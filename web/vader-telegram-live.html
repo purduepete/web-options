@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#0b0e16" id="theme-color-meta" />
-<title>Vader Telegram Live</title>
+<title>VADER Daily Put Recommendations</title>
 <script>
   (function () {
     var saved = localStorage.getItem('theme');
@@ -66,6 +66,13 @@
   .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .icon-btn:disabled:hover { border-color: var(--border); }
   .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .link-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    height: 36px; padding: 0 14px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; border-radius: var(--radius); transition: all 0.15s ease;
+    text-decoration: none; font-size: 0.85rem; font-weight: 600;
+  }
+  .link-btn:hover { border-color: var(--border-strong); }
 
   main { max-width: 1400px; margin: 0 auto; padding: 24px; }
 
@@ -173,9 +180,13 @@
 <header class="topbar">
   <div class="title">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-    Vader Telegram Live
+    VADER Daily Put Recommendations
   </div>
   <div class="topbar-actions">
+    <a class="link-btn" href="/calendars">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="0"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      Weekly Calendars
+    </a>
     <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
   </div>
 </header>
@@ -184,12 +195,18 @@
   <section class="status-banner">
     <h1>
       <span class="week-nav">
+        <button class="icon-btn" id="first-week" aria-label="Jump to earliest available week" title="Jump to earliest available week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 17 13 12 18 7"></polyline><polyline points="11 17 6 12 11 7"></polyline></svg>
+        </button>
         <button class="icon-btn" id="prev-week" aria-label="Previous week" title="Previous week">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
         <span id="week-title">Loading week...</span>
         <button class="icon-btn" id="next-week" aria-label="Next week" title="Next week">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <button class="icon-btn" id="current-week" aria-label="Jump to current week" title="Jump to current week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 7 11 12 6 17"></polyline><polyline points="13 7 18 12 13 17"></polyline></svg>
         </button>
       </span>
       <span class="symbol-filter">
@@ -400,8 +417,8 @@
       }
       out += '<div class="ticket ' + typeClass + '">'
         + '<div class="row1"><span class="ticker">' + t.symbol + ' ' + strikeLabel + '</span>' + badge + '</div>'
-        + '<div class="contract">Exp ' + formatMDY(t.expiration) + ' (' + (t.dte != null ? t.dte : 'n/a') + ' DTE)</div>'
-        + '<div class="delta-line">\u0394 ' + delta + '</div>'
+        + '<div class="contract">Exp <b>' + formatMDY(t.expiration) + '</b> (' + (t.dte != null ? t.dte : 'n/a') + ' DTE)</div>'
+        + '<div class="delta-line">\u0394 <b>' + delta + '</b></div>'
         + '<div class="stats"><span><b>' + ann + '</b> ann.</span><span><b>' + premium + '</b> premium</span><span><b>' + collateral + '</b> collateral</span></div>'
         + '</div>';
     });
@@ -412,6 +429,8 @@
   function updateNavButtons(data) {
     document.getElementById('next-week').disabled = !data.hasNextWeekData;
     document.getElementById('prev-week').disabled = !data.hasPriorWeekData;
+    document.getElementById('first-week').disabled = !data.hasPriorWeekData;
+    document.getElementById('current-week').disabled = !!data.isCurrentWeek;
   }
 
   function loadWeek(weekParam) {
@@ -439,11 +458,27 @@
       })
       .catch(function () {
         document.getElementById('error-box').style.display = 'flex';
-        document.getElementById('week-title').textContent = 'Vader Telegram Live';
+        document.getElementById('week-title').textContent = 'VADER Daily Put Recommendations';
         document.getElementById('page-footer').textContent = '';
         document.getElementById('week-grid').innerHTML = '';
         document.getElementById('prev-week').disabled = true;
         document.getElementById('next-week').disabled = true;
+        document.getElementById('first-week').disabled = true;
+        document.getElementById('current-week').disabled = true;
+      });
+  }
+
+  function jumpToEarliestWeek() {
+    fetch('/api/earliest-week', { headers: apiHeaders() })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Server responded with ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (data.weekStart) loadWeek(data.weekStart);
+      })
+      .catch(function () {
+        document.getElementById('error-box').style.display = 'flex';
       });
   }
 
@@ -460,6 +495,8 @@
 
   document.getElementById('prev-week').addEventListener('click', function () { shiftWeek(-7); });
   document.getElementById('next-week').addEventListener('click', function () { shiftWeek(7); });
+  document.getElementById('first-week').addEventListener('click', jumpToEarliestWeek);
+  document.getElementById('current-week').addEventListener('click', function () { loadWeek(null); });
 
   var symbolFilterInput = document.getElementById('symbol-filter');
   var symbolFilterWrap = document.querySelector('.symbol-filter');

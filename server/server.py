@@ -67,8 +67,10 @@ Usage:
 import configparser
 import datetime as dt
 import os
+import re
 import socket
 import sys
+from pathlib import Path
 
 import pyodbc
 from flask import Flask, Response, jsonify, redirect, request
@@ -93,6 +95,24 @@ DASHBOARD_HTML_PATH = os.path.join(
     os.path.dirname(__file__), "..", "web", "vader-telegram-live.html"
 )
 API_KEY_TOKEN = "__WEBOPTIONS_API_KEY__"
+
+# The Substack-derived weekly calendars (built by the web-options skill's
+# Substack workflow) currently live in @jimb's OneDrive folder, not in this
+# repo. The server reads them directly from there rather than copying them
+# in. Override via WEBOPTIONS_CALENDARS_DIR when this moves to a different
+# host (e.g. the planned jimbrownhome permanent-hosting step, where this
+# OneDrive path won't exist).
+CALENDARS_DIR = Path(
+    os.environ.get(
+        "WEBOPTIONS_CALENDARS_DIR",
+        r"C:\Users\JimBrown\OneDrive\Trading\Vader",
+    )
+)
+CALENDARS_INDEX_HTML_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "web", "calendars-index.html"
+)
+CALENDAR_FILENAME_RE = re.compile(r"^weekly-options-calendar-(\d{4}-\d{2}-\d{2})\.html$")
+CALENDAR_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # Origins the dashboard is actually served from. Kept narrow (not "*") now
 # that a real auth header is in play; add entries here if the dashboard is
@@ -209,6 +229,81 @@ def _parse_week_param(value: str) -> dt.date:
     return _monday_of(parsed)
 
 
+def _week_start_for_publish_date(publish_date: dt.date) -> dt.date:
+    """Maps a calendar's filename (publish) date to the Monday of the
+    trading week it covers. Weekday publish dates use that week's own
+    Monday. Weekend publish dates (the newsletter often lands Sat/Sun ahead
+    of the week it covers) map forward to the following Monday, not
+    backward to the just-finished week - a naive `_monday_of()` on a Sunday
+    would silently point at the wrong (already-past) week."""
+    weekday = publish_date.weekday()  # Mon=0 ... Sun=6
+    if weekday == 5:  # Saturday
+        return publish_date + dt.timedelta(days=2)
+    if weekday == 6:  # Sunday
+        return publish_date + dt.timedelta(days=1)
+    return publish_date - dt.timedelta(days=weekday)
+
+
+def _list_calendar_weeks():
+    """Scans CALENDARS_DIR for weekly-options-calendar-YYYY-MM-DD.html files
+    and returns them newest-first as
+    [{publishDate, weekStart, weekEnd, filename}, ...].
+
+    Degrades gracefully: a missing/inaccessible directory or an unparseable
+    filename is skipped rather than raised, so a stale env var or OneDrive
+    hiccup returns an empty list instead of a 500."""
+    if not CALENDARS_DIR.is_dir():
+        return []
+
+    weeks = []
+    try:
+        entries = os.listdir(CALENDARS_DIR)
+    except OSError:
+        return []
+
+    for name in entries:
+        match = CALENDAR_FILENAME_RE.match(name)
+        if not match:
+            continue
+        try:
+            publish_date = dt.datetime.strptime(match.group(1), "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        week_start = _week_start_for_publish_date(publish_date)
+        week_end = week_start + dt.timedelta(days=4)
+        weeks.append(
+            {
+                "publishDate": _iso(publish_date),
+                "weekStart": _iso(week_start),
+                "weekEnd": _iso(week_end),
+                "filename": name,
+            }
+        )
+
+    weeks.sort(key=lambda w: w["publishDate"], reverse=True)
+    return weeks
+
+
+def _resolve_calendar_file(date_str):
+    """Given a validated YYYY-MM-DD string, returns the resolved Path to
+    that week's calendar file inside CALENDARS_DIR, or None if the date is
+    malformed, the file doesn't exist, or the resolved path would escape
+    CALENDARS_DIR (defense-in-depth; the date regex alone already makes
+    traversal characters like '..' or '/' impossible in this parameter)."""
+    if not CALENDAR_DATE_RE.match(date_str):
+        return None
+    try:
+        base = CALENDARS_DIR.resolve(strict=True)
+    except OSError:
+        return None
+    candidate = (base / f"weekly-options-calendar-{date_str}.html").resolve()
+    if os.path.commonpath([str(base), str(candidate)]) != str(base):
+        return None
+    if not candidate.is_file():
+        return None
+    return candidate
+
+
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 # The dedup SQL below mirrors webportfolio's own getCspExplorer/getLatestCspSignals
@@ -265,6 +360,12 @@ WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
   AND report_date BETWEEN ? AND ?
 """
 
+EARLIEST_DATE_QUERY = """
+SELECT MIN(report_date) AS earliest
+FROM telegram_signal
+WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
+"""
+
 
 def _iso(d):
     if d is None:
@@ -279,6 +380,21 @@ def _week_has_data(conn, monday: dt.date) -> bool:
     cursor = conn.cursor()
     cursor.execute(EXISTS_QUERY, monday, friday)
     return cursor.fetchone() is not None
+
+
+def _earliest_week_monday(conn):
+    """Returns the Monday of the week containing the earliest signal on
+    record, or None if there's no data at all. Lets the frontend jump
+    straight there in one click instead of stepping back week-by-week."""
+    cursor = conn.cursor()
+    cursor.execute(EARLIEST_DATE_QUERY)
+    row = cursor.fetchone()
+    if row is None or row[0] is None:
+        return None
+    earliest_date = row[0]
+    if isinstance(earliest_date, dt.datetime):
+        earliest_date = earliest_date.date()
+    return _monday_of(earliest_date)
 
 
 def _fetch_week(conn, monday: dt.date):
@@ -371,6 +487,43 @@ def dashboard_page():
     return response
 
 
+@app.route("/calendars")
+def calendars_index_page():
+    # Same pattern as dashboard_page: one explicit file, key injected,
+    # no-store so a rotated key can't get stuck in a cached copy.
+    with open(CALENDARS_INDEX_HTML_PATH, "r", encoding="utf-8") as f:
+        html = f.read()
+    html = html.replace(API_KEY_TOKEN, API_KEY)
+    response = Response(html, mimetype="text/html")
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.route("/calendars/<date_str>")
+def calendars_file(date_str):
+    # No API key required here (same same-origin/LAN-trust model as
+    # dashboard_page/vader-telegram-live.html): these are static pre-rendered
+    # pages, not /api/* data endpoints. <date_str> is validated against
+    # ^\d{4}-\d{2}-\d{2}$ before any filesystem work, so path-traversal
+    # characters can't even reach this route; the resolved-path containment
+    # check in _resolve_calendar_file is defense-in-depth on top of that.
+    target = _resolve_calendar_file(date_str)
+    if target is None:
+        if not CALENDAR_DATE_RE.match(date_str):
+            return jsonify({"error": "date must be YYYY-MM-DD"}), 400
+        return jsonify({"error": "no calendar found for that date"}), 404
+    with open(target, "r", encoding="utf-8") as f:
+        html = f.read()
+    response = Response(html, mimetype="text/html")
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.route("/api/calendars")
+def calendars_list():
+    return jsonify({"calendars": _list_calendar_weeks()})
+
+
 @app.route("/api/week-signals")
 def week_signals():
     week_param = request.args.get("week")
@@ -413,12 +566,33 @@ def week_signals():
     )
 
 
+@app.route("/api/earliest-week")
+def earliest_week():
+    """Returns the Monday of the earliest week with any data on record, so
+    the frontend can jump straight there in one click."""
+    conn = get_database_connection()
+    try:
+        monday = _earliest_week_monday(conn)
+    finally:
+        conn.close()
+    if monday is None:
+        return jsonify({"weekStart": None})
+    return jsonify({"weekStart": _iso(monday)})
+
+
 @app.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
 
 
 if __name__ == "__main__":
+    if not CALENDARS_DIR.is_dir():
+        print(
+            f"Warning: CALENDARS_DIR does not exist: {CALENDARS_DIR}. "
+            "/calendars and /api/calendars will return no results until "
+            "this is fixed (see WEBOPTIONS_CALENDARS_DIR).",
+            file=sys.stderr,
+        )
     print(f"Vader Telegram Live Dashboard server starting on http://{LAN_BIND_HOST}:{PORT}")
     print(f"Open the dashboard at http://{LAN_BIND_HOST}:{PORT}/vader-telegram-live.html")
     print("Read-only. SELECT-only queries against webportfolio's telegram_signal table.")

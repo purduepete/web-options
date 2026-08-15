@@ -7,9 +7,11 @@ capabilities live here:
    - a small read-only Flask API serving live VADER cash-secured-put signals
      from webportfolio's production `telegram_signal` SQL table, rendered as
      a Monday-Friday calendar dashboard.
-2. Weekly Substack-derived calendars (built ad hoc by the `web-options`
-   Copilot skill, saved to `OneDrive\Trading\Vader\`) are a separate,
-   static-file workflow and don't live in this repo.
+2. **Weekly Substack calendars index** (`web/calendars-index.html`) - a
+   clean, card-based list linking to each week's Substack-derived
+   calendar HTML (`weekly-options-calendar-*.html`), built ad hoc by the
+   `web-options` Copilot skill and saved to `OneDrive\Trading\Vader\`. The
+   server reads that folder directly (files aren't copied into this repo).
 
 This repo is the dev home for the live dashboard, ahead of a later move to
 the `jimbrownhome` server for permanent hosting with automated startup and
@@ -33,7 +35,14 @@ network but not on every network interface.
 Then just browse to `http://<LAN-IP>:5057/vader-telegram-live.html` (or
 `http://<LAN-IP>:5057/`, which redirects there) from any device on the home
 LAN. The server serves the dashboard page itself with the API key already
-embedded, so there's nothing to configure or type in.
+embedded, so there's nothing to configure or type in. The two pages
+cross-link each other in their headers.
+
+By default the calendars index reads from
+`C:\Users\JimBrown\OneDrive\Trading\Vader`. Override with the
+`WEBOPTIONS_CALENDARS_DIR` environment variable if that folder moves (e.g.
+the planned `jimbrownhome` hosting step, where this OneDrive path won't
+exist).
 
 ## API
 
@@ -47,6 +56,19 @@ embedded, so there's nothing to configure or type in.
 - `GET /api/week-signals?week=YYYY-MM-DD` - any prior week (normalized to
   that week's Monday). Response includes `isCurrentWeek`, `hasPriorWeekData`,
   `hasNextWeekData`.
+- `GET /api/earliest-week` - the Monday of the earliest week with any data
+  on record, so the dashboard can jump straight there. Requires the API key.
+- `GET /calendars` - the weekly Substack calendars index page, served with
+  the real API key injected, same as the dashboard page.
+- `GET /api/calendars` - JSON list of available weekly calendars
+  (`publishDate`, `weekStart`, `weekEnd`, `filename`), newest-first. Requires
+  the API key.
+- `GET /calendars/<date>` - serves one week's static calendar HTML, keyed on
+  the calendar's literal filename date (`publishDate`, not the computed
+  `weekStart` - they can differ for weekend-published newsletters). No API
+  key required, same LAN-trust model as `/vader-telegram-live.html`: these
+  are static pre-rendered pages, not `/api/*` data endpoints. 400 for a
+  malformed date, 404 if no file matches.
 - `GET /api/health` - basic liveness check. Also requires the API key.
 
 ## Security notes
