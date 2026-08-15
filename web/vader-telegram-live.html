@@ -114,6 +114,17 @@
   @media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 640px) { .week-grid { grid-template-columns: 1fr; } }
 
+  .grid-loading-overlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: var(--glass); backdrop-filter: blur(2px); z-index: 20;
+  }
+  .grid-loading-overlay.visible { display: flex; }
+  .spinner {
+    width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .empty-week {
     color: var(--muted); font-size: 0.9rem; padding: 24px; text-align: center;
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
@@ -150,6 +161,24 @@
   .risk-group-heading.aggressive { color: var(--aggressive); }
   .risk-group-heading.other { color: var(--muted); }
   .risk-group-heading.top-picks { color: var(--accent-2); }
+  .risk-group-heading:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: -2px;
+  }
+
+  .shortcut-legend-wrap { position: relative; }
+  .shortcut-legend {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow); padding: 14px 16px; width: 260px; font-size: 0.8rem;
+  }
+  .shortcut-legend.open { display: block; }
+  .shortcut-legend h2 { margin: 0 0 10px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .shortcut-legend dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 7px 10px; }
+  .shortcut-legend dt {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 7px; font-family: ui-monospace, monospace; font-weight: 600; justify-self: start;
+  }
+  .shortcut-legend dd { margin: 0; color: var(--text); }
 
   .ticket {
     background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
@@ -171,7 +200,9 @@
   .tier-badge.balanced { color: var(--balanced); border-color: var(--balanced); }
   .tier-badge.aggressive { color: var(--aggressive); border-color: var(--aggressive); }
   .ticket .contract { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+  .ticket .contract b { color: var(--text); }
   .ticket .delta-line { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
+  .ticket .delta-line b { color: var(--text); }
   .ticket .stats { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
   .ticket .stats b { color: var(--text); }
 </style>
@@ -188,6 +219,21 @@
       Weekly Calendars
     </a>
     <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
+    <div class="shortcut-legend-wrap">
+      <button class="icon-btn" id="shortcut-help" aria-label="Keyboard shortcuts" title="Keyboard shortcuts" aria-expanded="false" aria-controls="shortcut-legend">?</button>
+      <div class="shortcut-legend" id="shortcut-legend" role="dialog" aria-label="Keyboard shortcuts">
+        <h2>Keyboard shortcuts</h2>
+        <dl>
+          <dt>&larr;</dt><dd>Previous week</dd>
+          <dt>&rarr;</dt><dd>Next week</dd>
+          <dt>t</dt><dd>Top picks only</dd>
+          <dt>a</dt><dd>Aggressive only</dd>
+          <dt>c</dt><dd>Conservative only</dd>
+          <dt>b</dt><dd>Balanced only</dd>
+          <dt>j</dt><dd>Toggle all groups</dd>
+        </dl>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -224,15 +270,19 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
     </span>
     <div>
-      <div><strong>Local server not reachable.</strong></div>
+      <div><strong>Couldn't load this week's signals.</strong></div>
       <div style="margin-top:4px;">
-        Start it from a terminal: <code>cd C:\Files\Dev\main\copilot\skills\vader-options\telegram-dashboard &amp;&amp; python server.py</code>,
-        then reload this page.
+        If reloading doesn't help, confirm the server is running: <code>cd C:\Files\Dev\main\weboptions\server &amp;&amp; python server.py</code>.
       </div>
     </div>
   </div>
 
-  <div class="week-grid" id="week-grid"></div>
+  <div class="week-grid-wrap">
+    <div class="week-grid" id="week-grid"></div>
+    <div class="grid-loading-overlay" id="grid-loading">
+      <div class="spinner"></div>
+    </div>
+  </div>
 </main>
 
 <footer id="page-footer"></footer>
@@ -268,6 +318,12 @@
   // collapses "Top Picks" across every day card in the current week's grid.
   // Expanded by default; persists across week navigation and filtering.
   var collapsedGroups = {};
+  // cssClasses of the groups actually rendered in the most recent
+  // renderDays() call (i.e. present for at least one day this week, under
+  // the current symbol filter). Kept in sync with the `groups` array built
+  // inside renderDays so keyboard shortcuts reason about what's actually on
+  // screen, not a hard-coded full list of possible groups.
+  var currentVisibleGroups = [];
 
   function formatDateLabel(iso) {
     var parts = iso.split('-');
@@ -306,6 +362,7 @@
       empty.style.gridColumn = '1 / -1';
       empty.textContent = 'No signals landed for this week yet.';
       grid.appendChild(empty);
+      currentVisibleGroups = [];
       return;
     }
 
@@ -347,6 +404,7 @@
     // is filtered out entirely, so a day's "No matches"/"no trades" message
     // has its own subgrid row instead of overlapping the head banner (which
     // only has row 1 to work with when TOTAL_ROWS would otherwise be 1).
+    currentVisibleGroups = groups.map(function (g) { return g.cssClass; });
     var TOTAL_ROWS = Math.max(2, 1 + groups.length * 2);
     // Always lay out 5 column tracks (Mon-Fri), regardless of how many days
     // actually have data, so a single day's card is the same width as it
@@ -377,7 +435,7 @@
           if (groupTrades.length === 0) return;
           var headingRow = 2 + idx * 2;
           var ticketsRow = 3 + idx * 2;
-          html += renderGroup(g.cssClass, groupTrades, g.label, g.showTierBadge, headingRow, ticketsRow);
+          html += renderGroup(g.cssClass, groupTrades, g.label, g.showTierBadge, headingRow, ticketsRow, d.date);
         });
       }
 
@@ -386,13 +444,15 @@
     });
   }
 
-  function renderGroup(cssClass, groupTrades, label, showTierBadge, headingRow, ticketsRow) {
+  function renderGroup(cssClass, groupTrades, label, showTierBadge, headingRow, ticketsRow, dayDate) {
     groupTrades.sort(function (a, b) {
       return (b.annualizedYield || 0) - (a.annualizedYield || 0);
     });
     var collapsed = !!collapsedGroups[cssClass];
     var out = '<div class="risk-group-heading ' + cssClass + (collapsed ? ' collapsed' : '') + '"'
-      + ' data-group="' + cssClass + '" style="grid-row:' + headingRow + '">'
+      + ' data-group="' + cssClass + '" data-day="' + dayDate + '"'
+      + ' tabindex="0" role="button" aria-expanded="' + (!collapsed) + '"'
+      + ' style="grid-row:' + headingRow + '">'
       + '<span class="chevron">' + ICONS.chevron + '</span>'
       + (label || cssClass) + ' (' + groupTrades.length + ')</div>';
     if (collapsed) {
@@ -433,9 +493,30 @@
     document.getElementById('current-week').disabled = !!data.isCurrentWeek;
   }
 
-  function loadWeek(weekParam) {
+  // URL deep-linking: currentWeekParam/symbolFilter are the canonical
+  // in-memory state; the URL is always derived FROM them via
+  // syncUrlFromState(), never the reverse, to avoid a "URL changed -> state
+  // changed -> URL changed" loop. applyStateFromUrl() is the only path that
+  // reads FROM the URL (initial load, and popstate) and it never itself
+  // calls syncUrlFromState when reacting to popstate, since that URL is
+  // already correct.
+  function syncUrlFromState(push) {
+    var params = new URLSearchParams();
+    if (currentWeekParam) params.set('week', currentWeekParam);
+    if (symbolFilter) params.set('symbol', symbolFilter);
+    var qs = params.toString();
+    var target = location.pathname + (qs ? '?' + qs : '');
+    var current = location.pathname + location.search;
+    if (target === current) return; // skip no-op history writes
+    var state = { week: currentWeekParam, symbol: symbolFilter };
+    if (push) history.pushState(state, '', target);
+    else history.replaceState(state, '', target);
+  }
+
+  function loadWeek(weekParam, historyMode) {
     var url = '/api/week-signals' + (weekParam ? ('?week=' + weekParam) : '');
     document.getElementById('error-box').style.display = 'none';
+    document.getElementById('grid-loading').classList.add('visible');
 
     fetch(url, { headers: apiHeaders() })
       .then(function (res) {
@@ -455,6 +536,7 @@
         document.getElementById('page-footer').textContent = 'Page loaded ' + datePart + ', ' + timePart;
         updateNavButtons(data);
         renderDays(data.days);
+        if (historyMode !== 'none') syncUrlFromState(historyMode === 'push');
       })
       .catch(function () {
         document.getElementById('error-box').style.display = 'flex';
@@ -465,6 +547,9 @@
         document.getElementById('next-week').disabled = true;
         document.getElementById('first-week').disabled = true;
         document.getElementById('current-week').disabled = true;
+      })
+      .finally(function () {
+        document.getElementById('grid-loading').classList.remove('visible');
       });
   }
 
@@ -475,7 +560,7 @@
         return res.json();
       })
       .then(function (data) {
-        if (data.weekStart) loadWeek(data.weekStart);
+        if (data.weekStart) loadWeek(data.weekStart, 'push');
       })
       .catch(function () {
         document.getElementById('error-box').style.display = 'flex';
@@ -490,13 +575,13 @@
     var yyyy = d.getFullYear();
     var mm = String(d.getMonth() + 1).padStart(2, '0');
     var dd = String(d.getDate()).padStart(2, '0');
-    loadWeek(yyyy + '-' + mm + '-' + dd);
+    loadWeek(yyyy + '-' + mm + '-' + dd, 'push');
   }
 
   document.getElementById('prev-week').addEventListener('click', function () { shiftWeek(-7); });
   document.getElementById('next-week').addEventListener('click', function () { shiftWeek(7); });
   document.getElementById('first-week').addEventListener('click', jumpToEarliestWeek);
-  document.getElementById('current-week').addEventListener('click', function () { loadWeek(null); });
+  document.getElementById('current-week').addEventListener('click', function () { loadWeek(null, 'push'); });
 
   var symbolFilterInput = document.getElementById('symbol-filter');
   var symbolFilterWrap = document.querySelector('.symbol-filter');
@@ -509,6 +594,7 @@
     symbolFilter = e.target.value.trim().toUpperCase();
     updateClearButtonVisibility();
     if (latestResponse) renderDays(latestResponse.days);
+    syncUrlFromState(false);
   });
 
   document.getElementById('symbol-filter-clear').addEventListener('click', function () {
@@ -517,21 +603,155 @@
     updateClearButtonVisibility();
     symbolFilterInput.focus();
     if (latestResponse) renderDays(latestResponse.days);
+    syncUrlFromState(false);
+  });
+
+  // Reads week/symbol from the URL and applies them. Used on initial load
+  // (isPopstate=false, so the resulting URL still gets normalized via
+  // replaceState) and on popstate (isPopstate=true, so loadWeek is told
+  // 'none' - the URL we're reacting to is already correct, and rewriting it
+  // here would create a sync loop with the browser's own history state).
+  function applyStateFromUrl(isPopstate) {
+    var params = new URLSearchParams(location.search);
+    var week = params.get('week');
+    var symbolParam = params.get('symbol') || '';
+    symbolFilter = symbolParam.trim().toUpperCase();
+    symbolFilterInput.value = symbolParam;
+    updateClearButtonVisibility();
+    loadWeek(week, isPopstate ? 'none' : 'replace');
+  }
+
+  window.addEventListener('popstate', function () {
+    applyStateFromUrl(true);
+  });
+
+  // Keyboard-shortcut legend popover
+  var shortcutHelpBtn = document.getElementById('shortcut-help');
+  var shortcutLegend = document.getElementById('shortcut-legend');
+
+  function closeShortcutLegend() {
+    shortcutLegend.classList.remove('open');
+    shortcutHelpBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleShortcutLegend() {
+    var open = shortcutLegend.classList.toggle('open');
+    shortcutHelpBtn.setAttribute('aria-expanded', String(open));
+  }
+
+  shortcutHelpBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    toggleShortcutLegend();
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!shortcutLegend.classList.contains('open')) return;
+    if (e.target === shortcutHelpBtn || shortcutLegend.contains(e.target)) return;
+    closeShortcutLegend();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && shortcutLegend.classList.contains('open')) {
+      closeShortcutLegend();
+      shortcutHelpBtn.focus();
+    }
   });
 
   // Event delegation: group headings are recreated on every render, so one
-  // listener on the grid container handles clicks for all of them. Toggling
-  // a group's cssClass collapses/expands it for every day card at once,
-  // since the collapse state is keyed by group, not by individual day.
+  // listener on the grid container handles clicks/keydowns for all of them.
+  // Toggling a group's cssClass collapses/expands it for every day card at
+  // once, since the collapse state is keyed by group, not by individual day.
+  // Because renderDays() rebuilds the grid's innerHTML from scratch on every
+  // toggle, the focused heading element is destroyed - restore focus to the
+  // matching heading (same data-group + data-day) after the re-render so
+  // keyboard users don't lose their place.
+  function toggleHeading(heading) {
+    var groupKey = heading.getAttribute('data-group');
+    var dayKey = heading.getAttribute('data-day');
+    collapsedGroups[groupKey] = !collapsedGroups[groupKey];
+    if (latestResponse) renderDays(latestResponse.days);
+    var restored = document.querySelector(
+      '.risk-group-heading[data-group="' + groupKey + '"][data-day="' + dayKey + '"]'
+    );
+    if (restored) restored.focus();
+  }
+
   document.getElementById('week-grid').addEventListener('click', function (e) {
     var heading = e.target.closest('.risk-group-heading');
     if (!heading) return;
-    var groupKey = heading.getAttribute('data-group');
-    collapsedGroups[groupKey] = !collapsedGroups[groupKey];
-    if (latestResponse) renderDays(latestResponse.days);
+    toggleHeading(heading);
   });
 
-  loadWeek(null);
+  document.getElementById('week-grid').addEventListener('keydown', function (e) {
+    var heading = e.target.closest('.risk-group-heading');
+    if (!heading) return;
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    e.preventDefault(); // Space would otherwise scroll the page
+    toggleHeading(heading);
+  });
+
+  // Keyboard shortcuts: Left/Right arrow shifts week, t/a/c/b isolates one
+  // risk-tier group, j toggles all groups open/closed. Only ever act on
+  // groups that are actually visible right now (currentVisibleGroups),
+  // never a hard-coded full list, so shortcuts never "collapse everything"
+  // for a group that isn't showing this week/filter.
+  function setOnlyGroupOpen(targetGroup) {
+    if (currentVisibleGroups.indexOf(targetGroup) === -1) return; // not showing; no-op
+    currentVisibleGroups.forEach(function (g) {
+      collapsedGroups[g] = (g !== targetGroup);
+    });
+    if (latestResponse) renderDays(latestResponse.days);
+  }
+
+  function toggleAllGroups() {
+    var anyCollapsed = currentVisibleGroups.some(function (g) { return !!collapsedGroups[g]; });
+    currentVisibleGroups.forEach(function (g) {
+      if (anyCollapsed) {
+        delete collapsedGroups[g]; // expand (missing key = expanded)
+      } else {
+        collapsedGroups[g] = true; // collapse
+      }
+    });
+    if (latestResponse) renderDays(latestResponse.days);
+  }
+
+  function isShortcutAllowed(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+    var el = document.activeElement;
+    if (!el) return true;
+    var tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable) return false;
+    return true;
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (!isShortcutAllowed(e)) return;
+    var key = e.key.toLowerCase();
+    if (key === 'arrowleft') {
+      if (!document.getElementById('prev-week').disabled) shiftWeek(-7);
+      e.preventDefault();
+    } else if (key === 'arrowright') {
+      if (!document.getElementById('next-week').disabled) shiftWeek(7);
+      e.preventDefault();
+    } else if (key === 't') {
+      setOnlyGroupOpen('top-picks');
+      e.preventDefault();
+    } else if (key === 'a') {
+      setOnlyGroupOpen('aggressive');
+      e.preventDefault();
+    } else if (key === 'c') {
+      setOnlyGroupOpen('conservative');
+      e.preventDefault();
+    } else if (key === 'b') {
+      setOnlyGroupOpen('balanced');
+      e.preventDefault();
+    } else if (key === 'j') {
+      toggleAllGroups();
+      e.preventDefault();
+    }
+  });
+
+  applyStateFromUrl(false);
 
   // Theme toggle
   var toggle = document.getElementById('theme-toggle');
