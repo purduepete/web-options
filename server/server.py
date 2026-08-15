@@ -499,6 +499,38 @@ def calendars_index_page():
     return response
 
 
+CALENDARS_BACK_LINK_MARKER = 'data-injected="calendars-back-link"'
+CALENDARS_BACK_LINK_HTML = (
+    '<div ' + CALENDARS_BACK_LINK_MARKER + ' style="display:flex;align-items:center;gap:8px;">'
+    '<a href="/calendars" '
+    'style="background:var(--surface-2,#1d2538);border:1px solid var(--border,#28324a);'
+    'color:var(--text,#e7ecf5);height:36px;padding:0 14px;display:flex;align-items:center;'
+    'gap:8px;border-radius:var(--radius,0);text-decoration:none;font-size:0.85rem;'
+    'font-weight:600;font-family:\'Inter\',system-ui,sans-serif;">'
+    '&larr; All weekly calendars</a>'
+)
+
+
+def _inject_calendars_back_link(html):
+    # These weekly-calendar files are static, hand-generated-per-week by the
+    # web-options skill, not templated by this server - so rather than
+    # editing every past/future file, inject a "back to the calendars list"
+    # link into the topbar at serve time, same pattern as the API-key
+    # placeholder swap on the dashboard page. Idempotent: skip if a file
+    # already has one (e.g. a future skill revision adds it directly). Wraps
+    # the theme-toggle button in a flex div alongside the new link, rather
+    # than adding a 3rd top-level topbar child, so header.topbar's
+    # `justify-content: space-between` (title vs. actions) still lays out
+    # as 2 groups instead of spreading 3 items apart.
+    if CALENDARS_BACK_LINK_MARKER in html:
+        return html
+    toggle_marker = '<button class="icon-btn" id="theme-toggle"'
+    if toggle_marker in html and "</header>" in html:
+        html = html.replace(toggle_marker, CALENDARS_BACK_LINK_HTML + toggle_marker, 1)
+        html = html.replace("</header>", "</div>\n</header>", 1)
+    return html
+
+
 @app.route("/calendars/<date_str>")
 def calendars_file(date_str):
     # No API key required here (same same-origin/LAN-trust model as
@@ -514,6 +546,7 @@ def calendars_file(date_str):
         return jsonify({"error": "no calendar found for that date"}), 404
     with open(target, "r", encoding="utf-8") as f:
         html = f.read()
+    html = _inject_calendars_back_link(html)
     response = Response(html, mimetype="text/html")
     response.headers["Cache-Control"] = "no-store"
     return response
