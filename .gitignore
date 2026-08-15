@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Never commit the real API key / secrets
+server/secrets.ini

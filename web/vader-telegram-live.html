@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0b0e16" id="theme-color-meta" />
+<title>Vader Telegram Live</title>
+<script>
+  (function () {
+    var saved = localStorage.getItem('theme');
+    var theme = saved || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --radius: 0; --radius-lg: 0;
+    --bg: #0b0e16; --surface: #141a28; --surface-2: #1d2538; --surface-3: #28324a;
+    --text: #e7ecf5; --muted: #9aa6bd; --border: #28324a; --border-strong: #3a465f;
+    --accent: #6366f1; --accent-2: #8b5cf6;
+    --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --on-accent: #fff;
+    --glass: rgba(20,26,40,0.72); --glass-strong: rgba(20,26,40,0.9);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.28);
+    --shadow-accent: 0 8px 20px rgba(99,102,241,0.35);
+    --put: #f87171; --call: #34d399;
+    --conservative: #34d399; --balanced: #fbbf24; --aggressive: #f87171;
+    --error: #f87171;
+  }
+  :root[data-theme='light'] {
+    --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --surface-3: #e5e9f2;
+    --text: #1a2233; --muted: #5b6678; --border: #e5e9f2; --border-strong: #cdd5e4;
+    --glass: rgba(255,255,255,0.72); --glass-strong: rgba(255,255,255,0.9);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+      --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --surface-3: #e5e9f2;
+      --text: #1a2233; --muted: #5b6678; --border: #e5e9f2; --border-strong: #cdd5e4;
+      --glass: rgba(255,255,255,0.72); --glass-strong: rgba(255,255,255,0.9);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+
+  header.topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--glass); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header.topbar .title { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; font-size: 1.05rem; }
+  .icon-btn {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border-radius: var(--radius); transition: all 0.15s ease;
+  }
+  .icon-btn:hover { border-color: var(--border-strong); }
+  .icon-btn:active { transform: translateY(1px) scale(0.97); }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn:disabled:hover { border-color: var(--border); }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+  main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  .status-banner {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow); padding: 18px 22px; margin-bottom: 18px;
+  }
+  .status-banner h1 { margin: 0; font-size: 1.2rem; letter-spacing: -0.01em; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .symbol-filter {
+    display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px 10px; color: var(--muted);
+  }
+  .symbol-filter input {
+    background: transparent; border: none; outline: none; color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.85rem; width: 140px;
+  }
+  .symbol-filter input::placeholder { color: var(--muted); }
+
+  .error-box {
+    background: var(--surface); border: 1px solid var(--error); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow); padding: 18px 22px; margin-bottom: 18px; display: none;
+    gap: 12px; align-items: flex-start;
+  }
+  .error-box .icon { color: var(--error); flex-shrink: 0; margin-top: 2px; }
+  .error-box code {
+    background: var(--surface-2); border: 1px solid var(--border); padding: 1px 6px; border-radius: var(--radius);
+  }
+
+  .week-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 14px; row-gap: 0;
+  }
+  @media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .week-grid { grid-template-columns: 1fr; } }
+
+  .empty-week {
+    color: var(--muted); font-size: 0.9rem; padding: 24px; text-align: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  }
+
+  footer#page-footer {
+    max-width: 1400px; margin: 8px auto 32px; padding: 0 24px; color: var(--muted); font-size: 0.78rem;
+  }
+
+  .day-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow); display: grid; grid-template-rows: subgrid; overflow: hidden;
+  }
+  .day-head {
+    background: var(--accent-grad); color: var(--on-accent); padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .day-head .name { font-weight: 700; letter-spacing: -0.01em; }
+  .day-head .date { font-size: 0.75rem; opacity: 0.9; }
+
+  .no-trades { color: var(--muted); font-size: 0.8rem; padding: 10px 14px; font-style: italic; align-self: start; }
+
+  .tickets { display: flex; flex-direction: column; overflow: hidden; }
+
+  .risk-group-heading {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+    padding: 8px 14px 4px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;
+  }
+  .risk-group-heading .chevron { flex-shrink: 0; transition: transform 0.15s ease; display: flex; }
+  .risk-group-heading.collapsed .chevron { transform: rotate(-90deg); }
+  .risk-group-heading.conservative { color: var(--conservative); }
+  .risk-group-heading.balanced { color: var(--balanced); }
+  .risk-group-heading.aggressive { color: var(--aggressive); }
+  .risk-group-heading.other { color: var(--muted); }
+  .risk-group-heading.top-picks { color: var(--accent-2); }
+
+  .ticket {
+    background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
+    border-radius: var(--radius); padding: 10px 12px; margin: 5px 12px;
+  }
+  .ticket.put { border-left-color: var(--put); }
+  .ticket.call { border-left-color: var(--call); }
+  .ticket .row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .ticket .ticker { font-weight: 700; font-size: 0.92rem; }
+  .ticket .top-pick {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 700;
+    padding: 2px 6px; border-radius: var(--radius); border: 1px solid var(--accent-2); color: var(--accent-2);
+  }
+  .ticket .tier-badge {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 700;
+    padding: 2px 6px; border-radius: var(--radius); border: 1px solid var(--border-strong);
+  }
+  .tier-badge.conservative { color: var(--conservative); border-color: var(--conservative); }
+  .tier-badge.balanced { color: var(--balanced); border-color: var(--balanced); }
+  .tier-badge.aggressive { color: var(--aggressive); border-color: var(--aggressive); }
+  .ticket .contract { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+  .ticket .delta-line { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
+  .ticket .stats { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+  .ticket .stats b { color: var(--text); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+    Vader Telegram Live
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
+  </div>
+</header>
+
+<main>
+  <section class="status-banner">
+    <h1>
+      <span class="week-nav">
+        <button class="icon-btn" id="prev-week" aria-label="Previous week" title="Previous week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <span id="week-title">Loading week...</span>
+        <button class="icon-btn" id="next-week" aria-label="Next week" title="Next week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </span>
+      <span class="symbol-filter">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="symbol-filter" placeholder="Filter by symbol" autocomplete="off" spellcheck="false" />
+      </span>
+    </h1>
+  </section>
+
+  <div class="error-box" id="error-box">
+    <span class="icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </span>
+    <div>
+      <div><strong>Local server not reachable.</strong></div>
+      <div style="margin-top:4px;">
+        Start it from a terminal: <code>cd C:\Files\Dev\main\copilot\skills\vader-options\telegram-dashboard &amp;&amp; python server.py</code>,
+        then reload this page.
+      </div>
+    </div>
+  </div>
+
+  <div class="week-grid" id="week-grid"></div>
+</main>
+
+<footer id="page-footer"></footer>
+
+<script>
+  // The server binds a specific LAN IP (not 127.0.0.1) so other devices on
+  // the home network can reach it; ask once for host:port and the shared
+  // API key, then remember them for this browser tab/session only
+  // (sessionStorage), not localStorage, so they don't linger indefinitely.
+  var apiHost = sessionStorage.getItem('vaderApiHost');
+  if (!apiHost) {
+    apiHost = window.prompt(
+      'Dashboard server address (host:port), e.g. 127.0.0.1:5057 or 192.168.1.20:5057:',
+      '127.0.0.1:5057'
+    ) || '127.0.0.1:5057';
+    sessionStorage.setItem('vaderApiHost', apiHost);
+  }
+  var apiKey = sessionStorage.getItem('vaderApiKey');
+  if (!apiKey) {
+    apiKey = window.prompt('Dashboard API key:') || '';
+    sessionStorage.setItem('vaderApiKey', apiKey);
+  }
+  var API_BASE = 'http://' + apiHost;
+
+  function apiHeaders() {
+    return { 'X-API-Key': apiKey };
+  }
+
+  function resetApiConfigAndReload() {
+    sessionStorage.removeItem('vaderApiHost');
+    sessionStorage.removeItem('vaderApiKey');
+    window.location.reload();
+  }
+
+  var ICONS = {
+    sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
+    moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
+    chevron: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>'
+  };
+
+  var groupOrder = ['conservative', 'balanced', 'aggressive'];
+  var ROW_HEAD = 1;
+
+  var currentWeekParam = null; // null = server's default (live current week)
+  var latestResponse = null;
+  var symbolFilter = '';
+  // Collapse state is keyed by group cssClass (e.g. 'top-picks',
+  // 'conservative'), NOT per day, so toggling one day's "Top Picks" heading
+  // collapses "Top Picks" across every day card in the current week's grid.
+  // Expanded by default; persists across week navigation and filtering.
+  var collapsedGroups = {};
+
+  function formatDateLabel(iso) {
+    var parts = iso.split('-');
+    var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function formatWeekTitle(weekStart, weekEnd) {
+    return 'Week of ' + formatDateLabel(weekStart) + ' to ' + formatDateLabel(weekEnd);
+  }
+
+  function formatMDY(iso) {
+    var parts = iso.split('-');
+    return parts[1] + '/' + parts[2] + '/' + parts[0];
+  }
+
+  function renderDays(rawDays) {
+    var grid = document.getElementById('week-grid');
+    grid.innerHTML = '';
+
+    // Apply the symbol filter once, up front, so group detection below
+    // (which groups get a row slot at all) reflects only matching trades.
+    var days = (rawDays || []).map(function (d) {
+      return {
+        name: d.name,
+        date: d.date,
+        trades: d.trades.filter(function (t) {
+          return !symbolFilter || (t.symbol || '').toUpperCase().indexOf(symbolFilter) !== -1;
+        })
+      };
+    });
+
+    if (days.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-week';
+      empty.style.gridColumn = '1 / -1';
+      empty.textContent = 'No signals landed for this week yet.';
+      grid.appendChild(empty);
+      return;
+    }
+
+    // Build the shared group layout ONCE across all 5 days, so every day's
+    // "Top Picks" / "Conservative" / etc. heading lands on the same grid
+    // row (via subgrid) regardless of how many tickets sit above it in a
+    // given day's column. A group only gets a row slot at all if at least
+    // one day this week actually has (matching) trades in it.
+    var groups = [];
+    var anyTopPicks = days.some(function (d) { return d.trades.some(function (t) { return t.isTopPick; }); });
+    if (anyTopPicks) {
+      groups.push({
+        cssClass: 'top-picks', label: 'Top Picks', showTierBadge: true,
+        match: function (t) { return t.isTopPick; }
+      });
+    }
+    groupOrder.forEach(function (g) {
+      var present = days.some(function (d) {
+        return d.trades.some(function (t) { return !t.isTopPick && (t.tier || '').toLowerCase() === g; });
+      });
+      if (present) {
+        groups.push({
+          cssClass: g, label: null, showTierBadge: false,
+          match: function (t) { return !t.isTopPick && (t.tier || '').toLowerCase() === g; }
+        });
+      }
+    });
+    var anyOther = days.some(function (d) {
+      return d.trades.some(function (t) { return !t.isTopPick && groupOrder.indexOf((t.tier || '').toLowerCase()) === -1; });
+    });
+    if (anyOther) {
+      groups.push({
+        cssClass: 'other', label: 'Other', showTierBadge: false,
+        match: function (t) { return !t.isTopPick && groupOrder.indexOf((t.tier || '').toLowerCase()) === -1; }
+      });
+    }
+
+    var TOTAL_ROWS = 1 + groups.length * 2;
+    grid.style.gridTemplateColumns = 'repeat(' + days.length + ', 1fr)';
+    grid.style.gridTemplateRows = 'repeat(' + TOTAL_ROWS + ', auto)';
+
+    days.forEach(function (d) {
+      var card = document.createElement('div');
+      card.className = 'day-card';
+      card.style.gridRow = '1 / span ' + TOTAL_ROWS;
+
+      var html = '<div class="day-head" style="grid-row:' + ROW_HEAD + '"><span class="name">' + d.name + '</span><span class="date">' + formatDateLabel(d.date) + ' (' + d.trades.length + ')</span></div>';
+      var trades = d.trades;
+
+      if (trades.length === 0) {
+        var msg = symbolFilter ? 'No matches for "' + symbolFilter + '".' : 'No signals parsed for this day.';
+        html += '<div class="no-trades" style="grid-row:2">' + msg + '</div>';
+      } else {
+        groups.forEach(function (g, idx) {
+          var groupTrades = trades.filter(g.match);
+          if (groupTrades.length === 0) return;
+          var headingRow = 2 + idx * 2;
+          var ticketsRow = 3 + idx * 2;
+          html += renderGroup(g.cssClass, groupTrades, g.label, g.showTierBadge, headingRow, ticketsRow);
+        });
+      }
+
+      card.innerHTML = html;
+      grid.appendChild(card);
+    });
+  }
+
+  function renderGroup(cssClass, groupTrades, label, showTierBadge, headingRow, ticketsRow) {
+    groupTrades.sort(function (a, b) {
+      return (b.annualizedYield || 0) - (a.annualizedYield || 0);
+    });
+    var collapsed = !!collapsedGroups[cssClass];
+    var out = '<div class="risk-group-heading ' + cssClass + (collapsed ? ' collapsed' : '') + '"'
+      + ' data-group="' + cssClass + '" style="grid-row:' + headingRow + '">'
+      + '<span class="chevron">' + ICONS.chevron + '</span>'
+      + (label || cssClass) + ' (' + groupTrades.length + ')</div>';
+    if (collapsed) {
+      out += '<div class="tickets" style="grid-row:' + ticketsRow + '"></div>';
+      return out;
+    }
+    out += '<div class="tickets" style="grid-row:' + ticketsRow + '">';
+    groupTrades.forEach(function (t) {
+      var typeClass = t.optionRight === 'P' ? 'put' : 'call';
+      var strikeLabel = (t.strike != null ? '$' + t.strike : '') + (t.optionRight === 'P' ? 'P' : 'C');
+      var ann = t.annualizedYield != null ? t.annualizedYield.toFixed(1) + '%' : 'n/a';
+      var premium = t.premium != null ? '$' + t.premium.toFixed(0) : 'n/a';
+      var collateral = t.collateral != null ? '$' + t.collateral.toLocaleString() : 'n/a';
+      var delta = t.delta != null ? t.delta.toFixed(2) : 'n/a';
+      var badge = '';
+      if (showTierBadge) {
+        var tierClass = (t.tier || '').toLowerCase();
+        var tierLabel = t.tier || 'Unclassified';
+        badge = '<span class="tier-badge ' + tierClass + '">' + tierLabel + '</span>';
+      } else if (t.isTopPick) {
+        badge = '<span class="top-pick">Top pick</span>';
+      }
+      out += '<div class="ticket ' + typeClass + '">'
+        + '<div class="row1"><span class="ticker">' + t.symbol + ' ' + strikeLabel + '</span>' + badge + '</div>'
+        + '<div class="contract">Exp ' + formatMDY(t.expiration) + ' (' + (t.dte != null ? t.dte : 'n/a') + ' DTE)</div>'
+        + '<div class="delta-line">\u0394 ' + delta + '</div>'
+        + '<div class="stats"><span><b>' + ann + '</b> ann.</span><span><b>' + premium + '</b> premium</span><span><b>' + collateral + '</b> collateral</span></div>'
+        + '</div>';
+    });
+    out += '</div>';
+    return out;
+  }
+
+  function updateNavButtons(data) {
+    document.getElementById('next-week').disabled = !data.hasNextWeekData;
+    document.getElementById('prev-week').disabled = !data.hasPriorWeekData;
+  }
+
+  function loadWeek(weekParam) {
+    var url = API_BASE + '/api/week-signals' + (weekParam ? ('?week=' + weekParam) : '');
+    document.getElementById('error-box').style.display = 'none';
+
+    fetch(url, { headers: apiHeaders() })
+      .then(function (res) {
+        if (res.status === 401) {
+          window.alert('API key rejected. Re-enter it to continue.');
+          resetApiConfigAndReload();
+          throw new Error('Unauthorized');
+        }
+        if (!res.ok) throw new Error('Server responded with ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        latestResponse = data;
+        currentWeekParam = data.weekStart;
+        document.getElementById('week-title').textContent = formatWeekTitle(data.weekStart, data.weekEnd);
+        var now = new Date();
+        var datePart = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        var timePart = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        document.getElementById('page-footer').textContent = 'Page loaded ' + datePart + ', ' + timePart;
+        updateNavButtons(data);
+        renderDays(data.days);
+      })
+      .catch(function () {
+        document.getElementById('error-box').style.display = 'flex';
+        document.getElementById('week-title').textContent = 'Vader Telegram Live';
+        document.getElementById('page-footer').textContent = '';
+        document.getElementById('week-grid').innerHTML = '';
+        document.getElementById('prev-week').disabled = true;
+        document.getElementById('next-week').disabled = true;
+      });
+  }
+
+  function shiftWeek(days) {
+    if (!currentWeekParam) return;
+    var parts = currentWeekParam.split('-').map(Number);
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setDate(d.getDate() + days);
+    var yyyy = d.getFullYear();
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    loadWeek(yyyy + '-' + mm + '-' + dd);
+  }
+
+  document.getElementById('prev-week').addEventListener('click', function () { shiftWeek(-7); });
+  document.getElementById('next-week').addEventListener('click', function () { shiftWeek(7); });
+
+  document.getElementById('symbol-filter').addEventListener('input', function (e) {
+    symbolFilter = e.target.value.trim().toUpperCase();
+    if (latestResponse) renderDays(latestResponse.days);
+  });
+
+  // Event delegation: group headings are recreated on every render, so one
+  // listener on the grid container handles clicks for all of them. Toggling
+  // a group's cssClass collapses/expands it for every day card at once,
+  // since the collapse state is keyed by group, not by individual day.
+  document.getElementById('week-grid').addEventListener('click', function (e) {
+    var heading = e.target.closest('.risk-group-heading');
+    if (!heading) return;
+    var groupKey = heading.getAttribute('data-group');
+    collapsedGroups[groupKey] = !collapsedGroups[groupKey];
+    if (latestResponse) renderDays(latestResponse.days);
+  });
+
+  loadWeek(null);
+
+  // Theme toggle
+  var toggle = document.getElementById('theme-toggle');
+  var metaColor = document.getElementById('theme-color-meta');
+  function currentTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; }
+  function applyToggleIcon() {
+    var t = currentTheme();
+    toggle.innerHTML = t === 'dark' ? ICONS.sun : ICONS.moon;
+    metaColor.setAttribute('content', t === 'dark' ? '#0b0e16' : '#f5f7fb');
+  }
+  toggle.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    applyToggleIcon();
+  });
+  applyToggleIcon();
+</script>
+</body>
+</html>
