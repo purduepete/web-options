@@ -20,7 +20,8 @@ SECURITY / SCOPE (read this before changing anything):
     recommended a dedicated read-only SQL login as a follow-up hardening
     step; @jimb chose to defer that and use the existing credentials for
     now. Do not "fix" this by adding writes - if hardening happens, it
-    happens as a separate, explicitly-requested change.
+    happens as a separate, explicitly-requested change. This remains the
+    single highest-priority follow-up hardening item for this project.
   * Binds to this machine's specific LAN IPv4 address (not 0.0.0.0), so it
     is reachable from other devices on the home LAN but doesn't listen on
     every interface (Wi-Fi, Ethernet, VPN, virtual adapters). See
@@ -30,19 +31,37 @@ SECURITY / SCOPE (read this before changing anything):
     without a valid key get 401. OPTIONS (CORS preflight) requests are
     exempt from this check so cross-origin fetches from the dashboard
     still work.
+  * `/vader-telegram-live.html` (and `/`, which redirects to it) is served
+    directly by this app with the real API key auto-injected into the page
+    (replacing a placeholder token in the committed HTML), so browsing
+    straight to http://<LAN-IP>:5057/vader-telegram-live.html "just works"
+    with no prompts. IMPORTANT HONEST NOTE (per a second independent
+    review, GPT-5.4 + Mai-1.1-flash, session ae15e7af): once the key is
+    embedded in every served page, it is NOT real per-request
+    authentication - anyone who can reach the page can view-source/devtools
+    the key out and call /api/* directly. The X-API-Key check is a light
+    nuisance control against accidental or naive script access, not a
+    security boundary. The actual trust boundary here is LAN reachability
+    itself (same as it practically was in the prior round, which handed the
+    key/host to anyone using the dashboard via a prompt instead of
+    automatically - this is not a regression, just removing a manual step).
+    @jimb reviewed this trade-off directly and chose to keep the header
+    check anyway, for the minor friction it still adds.
+  * The served HTML response sets Cache-Control: no-store, so a rotated key
+    can't get stuck in a cached copy of the page.
   * This LAN-reachable + shared-secret-key model was independently reviewed
-    by GPT-5.4 and Mai-1.1-flash (session ae15e7af, plan step 3) before
-    being adopted. Known accepted limitations for this dev phase, not yet
-    solved: plaintext HTTP (no TLS) and the DB credentials above are not
-    scoped to read-only. Revisit both if/when this moves beyond the home
-    LAN (e.g. the planned jimbrownhome permanent-hosting step).
+    by GPT-5.4 and Mai-1.1-flash (session ae15e7af) before being adopted.
+    Known accepted limitations for this dev phase, not yet solved:
+    plaintext HTTP (no TLS) and the DB credentials above are not scoped to
+    read-only. Revisit both if/when this moves beyond the home LAN (e.g.
+    the planned jimbrownhome permanent-hosting step).
   * Never print/log the DB password or the API key. Never commit
     secrets.ini or config.ini.
 
 Usage:
     python server.py
-    (then open ../web/vader-telegram-live.html in a browser; it fetches
-    from http://<LAN-IP>:5057/api/week-signals with an X-API-Key header)
+    (it prints the LAN address it bound to; browse directly to
+    http://<LAN-IP>:5057/vader-telegram-live.html, no local file needed)
 """
 
 import configparser
@@ -52,7 +71,7 @@ import socket
 import sys
 
 import pyodbc
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, redirect, request
 from flask_cors import CORS
 
 # --- config -------------------------------------------------------------
@@ -65,6 +84,15 @@ WEBPORTFOLIO_CONFIG_PATH = r"C:\Files\Dev\main\webportfolio\config\config.ini"
 # This repo's own untracked secrets file (gitignored), holding the shared
 # API key clients must send as X-API-Key. Never commit this file.
 SECRETS_PATH = os.path.join(os.path.dirname(__file__), "secrets.ini")
+
+# The dashboard HTML lives in a sibling web/ folder in this same repo. It's
+# served directly by this app (see dashboard_page below), with API_KEY_TOKEN
+# swapped for the real key at serve-time. The committed file only ever
+# contains the placeholder.
+DASHBOARD_HTML_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "web", "vader-telegram-live.html"
+)
+API_KEY_TOKEN = "__WEBOPTIONS_API_KEY__"
 
 # Origins the dashboard is actually served from. Kept narrow (not "*") now
 # that a real auth header is in play; add entries here if the dashboard is
@@ -321,6 +349,28 @@ def _require_api_key():
     return None
 
 
+@app.route("/")
+def index():
+    return redirect("/vader-telegram-live.html")
+
+
+@app.route("/vader-telegram-live.html")
+def dashboard_page():
+    # Serve this one specific file only (not a generic static-folder mount)
+    # so nothing else in web/ is accidentally exposed. The real API key is
+    # injected here, replacing the placeholder in the committed source, so
+    # the browser never has to prompt for it. See the module docstring for
+    # why this key is a nuisance control, not real per-request auth, once
+    # embedded this way.
+    with open(DASHBOARD_HTML_PATH, "r", encoding="utf-8") as f:
+        html = f.read()
+    html = html.replace(API_KEY_TOKEN, API_KEY)
+    response = Response(html, mimetype="text/html")
+    # Never let a rotated key get stuck in a cached copy of this page.
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @app.route("/api/week-signals")
 def week_signals():
     week_param = request.args.get("week")
@@ -370,6 +420,7 @@ def health():
 
 if __name__ == "__main__":
     print(f"Vader Telegram Live Dashboard server starting on http://{LAN_BIND_HOST}:{PORT}")
+    print(f"Open the dashboard at http://{LAN_BIND_HOST}:{PORT}/vader-telegram-live.html")
     print("Read-only. SELECT-only queries against webportfolio's telegram_signal table.")
     print("All /api/* routes require an X-API-Key header (see secrets.ini).")
     app.run(host=LAN_BIND_HOST, port=PORT, debug=False)

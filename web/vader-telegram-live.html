@@ -212,33 +212,17 @@
 <footer id="page-footer"></footer>
 
 <script>
-  // The server binds a specific LAN IP (not 127.0.0.1) so other devices on
-  // the home network can reach it; ask once for host:port and the shared
-  // API key, then remember them for this browser tab/session only
-  // (sessionStorage), not localStorage, so they don't linger indefinitely.
-  var apiHost = sessionStorage.getItem('vaderApiHost');
-  if (!apiHost) {
-    apiHost = window.prompt(
-      'Dashboard server address (host:port), e.g. 127.0.0.1:5057 or 192.168.1.20:5057:',
-      '127.0.0.1:5057'
-    ) || '127.0.0.1:5057';
-    sessionStorage.setItem('vaderApiHost', apiHost);
-  }
-  var apiKey = sessionStorage.getItem('vaderApiKey');
-  if (!apiKey) {
-    apiKey = window.prompt('Dashboard API key:') || '';
-    sessionStorage.setItem('vaderApiKey', apiKey);
-  }
-  var API_BASE = 'http://' + apiHost;
+  // Served same-origin by the Flask app itself (server.py injects the real
+  // API key below, replacing the placeholder in the committed source).
+  // This key is a nuisance control against accidental/naive script access,
+  // not real per-request authentication - anyone who can load this page can
+  // view-source the key just as easily. The actual trust boundary is being
+  // on the home LAN, same as it practically was when the key/host were
+  // handed out via a prompt. See README.md / server.py for the full note.
+  var API_KEY = '__WEBOPTIONS_API_KEY__';
 
   function apiHeaders() {
-    return { 'X-API-Key': apiKey };
-  }
-
-  function resetApiConfigAndReload() {
-    sessionStorage.removeItem('vaderApiHost');
-    sessionStorage.removeItem('vaderApiKey');
-    window.location.reload();
+    return { 'X-API-Key': API_KEY };
   }
 
   var ICONS = {
@@ -409,15 +393,13 @@
   }
 
   function loadWeek(weekParam) {
-    var url = API_BASE + '/api/week-signals' + (weekParam ? ('?week=' + weekParam) : '');
+    var url = '/api/week-signals' + (weekParam ? ('?week=' + weekParam) : '');
     document.getElementById('error-box').style.display = 'none';
 
     fetch(url, { headers: apiHeaders() })
       .then(function (res) {
         if (res.status === 401) {
-          window.alert('API key rejected. Re-enter it to continue.');
-          resetApiConfigAndReload();
-          throw new Error('Unauthorized');
+          throw new Error('API key rejected (server may have rotated it - reload the page)');
         }
         if (!res.ok) throw new Error('Server responded with ' + res.status);
         return res.json();
