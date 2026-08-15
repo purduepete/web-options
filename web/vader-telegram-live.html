@@ -318,7 +318,10 @@
     }
 
     var TOTAL_ROWS = 1 + groups.length * 2;
-    grid.style.gridTemplateColumns = 'repeat(' + days.length + ', 1fr)';
+    // Always lay out 5 column tracks (Mon-Fri), regardless of how many days
+    // actually have data, so a single day's card is the same width as it
+    // would be in a full 5-day week instead of stretching to fill the row.
+    grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
     grid.style.gridTemplateRows = 'repeat(' + TOTAL_ROWS + ', auto)';
 
     days.forEach(function (d) {
