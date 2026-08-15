@@ -326,7 +326,11 @@
       });
     }
 
-    var TOTAL_ROWS = 1 + groups.length * 2;
+    // Reserve at least 2 rows (head + a message row) even when every group
+    // is filtered out entirely, so a day's "No matches"/"no trades" message
+    // has its own subgrid row instead of overlapping the head banner (which
+    // only has row 1 to work with when TOTAL_ROWS would otherwise be 1).
+    var TOTAL_ROWS = Math.max(2, 1 + groups.length * 2);
     // Always lay out 5 column tracks (Mon-Fri), regardless of how many days
     // actually have data, so a single day's card is the same width as it
     // would be in a full 5-day week instead of stretching to fill the row.
