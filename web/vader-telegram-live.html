@@ -337,6 +337,12 @@
       var card = document.createElement('div');
       card.className = 'day-card';
       card.style.gridRow = '1 / span ' + TOTAL_ROWS;
+      // Place the card in the column matching its actual weekday (Mon=1 ...
+      // Fri=5), not its position in the filtered days array, so a
+      // Friday-only week still lands in the 5th column instead of the 1st.
+      var dateParts = d.date.split('-').map(Number);
+      var weekday = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]).getDay();
+      card.style.gridColumn = String(weekday);
 
       var html = '<div class="day-head" style="grid-row:' + ROW_HEAD + '"><span class="name">' + d.name + '</span><span class="date">' + formatDateLabel(d.date) + ' (' + d.trades.length + ')</span></div>';
       var trades = d.trades;
