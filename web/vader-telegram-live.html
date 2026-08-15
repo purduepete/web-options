@@ -84,6 +84,12 @@
     font-size: 0.85rem; width: 140px;
   }
   .symbol-filter input::placeholder { color: var(--muted); }
+  .symbol-filter-clear {
+    display: none; align-items: center; justify-content: center; background: transparent; border: none;
+    color: var(--muted); cursor: pointer; padding: 2px; border-radius: 4px; flex-shrink: 0;
+  }
+  .symbol-filter-clear:hover { color: var(--text); }
+  .symbol-filter.has-value .symbol-filter-clear { display: inline-flex; }
 
   .error-box {
     background: var(--surface); border: 1px solid var(--error); border-radius: var(--radius-lg);
@@ -189,6 +195,9 @@
       <span class="symbol-filter">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" id="symbol-filter" placeholder="Filter by symbol" autocomplete="off" spellcheck="false" />
+        <button type="button" class="symbol-filter-clear" id="symbol-filter-clear" aria-label="Clear symbol filter" title="Clear">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </span>
     </h1>
   </section>
@@ -442,8 +451,24 @@
   document.getElementById('prev-week').addEventListener('click', function () { shiftWeek(-7); });
   document.getElementById('next-week').addEventListener('click', function () { shiftWeek(7); });
 
-  document.getElementById('symbol-filter').addEventListener('input', function (e) {
+  var symbolFilterInput = document.getElementById('symbol-filter');
+  var symbolFilterWrap = document.querySelector('.symbol-filter');
+
+  function updateClearButtonVisibility() {
+    symbolFilterWrap.classList.toggle('has-value', symbolFilterInput.value.length > 0);
+  }
+
+  symbolFilterInput.addEventListener('input', function (e) {
     symbolFilter = e.target.value.trim().toUpperCase();
+    updateClearButtonVisibility();
+    if (latestResponse) renderDays(latestResponse.days);
+  });
+
+  document.getElementById('symbol-filter-clear').addEventListener('click', function () {
+    symbolFilterInput.value = '';
+    symbolFilter = '';
+    updateClearButtonVisibility();
+    symbolFilterInput.focus();
     if (latestResponse) renderDays(latestResponse.days);
   });
 
