@@ -1,0 +1,64 @@
+/**
+ * Wire contracts shared by the backend and frontend.
+ *
+ * DATE RULE: every date crossing this boundary is an `IsoDate` string, never a JS
+ * `Date`. A serialized Date arrives as "2026-08-16T00:00:00.000Z"; reading it back
+ * with local getters shifts it a day earlier in any negative-offset zone (Pacific).
+ */
+
+/** A calendar date with no time and no zone, formatted `YYYY-MM-DD`. */
+export type IsoDate = string;
+
+export type OptionRight = 'P' | 'C';
+
+export interface Trade {
+    symbol: string;
+    sector: string | null;
+    optionRight: OptionRight;
+    strike: number | null;
+    expiration: IsoDate | null;
+    dte: number | null;
+    delta: number | null;
+    annualizedYield: number | null;
+    premium: number | null;
+    collateral: number | null;
+    tier: string | null;
+    isTopPick: boolean;
+}
+
+export interface DaySignals {
+    name: string;
+    date: IsoDate;
+    hasData: true;
+    trades: Trade[];
+}
+
+export interface WeekSignalsResponse {
+    weekStart: IsoDate;
+    weekEnd: IsoDate;
+    generatedAt: string;
+    isCurrentWeek: boolean;
+    hasPriorWeekData: boolean;
+    hasNextWeekData: boolean;
+    days: DaySignals[];
+}
+
+export interface EarliestWeekResponse {
+    weekStart: IsoDate | null;
+}
+
+export interface HealthResponse {
+    status: 'ok';
+}
+
+export interface ApiError {
+    error: string;
+}
+
+export const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
+
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export function isIsoDate(value: unknown): value is IsoDate {
+    return typeof value === 'string' && ISO_DATE_RE.test(value);
+}

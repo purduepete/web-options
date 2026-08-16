@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0b0e16" />
+        <title>weboptions — Refactor Plan v6.1</title>
+        <script>
+            // Set the theme before first paint so there is no flash of the wrong palette.
+            (function () {
+                try {
+                    var t = localStorage.getItem('theme');
+                    if (t !== 'light' && t !== 'dark')
+                        t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', t);
+                    var m = document.querySelector('meta[name="theme-color"]');
+                    if (m) m.setAttribute('content', t === 'light' ? '#f5f7fb' : '#0b0e16');
+                } catch (e) {
+                    /* private mode: fall through to the dark default */
+                }
+            })();
+        </script>
+        <style>
+            :root {
+                --radius: 0;
+                --radius-lg: 0;
+                --bg: #0b0e16;
+                --surface: #141a28;
+                --surface-2: #1d2538;
+                --surface-3: #28324a;
+                --text: #e7ecf5;
+                --muted: #9aa6bd;
+                --border: #28324a;
+                --border-strong: #3a465f;
+                --accent: #6366f1;
+                --accent-2: #8b5cf6;
+                --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                --on-accent: #fff;
+                --glass: rgba(20, 26, 40, 0.72);
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+                --write: #f87171;
+                --read: #34d399;
+                --gate: #fbbf24;
+            }
+            :root[data-theme='light'] {
+                --bg: #f5f7fb;
+                --surface: #ffffff;
+                --surface-2: #f1f3f9;
+                --surface-3: #e5e9f2;
+                --text: #1a2233;
+                --muted: #5b6678;
+                --border: #e5e9f2;
+                --border-strong: #cdd5e4;
+                --glass: rgba(255, 255, 255, 0.72);
+                --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                --write: #dc2626;
+                --read: #059669;
+                --gate: #b45309;
+            }
+            @media (prefers-color-scheme: light) {
+                :root:not([data-theme='dark']) {
+                    --bg: #f5f7fb;
+                    --surface: #ffffff;
+                    --surface-2: #f1f3f9;
+                    --surface-3: #e5e9f2;
+                    --text: #1a2233;
+                    --muted: #5b6678;
+                    --border: #e5e9f2;
+                    --border-strong: #cdd5e4;
+                    --glass: rgba(255, 255, 255, 0.72);
+                    --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                    --write: #dc2626;
+                    --read: #059669;
+                    --gate: #b45309;
+                }
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
+            }
+            .bar {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 14px 24px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            .bar h1 {
+                font-size: 17px;
+                margin: 0;
+                letter-spacing: -0.01em;
+                font-weight: 650;
+            }
+            .bar .tag {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--on-accent);
+                background: var(--accent-grad);
+                padding: 3px 8px;
+                border-radius: var(--radius);
+            }
+            .bar .spacer {
+                flex: 1;
+            }
+            .icon-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                cursor: pointer;
+                background: var(--surface);
+                color: var(--text);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                transition:
+                    background 0.15s ease,
+                    border-color 0.15s ease,
+                    transform 0.15s ease;
+            }
+            .icon-btn:hover {
+                background: var(--surface-2);
+                border-color: var(--border-strong);
+            }
+            .icon-btn:active {
+                transform: translateY(1px) scale(0.99);
+            }
+
+            main {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 28px 24px 80px;
+            }
+            .lede {
+                color: var(--muted);
+                max-width: 78ch;
+                margin: 0 0 32px;
+            }
+
+            section {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow);
+                padding: 22px 24px 26px;
+                margin-bottom: 28px;
+            }
+            section > h2 {
+                font-size: 15px;
+                margin: 0 0 4px;
+                letter-spacing: -0.01em;
+                font-weight: 650;
+                display: flex;
+                align-items: center;
+                gap: 9px;
+            }
+            section > h2 svg {
+                color: var(--accent-2);
+                flex: none;
+            }
+            section > p.sub {
+                margin: 0 0 18px;
+                color: var(--muted);
+                font-size: 13.5px;
+                max-width: 90ch;
+            }
+
+            .figure {
+                width: 100%;
+                overflow-x: auto;
+            }
+            .figure svg {
+                display: block;
+                min-width: 720px;
+                width: 100%;
+                height: auto;
+            }
+
+            /* Shared SVG node styling, themed through the same tokens as the page. */
+            .node {
+                fill: var(--surface-2);
+                stroke: var(--border-strong);
+                stroke-width: 1.25;
+            }
+            .node.alt {
+                fill: var(--surface-3);
+            }
+            .node.par {
+                fill: var(--surface-2);
+                stroke: var(--accent-2);
+                stroke-width: 1.75;
+            }
+            .node.gate {
+                fill: var(--surface-2);
+                stroke: var(--gate);
+                stroke-width: 1.75;
+            }
+            .node.kick {
+                fill: var(--surface-2);
+                stroke: var(--accent);
+                stroke-width: 1.75;
+            }
+            .node.dead {
+                fill: none;
+                stroke: var(--border);
+                stroke-width: 1.25;
+                stroke-dasharray: 4 3;
+            }
+            .zone {
+                fill: none;
+                stroke: var(--border-strong);
+                stroke-width: 1.25;
+                stroke-dasharray: 6 4;
+            }
+
+            .t {
+                fill: var(--text);
+                font-size: 13px;
+                font-weight: 620;
+            }
+            .t.s {
+                fill: var(--muted);
+                font-size: 11px;
+                font-weight: 450;
+            }
+            .t.z {
+                fill: var(--muted);
+                font-size: 11px;
+                font-weight: 620;
+                letter-spacing: 0.07em;
+            }
+            .t.dead {
+                fill: var(--muted);
+            }
+
+            .edge {
+                fill: none;
+                stroke: var(--border-strong);
+                stroke-width: 1.5;
+            }
+            .edge.w {
+                stroke: var(--write);
+                stroke-width: 1.9;
+            }
+            .edge.r {
+                stroke: var(--read);
+                stroke-width: 1.9;
+            }
+            .edge.d {
+                stroke: var(--border);
+                stroke-dasharray: 5 4;
+            }
+            .head {
+                fill: var(--border-strong);
+            }
+            .head.w {
+                fill: var(--write);
+            }
+            .head.r {
+                fill: var(--read);
+            }
+            .head.d {
+                fill: var(--border);
+            }
+
+            .notes {
+                margin: 18px 0 0;
+                padding: 0;
+                list-style: none;
+                display: grid;
+                gap: 8px;
+            }
+            .notes li {
+                font-size: 13px;
+                color: var(--muted);
+                padding-left: 16px;
+                position: relative;
+            }
+            .notes li::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 8px;
+                width: 6px;
+                height: 6px;
+                background: var(--accent-2);
+            }
+            .notes li b {
+                color: var(--text);
+                font-weight: 620;
+            }
+            code {
+                font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+                font-size: 12.5px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 1px 5px;
+            }
+            footer {
+                color: var(--muted);
+                font-size: 12.5px;
+                text-align: center;
+                padding-bottom: 40px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="bar">
+                <h1>weboptions — Refactor Plan</h1>
+                <span class="tag">v6.1 · converged</span>
+                <span class="spacer"></span>
+                <button
+                    class="icon-btn"
+                    id="themeBtn"
+                    type="button"
+                    aria-label="Toggle colour theme"
+                    title="Toggle theme"
+                >
+                    <svg
+                        id="sunIcon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path
+                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+                        ></path>
+                    </svg>
+                    <svg
+                        id="moonIcon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="display: none"
+                    >
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <p class="lede">
+                Python Flask on the laptop becomes a Node/React app on <b>jimbrownhome</b>, reading from the shared
+                <code>webportfolio</code> Azure SQL database. Reviewed across five rounds by Gemini 3.1 Pro, GPT-5.5 and
+                MAI-Code-1.1 until all three returned SHIP.
+            </p>
+
+            <!-- ================================================================= 1 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+                    </svg>
+                    1 · Phase dependency graph
+                </h2>
+                <p class="sub">
+                    Ten phases. Only Phase 4 floats free of the critical path; Phase 8 is the gate where nothing is
+                    deleted until parity against the captured Flask output is proven.
+                </p>
+                <div class="figure">
+                    <svg
+                        viewBox="0 0 1320 560"
+                        role="img"
+                        aria-label="Phase dependency graph for the weboptions refactor"
+                    >
+                        <defs>
+                            <marker
+                                id="a1"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+                            </marker>
+                        </defs>
+
+                        <!-- edges first, so nodes paint over the joins -->
+                        <path class="edge" marker-end="url(#a1)" d="M180,286 L211,286"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M365,286 C383,286 384,186 396,186"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M365,286 C383,286 384,386 396,386"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M550,186 L581,186"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M550,186 C568,186 569,386 581,386"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M550,386 L581,386"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M735,386 C753,386 754,286 766,286"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M735,386 C753,386 754,466 766,466"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M735,186 C753,186 754,286 766,286"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M660,150 C700,64 992,64 1030,246"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M920,286 L951,286"></path>
+                        <path class="edge" marker-end="url(#a1)" d="M1105,286 L1136,286"></path>
+
+                        <!-- Phase 0 -->
+                        <rect class="node kick" x="30" y="250" width="150" height="72"></rect>
+                        <text class="t" x="105" y="272" text-anchor="middle">Phase 0</text>
+                        <text class="t s" x="105" y="290" text-anchor="middle">Kickoff artifact</text>
+                        <text class="t s" x="105" y="306" text-anchor="middle">this diagram</text>
+
+                        <!-- Phase 1 -->
+                        <rect class="node" x="215" y="250" width="150" height="72"></rect>
+                        <text class="t" x="290" y="272" text-anchor="middle">Phase 1</text>
+                        <text class="t s" x="290" y="290" text-anchor="middle">Walking skeleton</text>
+                        <text class="t s" x="290" y="306" text-anchor="middle">ported SQL · TZ pin</text>
+
+                        <!-- Phase 2 -->
+                        <rect class="node" x="400" y="150" width="150" height="72"></rect>
+                        <text class="t" x="475" y="172" text-anchor="middle">Phase 2</text>
+                        <text class="t s" x="475" y="190" text-anchor="middle">Auth + migrations</text>
+                        <text class="t s" x="475" y="206" text-anchor="middle">opt · weboptions_ro</text>
+
+                        <!-- Phase 3 -->
+                        <rect class="node" x="585" y="150" width="150" height="72"></rect>
+                        <text class="t" x="660" y="172" text-anchor="middle">Phase 3</text>
+                        <text class="t s" x="660" y="190" text-anchor="middle">Calendar ingest</text>
+                        <text class="t s" x="660" y="206" text-anchor="middle">cascade re-ingest</text>
+
+                        <!-- Phase 4 -->
+                        <rect class="node par" x="400" y="350" width="150" height="72"></rect>
+                        <text class="t" x="475" y="372" text-anchor="middle">Phase 4</text>
+                        <text class="t s" x="475" y="390" text-anchor="middle">Design system</text>
+                        <text class="t s" x="475" y="406" text-anchor="middle">runs in parallel</text>
+
+                        <!-- Phase 5 -->
+                        <rect class="node" x="585" y="350" width="150" height="72"></rect>
+                        <text class="t" x="660" y="372" text-anchor="middle">Phase 5</text>
+                        <text class="t s" x="660" y="390" text-anchor="middle">App shell</text>
+                        <text class="t s" x="660" y="406" text-anchor="middle">providers · mega menu</text>
+
+                        <!-- Phase 7 -->
+                        <rect class="node" x="770" y="250" width="150" height="72"></rect>
+                        <text class="t" x="845" y="272" text-anchor="middle">Phase 7</text>
+                        <text class="t s" x="845" y="290" text-anchor="middle">Pages</text>
+                        <text class="t s" x="845" y="306" text-anchor="middle">signals · calendars</text>
+
+                        <!-- Phase 6 -->
+                        <rect class="node" x="770" y="430" width="150" height="72"></rect>
+                        <text class="t" x="845" y="452" text-anchor="middle">Phase 6</text>
+                        <text class="t s" x="845" y="470" text-anchor="middle">Command palette</text>
+                        <text class="t s" x="845" y="486" text-anchor="middle">fuzzy scorer</text>
+
+                        <!-- Phase 8 -->
+                        <rect class="node gate" x="955" y="250" width="150" height="72"></rect>
+                        <text class="t" x="1030" y="272" text-anchor="middle">Phase 8</text>
+                        <text class="t s" x="1030" y="290" text-anchor="middle">Parity gate</text>
+                        <text class="t s" x="1030" y="306" text-anchor="middle">then delete Flask</text>
+
+                        <!-- Phase 9 -->
+                        <rect class="node gate" x="1140" y="250" width="150" height="72"></rect>
+                        <text class="t" x="1215" y="272" text-anchor="middle">Phase 9</text>
+                        <text class="t s" x="1215" y="290" text-anchor="middle">Deploy</text>
+                        <text class="t s" x="1215" y="306" text-anchor="middle">jimbrownhome</text>
+
+                        <!-- legend -->
+                        <rect class="node par" x="30" y="516" width="16" height="16"></rect>
+                        <text class="t s" x="54" y="529">parallel — off the critical path</text>
+                        <rect class="node gate" x="250" y="516" width="16" height="16"></rect>
+                        <text class="t s" x="274" y="529">irreversible — needs sign-off before it runs</text>
+                    </svg>
+                </div>
+                <ul class="notes">
+                    <li>
+                        <b>Phase 2 is the first irreversible step.</b> It creates the <code>opt</code> schema and the
+                        <code>weboptions_ro</code> login on the shared production database.
+                    </li>
+                    <li>
+                        <b>Phase 8 deletes nothing until parity passes</b> against golden JSON captured from the running
+                        Flask server.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ================================================================= 2 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="4" width="18" height="7"></rect>
+                        <rect x="3" y="14" width="18" height="7"></rect>
+                        <path d="M7 7.5h.01M7 17.5h.01"></path>
+                    </svg>
+                    2 · Runtime architecture — the write/read split
+                </h2>
+                <p class="sub">
+                    The load-bearing rule. Two different SQL principals: the laptop writes as <code>purduepete</code>,
+                    the service reads as <code>weboptions_ro</code>. The running server physically cannot write — not by
+                    convention, by permission.
+                </p>
+                <div class="figure">
+                    <svg
+                        viewBox="0 0 1240 600"
+                        role="img"
+                        aria-label="Runtime architecture showing separate write and read database principals"
+                    >
+                        <defs>
+                            <marker
+                                id="a2"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+                            </marker>
+                            <marker
+                                id="a2w"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head w"></path>
+                            </marker>
+                            <marker
+                                id="a2r"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head r"></path>
+                            </marker>
+                        </defs>
+
+                        <!-- zones -->
+                        <rect class="zone" x="24" y="56" width="316" height="452"></rect>
+                        <text class="t z" x="40" y="46">LAPTOP — OPERATOR · WRITES</text>
+                        <rect class="zone" x="396" y="56" width="316" height="452"></rect>
+                        <text class="t z" x="412" y="46">AZURE SQL — SHARED PROD</text>
+                        <rect class="zone" x="768" y="56" width="316" height="200"></rect>
+                        <text class="t z" x="784" y="46">JIMBROWNHOME — READS ONLY</text>
+                        <rect class="zone" x="768" y="308" width="316" height="200"></rect>
+                        <text class="t z" x="784" y="298">CLIENTS</text>
+
+                        <!-- edges -->
+                        <path class="edge" marker-end="url(#a2)" d="M182,152 L182,170"></path>
+                        <path class="edge" marker-end="url(#a2)" d="M182,224 L182,242"></path>
+                        <path class="edge" marker-end="url(#a2)" d="M182,296 L182,314"></path>
+
+                        <path class="edge w" marker-end="url(#a2w)" d="M312,346 L418,242"></path>
+                        <path class="edge w" marker-end="url(#a2w)" d="M312,366 L418,328"></path>
+
+                        <path class="edge r" marker-end="url(#a2r)" d="M792,150 L690,140"></path>
+                        <path class="edge r" marker-end="url(#a2r)" d="M792,168 L690,230"></path>
+                        <path class="edge r" marker-end="url(#a2r)" d="M792,186 L690,324"></path>
+
+                        <path class="edge" marker-end="url(#a2)" d="M856,356 L856,226"></path>
+                        <path class="edge" marker-end="url(#a2)" d="M996,356 L996,226"></path>
+
+                        <!-- laptop nodes -->
+                        <rect class="node" x="52" y="104" width="260" height="48"></rect>
+                        <text class="t" x="182" y="133" text-anchor="middle">Multiplier newsletter</text>
+
+                        <rect class="node" x="52" y="176" width="260" height="48"></rect>
+                        <text class="t" x="182" y="205" text-anchor="middle">web-options generator</text>
+
+                        <rect class="node" x="52" y="248" width="260" height="48"></rect>
+                        <text class="t" x="182" y="270" text-anchor="middle">sidecar JSON</text>
+                        <text class="t s" x="182" y="287" text-anchor="middle">includes the macro banner</text>
+
+                        <rect class="node alt" x="52" y="320" width="260" height="72"></rect>
+                        <text class="t" x="182" y="343" text-anchor="middle">tools/ — operator only</text>
+                        <text class="t s" x="182" y="361" text-anchor="middle">migrate · ingest-calendar</text>
+                        <text class="t s" x="182" y="377" text-anchor="middle">mint-key · revoke-key</text>
+
+                        <!-- azure nodes -->
+                        <rect class="node" x="424" y="104" width="260" height="60"></rect>
+                        <text class="t" x="554" y="128" text-anchor="middle">dbo.telegram_signal</text>
+                        <text class="t s" x="554" y="146" text-anchor="middle">read-only · never written</text>
+
+                        <rect class="node" x="424" y="196" width="260" height="76"></rect>
+                        <text class="t" x="554" y="220" text-anchor="middle">opt.calendar_week</text>
+                        <text class="t s" x="554" y="238" text-anchor="middle">opt.calendar_day</text>
+                        <text class="t s" x="554" y="255" text-anchor="middle">opt.calendar_trade</text>
+
+                        <rect class="node" x="424" y="304" width="260" height="52"></rect>
+                        <text class="t" x="554" y="335" text-anchor="middle">opt.api_key</text>
+
+                        <!-- home node -->
+                        <rect class="node" x="796" y="110" width="260" height="110"></rect>
+                        <text class="t" x="926" y="142" text-anchor="middle">Express 5 · port 5057</text>
+                        <text class="t s" x="926" y="163" text-anchor="middle">serves built SPA + API</text>
+                        <text class="t s" x="926" y="180" text-anchor="middle">same-origin · one process</text>
+                        <text class="t s" x="926" y="200" text-anchor="middle">NSSM service · TZ pinned</text>
+
+                        <!-- clients -->
+                        <rect class="node" x="796" y="360" width="120" height="52"></rect>
+                        <text class="t" x="856" y="391" text-anchor="middle">Phone</text>
+                        <rect class="node" x="936" y="360" width="120" height="52"></rect>
+                        <text class="t" x="996" y="391" text-anchor="middle">Browser</text>
+                        <text class="t s" x="926" y="440" text-anchor="middle">LAN + Tailscale · no public port</text>
+                        <text class="t s" x="926" y="458" text-anchor="middle">X-API-Key: woak_...</text>
+
+                        <!-- legend -->
+                        <path class="edge w" d="M30,548 L74,548" marker-end="url(#a2w)"></path>
+                        <text class="t s" x="86" y="552">purduepete — DDL + writes, by hand from the laptop</text>
+                        <path class="edge r" d="M560,548 L604,548" marker-end="url(#a2r)"></path>
+                        <text class="t s" x="616" y="552">weboptions_ro — db_datareader, SELECT only</text>
+                    </svg>
+                </div>
+                <ul class="notes">
+                    <li>
+                        <b>Gemini and GPT-5.5 independently flagged the same gap:</b> a CI grep for
+                        <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> is not a control. It is defeated by
+                        casing, string building or <code>EXEC</code>, and does nothing at runtime.
+                    </li>
+                    <li>
+                        So the split moved into the database. The grep survives as a cheap tripwire, not as the fence.
+                    </li>
+                    <li>Nothing in <code>dbo</code> is ever modified — it stays the webportfolio app's data.</li>
+                </ul>
+            </section>
+
+            <!-- ================================================================= 3 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="4" width="18" height="18"></rect>
+                        <path d="M3 10h18M8 2v4M16 2v4"></path>
+                    </svg>
+                    3 · Calendar data path — before and after
+                </h2>
+                <p class="sub">
+                    The OneDrive dependency is not being removed for tidiness. It is the single thing that made the
+                    whole plan impossible on a separate host: a home server cannot read a folder that only exists on the
+                    laptop.
+                </p>
+                <div class="figure">
+                    <svg
+                        viewBox="0 0 1240 400"
+                        role="img"
+                        aria-label="Calendar data path, current OneDrive flow versus the new SQL ingest flow"
+                    >
+                        <defs>
+                            <marker
+                                id="a3"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+                            </marker>
+                            <marker
+                                id="a3d"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head d"></path>
+                            </marker>
+                        </defs>
+
+                        <text class="t z" x="40" y="42">TODAY — BREAKS THE MOMENT THE SERVER LEAVES THE LAPTOP</text>
+
+                        <path class="edge d" marker-end="url(#a3d)" d="M240,98 L294,98"></path>
+                        <path class="edge d" marker-end="url(#a3d)" d="M500,98 L554,98"></path>
+                        <path class="edge d" marker-end="url(#a3d)" d="M760,98 L814,98"></path>
+
+                        <rect class="node dead" x="40" y="70" width="200" height="56"></rect>
+                        <text class="t dead" x="140" y="103" text-anchor="middle">Generator writes HTML</text>
+                        <rect class="node dead" x="300" y="70" width="200" height="56"></rect>
+                        <text class="t dead" x="400" y="95" text-anchor="middle">OneDrive folder</text>
+                        <text class="t s" x="400" y="112" text-anchor="middle">laptop-local</text>
+                        <rect class="node dead" x="560" y="70" width="200" height="56"></rect>
+                        <text class="t dead" x="660" y="95" text-anchor="middle">Flask reads the folder</text>
+                        <text class="t s" x="660" y="112" text-anchor="middle">serves raw HTML</text>
+                        <rect class="node dead" x="820" y="70" width="200" height="56"></rect>
+                        <text class="t dead" x="920" y="103" text-anchor="middle">Browser</text>
+
+                        <text class="t z" x="40" y="224">v6 — THE SERVER NEVER TOUCHES A FILESYSTEM</text>
+
+                        <path class="edge" marker-end="url(#a3)" d="M230,278 L274,278"></path>
+                        <path class="edge" marker-end="url(#a3)" d="M470,278 L514,278"></path>
+                        <path class="edge" marker-end="url(#a3)" d="M710,278 L754,278"></path>
+                        <path class="edge" marker-end="url(#a3)" d="M950,278 L994,278"></path>
+                        <path class="edge d" marker-end="url(#a3d)" d="M375,330 L375,312"></path>
+
+                        <rect class="node" x="40" y="250" width="190" height="56"></rect>
+                        <text class="t" x="135" y="274" text-anchor="middle">Generator writes</text>
+                        <text class="t s" x="135" y="292" text-anchor="middle">HTML + JSON sidecar</text>
+
+                        <rect class="node" x="280" y="250" width="190" height="56"></rect>
+                        <text class="t" x="375" y="274" text-anchor="middle">ingest-calendar</text>
+                        <text class="t s" x="375" y="292" text-anchor="middle">on the laptop</text>
+
+                        <rect class="node alt" x="520" y="250" width="190" height="56"></rect>
+                        <text class="t" x="615" y="274" text-anchor="middle">opt.calendar_*</text>
+                        <text class="t s" x="615" y="292" text-anchor="middle">one txn · cascade + reinsert</text>
+
+                        <rect class="node" x="760" y="250" width="190" height="56"></rect>
+                        <text class="t" x="855" y="274" text-anchor="middle">SqlCalendarSource</text>
+                        <text class="t s" x="855" y="292" text-anchor="middle">Express, read-only</text>
+
+                        <rect class="node" x="1000" y="250" width="190" height="56"></rect>
+                        <text class="t" x="1095" y="274" text-anchor="middle">CalendarWeekPage</text>
+                        <text class="t s" x="1095" y="292" text-anchor="middle">macro banner + trades</text>
+
+                        <rect class="node dead" x="280" y="330" width="190" height="48"></rect>
+                        <text class="t s" x="375" y="350" text-anchor="middle">3 existing HTML files</text>
+                        <text class="t s" x="375" y="366" text-anchor="middle">backfill extractor, run once</text>
+                    </svg>
+                </div>
+                <ul class="notes">
+                    <li>
+                        <b>Re-ingest is one statement.</b>
+                        <code>DELETE FROM opt.calendar_week WHERE publish_date = @d</code>, with
+                        <code>ON DELETE CASCADE</code> down to days and trades, then reinsert — all in one transaction.
+                    </li>
+                    <li>Without the cascade the delete throws an FK violation. Gemini caught that one.</li>
+                    <li>
+                        The extractor is <b>backfill-only</b>. The server never imports it, and there is no runtime HTML
+                        fallback.
+                    </li>
+                </ul>
+            </section>
+
+            <footer>Plan v6.1 · converged 2026-08-16 · Gemini 3.1 Pro · GPT-5.5 · MAI-Code-1.1-Flash</footer>
+        </main>
+
+        <script>
+            (function () {
+                var btn = document.getElementById('themeBtn');
+                var sun = document.getElementById('sunIcon');
+                var moon = document.getElementById('moonIcon');
+                var meta = document.querySelector('meta[name="theme-color"]');
+
+                function paint(theme) {
+                    document.documentElement.setAttribute('data-theme', theme);
+                    if (meta) meta.setAttribute('content', theme === 'light' ? '#f5f7fb' : '#0b0e16');
+                    sun.style.display = theme === 'dark' ? '' : 'none';
+                    moon.style.display = theme === 'dark' ? 'none' : '';
+                }
+
+                paint(document.documentElement.getAttribute('data-theme') || 'dark');
+
+                btn.addEventListener('click', function () {
+                    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    try {
+                        localStorage.setItem('theme', next);
+                    } catch (e) {
+                        /* private mode */
+                    }
+                    paint(next);
+                });
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,30 @@
+{
+    "name": "weboptions",
+    "private": true,
+    "version": "0.1.0",
+    "description": "Personal options dashboards — Node/React rewrite of the Flask prototype.",
+    "workspaces": [
+        "shared",
+        "backend",
+        "frontend"
+    ],
+    "engines": {
+        "node": ">=20.11"
+    },
+    "scripts": {
+        "build:shared": "npm run build --workspace @weboptions/shared",
+        "build:backend": "npm run build --workspace @weboptions/backend",
+        "build:frontend": "npm run build --workspace @weboptions/frontend",
+        "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+        "dev:backend": "npm run build:shared && npm run dev --workspace @weboptions/backend",
+        "dev:frontend": "npm run dev --workspace @weboptions/frontend",
+        "start": "node backend/dist/server.js",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p frontend --noEmit"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.2",
+        "vitest": "^3.0.5"
+    }
+}
