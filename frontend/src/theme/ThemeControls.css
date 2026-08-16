@@ -1,0 +1,72 @@
+.theme-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.theme-group {
+    border: var(--border-width) solid var(--border);
+    padding: 1rem;
+    margin: 0;
+}
+
+.theme-group legend {
+    padding: 0 0.4rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.theme-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.theme-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+}
+
+.theme-option.selected {
+    border-color: var(--highlight);
+    background: rgb(var(--highlight-rgb) / 15%);
+    color: var(--text);
+}
+
+.note {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+}
+
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.swatch {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    border: var(--border-width) solid var(--border);
+}
+
+/* The swatch IS the colour, so hover must not repaint it. */
+.swatch:hover:not(:disabled) {
+    background: inherit;
+    border-color: var(--text-muted);
+}
+
+.swatch.selected {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}

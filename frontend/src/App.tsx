@@ -3,12 +3,16 @@ import type { WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, fetchWeekSignals } from './api';
 import { ApiKeyProvider, useApiKey } from './auth/ApiKeyProvider';
 import { KeyGate } from './auth/KeyGate';
+import { ThemeProvider } from './theme/ThemeProvider';
+import { ThemeControls } from './theme/ThemeControls';
 
 export default function App() {
     return (
-        <ApiKeyProvider>
-            <Gate />
-        </ApiKeyProvider>
+        <ThemeProvider>
+            <ApiKeyProvider>
+                <Gate />
+            </ApiKeyProvider>
+        </ThemeProvider>
     );
 }
 
@@ -76,6 +80,11 @@ function Dashboard() {
                 </button>
             </p>
 
+            <details>
+                <summary>Appearance</summary>
+                <ThemeControls />
+            </details>
+
             <p>
                 <button type="button" onClick={() => shiftWeek(-7)} disabled={!data?.hasPriorWeekData}>
                     previous week
@@ -101,7 +110,7 @@ function Dashboard() {
                     {data.days.map((day) => (
                         <section key={day.date}>
                             <h2>
-                                {day.name} {day.date} — {day.trades.length} trades
+                                {day.name} {day.date}, {day.trades.length} trades
                             </h2>
                             <table>
                                 <thead>

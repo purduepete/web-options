@@ -1,10 +1,55 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="midnight">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content="dark light" />
+        <meta name="theme-color" content="#020617" />
         <title>weboptions</title>
+        <!--
+            Runs before first paint so the page never flashes the wrong theme. It
+            duplicates a few lines of shared/src/theme.ts on purpose: importing a
+            module here would defeat the point.
+        -->
+        <script>
+            (function () {
+                var root = document.documentElement;
+                var theme = 'midnight';
+                var highlight = '#6b8cae';
+                function unquote(value) {
+                    return value.replace(/^"|"$/g, '');
+                }
+                try {
+                    var stored = localStorage.getItem('config_theme_preference');
+                    if (stored) {
+                        var preference = unquote(stored);
+                        if (preference === 'system') {
+                            var prefersDark =
+                                window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                            theme = prefersDark ? 'midnight' : 'light';
+                        } else if (preference === 'light' || preference === 'dark' || preference === 'midnight') {
+                            theme = preference;
+                        }
+                    }
+                    var color = localStorage.getItem('config_highlight_color');
+                    if (color && /^#[0-9a-f]{6}$/i.test(unquote(color))) {
+                        highlight = unquote(color);
+                    }
+                } catch (error) {
+                    // Private mode or blocked storage: the defaults above are fine.
+                }
+                root.setAttribute('data-theme', theme);
+                root.style.setProperty('--highlight', highlight);
+                var value = parseInt(highlight.slice(1), 16);
+                root.style.setProperty(
+                    '--highlight-rgb',
+                    ((value >> 16) & 255) + ', ' + ((value >> 8) & 255) + ', ' + (value & 255),
+                );
+                root.style.setProperty('--highlight-contrast', theme === 'light' ? '#f8fafc' : '#0f172a');
+                var backgrounds = { light: '#ffffff', dark: '#111827', midnight: '#020617' };
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', backgrounds[theme]);
+            })();
+        </script>
     </head>
     <body>
         <div id="root"></div>

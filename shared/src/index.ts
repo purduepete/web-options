@@ -6,6 +6,8 @@
  * with local getters shifts it a day earlier in any negative-offset zone (Pacific).
  */
 
+export * from './theme';
+
 /** A calendar date with no time and no zone, formatted `YYYY-MM-DD`. */
 export type IsoDate = string;
 

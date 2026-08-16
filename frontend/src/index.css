@@ -1,0 +1,205 @@
+/*
+ * Design tokens. Three themes on `data-theme`, squared corners everywhere, and a
+ * highlight colour the user picks that lands on `--highlight` at runtime.
+ *
+ * The font is self-hosted: jimbrownhome is reachable over Tailscale from places
+ * where a Google Fonts round trip is the slowest thing on the page.
+ */
+
+@font-face {
+    font-family: 'Roboto Flex';
+    font-style: normal;
+    font-weight: 100 1000;
+    font-stretch: 100%;
+    font-display: swap;
+    src: url('/fonts/roboto-flex-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+        U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Roboto Flex';
+    font-style: normal;
+    font-weight: 100 1000;
+    font-stretch: 100%;
+    font-display: swap;
+    src: url('/fonts/roboto-flex-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+    --font-sans: 'Roboto Flex', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+
+    --radius: 0;
+    --space: 0.5rem;
+    --border-width: 1px;
+
+    --highlight: #6b8cae;
+    --highlight-rgb: 107, 140, 174;
+    --highlight-contrast: #0f172a;
+
+    --transition: 120ms ease;
+}
+
+[data-theme='light'] {
+    color-scheme: light;
+
+    --bg: #ffffff;
+    --surface: #f9fafb;
+    --surface-2: #f3f4f6;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --overlay: rgb(17 24 39 / 45%);
+
+    --put: #dc2626;
+    --call: #16a34a;
+    --conservative: #16a34a;
+    --balanced: #d97706;
+    --aggressive: #dc2626;
+    --danger: #dc2626;
+}
+
+[data-theme='dark'] {
+    color-scheme: dark;
+
+    --bg: #111827;
+    --surface: #1f2937;
+    --surface-2: #1d2735;
+    --border: #374151;
+    --text: #f9fafb;
+    --text-muted: #9ca3af;
+    --overlay: rgb(3 7 18 / 65%);
+
+    --put: #f87171;
+    --call: #34d399;
+    --conservative: #34d399;
+    --balanced: #fbbf24;
+    --aggressive: #f87171;
+    --danger: #f87171;
+}
+
+[data-theme='midnight'] {
+    color-scheme: dark;
+
+    --bg: #020617;
+    --surface: #0f172a;
+    --surface-2: #1e293b;
+    --border: #1e293b;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --overlay: rgb(2 6 23 / 70%);
+
+    --put: #f87171;
+    --call: #34d399;
+    --conservative: #34d399;
+    --balanced: #fbbf24;
+    --aggressive: #f87171;
+    --danger: #f87171;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    border-radius: var(--radius);
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Phase 5 replaces this with a real layout; until then nothing should sit flush
+   against the viewport edge. */
+main {
+    padding: 1.5rem;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+a {
+    color: var(--highlight);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    padding: 0.4rem 0.6rem;
+}
+
+button {
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+button:hover:not(:disabled) {
+    background: var(--surface-2);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button.primary {
+    background: var(--highlight);
+    border-color: var(--highlight);
+    color: var(--highlight-contrast);
+    font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+    background: var(--highlight);
+    filter: brightness(1.1);
+}
+
+/* One visible focus style for everything, since nothing here is rounded. */
+:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+}
+
+.surface {
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+}
+
+.muted {
+    color: var(--text-muted);
+}
+
+.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}

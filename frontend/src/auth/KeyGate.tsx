@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { ThemeControls } from '../theme/ThemeControls';
 import { useApiKey } from './ApiKeyProvider';
 
 // Unstyled like the rest of the Phase 1 skeleton; the real shell lands in Phase 5.
@@ -56,6 +57,13 @@ export function KeyGate() {
                 </p>
                 {error && <p>{error}</p>}
             </form>
+
+            {/* Appearance is a purely local preference, so it stays reachable
+                while the app is locked. */}
+            <details>
+                <summary>Appearance</summary>
+                <ThemeControls />
+            </details>
         </main>
     );
 }
