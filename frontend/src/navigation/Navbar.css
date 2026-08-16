@@ -32,6 +32,37 @@
     margin-left: auto;
 }
 
+.search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface-2);
+    border: var(--border-width) solid var(--border);
+    padding: 0.3rem 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.search-trigger:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    border-color: var(--highlight);
+}
+
+.search-trigger kbd {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.05rem 0.3rem;
+    border: var(--border-width) solid var(--border);
+}
+
+@media (max-width: 640px) {
+    .search-trigger-label,
+    .search-trigger kbd {
+        display: none;
+    }
+}
+
 .section-button,
 .drawer-toggle,
 .accordion-summary {

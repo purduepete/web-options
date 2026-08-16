@@ -57,6 +57,12 @@ if (!window.matchMedia) {
     })) as typeof window.matchMedia;
 }
 
+// jsdom has no layout, so it has no scrollIntoView either. The palette keeps
+// its active option in view with it.
+if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => {};
+}
+
 afterEach(() => {
     cleanup();
     localStorage.clear();

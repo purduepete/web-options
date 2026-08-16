@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronDownIcon, ClockIcon, CloseIcon, MenuIcon, StarIcon } from '../components/icons';
+import { ChevronDownIcon, ClockIcon, CloseIcon, MenuIcon, SearchIcon, StarIcon } from '../components/icons';
 import { useFavorites } from './FavoritesProvider';
 import { useRecentlyVisited } from './RecentlyVisitedProvider';
 import { MAX_FAVORITES } from './navLists';
@@ -11,7 +11,13 @@ import './Navbar.css';
 const DESKTOP_QUERY = '(min-width: 1024px)';
 const QUICK_ACCESS = 'quick-access';
 
-export function Navbar({ onNotify }: { onNotify?: (message: string) => void }) {
+export function Navbar({
+    onNotify,
+    onOpenSearch,
+}: {
+    onNotify?: (message: string) => void;
+    onOpenSearch?: () => void;
+}) {
     const isDesktop = useMediaQuery(DESKTOP_QUERY);
     const [openSection, setOpenSection] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -64,6 +70,14 @@ export function Navbar({ onNotify }: { onNotify?: (message: string) => void }) {
                 <Link className="brand" to="/">
                     weboptions
                 </Link>
+
+                {onOpenSearch && (
+                    <button type="button" className="search-trigger" onClick={onOpenSearch}>
+                        <SearchIcon />
+                        <span className="search-trigger-label">Search</span>
+                        <kbd aria-hidden="true">Ctrl K</kbd>
+                    </button>
+                )}
 
                 {isDesktop ? (
                     <nav className="sections" aria-label="Main">
