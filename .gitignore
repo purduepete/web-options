@@ -9,5 +9,6 @@ dist/
 
 # Never commit the real API key / secrets
 server/secrets.ini
+.secrets/
 .env
 .env.local

@@ -21,7 +21,10 @@
         "start": "node backend/dist/server.js",
         "test": "vitest run",
         "test:watch": "vitest",
-        "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p frontend --noEmit"
+        "migrate": "tsx backend/tools/migrate.ts",
+        "create-readonly-user": "tsx backend/tools/create-readonly-user.ts",
+        "verify-readonly": "tsx backend/tools/verify-readonly.ts",
+        "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p backend/tsconfig.tools.json && tsc -p frontend --noEmit"
     },
     "devDependencies": {
         "typescript": "^5.7.2",
