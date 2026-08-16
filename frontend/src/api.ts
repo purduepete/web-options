@@ -1,11 +1,32 @@
-import type { EarliestWeekResponse, WeekSignalsResponse } from '@weboptions/shared';
+import type { EarliestWeekResponse, MeResponse, WeekSignalsResponse } from '@weboptions/shared';
+import { readKey } from './auth/keyStore';
 
-async function getJson<T>(path: string): Promise<T> {
-    const response = await fetch(path, { headers: { Accept: 'application/json' } });
+/** Thrown when the server rejects the key, so the UI can fall back to the key prompt. */
+export class UnauthorizedError extends Error {
+    constructor(message = 'api key rejected') {
+        super(message);
+        this.name = 'UnauthorizedError';
+    }
+}
+
+async function getJson<T>(path: string, key?: string): Promise<T> {
+    const apiKey = key ?? readKey();
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (apiKey) headers['X-API-Key'] = apiKey;
+
+    const response = await fetch(path, { headers });
+    if (response.status === 401) {
+        throw new UnauthorizedError();
+    }
     if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`);
     }
     return (await response.json()) as T;
+}
+
+/** Takes the key explicitly so a candidate can be checked before it is stored. */
+export function fetchMe(key: string): Promise<MeResponse> {
+    return getJson<MeResponse>('/api/me', key);
 }
 
 export function fetchWeekSignals(week?: string): Promise<WeekSignalsResponse> {

@@ -14,7 +14,8 @@ export const READ_ONLY_LOGIN = 'weboptions_ro';
 
 // A password echoed to stdout ends up in shell history, terminal scrollback and any
 // transcript of the session, so it goes to a gitignored file instead.
-export const SECRET_FILE = path.resolve(__dirname, '../../.secrets/weboptions_ro.password');
+export const SECRET_DIR = path.resolve(__dirname, '../../.secrets');
+export const SECRET_FILE = path.join(SECRET_DIR, 'weboptions_ro.password');
 
 export function loadOperatorConfig(): AppConfig {
     const config = loadConfig();

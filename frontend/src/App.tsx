@@ -1,10 +1,28 @@
 import { useEffect, useState } from 'react';
 import type { WeekSignalsResponse } from '@weboptions/shared';
-import { fetchWeekSignals } from './api';
+import { UnauthorizedError, fetchWeekSignals } from './api';
+import { ApiKeyProvider, useApiKey } from './auth/ApiKeyProvider';
+import { KeyGate } from './auth/KeyGate';
+
+export default function App() {
+    return (
+        <ApiKeyProvider>
+            <Gate />
+        </ApiKeyProvider>
+    );
+}
+
+function Gate() {
+    const { status } = useApiKey();
+    if (status === 'checking') return <p>checking key…</p>;
+    if (status === 'locked') return <KeyGate />;
+    return <Dashboard />;
+}
 
 // Phase 1 walking skeleton: unstyled on purpose. The design system lands in
 // Phase 4 and this page is rebuilt properly in Phase 7.
-export default function App() {
+function Dashboard() {
+    const { identity, forget } = useApiKey();
     const [week, setWeek] = useState<string | undefined>(undefined);
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -19,7 +37,13 @@ export default function App() {
                 if (!cancelled) setData(result);
             })
             .catch((cause: Error) => {
-                if (!cancelled) setError(cause.message);
+                if (cancelled) return;
+                // Revoked or expired while the tab was open: send them back to the prompt.
+                if (cause instanceof UnauthorizedError) {
+                    forget();
+                    return;
+                }
+                setError(cause.message);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -27,7 +51,7 @@ export default function App() {
         return () => {
             cancelled = true;
         };
-    }, [week]);
+    }, [week, forget]);
 
     function shiftWeek(days: number) {
         if (!data) return;
@@ -44,6 +68,13 @@ export default function App() {
     return (
         <main>
             <h1>VADER live signals</h1>
+
+            <p>
+                key: {identity?.label ?? 'unknown'}{' '}
+                <button type="button" onClick={forget}>
+                    forget key
+                </button>
+            </p>
 
             <p>
                 <button type="button" onClick={() => shiftWeek(-7)} disabled={!data?.hasPriorWeekData}>

@@ -51,6 +51,13 @@ export interface HealthResponse {
     status: 'ok';
 }
 
+/** Identifies the key the caller presented. Never includes the key or its hash. */
+export interface MeResponse {
+    label: string;
+    prefix: string;
+    expiresAt: IsoDate | null;
+}
+
 export interface ApiError {
     error: string;
 }
