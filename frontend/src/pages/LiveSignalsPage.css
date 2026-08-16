@@ -1,0 +1,107 @@
+/* The bar above the grid: title, week navigation and the symbol filter. */
+
+.signals-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.signals-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.signals-head h1 {
+    flex: 1 1 auto;
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.week-nav {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.week-nav button {
+    font-size: 0.8rem;
+}
+
+.symbol-filter {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.symbol-filter input {
+    width: 12rem;
+    padding-right: 2rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+
+.symbol-filter-clear {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.4rem;
+    background: none;
+    border: 0;
+    color: var(--text-muted);
+}
+
+.symbol-filter-clear:hover {
+    background: none;
+    color: var(--text);
+}
+
+.signals-error {
+    margin: 0;
+    padding: 0.75rem 0.875rem;
+    background: var(--surface);
+    border: var(--border-width) solid var(--danger);
+    color: var(--danger);
+    font-size: 0.85rem;
+}
+
+.signals-status {
+    margin: 0;
+    min-height: 1.2rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.shortcuts {
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.shortcuts summary {
+    cursor: pointer;
+    width: fit-content;
+}
+
+.shortcuts dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 0.75rem;
+    margin: 0.75rem 0 0;
+    max-width: 22rem;
+}
+
+.shortcuts dt {
+    justify-self: start;
+    padding: 0.05rem 0.4rem;
+    background: var(--surface-2);
+    border: var(--border-width) solid var(--border);
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+.shortcuts dd {
+    margin: 0;
+    color: var(--text);
+}

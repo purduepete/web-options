@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { CalendarWeek } from '@weboptions/shared';
 import { NotFoundError, UnauthorizedError, fetchCalendar } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
+import { CalendarGrid } from '../calendars/CalendarGrid';
+import { weekRangeLabel } from '../calendars/calendarGroups';
+import { formatMDY } from '../signals/format';
+import './CalendarWeekPage.css';
 
-// Phase 7 renders this properly (macro banner, risk groups, put/call colours).
-// It is here now so the shell's routes are real rather than dead ends.
+/**
+ * One published weekly calendar: the macro read at the top, then the five days.
+ *
+ * The macro notes are the newsletter's own framing, so they lead — a trade on
+ * Wednesday only makes sense once you know Wednesday is CPI day.
+ */
 export function CalendarWeekPage() {
     const { publishDate = '' } = useParams();
     const { forget } = useApiKey();
@@ -26,7 +34,9 @@ export function CalendarWeekPage() {
                     forget();
                     return;
                 }
-                setError(cause instanceof NotFoundError ? 'No calendar for that date.' : cause.message);
+                setError(
+                    cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : cause.message,
+                );
             });
         return () => {
             cancelled = true;
@@ -34,48 +44,42 @@ export function CalendarWeekPage() {
     }, [publishDate, forget]);
 
     return (
-        <main>
-            <h1>{week?.title ?? 'Weekly calendar'}</h1>
-            {error && <p>{error}</p>}
-            {!week && !error && <p>loading…</p>}
+        <main className="calendar-week-page">
+            <p className="calendar-back">
+                <Link to="/calendars">&larr; All weekly calendars</Link>
+            </p>
+
+            {error && (
+                <p className="signals-error" role="alert">
+                    {error}
+                </p>
+            )}
+
+            <p className="signals-status" role="status">
+                {!week && !error ? 'Loading the calendar…' : ''}
+            </p>
 
             {week && (
                 <>
-                    <p className="muted">
-                        {week.weekStart} to {week.weekEnd}, published {week.publishDate}
-                    </p>
+                    <section className="macro-banner">
+                        <h1>{week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`}</h1>
+                        <p className="macro-meta">
+                            {weekRangeLabel(week.weekStart, week.weekEnd)} · published {formatMDY(week.publishDate)}
+                        </p>
 
-                    {week.macro.length > 0 && (
-                        <ul>
-                            {week.macro.map((note) => (
-                                <li key={note.label}>
-                                    <strong>{note.label}</strong> {note.text}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                        {week.macro.length > 0 && (
+                            <ul className="macro-grid">
+                                {week.macro.map((note) => (
+                                    <li key={note.label} className="macro-item">
+                                        <b>{note.label}</b>
+                                        <span>{note.text}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
 
-                    {week.days.map((day) => (
-                        <section key={`${day.name}-${day.date}`}>
-                            <h2>
-                                {day.name} {day.date}
-                            </h2>
-                            {day.rule && <p className="muted">{day.rule}</p>}
-                            {day.event && <p className="muted">{day.event}</p>}
-                            {day.trades.length === 0 ? (
-                                <p className="muted">No trades.</p>
-                            ) : (
-                                <ul>
-                                    {day.trades.map((trade, index) => (
-                                        <li key={`${trade.ticker}-${trade.strike}-${index}`}>
-                                            {trade.ticker} {trade.strike} {trade.optionRight} exp {trade.expiry}, delta{' '}
-                                            {trade.delta}, {trade.annualizedYield}% ann, {trade.risk}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </section>
-                    ))}
+                    <CalendarGrid days={week.days} />
                 </>
             )}
         </main>

@@ -1,0 +1,93 @@
+/*
+ * A published week. Reuses the ticket and day-card styling from the live grid
+ * (WeekGrid.css) and adds the two parts only a calendar has: the event banner
+ * and the rule box.
+ */
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 0.875rem;
+    row-gap: 0;
+}
+
+@media (max-width: 1100px) {
+    .calendar-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: none;
+    }
+
+    .calendar-day {
+        grid-row: auto !important;
+        grid-column: auto !important;
+        grid-template-rows: none;
+        margin-bottom: 0.875rem;
+    }
+
+    .calendar-day > * {
+        grid-row: auto !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.event-banner,
+.rule-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.event-banner svg,
+.rule-box svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin-top: 0.15rem;
+}
+
+.event-banner {
+    background: var(--surface-2);
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--balanced);
+    font-weight: 600;
+}
+
+.rule-box {
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--text-muted);
+}
+
+.rule-box svg {
+    color: var(--conservative);
+}
+
+.calendar-day .tickets {
+    padding-bottom: 0.5rem;
+}
+
+.calendar-day .risk-group-heading {
+    margin: 0;
+    padding: 0.5rem 0.875rem 0.25rem;
+    border-bottom: var(--border-width) solid var(--border);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.ticket-note {
+    margin: 0.375rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}

@@ -129,8 +129,8 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Phase 5 replaces this with a real layout; until then nothing should sit flush
-   against the viewport edge. */
+/* Every page is a `main`, and none of them should sit flush against the
+   viewport edge or run under the fixed navbar. */
 main {
     padding: 1.5rem;
 }

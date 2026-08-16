@@ -3,8 +3,16 @@ import { Link } from 'react-router-dom';
 import type { CalendarSummary } from '@weboptions/shared';
 import { UnauthorizedError, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
+import { isLatest, weekRangeLabel } from '../calendars/calendarGroups';
+import { formatMDY } from '../signals/format';
+import './CalendarsIndexPage.css';
 
-// Plain list for now; Phase 7 turns this into the card grid with the Latest badge.
+/**
+ * Every ingested weekly newsletter, newest first.
+ *
+ * The publish date is only worth showing when it differs from the Monday the
+ * week starts on — otherwise it just repeats the range that is already there.
+ */
 export function CalendarsIndexPage() {
     const { forget } = useApiKey();
     const [calendars, setCalendars] = useState<readonly CalendarSummary[] | null>(null);
@@ -30,23 +38,45 @@ export function CalendarsIndexPage() {
     }, [forget]);
 
     return (
-        <main>
+        <main className="calendars-page">
             <h1>Weekly calendars</h1>
-            {error && <p>failed: {error}</p>}
-            {!calendars && !error && <p>loading…</p>}
-            {calendars?.length === 0 && <p className="muted">Nothing ingested yet.</p>}
-            <ul>
-                {calendars?.map((calendar) => (
-                    <li key={calendar.publishDate}>
-                        <Link to={`/calendars/${calendar.publishDate}`}>
-                            {calendar.weekStart} to {calendar.weekEnd}
-                        </Link>{' '}
-                        <span className="muted">
-                            published {calendar.publishDate}, {calendar.tradeCount} trades
-                        </span>
-                    </li>
-                ))}
-            </ul>
+
+            {error && (
+                <p className="signals-error" role="alert">
+                    Could not load the calendars: {error}
+                </p>
+            )}
+
+            <p className="signals-status" role="status">
+                {!calendars && !error ? 'Loading the calendars…' : ''}
+            </p>
+
+            {calendars?.length === 0 && <p className="empty-week">No weekly calendars have been ingested yet.</p>}
+
+            {calendars && calendars.length > 0 && (
+                <ul className="calendar-cards">
+                    {calendars.map((calendar) => (
+                        <li key={calendar.publishDate} className="calendar-card">
+                            <div className="calendar-card-head">
+                                <h2>{weekRangeLabel(calendar.weekStart, calendar.weekEnd)}</h2>
+                                {isLatest(calendar.publishDate, calendars) && <span className="badge">Latest</span>}
+                            </div>
+
+                            {calendar.title && <p className="calendar-card-title">{calendar.title}</p>}
+
+                            <p className="calendar-card-meta">
+                                {calendar.tradeCount} {calendar.tradeCount === 1 ? 'trade' : 'trades'}
+                                {calendar.publishDate !== calendar.weekStart &&
+                                    ` · published ${formatMDY(calendar.publishDate)}`}
+                            </p>
+
+                            <Link className="calendar-card-open" to={`/calendars/${calendar.publishDate}`}>
+                                Open calendar
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </main>
     );
 }
