@@ -47,6 +47,55 @@ export interface EarliestWeekResponse {
     weekStart: IsoDate | null;
 }
 
+/** One headline from a calendar's macro banner. */
+export interface MacroNote {
+    label: string;
+    text: string;
+}
+
+export interface CalendarTrade {
+    ticker: string;
+    optionRight: OptionRight;
+    strike: number | null;
+    expiry: IsoDate | null;
+    dte: number | null;
+    delta: number | null;
+    annualizedYield: number | null;
+    premium: number | null;
+    collateral: number | null;
+    risk: string | null;
+    note: string | null;
+}
+
+export interface CalendarDay {
+    name: string;
+    date: IsoDate;
+    rule: string | null;
+    event: string | null;
+    trades: CalendarTrade[];
+}
+
+export interface CalendarWeek {
+    publishDate: IsoDate;
+    weekStart: IsoDate;
+    weekEnd: IsoDate;
+    title: string | null;
+    macro: MacroNote[];
+    days: CalendarDay[];
+}
+
+export interface CalendarSummary {
+    publishDate: IsoDate;
+    weekStart: IsoDate;
+    weekEnd: IsoDate;
+    title: string | null;
+    tradeCount: number;
+}
+
+export interface CalendarsIndexResponse {
+    calendars: CalendarSummary[];
+}
+
 export interface HealthResponse {
     status: 'ok';
 }

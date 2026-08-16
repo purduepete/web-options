@@ -1,13 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  READ_ONLY_LOGIN,
-  SECRET_FILE,
-  connectAsOperator,
-  describeTarget,
-  loadOperatorConfig,
-} from './operator';
+import { READ_ONLY_LOGIN, SECRET_FILE, connectAsOperator, describeTarget, loadOperatorConfig } from './operator';
 
 /**
  * Creates the contained user the service runs as, or rotates its password.

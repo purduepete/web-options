@@ -1,0 +1,271 @@
+{
+  "publishDate": "2026-08-03",
+  "title": null,
+  "macro": [
+    {
+      "label": "S&P 500 at 7,489.72",
+      "text": "Up about 1% last week, but individual stocks moved much more (Amazon +17%, Microsoft +21%). If you own either, consider a higher strike so you're not selling into last month's price."
+    },
+    {
+      "label": "VIX at 15.99",
+      "text": "Near its lowest close in weeks. Index premium is thin right now, so favor individual names with richer pricing over index funds this week."
+    },
+    {
+      "label": "10-year yield at 4.741%",
+      "text": "Highest since January 2025. Rich bond yields are pulling money out of utilities, REITs and telecoms; consider selling calls closer to the stock price on any of those you hold."
+    },
+    {
+      "label": "3-month T-bill at 3.815%",
+      "text": "The risk-free bar every trade below needs to clear once you price in the risk. Cash is a valid position if nothing here beats it comfortably."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Aug 3",
+      "rule": "Monday-Tuesday window: sell calls on big-tech names that have already reported and cleared their own earnings risk. These 5 aren’t tied to a single day, so place them either Monday or Tuesday. Also a good day to review existing positions ahead of AMD’s report Tuesday.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$140C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.34",
+          "ann": "55.5%",
+          "premium": "$415",
+          "collateral": "$12,987",
+          "risk": "aggressive",
+          "note": "7.8% out of the money; the richest premium in this group."
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$120C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.33",
+          "ann": "49.2%",
+          "premium": "$315",
+          "collateral": "$11,123",
+          "risk": "aggressive",
+          "note": "7.9% out of the money; its own earnings report is already behind it."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$75C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.32",
+          "ann": "29.8%",
+          "premium": "$123",
+          "collateral": "$7,171",
+          "risk": "balanced",
+          "note": "Smallest position size here; 4.6% out of the money."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$285C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.29",
+          "ann": "23.0%",
+          "premium": "$360",
+          "collateral": "$27,158",
+          "risk": "balanced",
+          "note": "4.9% above a stock that just gained 17% in five sessions."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "call",
+          "strike": "$375C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.28",
+          "ann": "22.5%",
+          "premium": "$462.50",
+          "collateral": "$35,665",
+          "risk": "balanced",
+          "note": "5.1% out of the money; no company event until October."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Aug 4",
+      "rule": "Same Monday-Tuesday window as Monday, same 5 names: last chance to open before AMD’s report today ripples through the rest of the chip sector.",
+      "event": "Key event: AMD earnings today. Its results set the tone for every other chipmaker this week, so hold off on chip-name trades until Wednesday.",
+      "trades": [
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$140C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.34",
+          "ann": "55.5%",
+          "premium": "$415",
+          "collateral": "$12,987",
+          "risk": "aggressive",
+          "note": "7.8% out of the money; the richest premium in this group."
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$120C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.33",
+          "ann": "49.2%",
+          "premium": "$315",
+          "collateral": "$11,123",
+          "risk": "aggressive",
+          "note": "7.9% out of the money; its own earnings report is already behind it."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$75C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.32",
+          "ann": "29.8%",
+          "premium": "$123",
+          "collateral": "$7,171",
+          "risk": "balanced",
+          "note": "Smallest position size here; 4.6% out of the money."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$285C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.29",
+          "ann": "23.0%",
+          "premium": "$360",
+          "collateral": "$27,158",
+          "risk": "balanced",
+          "note": "4.9% above a stock that just gained 17% in five sessions."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "call",
+          "strike": "$375C",
+          "expiry": "2026-08-21",
+          "dte": 21,
+          "delta": "+0.28",
+          "ann": "22.5%",
+          "premium": "$462.50",
+          "collateral": "$35,665",
+          "risk": "balanced",
+          "note": "5.1% out of the money; no company event until October."
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Aug 5",
+      "rule": "No new risk before 7:00 AM Pacific. Three data releases land between 5:15 and 7:00 AM Pacific, and the Treasury refunding announcement is the one that moves long yields hardest. Once that settles, the path is clear until Friday.",
+      "event": "Key event: Treasury refunding and other data releases, 5:15-7:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "KO",
+          "type": "put",
+          "strike": "$85P",
+          "expiry": "2026-09-18",
+          "dte": 49,
+          "delta": "-0.33",
+          "ann": "14.1%",
+          "premium": "$160.50",
+          "collateral": "$8,500",
+          "risk": "conservative",
+          "note": "3.0% cushion at a price most holders would be glad to own."
+        },
+        {
+          "ticker": "PG",
+          "type": "put",
+          "strike": "$140P",
+          "expiry": "2026-09-18",
+          "dte": 49,
+          "delta": "-0.32",
+          "ann": "13.4%",
+          "premium": "$251.50",
+          "collateral": "$14,000",
+          "risk": "conservative",
+          "note": "3.1% cushion on the steadiest name in this set."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$210C",
+          "expiry": "2026-08-14",
+          "dte": 14,
+          "delta": "+0.29",
+          "ann": "32.5%",
+          "premium": "$250",
+          "collateral": "$20,075",
+          "risk": "aggressive",
+          "note": "4.6% out of the money; expires before Nvidia’s own late-August report."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Aug 6",
+      "rule": "No catalyst today, and volatility builds toward Friday’s jobs report, so options only get pricier as the day runs. Doing nothing is the correct trade here; use today only to close any short-dated position you don’t want carrying into Friday.",
+      "event": "No new positions today. Hold ahead of Friday’s jobs report.",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Aug 7",
+      "rule": "Wait for the 5:30 AM Pacific jobs-report reaction to settle before opening anything. A strong jobs number is being read as bad news right now (higher odds of a rate hike), so let the initial move play out first.",
+      "event": "Key event: July jobs report, 5:30 AM Pacific. Once the reaction settles, this is the richest put-selling window of the week.",
+      "trades": [
+        {
+          "ticker": "BMY",
+          "type": "put",
+          "strike": "$62.5P",
+          "expiry": "2026-09-18",
+          "dte": 49,
+          "delta": "-0.31",
+          "ann": "16.8%",
+          "premium": "$141",
+          "collateral": "$6,250",
+          "risk": "conservative",
+          "note": "4.3% cushion; clear of Tuesday’s pharma reports by Friday."
+        },
+        {
+          "ticker": "BAC",
+          "type": "put",
+          "strike": "$60P",
+          "expiry": "2026-09-18",
+          "dte": 49,
+          "delta": "-0.32",
+          "ann": "14.1%",
+          "premium": "$113.50",
+          "collateral": "$6,000",
+          "risk": "conservative",
+          "note": "3.1% cushion; the lowest cash requirement on this week’s list."
+        },
+        {
+          "ticker": "AXP",
+          "type": "put",
+          "strike": "$320P",
+          "expiry": "2026-09-18",
+          "dte": 49,
+          "delta": "-0.27",
+          "ann": "13.2%",
+          "premium": "$565",
+          "collateral": "$32,000",
+          "risk": "balanced",
+          "note": "4.8% cushion, the widest of any put this week."
+        }
+      ]
+    }
+  ]
+}

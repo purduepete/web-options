@@ -25,7 +25,12 @@ function flag(argv: string[], name: string): string | null {
 }
 
 function slug(label: string): string {
-    return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'key';
+    return (
+        label
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'key'
+    );
 }
 
 async function list(pool: sql.ConnectionPool): Promise<void> {
@@ -107,9 +112,11 @@ async function revoke(pool: sql.ConnectionPool, argv: string[], confirmed: boole
     const found = await pool
         .request()
         .input('prefix', sql.VarChar(16), prefix)
-        .query<{ id: number; label: string; is_revoked: boolean }>(
-            'SELECT id, label, is_revoked FROM opt.api_key WHERE prefix = @prefix',
-        );
+        .query<{
+            id: number;
+            label: string;
+            is_revoked: boolean;
+        }>('SELECT id, label, is_revoked FROM opt.api_key WHERE prefix = @prefix');
 
     if (found.recordset.length === 0) throw new Error(`No key with prefix ${prefix}`);
     for (const row of found.recordset) {

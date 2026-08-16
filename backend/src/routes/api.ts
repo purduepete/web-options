@@ -1,6 +1,14 @@
 import { Router } from 'express';
-import type { EarliestWeekResponse, HealthResponse, MeResponse, WeekSignalsResponse } from '@weboptions/shared';
+import type {
+    CalendarsIndexResponse,
+    EarliestWeekResponse,
+    HealthResponse,
+    MeResponse,
+    WeekSignalsResponse,
+} from '@weboptions/shared';
+import { isIsoDate } from '@weboptions/shared';
 import type { AppConfig } from '../config';
+import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { requireApiKey } from '../middleware/apiKey';
 import { earliestWeekMonday, fetchWeek, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
@@ -79,6 +87,33 @@ export function createApiRouter(config: AppConfig): Router {
         try {
             const body: EarliestWeekResponse = { weekStart: await earliestWeekMonday(config.db) };
             res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/calendars', async (_req, res, next) => {
+        try {
+            const body: CalendarsIndexResponse = { calendars: await listCalendars(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/calendars/:publishDate', async (req, res, next) => {
+        const { publishDate } = req.params;
+        if (!isIsoDate(publishDate)) {
+            res.status(400).json({ error: 'publishDate must be YYYY-MM-DD' });
+            return;
+        }
+        try {
+            const calendar = await fetchCalendar(config.db, publishDate);
+            if (!calendar) {
+                res.status(404).json({ error: 'no calendar for that date' });
+                return;
+            }
+            res.json(calendar);
         } catch (error) {
             next(error);
         }

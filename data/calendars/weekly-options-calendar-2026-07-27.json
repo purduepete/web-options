@@ -1,0 +1,284 @@
+{
+  "publishDate": "2026-07-27",
+  "title": null,
+  "macro": [
+    {
+      "label": "S&P 500 at 7,411.98",
+      "text": "Down 0.61% last week and now below its 50-day average, a sign buyers are getting careful. Consider wider call strikes and accepting less cash for them this week."
+    },
+    {
+      "label": "VIX at 18.58",
+      "text": "The index is calm while individual companies are not. Favor selling on individual quality names over index funds, since that's where the premium is."
+    },
+    {
+      "label": "10-year yield at 4.68%",
+      "text": "Rich bond yields are pulling money out of utilities, REITs and telecoms. Give more room on strikes for any of those you hold."
+    },
+    {
+      "label": "3-month T-bill at 3.730%",
+      "text": "The risk-free bar every trade below needs to clearly beat once you allow for what could go wrong. Cash is a valid position while you wait."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Jul 27",
+      "rule": "Monday-Tuesday window: sell healthcare and industrials names while the calendar is calm, ahead of Wednesday’s Fed decision. These 5 aren’t tied to a single day, so place them either Monday or Tuesday.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "DHR",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.21",
+          "ann": "10.8%",
+          "premium": "$290",
+          "collateral": "$17,500",
+          "risk": "conservative",
+          "note": "Healthcare; the stock would need to fall 8.6% before this strike matters."
+        },
+        {
+          "ticker": "TMO",
+          "type": "put",
+          "strike": "$520P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.22",
+          "ann": "12.5%",
+          "premium": "$995",
+          "collateral": "$52,000",
+          "risk": "conservative",
+          "note": "Healthcare; the biggest cushion on the list, though it ties up a lot of cash."
+        },
+        {
+          "ticker": "CTAS",
+          "type": "put",
+          "strike": "$195P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.28",
+          "ann": "14.5%",
+          "premium": "$435",
+          "collateral": "$19,500",
+          "risk": "conservative",
+          "note": "Industrials (work-uniform rental); nothing about AI spending touches this business."
+        },
+        {
+          "ticker": "JNJ",
+          "type": "call",
+          "strike": "$270C",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "+0.38",
+          "ann": "22.9%",
+          "premium": "$463",
+          "collateral": "$26,340",
+          "risk": "balanced",
+          "note": "Healthcare; barely moves when the broader market does, which is the point this week."
+        },
+        {
+          "ticker": "ABT",
+          "type": "call",
+          "strike": "$107C",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "+0.33",
+          "ann": "20.7%",
+          "premium": "$164",
+          "collateral": "$10,310",
+          "risk": "balanced",
+          "note": "Healthcare; only 3.8% above today’s price, so be ready to part with the shares."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Jul 28",
+      "rule": "Same Monday-Tuesday window as Monday, same 5 names: the last calm day before the Fed speaks Wednesday afternoon.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "DHR",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.21",
+          "ann": "10.8%",
+          "premium": "$290",
+          "collateral": "$17,500",
+          "risk": "conservative",
+          "note": "Healthcare; the stock would need to fall 8.6% before this strike matters."
+        },
+        {
+          "ticker": "TMO",
+          "type": "put",
+          "strike": "$520P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.22",
+          "ann": "12.5%",
+          "premium": "$995",
+          "collateral": "$52,000",
+          "risk": "conservative",
+          "note": "Healthcare; the biggest cushion on the list, though it ties up a lot of cash."
+        },
+        {
+          "ticker": "CTAS",
+          "type": "put",
+          "strike": "$195P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.28",
+          "ann": "14.5%",
+          "premium": "$435",
+          "collateral": "$19,500",
+          "risk": "conservative",
+          "note": "Industrials (work-uniform rental); nothing about AI spending touches this business."
+        },
+        {
+          "ticker": "JNJ",
+          "type": "call",
+          "strike": "$270C",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "+0.38",
+          "ann": "22.9%",
+          "premium": "$463",
+          "collateral": "$26,340",
+          "risk": "balanced",
+          "note": "Healthcare; barely moves when the broader market does, which is the point this week."
+        },
+        {
+          "ticker": "ABT",
+          "type": "call",
+          "strike": "$107C",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "+0.33",
+          "ann": "20.7%",
+          "premium": "$164",
+          "collateral": "$10,310",
+          "risk": "balanced",
+          "note": "Healthcare; only 3.8% above today’s price, so be ready to part with the shares."
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Jul 29",
+      "rule": "Treat today as a no-new-trades day. Nothing opened today beats waiting until tomorrow. If anything expiring Aug 3 or 7 is showing a profit, consider closing it this morning rather than carrying it through two more nights of earnings headlines.",
+      "event": "Key event: Fed rate decision, 11:00 AM Pacific. Microsoft and Meta report after the close.",
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Jul 30",
+      "rule": "Wait until 7:00 AM Pacific before opening anything. Bid/ask spreads widen right after the inflation number, so half an hour of patience is worth real money on a large position. Once that settles, sell the financials and remaining industrials below.",
+      "event": "Key event: core inflation (PCE) data, 5:30 AM Pacific, the second of this week’s two \"walls.\" Apple and Amazon report after the close tonight.",
+      "trades": [
+        {
+          "ticker": "GE",
+          "type": "put",
+          "strike": "$320P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.20",
+          "ann": "12.0%",
+          "premium": "$588",
+          "collateral": "$32,000",
+          "risk": "conservative",
+          "note": "Industrials; the lowest chance of assignment on the list, roughly 1-in-5."
+        },
+        {
+          "ticker": "JPM",
+          "type": "put",
+          "strike": "$335P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.26",
+          "ann": "10.5%",
+          "premium": "$538",
+          "collateral": "$33,500",
+          "risk": "conservative",
+          "note": "Financials; already reported, and banks tend to do better if rates rise."
+        },
+        {
+          "ticker": "VZ",
+          "type": "call",
+          "strike": "$48C",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "+0.38",
+          "ann": "16.7%",
+          "premium": "$119",
+          "collateral": "$4,638",
+          "risk": "conservative",
+          "note": "Communication services; jumped 6% Friday on its results, so this sells into a name that just ran."
+        },
+        {
+          "ticker": "IBKR",
+          "type": "put",
+          "strike": "$85P",
+          "expiry": "2026-09-18",
+          "dte": 56,
+          "delta": "-0.29",
+          "ann": "23.6%",
+          "premium": "$308",
+          "collateral": "$8,500",
+          "risk": "balanced",
+          "note": "Financials; the best return for the cash tied up of anything on this list."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Jul 31",
+      "rule": "Apple and Amazon earnings risk has cleared. Sell the tech names below, the richest premium of the week now that both walls are behind us.",
+      "event": "Apple and Amazon reported Thursday night; both risks are now behind these names.",
+      "trades": [
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$120C",
+          "expiry": "2026-08-07",
+          "dte": 14,
+          "delta": "+0.40",
+          "ann": "92.4%",
+          "premium": "$408",
+          "collateral": "$11,499",
+          "risk": "aggressive",
+          "note": "Technology; pays the most per day of any clean name here, with the strike only 4.4% away."
+        },
+        {
+          "ticker": "MRVL",
+          "type": "call",
+          "strike": "$210C",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "+0.43",
+          "ann": "88.3%",
+          "premium": "$1,315",
+          "collateral": "$19,423",
+          "risk": "aggressive",
+          "note": "Technology; the largest single premium on the list, and the highest chance of the shares getting called away."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "put",
+          "strike": "$310P",
+          "expiry": "2026-08-21",
+          "dte": 28,
+          "delta": "-0.34",
+          "ann": "27.1%",
+          "premium": "$645",
+          "collateral": "$31,000",
+          "risk": "balanced",
+          "note": "Communication services; already reported and already punished, which is exactly why the premium is still this good."
+        }
+      ]
+    }
+  ]
+}

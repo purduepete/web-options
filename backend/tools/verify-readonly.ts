@@ -49,6 +49,17 @@ const PROBES: Probe[] = [
         expect: 'deny',
         run: (pool) => pool.request().query('SELECT TOP 1 * FROM dbo.user_api_keys'),
     },
+    {
+        // Proves the schema-scope GRANT reaches tables created after it was issued.
+        label: 'SELECT opt.calendar_week',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 publish_date FROM opt.calendar_week'),
+    },
+    {
+        label: 'DELETE opt.calendar_week',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; DELETE FROM opt.calendar_week; ROLLBACK;'),
+    },
 ];
 
 async function main(): Promise<void> {

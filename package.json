@@ -25,6 +25,8 @@
         "create-readonly-user": "tsx backend/tools/create-readonly-user.ts",
         "verify-readonly": "tsx backend/tools/verify-readonly.ts",
         "keys": "tsx backend/tools/manage-keys.ts",
+        "extract-calendar": "tsx backend/tools/extract-calendar.ts",
+        "ingest-calendar": "tsx backend/tools/ingest-calendar.ts",
         "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p backend/tsconfig.tools.json && tsc -p frontend --noEmit"
     },
     "devDependencies": {

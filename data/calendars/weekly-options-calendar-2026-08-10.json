@@ -1,0 +1,306 @@
+{
+  "publishDate": "2026-08-10",
+  "title": null,
+  "macro": [
+    {
+      "label": "S&P 500 at a record close",
+      "text": "Best week since April. Calls sold close to the stock price got hit hard last week, so give new calls extra room."
+    },
+    {
+      "label": "VIX at its lowest close",
+      "text": "Option premium is thinner than a week ago. Be selective: only sell where the premium still looks rich."
+    },
+    {
+      "label": "10-year yield eased",
+      "text": "Rate-sensitive names (utilities, REITs, telecom) got a breather. Good window to sell covered calls on those while it lasts."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Aug 10",
+      "rule": "Monday-Tuesday window: sell puts on steady, non-event-sensitive names while the market catches its breath after last week’s rally. These 4 aren’t tied to a specific day, so place them whenever it suits you across Mon/Tue. Also a good day to review existing positions ahead of Wednesday.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "PM",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.19",
+          "ann": "9.7%",
+          "premium": "$195",
+          "collateral": "$17,500",
+          "risk": "conservative",
+          "note": "7.7% cushion; defensive consumer name."
+        },
+        {
+          "ticker": "RTX",
+          "type": "put",
+          "strike": "$210P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.21",
+          "ann": "9.7%",
+          "premium": "$234",
+          "collateral": "$21,000",
+          "risk": "conservative",
+          "note": "Defense contractor, not sensitive to a CPI print."
+        },
+        {
+          "ticker": "NEM",
+          "type": "put",
+          "strike": "$105P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.28",
+          "ann": "24.9%",
+          "premium": "$300",
+          "collateral": "$10,500",
+          "risk": "balanced",
+          "note": "Gold miner; a hot CPI print tends to help gold."
+        },
+        {
+          "ticker": "NVO",
+          "type": "put",
+          "strike": "$45P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.32",
+          "ann": "22.3%",
+          "premium": "$115",
+          "collateral": "$4,500",
+          "risk": "aggressive",
+          "note": "Smallest collateral on the list; higher delta, not a shaky business."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Aug 11",
+      "rule": "Monday-Tuesday window (same 4 as Monday, not day-specific): last chance to close any existing winners before Wednesday’s CPI release. Consider buying back anything already at 50%+ of max profit.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "PM",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.19",
+          "ann": "9.7%",
+          "premium": "$195",
+          "collateral": "$17,500",
+          "risk": "conservative",
+          "note": "7.7% cushion; defensive consumer name."
+        },
+        {
+          "ticker": "RTX",
+          "type": "put",
+          "strike": "$210P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.21",
+          "ann": "9.7%",
+          "premium": "$234",
+          "collateral": "$21,000",
+          "risk": "conservative",
+          "note": "Defense contractor, not sensitive to a CPI print."
+        },
+        {
+          "ticker": "NEM",
+          "type": "put",
+          "strike": "$105P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.28",
+          "ann": "24.9%",
+          "premium": "$300",
+          "collateral": "$10,500",
+          "risk": "balanced",
+          "note": "Gold miner; a hot CPI print tends to help gold."
+        },
+        {
+          "ticker": "NVO",
+          "type": "put",
+          "strike": "$45P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.32",
+          "ann": "22.3%",
+          "premium": "$115",
+          "collateral": "$4,500",
+          "risk": "aggressive",
+          "note": "Smallest collateral on the list; higher delta, not a shaky business."
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Aug 12",
+      "rule": "No new risk until the July CPI number is out and digested. If CPI comes in at/below 3.4%, sell this main list that afternoon once the market has picked a direction. If it runs hot, stay defensive or hold cash instead.",
+      "event": "Key event: July CPI release this morning. This decides the September Fed rate path.",
+      "trades": [
+        {
+          "ticker": "NOW",
+          "type": "put",
+          "strike": "$110P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.21",
+          "ann": "24.5%",
+          "premium": "$310",
+          "collateral": "$11,000",
+          "risk": "balanced",
+          "note": "11.9% cushion below the stock, the widest of any put this week."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "put",
+          "strike": "$160P",
+          "expiry": "2026-09-04",
+          "dte": 28,
+          "delta": "-0.27",
+          "ann": "35.4%",
+          "premium": "$435",
+          "collateral": "$16,000",
+          "risk": "balanced",
+          "note": "Placed after its earnings beat; strike sits 7% below the stock."
+        },
+        {
+          "ticker": "IBM",
+          "type": "put",
+          "strike": "$220P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.26",
+          "ann": "21.5%",
+          "premium": "$545",
+          "collateral": "$22,000",
+          "risk": "balanced",
+          "note": "7.3% cushion on a steady enterprise name."
+        },
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$165C",
+          "expiry": "2026-09-04",
+          "dte": 28,
+          "delta": "+0.27",
+          "ann": "32.6%",
+          "premium": "$367",
+          "collateral": "$14,694",
+          "risk": "balanced",
+          "note": "Strike sits 12.3% above the stock."
+        },
+        {
+          "ticker": "GLW",
+          "type": "call",
+          "strike": "$190C",
+          "expiry": "2026-08-28",
+          "dte": 21,
+          "delta": "+0.25",
+          "ann": "41.7%",
+          "premium": "$397",
+          "collateral": "$16,569",
+          "risk": "balanced",
+          "note": "14.7% cushion above the stock, the widest call cushion this week."
+        },
+        {
+          "ticker": "DAL",
+          "type": "put",
+          "strike": "$85P",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "-0.25",
+          "ann": "18.5%",
+          "premium": "$180",
+          "collateral": "$8,500",
+          "risk": "balanced",
+          "note": "Cheaper jet fuel from last week’s oil drop supports the name."
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$130C",
+          "expiry": "2026-08-21",
+          "dte": 14,
+          "delta": "+0.38",
+          "ann": "68.4%",
+          "premium": "$327",
+          "collateral": "$12,488",
+          "risk": "aggressive",
+          "note": "Highest annualized yield this week; short-dated, check daily."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-08-21",
+          "dte": 14,
+          "delta": "+0.35",
+          "ann": "57.6%",
+          "premium": "$380",
+          "collateral": "$17,201",
+          "risk": "aggressive",
+          "note": "Still carrying earnings-week pricing after the report."
+        },
+        {
+          "ticker": "TEAM",
+          "type": "call",
+          "strike": "$160C",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "+0.42",
+          "ann": "52.8%",
+          "premium": "$905",
+          "collateral": "$14,907",
+          "risk": "aggressive",
+          "note": "Second-largest premium check this week."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Aug 13",
+      "rule": "Producer prices and jobless claims either confirm or contradict Wednesday’s CPI signal. If they contradict it, consider pausing new sales for the day. Still no chip-name calls before Applied Materials reports tonight.",
+      "event": "Key event: Applied Materials earnings after the close (chip-sector ripple risk).",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Aug 14",
+      "rule": "AMAT and Cisco earnings risk has cleared. Sell the chip/networking calls below.",
+      "event": "Cisco reported Wed night, AMAT reported Thu night; both risks are now behind these names.",
+      "trades": [
+        {
+          "ticker": "ANET",
+          "type": "call",
+          "strike": "$200C",
+          "expiry": "2026-09-18",
+          "dte": 42,
+          "delta": "+0.42",
+          "ann": "44.6%",
+          "premium": "$967",
+          "collateral": "$18,867",
+          "risk": "aggressive",
+          "note": "Biggest premium of the week; waits until Friday due to Cisco’s earnings ripple."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$230C",
+          "expiry": "2026-08-21",
+          "dte": 14,
+          "delta": "+0.36",
+          "ann": "41.0%",
+          "premium": "$352",
+          "collateral": "$22,396",
+          "risk": "aggressive",
+          "note": "Expires before Nvidia’s own late-August report."
+        }
+      ]
+    }
+  ]
+}
