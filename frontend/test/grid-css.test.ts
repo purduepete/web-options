@@ -1,0 +1,74 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+/*
+ * jsdom does not lay anything out, so the week grid's one real invariant cannot
+ * be caught by rendering it: the day cards share their rows with the container
+ * through `subgrid`, and anything that takes those rows away collapses a whole
+ * day onto a single track — the head, the rule and the first risk group all
+ * paint over each other.
+ *
+ * That is exactly what a responsive rule did, so these read the stylesheets.
+ */
+
+function read(relative: string): string {
+    return readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+}
+
+const weekGridCss = read('../src/signals/WeekGrid.css');
+const calendarGridCss = read('../src/calendars/CalendarGrid.css');
+const calendarGridTsx = read('../src/calendars/CalendarGrid.tsx');
+
+/** The bodies of every `@media` block in a stylesheet. */
+function mediaBlocks(css: string): string[] {
+    const blocks: string[] = [];
+
+    for (const match of css.matchAll(/@media[^{]*\{/g)) {
+        let depth = 1;
+        let index = match.index + match[0].length;
+        const start = index;
+
+        while (index < css.length && depth > 0) {
+            const char = css.charAt(index);
+            if (char === '{') depth += 1;
+            else if (char === '}') depth -= 1;
+            index += 1;
+        }
+
+        blocks.push(css.slice(start, index - 1));
+    }
+
+    return blocks;
+}
+
+describe('week grid stylesheets', () => {
+    it('finds the media blocks it means to inspect', () => {
+        expect(mediaBlocks(weekGridCss)).toHaveLength(2);
+        expect(mediaBlocks(calendarGridCss)).toHaveLength(2);
+    });
+
+    it.each([
+        ['WeekGrid.css', weekGridCss],
+        ['CalendarGrid.css', calendarGridCss],
+    ])('%s only changes columns at a breakpoint', (_name, css) => {
+        for (const block of mediaBlocks(css)) {
+            expect(block).not.toMatch(/grid-template-rows/);
+            expect(block).not.toMatch(/grid-row/);
+        }
+    });
+
+    it('keeps the day cards on subgrid so the rows stay shared', () => {
+        expect(weekGridCss).toMatch(/\.day-card\s*\{[^}]*grid-template-rows:\s*subgrid/);
+    });
+
+    it('gives the calendar the shared card styling before its own overrides', () => {
+        const shared = calendarGridTsx.indexOf("import '../signals/WeekGrid.css'");
+        const own = calendarGridTsx.indexOf("import './CalendarGrid.css'");
+
+        // Without the first import a calendar opened cold has no card styling at
+        // all; with it in the wrong order the shared sheet wins the cascade.
+        expect(shared).toBeGreaterThan(-1);
+        expect(own).toBeGreaterThan(shared);
+    });
+});

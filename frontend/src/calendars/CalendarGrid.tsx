@@ -11,6 +11,10 @@ import {
     formatStrike,
 } from '../signals/format';
 import { AlertIcon, CheckIcon } from '../components/icons';
+// The day card, ticket and risk-group styling lives with the live grid. Import
+// it here too, before our own sheet, so a calendar opened cold is styled and so
+// the overrides below always win the cascade.
+import '../signals/WeekGrid.css';
 import './CalendarGrid.css';
 
 /**

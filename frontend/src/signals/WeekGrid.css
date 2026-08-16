@@ -10,23 +10,17 @@
     row-gap: 0;
 }
 
-/* Below the point where five columns stop being readable the cards stop sharing
-   rows, so each one just stacks its own content. */
+/* Day cards are placed into their real weekday column, so the grid stays five
+   columns wide at every width and these breakpoints only resize the leading
+   tracks — the same as the page this replaces.
+
+   They must not touch the rows. The cards inherit those with `subgrid`, and a
+   card whose rows are taken away collapses its whole contents into a single
+   track: the day head, the rule and the first risk group then paint on top of
+   one another. */
 @media (max-width: 1100px) {
     .week-grid {
         grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: none !important;
-    }
-
-    .day-card {
-        grid-row: auto !important;
-        grid-column: auto !important;
-        grid-template-rows: none;
-        margin-bottom: 0.875rem;
-    }
-
-    .day-card > * {
-        grid-row: auto !important;
     }
 }
 
@@ -44,14 +38,21 @@
     overflow: hidden;
 }
 
+/* The page this replaces ran a fixed indigo-to-violet gradient across the day
+   head. Keep the gradient, but derive it from the highlight the user picked so
+   the banner still answers to the theme. */
 .day-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
     margin: 0;
     padding: 0.75rem 0.875rem;
-    background: var(--highlight);
+    background: linear-gradient(
+        135deg,
+        var(--highlight) 0%,
+        color-mix(in oklab, var(--highlight) 74%, #ffffff) 100%
+    );
     color: var(--highlight-contrast);
     font-size: 0.95rem;
 }
@@ -63,7 +64,7 @@
 
 .day-date {
     font-size: 0.75rem;
-    opacity: 0.85;
+    opacity: 0.9;
     font-weight: 500;
 }
 
