@@ -13,12 +13,6 @@ export type ResolvedTheme = (typeof RESOLVED_THEMES)[number];
 
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'midnight';
 
-export const STORAGE_KEYS = {
-    themePreference: 'config_theme_preference',
-    highlightColor: 'config_highlight_color',
-    apiKey: 'weboptions_api_key',
-} as const;
-
 export interface HighlightOption {
     name: string;
     value: string;

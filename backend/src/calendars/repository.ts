@@ -68,10 +68,7 @@ export async function listCalendars(db: DbConfig): Promise<CalendarSummary[]> {
 export async function fetchCalendar(db: DbConfig, publishDate: string): Promise<CalendarWeek | null> {
     const pool = await getPool(db);
 
-    const weekResult = await pool
-        .request()
-        .input('publishDate', sql.VarChar(10), publishDate)
-        .query(WEEK_QUERY);
+    const weekResult = await pool.request().input('publishDate', sql.VarChar(10), publishDate).query(WEEK_QUERY);
 
     const weekRow = weekResult.recordset[0];
     if (!weekRow) return null;

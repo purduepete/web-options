@@ -24,9 +24,9 @@ async function existingHash(pool: sql.ConnectionPool, publishDate: string): Prom
     const result = await pool
         .request()
         .input('publishDate', sql.VarChar(10), publishDate)
-        .query<{ source_hash: string }>(
-            'SELECT source_hash FROM opt.calendar_week WHERE publish_date = CAST(@publishDate AS DATE)',
-        );
+        .query<{
+            source_hash: string;
+        }>('SELECT source_hash FROM opt.calendar_week WHERE publish_date = CAST(@publishDate AS DATE)');
     return result.recordset[0]?.source_hash ?? null;
 }
 

@@ -42,13 +42,7 @@ describe('extractPayload', () => {
     });
 
     it('recovers all five weekdays, including the one with no trades', () => {
-        expect(payload.days.map((day) => day.name)).toEqual([
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-        ]);
+        expect(payload.days.map((day) => day.name)).toEqual(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
         expect(payload.days.map((day) => day.trades?.length ?? 0)).toEqual([4, 4, 9, 0, 2]);
     });
 

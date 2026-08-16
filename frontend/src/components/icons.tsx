@@ -59,3 +59,53 @@ export function CheckIcon(props: SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m6 9 6 6 6-6" />
+        </svg>
+    );
+}
+
+export function MenuIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    );
+}
+
+export function CloseIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+    );
+}
+
+export function StarIcon({ filled = false, ...props }: SVGProps<SVGSVGElement> & { filled?: boolean }) {
+    return (
+        <svg {...base} fill={filled ? 'currentColor' : 'none'} {...props}>
+            <path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.8l6.5-.9Z" />
+        </svg>
+    );
+}
+
+export function ClockIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+        </svg>
+    );
+}
+
+export function KeyIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <circle cx="7.5" cy="15.5" r="4.5" />
+            <path d="m10.7 12.3 8.3-8.3M17 6l2 2M14 9l2 2" />
+        </svg>
+    );
+}
