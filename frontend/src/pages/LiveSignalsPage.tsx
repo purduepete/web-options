@@ -149,11 +149,11 @@ export function LiveSignalsPage() {
                     <button type="button" onClick={goPrevious} disabled={!data?.hasPriorWeekData}>
                         Previous
                     </button>
-                    <button type="button" onClick={() => setWeekParam(null)} disabled={data?.isCurrentWeek !== false}>
-                        Current
-                    </button>
                     <button type="button" onClick={goNext} disabled={!data?.hasNextWeekData}>
                         Next
+                    </button>
+                    <button type="button" onClick={() => setWeekParam(null)} disabled={data?.isCurrentWeek !== false}>
+                        Current
                     </button>
                 </div>
 

@@ -143,6 +143,16 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByRole('button', { name: 'Current' }).hasAttribute('disabled')).toBe(true);
     });
 
+    it('keeps the two step buttons next to each other', async () => {
+        renderPage();
+        await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
+
+        const nav = document.querySelector('.week-nav');
+        const labels = [...(nav?.querySelectorAll('button') ?? [])].map((button) => button.textContent);
+
+        expect(labels).toEqual(['First', 'Previous', 'Next', 'Current']);
+    });
+
     it('jumps to the earliest week the server knows about', async () => {
         const user = userEvent.setup();
         fetchEarliestWeek.mockResolvedValue({ weekStart: '2025-01-06' });
