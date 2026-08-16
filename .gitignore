@@ -7,6 +7,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Pid files and logs written by scripts/weboptions.ps1
+.run/
+
 # Never commit the real API key / secrets
 server/secrets.ini
 .secrets/
