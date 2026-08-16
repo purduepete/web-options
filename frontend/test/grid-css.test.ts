@@ -19,6 +19,7 @@ function read(relative: string): string {
 const weekGridCss = read('../src/signals/WeekGrid.css');
 const calendarGridCss = read('../src/calendars/CalendarGrid.css');
 const calendarGridTsx = read('../src/calendars/CalendarGrid.tsx');
+const indexCss = read('../src/index.css');
 
 /** The bodies of every `@media` block in a stylesheet. */
 function mediaBlocks(css: string): string[] {
@@ -70,5 +71,26 @@ describe('week grid stylesheets', () => {
         // all; with it in the wrong order the shared sheet wins the cascade.
         expect(shared).toBeGreaterThan(-1);
         expect(own).toBeGreaterThan(shared);
+    });
+});
+
+describe('trade classification colours', () => {
+    // Top picks and the three tiers describe the trade, not the chrome, so they
+    // must not fall back to the highlight the user picked.
+    it.each(['conservative', 'balanced', 'aggressive', 'top-pick'])(
+        'every theme defines --%s',
+        (token) => {
+            const themes = indexCss.match(/\[data-theme='[a-z]+'\]\s*\{[^}]*\}/g) ?? [];
+
+            expect(themes.length).toBe(3);
+            for (const theme of themes) {
+                expect(theme).toContain(`--${token}:`);
+            }
+        },
+    );
+
+    it('colours the top-pick heading and badge from that token', () => {
+        expect(weekGridCss).toMatch(/\.risk-group-heading\.top-picks\s*\{\s*color:\s*var\(--top-pick\)/);
+        expect(weekGridCss).toMatch(/\.top-pick\s*\{[^}]*color:\s*var\(--top-pick\)/);
     });
 });

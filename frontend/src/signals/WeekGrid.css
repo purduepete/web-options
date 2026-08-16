@@ -125,8 +125,10 @@
     transform: rotate(-90deg);
 }
 
+/* Top picks are a classification of the trade, like the three tiers, so they
+   carry their own colour rather than the highlight the user picked. */
 .risk-group-heading.top-picks {
-    color: var(--highlight);
+    color: var(--top-pick);
 }
 .risk-group-heading.conservative {
     color: var(--conservative);
@@ -188,8 +190,8 @@
 }
 
 .top-pick {
-    color: var(--highlight);
-    border-color: var(--highlight);
+    color: var(--top-pick);
+    border-color: var(--top-pick);
 }
 
 .tier-badge.conservative {

@@ -63,6 +63,7 @@
     --conservative: #16a34a;
     --balanced: #d97706;
     --aggressive: #dc2626;
+    --top-pick: #7c3aed;
     --danger: #dc2626;
 }
 
@@ -83,6 +84,7 @@
     --conservative: #34d399;
     --balanced: #fbbf24;
     --aggressive: #f87171;
+    --top-pick: #8b5cf6;
     --danger: #f87171;
 }
 
@@ -103,6 +105,7 @@
     --conservative: #34d399;
     --balanced: #fbbf24;
     --aggressive: #f87171;
+    --top-pick: #8b5cf6;
     --danger: #f87171;
 }
 
