@@ -83,25 +83,29 @@ export function Navbar({
                     Web Options
                 </Link>
 
-                {isDesktop && (
-                    <button
-                        type="button"
-                        className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
-                        aria-expanded={menuOpen}
-                        aria-controls="mega-panel"
-                        onClick={() => setMenuOpen((open) => !open)}
-                    >
-                        Menu
-                        <ChevronDownIcon className={menuOpen ? 'rotated' : undefined} />
-                    </button>
-                )}
-
                 <div className="bar-right">
                     {onOpenSearch && (
-                        <button type="button" className="search-trigger" onClick={onOpenSearch}>
+                        <button
+                            type="button"
+                            className="search-trigger"
+                            aria-label="Search"
+                            title="Search (Ctrl K)"
+                            onClick={onOpenSearch}
+                        >
                             <SearchIcon />
-                            <span className="search-trigger-label">Search</span>
-                            <kbd aria-hidden="true">Ctrl K</kbd>
+                        </button>
+                    )}
+
+                    {isDesktop && (
+                        <button
+                            type="button"
+                            className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
+                            aria-expanded={menuOpen}
+                            aria-controls="mega-panel"
+                            onClick={() => setMenuOpen((open) => !open)}
+                        >
+                            Menu
+                            <ChevronDownIcon className={menuOpen ? 'rotated' : undefined} />
                         </button>
                     )}
 
