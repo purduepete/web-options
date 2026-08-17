@@ -70,14 +70,16 @@ export function Navbar({
                 else setDrawerOpen((open) => !open);
             }
         }
-        function onPointerDown(event: MouseEvent) {
+        function onPointerDown(event: Event) {
             if (!navRef.current?.contains(event.target as Node | null)) closeAll();
         }
         document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('mousedown', onPointerDown);
+        // pointerdown, not mousedown: a tap on a plain part of the page does not
+        // always reach us as a mouse event on iPad.
+        document.addEventListener('pointerdown', onPointerDown);
         return () => {
             document.removeEventListener('keydown', onKeyDown);
-            document.removeEventListener('mousedown', onPointerDown);
+            document.removeEventListener('pointerdown', onPointerDown);
         };
     }, [closeAll, isDesktop]);
 

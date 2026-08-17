@@ -68,7 +68,8 @@ describe('Navbar on desktop', () => {
         await user.click(menu);
         expect(menu.getAttribute('aria-expanded')).toBe('true');
 
-        fireEvent.mouseDown(document.body);
+        // pointerdown rather than mousedown, so a tap dismisses it too.
+        fireEvent.pointerDown(document.body);
         expect(menu.getAttribute('aria-expanded')).toBe('false');
     });
 

@@ -190,9 +190,17 @@ textarea {
 
 button {
     cursor: pointer;
+    /* Without this Safari holds the tap back to watch for a double tap. */
+    touch-action: manipulation;
     transition:
         background var(--transition),
         border-color var(--transition);
+}
+
+/* An icon is decoration, never the thing being pressed: Safari on iPad hands the
+   tap to the svg it landed on and the button's handler never runs. */
+button svg {
+    pointer-events: none;
 }
 
 button:hover:not(:disabled) {
