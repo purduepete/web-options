@@ -233,6 +233,17 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* First / Previous / Next / Latest. Shared by the live signals page and the
+   published calendars, so it lives here rather than with either of them. */
+.week-nav {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.week-nav button {
+    font-size: 0.8rem;
+}
+
 button.primary {
     background: var(--highlight);
     border-color: var(--highlight);

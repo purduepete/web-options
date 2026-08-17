@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import type { CalendarWeek } from '@weboptions/shared';
-import { NotFoundError, UnauthorizedError, fetchCalendar } from '../api';
+import { useNavigate, useParams } from 'react-router-dom';
+import type { CalendarSummary, CalendarWeek } from '@weboptions/shared';
+import { NotFoundError, UnauthorizedError, fetchCalendar, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
@@ -19,11 +19,29 @@ import './CalendarWeekPage.css';
 export function CalendarWeekPage() {
     const { publishDate = '' } = useParams();
     const { forget } = useApiKey();
+    const navigate = useNavigate();
     const [week, setWeek] = useState<CalendarWeek | null>(null);
+    const [calendars, setCalendars] = useState<CalendarSummary[]>([]);
     const [error, setError] = useState<string | null>(null);
     const headRef = useRef<HTMLDivElement>(null);
 
     usePublishedHeight(headRef, '--calendar-head-height');
+
+    // The archive index doubles as the map for stepping through it. It is a
+    // handful of rows, and fetching it here is what replaces listing it.
+    useEffect(() => {
+        let cancelled = false;
+        fetchCalendars()
+            .then((result) => {
+                if (!cancelled) setCalendars(result.calendars);
+            })
+            .catch((cause: Error) => {
+                if (!cancelled && cause instanceof UnauthorizedError) forget();
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [forget]);
 
     useEffect(() => {
         let cancelled = false;
@@ -46,12 +64,35 @@ export function CalendarWeekPage() {
         };
     }, [publishDate, forget]);
 
+    // The index arrives newest first, so the older week is the next one along.
+    const position = calendars.findIndex((entry) => entry.publishDate === publishDate);
+    const current = position >= 0 ? calendars[position] : undefined;
+    const older = position >= 0 ? calendars[position + 1] : undefined;
+    const newer = position > 0 ? calendars[position - 1] : undefined;
+    const earliest = calendars[calendars.length - 1];
+    const latest = calendars[0];
+
+    const open = (entry: CalendarSummary | undefined) => {
+        if (entry) navigate(`/calendars/${entry.publishDate}`);
+    };
+
     return (
         <main className="calendar-week-page">
             <div className="calendar-head" ref={headRef}>
-                <p className="calendar-back">
-                    <Link to="/calendars">&larr; All weekly calendars</Link>
-                </p>
+                <div className="week-nav">
+                    <button type="button" onClick={() => open(earliest)} disabled={!earliest || earliest === current}>
+                        First
+                    </button>
+                    <button type="button" onClick={() => open(older)} disabled={!older}>
+                        Previous
+                    </button>
+                    <button type="button" onClick={() => open(newer)} disabled={!newer}>
+                        Next
+                    </button>
+                    <button type="button" onClick={() => open(latest)} disabled={!latest || latest === current}>
+                        Latest
+                    </button>
+                </div>
 
                 {week && (
                     <section className="macro-banner enter">

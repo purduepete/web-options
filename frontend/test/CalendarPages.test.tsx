@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { CalendarDay, CalendarTrade, CalendarWeek } from '@weboptions/shared';
+import type { CalendarDay, CalendarSummary, CalendarTrade, CalendarWeek } from '@weboptions/shared';
 
 const fetchCalendars = vi.fn();
 const fetchCalendar = vi.fn();
@@ -72,9 +72,24 @@ function renderWeek(publishDate = '2026-08-10') {
     );
 }
 
+/** Newest first, the order the index endpoint returns. */
+function archive(): CalendarSummary[] {
+    return [
+        { publishDate: '2026-08-17', weekStart: '2026-08-17', weekEnd: '2026-08-21', title: null, tradeCount: 2 },
+        { publishDate: '2026-08-10', weekStart: '2026-08-10', weekEnd: '2026-08-14', title: null, tradeCount: 9 },
+        { publishDate: '2026-08-03', weekStart: '2026-08-03', weekEnd: '2026-08-07', title: null, tradeCount: 4 },
+    ];
+}
+
+function button(name: string): HTMLElement {
+    return screen.getByRole('button', { name });
+}
+
 beforeEach(() => {
     fetchCalendars.mockReset();
     fetchCalendar.mockReset();
+    // The week page asks for the archive too, to build its navigation.
+    fetchCalendars.mockResolvedValue({ calendars: [] });
 });
 
 describe('CalendarsIndexPage', () => {
@@ -230,23 +245,53 @@ describe('CalendarWeekPage', () => {
         expect(screen.queryByTestId('calendar-grid')).toBeNull();
     });
 
-    it('always offers the way back to the archive', async () => {
-        fetchCalendar.mockResolvedValue(calendar());
-        renderWeek();
-        await screen.findByRole('heading', { name: 'Rally week' });
-        expect(screen.getByRole('link', { name: '← All weekly calendars' }).getAttribute('href')).toBe('/calendars');
-    });
-
-    it('gathers the back link and the macro read into one pinned block', async () => {
+    it('gathers the navigation and the macro read into one pinned block', async () => {
         fetchCalendar.mockResolvedValue(calendar());
         const { container } = renderWeek();
         await screen.findByRole('heading', { name: 'Rally week' });
 
         const head = container.querySelector('.calendar-head');
         expect(head).toBeTruthy();
-        expect(head?.querySelector('.calendar-back')).toBeTruthy();
+        expect(head?.querySelector('.week-nav')).toBeTruthy();
         expect(head?.querySelector('.macro-banner')).toBeTruthy();
         // The day names stop underneath it, so its height has to be measured.
         expect(document.documentElement.style.getPropertyValue('--calendar-head-height')).not.toBe('');
+    });
+
+    it('steps through the archive instead of linking to a list of it', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderWeek('2026-08-10');
+        await screen.findByRole('heading', { name: 'Rally week' });
+
+        expect(screen.queryByRole('link', { name: /All weekly calendars/ })).toBeNull();
+
+        await waitFor(() => expect(button('Previous').hasAttribute('disabled')).toBe(false));
+        fireEvent.click(button('Previous'));
+        await waitFor(() => expect(fetchCalendar).toHaveBeenCalledWith('2026-08-03'));
+    });
+
+    it('stops at the ends of the archive', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderWeek('2026-08-03');
+        await screen.findByRole('heading', { name: 'Rally week' });
+
+        // The oldest week: nothing behind it, everything ahead of it.
+        await waitFor(() => expect(button('Latest').hasAttribute('disabled')).toBe(false));
+        expect(button('First').hasAttribute('disabled')).toBe(true);
+        expect(button('Previous').hasAttribute('disabled')).toBe(true);
+        expect(button('Next').hasAttribute('disabled')).toBe(false);
+    });
+
+    it('leaves the navigation alone until the archive is known', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockRejectedValue(new Error('nope'));
+        renderWeek();
+        await screen.findByRole('heading', { name: 'Rally week' });
+
+        for (const name of ['First', 'Previous', 'Next', 'Latest']) {
+            expect(button(name).hasAttribute('disabled')).toBe(true);
+        }
     });
 });
