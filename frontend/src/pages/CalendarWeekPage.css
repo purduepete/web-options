@@ -11,6 +11,24 @@
     font-size: 0.8rem;
 }
 
+/* The week's framing stays put while the days scroll. A ticket halfway down
+   Wednesday only reads correctly next to the macro note that set the week up,
+   and the way back out of the calendar shouldn't need a scroll to reach. */
+.calendar-head {
+    position: sticky;
+    top: var(--navbar-height, 0px);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    /* The padding paints the strip the parent's flex gap would leave clear,
+       where the day cards would otherwise be seen sliding past. The negative
+       margin hands that width back, so the spacing is unchanged. */
+    padding-bottom: 0.75rem;
+    margin-bottom: -0.75rem;
+    background: var(--bg);
+}
+
 .macro-banner {
     padding: 0.875rem;
     background: var(--surface);
@@ -55,4 +73,17 @@
 .macro-item span {
     color: var(--text-muted);
     line-height: 1.45;
+}
+
+.calendar-week-page .day-card {
+    /* `hidden` would make the card a scroll container of its own, leaving the
+       head with nothing to stick to. `clip` still clips. */
+    overflow: clip;
+}
+
+/* The day names come to rest under the header above them, not behind it. */
+.calendar-week-page .day-head {
+    position: sticky;
+    top: calc(var(--navbar-height, 0px) + var(--calendar-head-height, 0px));
+    z-index: 2;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { CalendarWeek } from '@weboptions/shared';
 import { NotFoundError, UnauthorizedError, fetchCalendar } from '../api';
@@ -7,6 +7,7 @@ import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
 import { Loading } from '../components/Loading';
+import { usePublishedHeight } from '../hooks/usePublishedHeight';
 import './CalendarWeekPage.css';
 
 /**
@@ -20,6 +21,9 @@ export function CalendarWeekPage() {
     const { forget } = useApiKey();
     const [week, setWeek] = useState<CalendarWeek | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const headRef = useRef<HTMLDivElement>(null);
+
+    usePublishedHeight(headRef, '--calendar-head-height');
 
     useEffect(() => {
         let cancelled = false;
@@ -44,20 +48,12 @@ export function CalendarWeekPage() {
 
     return (
         <main className="calendar-week-page">
-            <p className="calendar-back">
-                <Link to="/calendars">&larr; All weekly calendars</Link>
-            </p>
-
-            {error && (
-                <p className="signals-error" role="alert">
-                    {error}
+            <div className="calendar-head" ref={headRef}>
+                <p className="calendar-back">
+                    <Link to="/calendars">&larr; All weekly calendars</Link>
                 </p>
-            )}
 
-            {!week && !error && <Loading label="Loading the calendar" />}
-
-            {week && (
-                <>
+                {week && (
                     <section className="macro-banner enter">
                         <h1>{week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`}</h1>
                         <p className="macro-meta">
@@ -75,10 +71,18 @@ export function CalendarWeekPage() {
                             </ul>
                         )}
                     </section>
+                )}
+            </div>
 
-                    <CalendarGrid days={week.days} />
-                </>
+            {error && (
+                <p className="signals-error" role="alert">
+                    {error}
+                </p>
             )}
+
+            {!week && !error && <Loading label="Loading the calendar" />}
+
+            {week && <CalendarGrid days={week.days} />}
         </main>
     );
 }

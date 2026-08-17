@@ -14,6 +14,7 @@ function read(relative: string): string {
 
 const indexCss = read('../src/index.css');
 const signalsCss = read('../src/pages/LiveSignalsPage.css');
+const calendarCss = read('../src/pages/CalendarWeekPage.css');
 
 describe('pinned headers', () => {
     it('lets the navbar travel the whole page, not just the first screen', () => {
@@ -37,5 +38,30 @@ describe('pinned headers', () => {
     it('stops the day card being a scroll container of its own', () => {
         // `overflow: hidden` would leave the head with nothing to stick to.
         expect(signalsCss).toMatch(/\.signals-page \.day-card\s*\{[^}]*overflow:\s*clip/);
+    });
+});
+
+describe('pinned calendar header', () => {
+    const head = /\.calendar-head\s*\{([^}]*)\}/.exec(calendarCss)?.[1] ?? '';
+
+    it('pins the whole week header under the navbar', () => {
+        expect(head).toContain('position: sticky');
+        expect(head).toContain('top: var(--navbar-height');
+    });
+
+    it('paints the block, so the days do not show through as they pass behind', () => {
+        expect(head).toMatch(/background:\s*var\(--bg\)/);
+    });
+
+    it('stacks the day names below the header rather than behind it', () => {
+        const rule = /\.calendar-week-page \.day-head\s*\{([^}]*)\}/.exec(calendarCss)?.[1] ?? '';
+
+        expect(rule).toContain('position: sticky');
+        expect(rule).toContain('--navbar-height');
+        expect(rule).toContain('--calendar-head-height');
+    });
+
+    it('stops the calendar day card being a scroll container of its own', () => {
+        expect(calendarCss).toMatch(/\.calendar-week-page \.day-card\s*\{[^}]*overflow:\s*clip/);
     });
 });

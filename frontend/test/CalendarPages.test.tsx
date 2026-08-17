@@ -236,4 +236,17 @@ describe('CalendarWeekPage', () => {
         await screen.findByRole('heading', { name: 'Rally week' });
         expect(screen.getByRole('link', { name: '← All weekly calendars' }).getAttribute('href')).toBe('/calendars');
     });
+
+    it('gathers the back link and the macro read into one pinned block', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        const { container } = renderWeek();
+        await screen.findByRole('heading', { name: 'Rally week' });
+
+        const head = container.querySelector('.calendar-head');
+        expect(head).toBeTruthy();
+        expect(head?.querySelector('.calendar-back')).toBeTruthy();
+        expect(head?.querySelector('.macro-banner')).toBeTruthy();
+        // The day names stop underneath it, so its height has to be measured.
+        expect(document.documentElement.style.getPropertyValue('--calendar-head-height')).not.toBe('');
+    });
 });
