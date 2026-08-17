@@ -62,8 +62,14 @@ $action = New-ScheduledTaskAction -Execute $wscript -Argument $argument -Working
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $identity.Name
 # The default execution time limit kills the task after 3 days, which reads as a
 # random unexplained outage.
+# RestartCount/RestartInterval are mostly cosmetic here: the hidden VBS launcher
+# detaches the real process and always reports success, so Task Scheduler never
+# sees a failure to restart. serve.ps1 has its own retry loop for that. Set them
+# anyway so Task Scheduler's own history/UI stays consistent with webportfolio's
+# task and in case the launcher ever starts reporting real exit codes.
 $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0 `
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 `
+    -RestartInterval (New-TimeSpan -Minutes 1) `
     -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal = New-ScheduledTaskPrincipal -UserId $identity.Name -LogonType Interactive -RunLevel Limited
 
