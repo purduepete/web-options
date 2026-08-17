@@ -1,0 +1,12 @@
+{
+  "capturedAt": "2026-08-16T20:56:19",
+  "source": "server/server.py (Flask)",
+  "volatileFields": [
+    "generatedAt"
+  ],
+  "weeks": {
+    "week-current": "2026-08-10",
+    "week-prior": "2026-08-03",
+    "week-earliest": "2026-07-13"
+  }
+}

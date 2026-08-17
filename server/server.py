@@ -62,6 +62,8 @@ Usage:
     python server.py
     (it prints the LAN address it bound to; browse directly to
     http://<LAN-IP>:5057/vader-telegram-live.html, no local file needed)
+
+    Set WEBOPTIONS_PORT to move off 5057, which the Node backend also uses.
 """
 
 import configparser
@@ -114,16 +116,18 @@ CALENDARS_INDEX_HTML_PATH = os.path.join(
 CALENDAR_FILENAME_RE = re.compile(r"^weekly-options-calendar-(\d{4}-\d{2}-\d{2})\.html$")
 CALENDAR_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+# Overridable so this can run alongside the Node backend, which wants 5057
+# too. The parity capture needs both stacks up at once.
+PORT = int(os.environ.get("WEBOPTIONS_PORT", "5057"))
+
 # Origins the dashboard is actually served from. Kept narrow (not "*") now
 # that a real auth header is in play; add entries here if the dashboard is
 # opened from a new host/port.
 ALLOWED_ORIGINS = [
     "null",  # a file:// page's Origin header is literally the string "null"
-    "http://localhost:5057",
-    "http://127.0.0.1:5057",
+    f"http://localhost:{PORT}",
+    f"http://127.0.0.1:{PORT}",
 ]
-
-PORT = 5057
 
 
 def _lan_bind_host():
@@ -196,7 +200,9 @@ def get_database_connection():
     cfg = DATABASE_CONFIG
     connection_string = (
         f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-        f"SERVER={cfg['server']};"
+        # Without the tcp: prefix and an explicit port, the driver negotiates
+        # its own protocol and can land on Named Pipes, which Azure SQL refuses.
+        f"SERVER=tcp:{cfg['server']},1433;"
         f"DATABASE={cfg['database']};"
         f"UID={_odbc_escape(cfg['username'])};"
         f"PWD={_odbc_escape(cfg['password'])};"
