@@ -1,0 +1,39 @@
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    animation: loading-in 0.4s ease-out;
+}
+
+/* The one round corner in the app: a squared ring would not read as spinning. */
+.spinner {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 3px solid var(--border);
+    border-top-color: var(--highlight);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes loading-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading {
+        animation: none;
+    }
+
+    .spinner {
+        animation-duration: 2.5s;
+    }
+}

@@ -34,9 +34,3 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
         ],
     },
 ];
-
-export function shortcutSection(title: string): ShortcutSection {
-    const section = SHORTCUT_SECTIONS.find((candidate) => candidate.title === title);
-    if (!section) throw new Error(`No shortcut section named ${title}`);
-    return section;
-}

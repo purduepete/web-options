@@ -5,6 +5,7 @@ import { UnauthorizedError, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { isLatest, weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
+import { Loading } from '../components/Loading';
 import './CalendarsIndexPage.css';
 
 /**
@@ -47,9 +48,7 @@ export function CalendarsIndexPage() {
                 </p>
             )}
 
-            <p className="signals-status" role="status">
-                {!calendars && !error ? 'Loading the calendars…' : ''}
-            </p>
+            {!calendars && !error && <Loading label="Loading the calendars" />}
 
             {calendars?.length === 0 && <p className="empty-week">No weekly calendars have been ingested yet.</p>}
 

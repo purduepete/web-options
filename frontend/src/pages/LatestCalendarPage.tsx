@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { UnauthorizedError, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
+import { Loading } from '../components/Loading';
 
 /** The index is already sorted newest-first, so "latest" is just the first row. */
 export function LatestCalendarPage() {
@@ -39,7 +40,7 @@ export function LatestCalendarPage() {
     return (
         <main>
             <h1>Latest calendar</h1>
-            <p>{error ?? 'loading…'}</p>
+            {error ? <p className="signals-error" role="alert">{error}</p> : <Loading label="Finding the latest calendar" />}
         </main>
     );
 }

@@ -3,6 +3,7 @@ import { ApiKeyProvider, useApiKey } from './auth/ApiKeyProvider';
 import { KeyGate } from './auth/KeyGate';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
+import { Loading } from './components/Loading';
 import { FavoritesProvider } from './navigation/FavoritesProvider';
 import { RecentlyVisitedProvider } from './navigation/RecentlyVisitedProvider';
 import { ApiKeyPage } from './pages/ApiKeyPage';
@@ -32,7 +33,7 @@ export default function App() {
  */
 function Gate() {
     const { status } = useApiKey();
-    if (status === 'checking') return <p>checking key…</p>;
+    if (status === 'checking') return <Loading label="Checking your key" />;
     if (status === 'locked') return <KeyGate />;
 
     return (

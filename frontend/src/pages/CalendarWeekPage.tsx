@@ -6,6 +6,7 @@ import { useApiKey } from '../auth/ApiKeyProvider';
 import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
+import { Loading } from '../components/Loading';
 import './CalendarWeekPage.css';
 
 /**
@@ -55,9 +56,7 @@ export function CalendarWeekPage() {
                 </p>
             )}
 
-            <p className="signals-status" role="status">
-                {!week && !error ? 'Loading the calendar…' : ''}
-            </p>
+            {!week && !error && <Loading label="Loading the calendar" />}
 
             {week && (
                 <>
