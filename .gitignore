@@ -21,3 +21,7 @@ src_files.txt
 # The retired Flask app kept its key here. The directory is gone from git, but
 # the untracked file survives on disk until it is deleted by hand.
 secrets.ini
+
+# Local Caddy reverse-proxy config/state, machine-specific
+scripts/Caddyfile
+scripts/caddy/
