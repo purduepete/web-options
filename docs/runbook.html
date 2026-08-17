@@ -709,6 +709,15 @@ npm run keys -- --revoke 3</code></pre>
                                 </td>
                             </tr>
                             <tr>
+                                <td class="k"><code>.secrets</code> is gone</td>
+                                <td>
+                                    Copy the folder back from another checkout. Do not run
+                                    <code>create-readonly-user --rotate</code> to make a new password: that changes the
+                                    login in the database and every other machine holding the old value stops
+                                    connecting. Rotate only when the password is actually compromised.
+                                </td>
+                            </tr>
+                            <tr>
                                 <td class="k">Page loads, no data, says it cannot reach the server</td>
                                 <td>
                                     The static files are being served but the API is not answering. Almost always means
