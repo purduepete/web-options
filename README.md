@@ -27,7 +27,11 @@ npm workspaces, no TypeScript project references.
 `database/migrations` holds the numbered SQL that builds the `opt` schema.
 `docs/site-review.html` is the current plan and the reasoning behind it.
 
-## Running it
+## Running it in development
+
+This is the two-server setup for working on the code, on the machine you are
+working on. To run it as a deployment, on jimbrownhome or anywhere else, skip to
+[Running it for real](#running-it-for-real).
 
 ```powershell
 npm install
@@ -61,6 +65,10 @@ Remove-Item Env:DB_SERVER,Env:DB_NAME,Env:DB_USER,Env:DB_PASSWORD -ErrorAction S
 
 In development, Vite serves the app and proxies `/api`. In production there is no
 Vite, so the API serves the built front end itself. One process, one port.
+
+This is not just tidier, it is the only thing that works off the box. Vite rejects
+requests whose `Host` header it does not recognise, so `npm run serve` on a server
+answers `localhost` and 403s every other machine on the network.
 
 ```powershell
 npm run build
