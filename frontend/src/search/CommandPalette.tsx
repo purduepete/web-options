@@ -95,9 +95,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
     // Keep the active option in view without tracking scroll ourselves.
     useEffect(() => {
         if (!open) return;
-        listRef.current
-            ?.querySelector('[aria-selected="true"]')
-            ?.scrollIntoView({ block: 'nearest' });
+        listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
     }, [active, open, results.length]);
 
     if (!open) return null;

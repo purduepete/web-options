@@ -47,7 +47,7 @@ function Get-LogFile([string] $Name) { Join-Path $RunDir "$Name.log" }
 
 function Get-ListenerPid([int] $Port) {
     $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
-        Select-Object -First 1
+    Select-Object -First 1
     if ($conn) { return $conn.OwningProcess }
     return $null
 }
@@ -77,7 +77,8 @@ function Wait-Ready([string] $Url, [int] $TimeoutSeconds = 45) {
         try {
             Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 | Out-Null
             return $true
-        } catch {
+        }
+        catch {
             # Any HTTP answer means it is listening; a 401 from an authed route counts.
             # A refused connection throws HttpRequestException, which carries no Response.
             $response = $_.Exception.PSObject.Properties['Response']
@@ -149,7 +150,8 @@ function Invoke-Start {
     try {
         Set-BackendCredentials
         Start-Service $Services.api
-    } finally {
+    }
+    finally {
         Clear-BackendCredentials
     }
 
@@ -160,7 +162,8 @@ function Invoke-Start {
         if ($ApiOnly -and $service.Name -eq 'web') { continue }
         if (Wait-Ready $service.Probe) {
             Write-Host "  $($service.Name) ready on $($service.Port)" -ForegroundColor Green
-        } else {
+        }
+        else {
             $failed = $true
             Write-Host "  $($service.Name) did not answer on $($service.Port)" -ForegroundColor Red
             Write-Host "  --- tail of $(Get-LogFile $service.Name) ---" -ForegroundColor Red
@@ -181,7 +184,8 @@ function Invoke-Stop {
         if ($running) {
             Stop-Tree $running
             Write-Host "  $($service.Name) stopped (pid $running)"
-        } else {
+        }
+        else {
             Write-Host "  $($service.Name) was not running" -ForegroundColor DarkGray
         }
 
@@ -199,7 +203,8 @@ function Invoke-Status {
         $running = Get-RunningPid $service
         if ($running) {
             Write-Host "  $($service.Name)  running  port $($service.Port)  pid $running" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  $($service.Name)  stopped  port $($service.Port)" -ForegroundColor DarkGray
         }
     }

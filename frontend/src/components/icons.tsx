@@ -172,4 +172,3 @@ export function WrenchIcon(props: SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
-

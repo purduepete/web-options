@@ -56,8 +56,7 @@ export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignal
 /** The groups at least one day this week can fill, in the order they are drawn. */
 export function buildGroups(days: DaySignals[]): SignalGroup[] {
     const groups: SignalGroup[] = [];
-    const someTradeIs = (predicate: (trade: Trade) => boolean) =>
-        days.some((day) => day.trades.some(predicate));
+    const someTradeIs = (predicate: (trade: Trade) => boolean) => days.some((day) => day.trades.some(predicate));
 
     const isTopPick = (trade: Trade) => trade.isTopPick;
     if (someTradeIs(isTopPick)) {

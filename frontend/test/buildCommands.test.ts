@@ -5,7 +5,13 @@ import { findNavItem } from '../src/navigation/navModel';
 import type { NavItem } from '../src/navigation/navModel';
 
 const CALENDARS: readonly CalendarSummary[] = [
-    { publishDate: '2026-01-05', weekStart: '2026-01-05', weekEnd: '2026-01-09', title: 'New year kick-off', tradeCount: 19 },
+    {
+        publishDate: '2026-01-05',
+        weekStart: '2026-01-05',
+        weekEnd: '2026-01-09',
+        title: 'New year kick-off',
+        tradeCount: 19,
+    },
     { publishDate: '2025-12-29', weekStart: '2025-12-29', weekEnd: '2026-01-02', title: null, tradeCount: 7 },
 ];
 

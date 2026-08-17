@@ -40,7 +40,13 @@ export function LatestCalendarPage() {
     return (
         <main>
             <h1>Latest calendar</h1>
-            {error ? <p className="signals-error" role="alert">{error}</p> : <Loading label="Finding the latest calendar" />}
+            {error ? (
+                <p className="signals-error" role="alert">
+                    {error}
+                </p>
+            ) : (
+                <Loading label="Finding the latest calendar" />
+            )}
         </main>
     );
 }

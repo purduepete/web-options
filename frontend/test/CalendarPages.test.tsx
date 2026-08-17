@@ -89,8 +89,20 @@ describe('CalendarsIndexPage', () => {
     it('badges only the newest week', async () => {
         fetchCalendars.mockResolvedValue({
             calendars: [
-                { publishDate: '2026-08-10', weekStart: '2026-08-10', weekEnd: '2026-08-14', title: null, tradeCount: 9 },
-                { publishDate: '2026-08-03', weekStart: '2026-08-03', weekEnd: '2026-08-07', title: null, tradeCount: 4 },
+                {
+                    publishDate: '2026-08-10',
+                    weekStart: '2026-08-10',
+                    weekEnd: '2026-08-14',
+                    title: null,
+                    tradeCount: 9,
+                },
+                {
+                    publishDate: '2026-08-03',
+                    weekStart: '2026-08-03',
+                    weekEnd: '2026-08-07',
+                    title: null,
+                    tradeCount: 4,
+                },
             ],
         });
         renderIndex();
@@ -104,7 +116,13 @@ describe('CalendarsIndexPage', () => {
     it('counts the trades and links to the week', async () => {
         fetchCalendars.mockResolvedValue({
             calendars: [
-                { publishDate: '2026-08-10', weekStart: '2026-08-10', weekEnd: '2026-08-14', title: null, tradeCount: 1 },
+                {
+                    publishDate: '2026-08-10',
+                    weekStart: '2026-08-10',
+                    weekEnd: '2026-08-14',
+                    title: null,
+                    tradeCount: 1,
+                },
             ],
         });
         renderIndex();
@@ -116,7 +134,13 @@ describe('CalendarsIndexPage', () => {
     it('mentions the publish date only when it is not the Monday', async () => {
         fetchCalendars.mockResolvedValue({
             calendars: [
-                { publishDate: '2026-08-09', weekStart: '2026-08-10', weekEnd: '2026-08-14', title: null, tradeCount: 3 },
+                {
+                    publishDate: '2026-08-09',
+                    weekStart: '2026-08-10',
+                    weekEnd: '2026-08-14',
+                    title: null,
+                    tradeCount: 3,
+                },
             ],
         });
         renderIndex();
@@ -170,10 +194,11 @@ describe('CalendarWeekPage', () => {
         renderWeek();
 
         const monday = await screen.findByRole('region', { name: 'Monday Aug 10' });
-        expect(within(monday).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
-            'Conservative',
-            'Balanced',
-        ]);
+        expect(
+            within(monday)
+                .getAllByRole('heading', { level: 3 })
+                .map((h) => h.textContent),
+        ).toEqual(['Conservative', 'Balanced']);
         expect(within(monday).getByText('PM $175P')).toBeTruthy();
         expect(within(monday).getByText('9.7%')).toBeTruthy();
         expect(within(monday).getByText('$17,500')).toBeTruthy();

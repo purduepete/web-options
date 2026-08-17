@@ -36,11 +36,7 @@ export function ShortcutsOverlay() {
 
     return createPortal(
         <div className="shortcuts-root">
-            <div
-                className="shortcuts-backdrop"
-                data-testid="shortcuts-backdrop"
-                onClick={() => setOpen(false)}
-            />
+            <div className="shortcuts-backdrop" data-testid="shortcuts-backdrop" onClick={() => setOpen(false)} />
 
             <div className="shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
                 <div className="shortcuts-head">

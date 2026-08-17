@@ -61,12 +61,7 @@ describe('buildGroups', () => {
             day('2025-08-12', 'Tuesday', [trade('AMD', { tier: 'Conservative' })]),
         ];
 
-        expect(buildGroups(days).map((g) => g.id)).toEqual([
-            'top-picks',
-            'conservative',
-            'balanced',
-            'aggressive',
-        ]);
+        expect(buildGroups(days).map((g) => g.id)).toEqual(['top-picks', 'conservative', 'balanced', 'aggressive']);
     });
 
     it('only offers a group some day this week actually fills', () => {
