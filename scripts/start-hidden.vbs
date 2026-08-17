@@ -1,5 +1,5 @@
 ' Run the production launcher without allocating a visible console window.
-' Task Scheduler invokes this with the absolute pwsh and serve.ps1 paths.
+' Detach it so Task Scheduler cannot end the server with the logon action.
 
 Option Explicit
 
@@ -20,9 +20,8 @@ If arguments.Count >= 3 Then
     command = command & " -Port " & arguments(2)
 End If
 
-Dim exitCode
-exitCode = shell.Run(command, 0, True)
-WScript.Quit exitCode
+shell.Run command, 0, False
+WScript.Quit 0
 
 Function Quote(value)
     Quote = Chr(34) & value & Chr(34)

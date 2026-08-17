@@ -422,16 +422,21 @@
                 <h2>Start, stop, restart</h2>
                 <div class="body">
                     <p>All manual, by decision. Nothing auto-restarts on crash.</p>
-                    <pre><code>Start-ScheduledTask -TaskName WebOptions
-Stop-ScheduledTask  -TaskName WebOptions
-Get-ScheduledTask   -TaskName WebOptions | Get-ScheduledTaskInfo</code></pre>
-                    <p>
-                        If the task says it is running but the port is not, the process died without the task noticing.
-                        Find and kill the listener, then start the task again.
-                    </p>
-                    <pre><code>Get-NetTCPConnection -LocalPort 5057 -State Listen |
+                    <pre><code># Start
+Start-ScheduledTask -TaskName WebOptions
+
+# Stop
+Get-NetTCPConnection -LocalPort 5057 -State Listen |
     Select-Object -First 1 -ExpandProperty OwningProcess |
-    Stop-Process -Id { $_ } -Force</code></pre>
+    Stop-Process -Id { $_ } -Force
+
+# Task history
+Get-ScheduledTask -TaskName WebOptions | Get-ScheduledTaskInfo</code></pre>
+                    <p>
+                        The task launches the server and exits, so <code>Ready</code> with result <code>0</code> is
+                        normal. The listener on port 5057 is the source of truth for whether production is running.
+                        To restart, stop that listener and start the task again.
+                    </p>
                 </div>
             </section>
 
@@ -518,7 +523,9 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                             <strong>A PowerShell window that opens at logon and stays open</strong> means the task is
                             running <code>pwsh.exe</code> directly. <code>-WindowStyle Hidden</code> does not reliably
                             prevent Windows from allocating that console. Re-run <code>scripts\install-task.ps1</code>
-                            so the task starts through <code>wscript.exe</code> and <code>start-hidden.vbs</code>.
+                            so the task starts through <code>wscript.exe</code> and <code>start-hidden.vbs</code>. The
+                            wrapper detaches after launch; otherwise Task Scheduler can end Node when the logon action
+                            finishes.
                         </p>
                     </div>
                     <div class="note warn">

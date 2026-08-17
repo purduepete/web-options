@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Registering this by hand is what lets the settings drift. The one that
-    matters is the launcher: wscript creates no console, then waits for the
-    hidden PowerShell process so Task Scheduler owns the server lifetime.
+    matters is the launcher: wscript creates no console and detaches the hidden
+    PowerShell process from the short-lived Task Scheduler logon action.
 
     Re-running this is safe. It overwrites the existing task.
 
