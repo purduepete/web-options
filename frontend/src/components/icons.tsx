@@ -157,3 +157,19 @@ export function AlertIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function ActivityIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+    );
+}
+
+export function WrenchIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M14.7 6.3a4 4 0 0 0 5 5l-8.4 8.4a2.8 2.8 0 0 1-4-4l8.4-8.4a4 4 0 0 0-5-5l3 3-1.4 3.5-3.5 1.4-3-3" />
+        </svg>
+    );
+}
+

@@ -1,15 +1,34 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronDownIcon, ClockIcon, CloseIcon, MenuIcon, SearchIcon, StarIcon } from '../components/icons';
+import {
+    ActivityIcon,
+    CalendarIcon,
+    ChevronDownIcon,
+    ClockIcon,
+    CloseIcon,
+    MenuIcon,
+    PageIcon,
+    SearchIcon,
+    SlidersIcon,
+    StarIcon,
+    WrenchIcon,
+} from '../components/icons';
 import { useFavorites } from './FavoritesProvider';
 import { useRecentlyVisited } from './RecentlyVisitedProvider';
 import { MAX_FAVORITES } from './navLists';
-import { NAV_SECTIONS, type NavItem } from './navModel';
+import { NAV_SECTIONS, type NavItem, type NavSection } from './navModel';
 import './Navbar.css';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
-const QUICK_ACCESS = 'quick-access';
+
+/** Kept here rather than in the nav model, which stays plain data. */
+const SECTION_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+    signals: ActivityIcon,
+    calendars: CalendarIcon,
+    tools: WrenchIcon,
+    settings: SlidersIcon,
+};
 
 export function Navbar({
     onNotify,
@@ -19,114 +38,103 @@ export function Navbar({
     onOpenSearch?: () => void;
 }) {
     const isDesktop = useMediaQuery(DESKTOP_QUERY);
-    const [openSection, setOpenSection] = useState<string | null>(null);
+    const [menuOpen, setMenuOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [openSection, setOpenSection] = useState<string | null>(null);
     const { pathname } = useLocation();
     const navRef = useRef<HTMLElement>(null);
 
-    // Navigating is the signal that the user is done with the menu.
-    useEffect(() => {
-        setOpenSection(null);
+    const closeAll = useCallback(() => {
+        setMenuOpen(false);
         setDrawerOpen(false);
-    }, [pathname]);
+        setOpenSection(null);
+    }, []);
+
+    // Navigating is the signal that the user is done with the menu.
+    useEffect(() => closeAll(), [pathname, closeAll]);
 
     // The desktop panel and the mobile drawer are different layouts of the same
     // state, so switching breakpoints mid-session has to reset both.
-    useEffect(() => {
-        setOpenSection(null);
-        setDrawerOpen(false);
-    }, [isDesktop]);
+    useEffect(() => closeAll(), [isDesktop, closeAll]);
 
     useEffect(() => {
         function onKeyDown(event: KeyboardEvent) {
-            if (event.key !== 'Escape') return;
-            setOpenSection(null);
-            setDrawerOpen(false);
+            if (event.key === 'Escape') closeAll();
+        }
+        function onPointerDown(event: MouseEvent) {
+            if (!navRef.current?.contains(event.target as Node | null)) closeAll();
         }
         document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    }, []);
-
-    const closePanel = useCallback(() => setOpenSection(null), []);
+        document.addEventListener('mousedown', onPointerDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            document.removeEventListener('mousedown', onPointerDown);
+        };
+    }, [closeAll]);
 
     function toggleSection(id: string) {
         setOpenSection((current) => (current === id ? null : id));
     }
 
     return (
-        <header
-            className="navbar"
-            ref={navRef}
-            onMouseLeave={isDesktop ? closePanel : undefined}
-            onBlur={
-                isDesktop
-                    ? (event) => {
-                          if (!navRef.current?.contains(event.relatedTarget as Node | null)) closePanel();
-                      }
-                    : undefined
-            }
-        >
+        <header className="navbar" ref={navRef}>
             <div className="navbar-bar">
                 <Link className="brand" to="/">
-                    weboptions
+                    Web Options
                 </Link>
 
-                {onOpenSearch && (
-                    <button type="button" className="search-trigger" onClick={onOpenSearch}>
-                        <SearchIcon />
-                        <span className="search-trigger-label">Search</span>
-                        <kbd aria-hidden="true">Ctrl K</kbd>
-                    </button>
-                )}
-
-                {isDesktop ? (
-                    <nav className="sections" aria-label="Main">
-                        {NAV_SECTIONS.map((section) => (
-                            <SectionButton
-                                key={section.id}
-                                id={section.id}
-                                label={section.label}
-                                open={openSection === section.id}
-                                onOpen={() => setOpenSection(section.id)}
-                                onToggle={() => toggleSection(section.id)}
-                            />
-                        ))}
-                        <SectionButton
-                            id={QUICK_ACCESS}
-                            label="Quick access"
-                            open={openSection === QUICK_ACCESS}
-                            onOpen={() => setOpenSection(QUICK_ACCESS)}
-                            onToggle={() => toggleSection(QUICK_ACCESS)}
-                        />
-                    </nav>
-                ) : (
+                {isDesktop && (
                     <button
                         type="button"
-                        className="drawer-toggle"
-                        aria-expanded={drawerOpen}
-                        aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
-                        onClick={() => setDrawerOpen((open) => !open)}
+                        className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
+                        aria-expanded={menuOpen}
+                        aria-controls="mega-panel"
+                        onClick={() => setMenuOpen((open) => !open)}
                     >
-                        {drawerOpen ? <CloseIcon /> : <MenuIcon />}
+                        Menu
+                        <ChevronDownIcon className={menuOpen ? 'rotated' : undefined} />
                     </button>
                 )}
+
+                <div className="bar-right">
+                    {onOpenSearch && (
+                        <button type="button" className="search-trigger" onClick={onOpenSearch}>
+                            <SearchIcon />
+                            <span className="search-trigger-label">Search</span>
+                            <kbd aria-hidden="true">Ctrl K</kbd>
+                        </button>
+                    )}
+
+                    {!isDesktop && (
+                        <button
+                            type="button"
+                            className="drawer-toggle"
+                            aria-expanded={drawerOpen}
+                            aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+                            onClick={() => setDrawerOpen((open) => !open)}
+                        >
+                            {drawerOpen ? <CloseIcon /> : <MenuIcon />}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {isDesktop && openSection && (
-                <div className="mega-panel" id={`panel-${openSection}`}>
-                    {openSection === QUICK_ACCESS ? (
-                        <QuickAccess onNotify={onNotify} />
-                    ) : (
-                        <ItemGrid
-                            items={NAV_SECTIONS.find((section) => section.id === openSection)?.items ?? []}
-                            onNotify={onNotify}
-                        />
-                    )}
+            {isDesktop && menuOpen && (
+                <div className="mega-panel" id="mega-panel">
+                    <div className="mega-inner">
+                        <QuickAccess />
+                        <div className="section-grid">
+                            {NAV_SECTIONS.map((section) => (
+                                <SectionColumn key={section.id} section={section} onNotify={onNotify} />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
 
             {!isDesktop && drawerOpen && (
                 <nav className="drawer" aria-label="Main">
+                    <QuickAccess />
                     {NAV_SECTIONS.map((section) => (
                         <div className="accordion" key={section.id}>
                             <button
@@ -140,84 +148,48 @@ export function Navbar({
                                 <ChevronDownIcon className={openSection === section.id ? 'rotated' : undefined} />
                             </button>
                             {openSection === section.id && (
-                                <div id={`accordion-${section.id}`}>
-                                    <ItemGrid items={section.items} onNotify={onNotify} />
+                                <div id={`accordion-${section.id}`} className="accordion-body">
+                                    <ItemList items={section.items} onNotify={onNotify} />
                                 </div>
                             )}
                         </div>
                     ))}
-                    <div className="accordion">
-                        <button
-                            type="button"
-                            className="accordion-summary"
-                            aria-expanded={openSection === QUICK_ACCESS}
-                            aria-controls={`accordion-${QUICK_ACCESS}`}
-                            onClick={() => toggleSection(QUICK_ACCESS)}
-                        >
-                            Quick access
-                            <ChevronDownIcon className={openSection === QUICK_ACCESS ? 'rotated' : undefined} />
-                        </button>
-                        {openSection === QUICK_ACCESS && (
-                            <div id={`accordion-${QUICK_ACCESS}`}>
-                                <QuickAccess onNotify={onNotify} />
-                            </div>
-                        )}
-                    </div>
                 </nav>
             )}
         </header>
     );
 }
 
-function SectionButton({
-    id,
-    label,
-    open,
-    onOpen,
-    onToggle,
-}: {
-    id: string;
-    label: string;
-    open: boolean;
-    onOpen: () => void;
-    onToggle: () => void;
-}) {
+function SectionColumn({ section, onNotify }: { section: NavSection; onNotify?: (message: string) => void }) {
+    const Icon = SECTION_ICONS[section.id] ?? PageIcon;
+
     return (
-        <button
-            type="button"
-            className={open ? 'section-button open' : 'section-button'}
-            aria-expanded={open}
-            aria-controls={`panel-${id}`}
-            // Hover is the primary desktop gesture; focus covers the keyboard and
-            // click still works for anyone who does not trust hover menus.
-            onMouseEnter={onOpen}
-            onFocus={onOpen}
-            onClick={onToggle}
-        >
-            {label}
-            <ChevronDownIcon className={open ? 'rotated' : undefined} />
-        </button>
+        <div className="nav-section">
+            <h2 className="nav-section-title">
+                <Icon />
+                {section.label}
+            </h2>
+            <ItemList items={section.items} onNotify={onNotify} />
+        </div>
     );
 }
 
-function ItemGrid({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (message: string) => void }) {
+function ItemList({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (message: string) => void }) {
     const { isFavorite, toggleFavorite, isFull } = useFavorites();
 
     return (
-        <ul className="item-grid">
+        <ul className="item-list">
             {items.map((item) => (
                 <li key={item.id} className={item.disabled ? 'nav-item disabled' : 'nav-item'}>
                     {item.path ? (
-                        <NavLink to={item.path} end className="nav-link">
-                            <span className="nav-label">{item.label}</span>
-                            <span className="nav-description">{item.description}</span>
+                        // The description no longer has a line of its own. Keep it as
+                        // the tooltip so the wording survives the tighter list.
+                        <NavLink to={item.path} end className="nav-link" title={item.description}>
+                            {item.label}
                         </NavLink>
                     ) : (
-                        <span className="nav-link">
-                            <span className="nav-label">
-                                {item.label} <span className="badge">soon</span>
-                            </span>
-                            <span className="nav-description">{item.description}</span>
+                        <span className="nav-link" title={item.description}>
+                            {item.label} <span className="badge">soon</span>
                         </span>
                     )}
 
@@ -246,40 +218,41 @@ function ItemGrid({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (
     );
 }
 
-function QuickAccess({ onNotify }: { onNotify?: (message: string) => void }) {
+/**
+ * Favourites and history ride above the sections, as pills. The app this menu is
+ * modelled on keeps favourites in a sidebar; there is no sidebar here, so they
+ * sit beside the history they behave like.
+ */
+function QuickAccess() {
     const { favorites } = useFavorites();
     const { recent } = useRecentlyVisited();
 
     return (
-        <div className="quick-access">
-            <section>
-                <h2>
-                    <StarIcon filled /> Favourites
-                </h2>
-                {favorites.length === 0 ? (
-                    <p className="muted">Star a page in any menu to pin it here.</p>
-                ) : (
-                    <ItemGrid items={favorites} onNotify={onNotify} />
-                )}
-            </section>
-            <section>
-                <h2>
-                    <ClockIcon /> Recently visited
-                </h2>
-                {recent.length === 0 ? (
-                    <p className="muted">Nothing yet.</p>
-                ) : (
-                    <ul className="item-grid">
-                        {recent.map((item) => (
-                            <li key={item.id} className="nav-item">
-                                <NavLink to={item.path!} end className="nav-link">
-                                    <span className="nav-label">{item.label}</span>
-                                </NavLink>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </section>
+        <>
+            <PillRow icon={<StarIcon filled />} title="Favourites" items={favorites} />
+            <PillRow icon={<ClockIcon />} title="Recently visited" items={recent} />
+        </>
+    );
+}
+
+function PillRow({ icon, title, items }: { icon: ReactNode; title: string; items: readonly NavItem[] }) {
+    if (items.length === 0) return null;
+
+    return (
+        <div className="pill-row">
+            <h2 className="nav-section-title">
+                {icon}
+                {title}
+            </h2>
+            <ul className="pills">
+                {items.map((item) => (
+                    <li key={item.id}>
+                        <NavLink to={item.path ?? '/'} end className="pill">
+                            {item.label}
+                        </NavLink>
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }

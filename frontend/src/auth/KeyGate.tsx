@@ -25,7 +25,7 @@ export function KeyGate() {
 
     return (
         <main>
-            <h1>weboptions</h1>
+            <h1>Web Options</h1>
             <form onSubmit={onSubmit}>
                 <p>
                     <label htmlFor="api-key">API key</label>
