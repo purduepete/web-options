@@ -379,7 +379,7 @@
         <header>
             <div class="bar">
                 <h1>weboptions — Site Review</h1>
-                <span class="tag">steps 0 and 3 complete · step 1 all but the runbook</span>
+                <span class="tag">steps 0, 1 and 3 complete</span>
                 <span class="spacer"></span>
                 <button
                     class="icon-btn"
@@ -532,17 +532,17 @@
                         <text class="t s" x="111" y="68" text-anchor="middle">port + golden JSON</text>
                         <text class="t s" x="111" y="84" text-anchor="middle">parity harness</text>
 
-                        <rect class="node now" x="222" y="26" width="170" height="68"></rect>
-                        <text class="t" x="307" y="50" text-anchor="middle">1 · Failure states</text>
-                        <text class="t s" x="307" y="68" text-anchor="middle">key · DB · offline ✓</text>
+                        <rect class="node done" x="222" y="26" width="170" height="68"></rect>
+                        <text class="t" x="307" y="50" text-anchor="middle">1 · Failure states ✓</text>
+                        <text class="t s" x="307" y="68" text-anchor="middle">key · DB · offline</text>
                         <text class="t s" x="307" y="84" text-anchor="middle">runbook · backup</text>
 
-                        <rect class="node" x="394" y="26" width="170" height="68"></rect>
+                        <rect class="node now" x="394" y="26" width="170" height="68"></rect>
                         <text class="t" x="479" y="50" text-anchor="middle">2 · Page contract</text>
                         <text class="t s" x="479" y="68" text-anchor="middle">PageHead · WeekNav</text>
                         <text class="t s" x="479" y="84" text-anchor="middle">titles · a11y</text>
 
-                        <rect class="node gate" x="566" y="26" width="170" height="68"></rect>
+                        <rect class="node done" x="566" y="26" width="170" height="68"></rect>
                         <text class="t" x="651" y="50" text-anchor="middle">3 · Retire Flask ✓</text>
                         <text class="t s" x="651" y="68" text-anchor="middle">parity gate passes</text>
                         <text class="t s" x="651" y="84" text-anchor="middle">delete · rewrite README</text>
@@ -692,7 +692,9 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="w"><span class="pill no">dropped</span> Unauthorized handling on the settings pages</td>
+                            <td class="w">
+                                <span class="pill no">dropped</span> Unauthorized handling on the settings pages
+                            </td>
                             <td class="m">
                                 Both pages turned out to be static: they read the identity the provider already holds
                                 and fetch nothing. There is no request to fail. The gap was really in the key prompt,
@@ -714,7 +716,9 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="w"><span class="pill later">needs you</span> Rotation and backup, written down</td>
+                            <td class="w">
+                                <span class="pill later">needs you</span> Rotation and backup, written down
+                            </td>
                             <td class="m">
                                 How the read-only SQL password rotates, how an API key is minted and revoked, and what
                                 gets backed up: <code>.secrets</code>, <code>opt.api_key</code>, migration history, the
@@ -868,9 +872,9 @@
                             <td class="m">
                                 Moved ahead of step 2 and finished on 2026-08-16, commit <code>000f203</code>. The
                                 parity gate passed 6 of 6 against the frozen fixtures, which was the condition.
-                                <code>server/</code>, <code>web/</code> and <code>scripts/capture-golden.ps1</code>
-                                are gone; the fixtures and <code>parity.test.ts</code> stay, and are now the only
-                                record of the old behaviour. README rewritten for the stack that actually exists.
+                                <code>server/</code>, <code>web/</code> and <code>scripts/capture-golden.ps1</code> are
+                                gone; the fixtures and <code>parity.test.ts</code> stay, and are now the only record of
+                                the old behaviour. README rewritten for the stack that actually exists.
                                 <code>server/secrets.ini</code> was untracked so it survived on disk, and its ignore
                                 rule was widened to a bare <code>secrets.ini</code> rather than dropped.
                             </td>
@@ -1084,10 +1088,21 @@
                 <table>
                     <tbody>
                         <tr>
+                            <td class="w">Minting keys from the page</td>
+                            <td class="m">
+                                <span class="pill later">open</span> Wanted, the way webportfolio does it. It collides
+                                with the read-only design: <code>weboptions_ro</code> holds SELECT and nothing else, so
+                                a settings page that mints a key needs INSERT and UPDATE on <code>opt.api_key</code>.
+                                Granting that on one table keeps the trading data unwritable, but it means any valid key
+                                can mint more, which makes a leaked key permanent rather than revocable. Needs a
+                                decision before it is built.
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="w"><code>/calendars</code></td>
                             <td class="m">
-                                Delete it. Done: the route, page, CSS and tests are gone. Latest Calendar plus the
-                                arrow keys is the archive.
+                                Delete it. Done: the route, page, CSS and tests are gone. Latest Calendar plus the arrow
+                                keys is the archive.
                             </td>
                         </tr>
                         <tr>
@@ -1109,8 +1124,7 @@
             </section>
 
             <footer>
-                Site review · 2026-08-16 · reviewed by GPT-5.5 and MAI-Code-1.1-Flash · steps 0 and 3 complete, step 1
-                all but the runbook
+                Site review · 2026-08-16 · reviewed by GPT-5.5 and MAI-Code-1.1-Flash · steps 0, 1 and 3 complete
             </footer>
         </main>
 

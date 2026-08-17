@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0b0e16" />
+        <title>weboptions — Runbook</title>
+        <script>
+            // Set the theme before first paint so there is no flash of the wrong palette.
+            (function () {
+                try {
+                    var t = localStorage.getItem('theme');
+                    if (t !== 'light' && t !== 'dark')
+                        t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', t);
+                    var m = document.querySelector('meta[name="theme-color"]');
+                    if (m) m.setAttribute('content', t === 'light' ? '#f5f7fb' : '#0b0e16');
+                } catch (e) {
+                    /* private mode: fall through to the dark default */
+                }
+            })();
+        </script>
+        <style>
+            :root {
+                --radius: 0;
+                --bg: #0b0e16;
+                --surface: #141a28;
+                --surface-2: #1d2538;
+                --surface-3: #28324a;
+                --text: #e7ecf5;
+                --muted: #9aa6bd;
+                --border: #28324a;
+                --border-strong: #3a465f;
+                --accent: #6366f1;
+                --accent-2: #8b5cf6;
+                --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                --on-accent: #fff;
+                --glass: rgba(20, 26, 40, 0.72);
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+                --ok: #34d399;
+                --bad: #f87171;
+                --warn: #fbbf24;
+            }
+            :root[data-theme='light'] {
+                --bg: #f5f7fb;
+                --surface: #ffffff;
+                --surface-2: #f1f3f9;
+                --surface-3: #e5e9f2;
+                --text: #1a2233;
+                --muted: #5b6678;
+                --border: #e5e9f2;
+                --border-strong: #cdd5e4;
+                --glass: rgba(255, 255, 255, 0.72);
+                --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                --ok: #059669;
+                --bad: #dc2626;
+                --warn: #b45309;
+            }
+            @media (prefers-color-scheme: light) {
+                :root:not([data-theme='dark']) {
+                    --bg: #f5f7fb;
+                    --surface: #ffffff;
+                    --surface-2: #f1f3f9;
+                    --surface-3: #e5e9f2;
+                    --text: #1a2233;
+                    --muted: #5b6678;
+                    --border: #e5e9f2;
+                    --border-strong: #cdd5e4;
+                    --glass: rgba(255, 255, 255, 0.72);
+                    --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                    --ok: #059669;
+                    --bad: #dc2626;
+                    --warn: #b45309;
+                }
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
+            }
+            .bar {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 14px 24px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            .bar h1 {
+                font-size: 17px;
+                margin: 0;
+                letter-spacing: -0.01em;
+                font-weight: 650;
+            }
+            .bar .tag {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+                border: 1px solid var(--border-strong);
+                padding: 3px 8px;
+            }
+            .bar .spacer {
+                flex: 1;
+            }
+            .toggle {
+                background: var(--surface-2);
+                color: var(--text);
+                border: 1px solid var(--border-strong);
+                padding: 6px 12px;
+                font-size: 13px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+            }
+            .toggle:hover {
+                background: var(--surface-3);
+            }
+            .toggle svg {
+                width: 15px;
+                height: 15px;
+                stroke: currentColor;
+                fill: none;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            main {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 28px 24px 80px;
+            }
+            section {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                margin-bottom: 22px;
+                box-shadow: var(--shadow);
+            }
+            section > h2 {
+                margin: 0;
+                padding: 14px 20px;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: var(--muted);
+                border-bottom: 1px solid var(--border);
+                background: var(--surface-2);
+                font-weight: 650;
+            }
+            .body {
+                padding: 18px 20px;
+            }
+            .body > *:first-child {
+                margin-top: 0;
+            }
+            .body > *:last-child {
+                margin-bottom: 0;
+            }
+            h3 {
+                font-size: 15px;
+                margin: 22px 0 8px;
+                font-weight: 650;
+            }
+            p {
+                margin: 0 0 12px;
+            }
+            .lede {
+                color: var(--muted);
+            }
+            ol,
+            ul {
+                margin: 0 0 12px;
+                padding-left: 22px;
+            }
+            li {
+                margin-bottom: 7px;
+            }
+            code {
+                font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+                font-size: 12.5px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 1px 5px;
+            }
+            pre {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 14px 16px;
+                overflow-x: auto;
+                margin: 0 0 14px;
+            }
+            pre code {
+                background: none;
+                border: none;
+                padding: 0;
+                font-size: 12.5px;
+                line-height: 1.65;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0 0 14px;
+                font-size: 14px;
+            }
+            th,
+            td {
+                text-align: left;
+                padding: 9px 12px;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+            }
+            thead th {
+                background: var(--surface-2);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--muted);
+            }
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+            td.k {
+                width: 34%;
+                font-weight: 600;
+            }
+            .pill {
+                display: inline-block;
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                padding: 2px 7px;
+                border: 1px solid currentColor;
+                margin-right: 7px;
+                vertical-align: 1px;
+            }
+            .pill.ok {
+                color: var(--ok);
+            }
+            .pill.bad {
+                color: var(--bad);
+            }
+            .pill.warn {
+                color: var(--warn);
+            }
+            .note {
+                border-left: 3px solid var(--accent);
+                background: var(--surface-2);
+                padding: 12px 16px;
+                margin: 0 0 14px;
+            }
+            .note.warn {
+                border-left-color: var(--warn);
+            }
+            .note p:last-child {
+                margin-bottom: 0;
+            }
+            footer {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 0 24px 40px;
+                color: var(--muted);
+                font-size: 13px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="bar">
+                <h1>weboptions runbook</h1>
+                <span class="tag">jimbrownhome</span>
+                <span class="spacer"></span>
+                <button class="toggle" id="themeBtn" type="button" aria-label="Toggle theme">
+                    <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+                    <span id="themeLabel">Light</span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section>
+                <h2>What is running</h2>
+                <div class="body">
+                    <p class="lede">
+                        One Node process. It serves the built React app and the API from the same port, so there is no
+                        proxy, no second server and no CORS to get wrong. Everything below assumes that.
+                    </p>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td class="k">Process</td>
+                                <td><code>node backend/dist/server.js</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k">Port</td>
+                                <td>5057, on every interface, so the LAN reaches it</td>
+                            </tr>
+                            <tr>
+                                <td class="k">Started by</td>
+                                <td>Task Scheduler, at boot, running whether or not anyone logs in</td>
+                            </tr>
+                            <tr>
+                                <td class="k">Secrets</td>
+                                <td>
+                                    <code>.secrets\weboptions_ro.password</code>, read by the launcher, never in the
+                                    repo
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Logs</td>
+                                <td><code>.run\weboptions.log</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k">Database</td>
+                                <td>
+                                    Azure SQL <code>webportfolio</code>, login <code>weboptions_ro</code>, SELECT only
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Timezone</td>
+                                <td>
+                                    Pinned to <code>America/Los_Angeles</code>. Week boundaries are machine-local, so an
+                                    unpinned box silently shows the wrong week.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section>
+                <h2>Is it healthy</h2>
+                <div class="body">
+                    <p>
+                        Yes, <code>/readyz</code> exists. It is the one to use. <code>/healthz</code> only proves the
+                        process is answering, which it will keep doing happily while the database is unreachable.
+                    </p>
+                    <pre><code>curl http://jimbrownhome:5057/readyz</code></pre>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Answer</th>
+                                <th>Means</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="k">
+                                    <span class="pill ok">200</span><code>{"status":"ok","database":"ok"}</code>
+                                </td>
+                                <td>
+                                    Healthy, and more than it looks. That check reads a row from
+                                    <code>opt.api_key</code>, so it proves the server is reachable, the login works, the
+                                    schema is deployed and the grants are still in place.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill warn">503</span><code>database_unreachable</code></td>
+                                <td>
+                                    The process is fine, SQL is not. Check the network first, then whether Azure SQL is
+                                    up. Also expect this for a second or two right after a restart, while the connection
+                                    pool warms. Retry once before believing it.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill bad">503</span><code>database_login_failed</code></td>
+                                <td>
+                                    The password in <code>.secrets</code> no longer matches the login. Nothing else
+                                    produces this.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill bad">no answer</span></td>
+                                <td>The process is down. Restart it, then read the log.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        From a browser, the app tells you the same thing in words. A dead server reads
+                        <em>Cannot reach the Web Options server</em>, a rejected login reads
+                        <em>the database rejected its login</em>, and a bad key reads <em>That key was rejected</em>.
+                        Those are deliberately three different messages.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Start, stop, restart</h2>
+                <div class="body">
+                    <p>All manual, by decision. Nothing auto-restarts on crash.</p>
+                    <pre><code>Start-ScheduledTask -TaskName WebOptions
+Stop-ScheduledTask  -TaskName WebOptions
+Get-ScheduledTask   -TaskName WebOptions | Get-ScheduledTaskInfo</code></pre>
+                    <p>
+                        If the task says it is running but the port is not, the process died without the task noticing.
+                        Find and kill the listener, then start the task again.
+                    </p>
+                    <pre><code>Get-NetTCPConnection -LocalPort 5057 -State Listen |
+    Select-Object -First 1 -ExpandProperty OwningProcess |
+    Stop-Process -Id { $_ } -Force</code></pre>
+                </div>
+            </section>
+
+            <section>
+                <h2>Update: pull and rebuild</h2>
+                <div class="body">
+                    <p>
+                        The build is not committed, so a pull alone changes nothing that is running. Every update is
+                        these five steps, in this order.
+                    </p>
+                    <pre><code>cd C:\weboptions
+Stop-ScheduledTask -TaskName WebOptions
+
+git pull
+npm ci                 # npm install if you want to allow lockfile drift
+npm run build          # shared -> backend -> frontend, in that order
+
+Start-ScheduledTask -TaskName WebOptions
+curl http://localhost:5057/readyz</code></pre>
+                    <p>
+                        <code>npm run build</code> is the whole thing. It compiles <code>shared</code> first because
+                        both other workspaces import it, then the backend, then Vite bundles the front end into
+                        <code>frontend\dist</code>. That last folder is what the server hands to the browser.
+                    </p>
+                    <div class="note">
+                        <p>
+                            <strong>Run the migrations only when the numbered SQL changed.</strong> Check
+                            <code>database\migrations</code> in the diff. If it did, run
+                            <code>npm run migrate</code> with operator credentials, not the read-only login, and do it
+                            before starting the task.
+                        </p>
+                    </div>
+                    <p>
+                        Sanity check after every update: <code>/readyz</code> returns ok, the front page lists this
+                        week's signals, and a deep link like <code>/calendars/2026-08-10</code> loads on its own rather
+                        than 404ing. That last one catches a broken static build, which is otherwise invisible until
+                        someone bookmarks a page.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>The Task Scheduler entry</h2>
+                <div class="body">
+                    <p>
+                        The task runs a launcher script rather than <code>node</code> directly, because it has to read
+                        the password out of <code>.secrets</code> and set the timezone first. Register it once, from an
+                        elevated shell.
+                    </p>
+                    <pre><code>$action  = New-ScheduledTaskAction -Execute 'pwsh.exe' `
+    -Argument '-NoProfile -WindowStyle Hidden -File C:\weboptions\scripts\serve.ps1' `
+    -WorkingDirectory 'C:\weboptions'
+$trigger = New-ScheduledTaskTrigger -AtStartup
+$set     = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0
+
+Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
+    -Settings $set -User 'SYSTEM' -RunLevel Limited</code></pre>
+                    <p>
+                        <code>ExecutionTimeLimit</code> of zero matters. The default kills a task after 3 days, which
+                        would look exactly like a random unexplained outage.
+                    </p>
+                    <p>The launcher sets five variables and starts the process:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="k"><code>DB_SERVER</code></td>
+                                <td><code>sqlgkhw25ijhyzzy.database.windows.net</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k"><code>DB_NAME</code></td>
+                                <td><code>webportfolio</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k"><code>DB_USER</code></td>
+                                <td><code>weboptions_ro</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k"><code>DB_PASSWORD</code></td>
+                                <td>read from <code>.secrets\weboptions_ro.password</code></td>
+                            </tr>
+                            <tr>
+                                <td class="k"><code>WEBOPTIONS_WEB_ROOT</code></td>
+                                <td>
+                                    <code>frontend\dist</code>. Without it the API runs but serves no app. Point it at a
+                                    folder with no <code>index.html</code> and the process refuses to start, which is on
+                                    purpose.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><code>TZ</code></td>
+                                <td><code>America/Los_Angeles</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="note warn">
+                        <p>
+                            <code>scripts\serve.ps1</code> does not exist yet. It is the last piece of the deploy and
+                            belongs with step 4, not here.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Logs</h2>
+                <div class="body">
+                    <p>
+                        Everything goes to <code>.run\weboptions.log</code>: one line per request from morgan, the
+                        listening address and timezone at startup, and any failure classified by the error middleware.
+                        Nothing sensitive is written. Connection strings and driver internals are deliberately kept out.
+                    </p>
+                    <pre><code>Get-Content .run\weboptions.log -Tail 50
+Get-Content .run\weboptions.log -Wait          # follow live
+Select-String -Path .run\weboptions.log -Pattern '\[weboptions\]'   # failures only</code></pre>
+                    <p>
+                        There is no rotation. A single-user LAN app writes very little, but the file grows forever, so
+                        truncate it when it gets annoying. Nothing reads it back.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Keys</h2>
+                <div class="body">
+                    <p>
+                        A key looks like <code>woak_</code> plus 48 characters. Only its hash is stored, in
+                        <code>opt.api_key</code>, so the value appears once at mint time and never again. It is typed
+                        into the browser once and kept in local storage under <code>weboptions_api_key</code>.
+                    </p>
+                    <pre><code>npm run keys -- --list
+npm run keys -- --mint "iPad"
+npm run keys -- --revoke 3</code></pre>
+                    <p>
+                        These need operator credentials, since <code>weboptions_ro</code> cannot write. Revoking takes
+                        effect on the next request, and that browser drops back to the unlock prompt.
+                    </p>
+                    <p>
+                        The read-only SQL password does not rotate on a schedule. If it is ever changed, update
+                        <code>.secrets\weboptions_ro.password</code> and restart. <code>/readyz</code> will say
+                        <code>database_login_failed</code> until you do.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Backup</h2>
+                <div class="body">
+                    <p>Four things exist. Only two of them actually need protecting.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Thing</th>
+                                <th>Verdict</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="k"><span class="pill bad">back up</span> <code>.secrets</code></td>
+                                <td>
+                                    The only thing here that is not in git and cannot be regenerated by reading
+                                    something else. Two files, a few hundred bytes. Copy them somewhere encrypted and
+                                    off this machine, and copy them again whenever they change, which is almost never.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill bad">back up</span> The ingested calendars</td>
+                                <td>
+                                    <code>opt.calendar_week</code>, <code>calendar_day</code>,
+                                    <code>calendar_trade</code>. This is the one genuinely irreplaceable dataset, since
+                                    it came from newsletters you no longer hold. It rides along with whatever already
+                                    backs up the <code>webportfolio</code> database. Confirm that, then stop worrying
+                                    about it.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill ok">skip</span> <code>opt.api_key</code></td>
+                                <td>
+                                    Hashes only. Losing them costs one command and re-typing a key on each device. Not
+                                    worth a backup policy.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k"><span class="pill ok">skip</span> Migrations and fixtures</td>
+                                <td>
+                                    Both are in git and pushed to GitHub. The golden fixtures matter historically, but
+                                    they are committed, so they are already backed up twice.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        In short: copy <code>.secrets</code> off the box, confirm the Azure SQL database is in a backup
+                        you trust, and everything else restores from <code>git clone</code> plus
+                        <code>npm run migrate</code>.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2>When something is wrong</h2>
+                <div class="body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Symptom</th>
+                                <th>Look here first</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="k">Nothing answers on 5057</td>
+                                <td>
+                                    Process is down. <code>Start-ScheduledTask</code>, then read the tail of the log for
+                                    why it stopped.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Page loads, no data, says it cannot reach the server</td>
+                                <td>
+                                    The static files are being served but the API is not answering. Almost always means
+                                    a stale <code>frontend\dist</code> against a stopped process. Check
+                                    <code>/readyz</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Blank page, API works</td>
+                                <td>
+                                    <code>WEBOPTIONS_WEB_ROOT</code> is unset or the build did not run. Rebuild and
+                                    restart.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Deep links 404, front page fine</td>
+                                <td>
+                                    The SPA fallback is not running, which means the app is being served by something
+                                    other than this process.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Wrong week showing</td>
+                                <td>
+                                    Timezone. Confirm the startup line in the log says
+                                    <code>America/Los_Angeles</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Everything asks for a key again</td>
+                                <td>
+                                    The key was revoked, or browser storage was cleared. Mint a new one and paste it in.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer>Runbook · 2026-08-16 · one process, port 5057, manual restart, no auto-recovery by decision</footer>
+
+        <script>
+            (function () {
+                var SUN =
+                    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+                var MOON = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+                var btn = document.getElementById('themeBtn');
+                var icon = document.getElementById('themeIcon');
+                var label = document.getElementById('themeLabel');
+
+                function paint() {
+                    var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+                    icon.innerHTML = dark ? SUN : MOON;
+                    label.textContent = dark ? 'Light' : 'Dark';
+                }
+                btn.addEventListener('click', function () {
+                    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', next);
+                    try {
+                        localStorage.setItem('theme', next);
+                    } catch (e) {
+                        /* private mode: the choice just will not stick */
+                    }
+                    var m = document.querySelector('meta[name="theme-color"]');
+                    if (m) m.setAttribute('content', next === 'light' ? '#f5f7fb' : '#0b0e16');
+                    paint();
+                });
+                paint();
+            })();
+        </script>
+    </body>
+</html>
