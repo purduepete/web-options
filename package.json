@@ -21,7 +21,7 @@
         "serve": "pwsh -NoProfile -File scripts/weboptions.ps1 start",
         "serve:stop": "pwsh -NoProfile -File scripts/weboptions.ps1 stop",
         "serve:status": "pwsh -NoProfile -File scripts/weboptions.ps1 status",
-        "start": "node backend/dist/server.js",
+        "start": "pwsh -NoProfile -File scripts/serve.ps1",
         "test": "vitest run",
         "test:watch": "vitest",
         "migrate": "tsx backend/tools/migrate.ts",

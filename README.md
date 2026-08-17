@@ -64,12 +64,15 @@ Vite, so the API serves the built front end itself. One process, one port.
 
 ```powershell
 npm run build
-$env:WEBOPTIONS_WEB_ROOT = 'frontend\dist'
 npm start
 ```
 
-Without `WEBOPTIONS_WEB_ROOT` the API runs but serves no app. Point it at a folder
-with no `index.html` and the process refuses to start rather than serving nothing.
+`npm start` runs `scripts/serve.ps1`, which reads the read-only password from
+`.secrets`, points `WEBOPTIONS_WEB_ROOT` at `frontend/dist`, pins the timezone,
+and runs node in the foreground so Task Scheduler can own the process. It refuses
+to start if the build is missing rather than serving a blank page.
+
+Everything it prints goes to `.run\weboptions.log` as well as the console.
 
 `docs/runbook.html` covers the rest: the Task Scheduler entry, the update procedure,
 what to check when something looks wrong.

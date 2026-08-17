@@ -483,7 +483,7 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                         <code>ExecutionTimeLimit</code> of zero matters. The default kills a task after 3 days, which
                         would look exactly like a random unexplained outage.
                     </p>
-                    <p>The launcher sets five variables and starts the process:</p>
+                    <p>The launcher sets the environment and then runs node in the foreground:</p>
                     <table>
                         <thead>
                             <tr>
@@ -522,10 +522,12 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                             </tr>
                         </tbody>
                     </table>
-                    <div class="note warn">
+                    <div class="note">
                         <p>
-                            <code>scripts\serve.ps1</code> does not exist yet. It is the last piece of the deploy and
-                            belongs with step 4, not here.
+                            <code>scripts\serve.ps1</code> checks the build and the password file before it starts
+                            anything, so a missing <code>npm run build</code> fails with a sentence about it rather than
+                            booting an API with no app. The same script backs <code>npm start</code>, which is how you
+                            run it by hand.
                         </p>
                     </div>
                 </div>
