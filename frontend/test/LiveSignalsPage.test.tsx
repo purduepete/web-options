@@ -102,6 +102,14 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByRole('region', { name: 'Tuesday Aug 12' })).toBeTruthy();
     });
 
+    it('publishes the head height the day names pin below', async () => {
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        // jsdom measures everything as nothing, so only the wiring is checked.
+        expect(document.documentElement.style.getPropertyValue('--signals-head-height')).toBe('0px');
+    });
+
     it('splits a day into top picks and risk tiers', async () => {
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });

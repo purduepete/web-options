@@ -7,10 +7,17 @@
 }
 
 .signals-head {
+    position: sticky;
+    top: var(--navbar-height, 0px);
+    z-index: 5;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
+    /* The grid slides underneath, so the bar brings its own backdrop and holds
+       a little clear space open below itself. */
+    padding-bottom: 0.75rem;
+    background: var(--bg);
 }
 
 .signals-head h1 {
@@ -64,4 +71,18 @@
     border: var(--border-width) solid var(--danger);
     color: var(--danger);
     font-size: 0.85rem;
+}
+
+/* The day names stay in view while a long week scrolls past. Scoped to this
+   page: the calendars share the grid stylesheet but not the bar above it. */
+.signals-page .day-card {
+    /* `hidden` would make the card a scroll container of its own, leaving the
+       head with nothing to stick to. `clip` still clips. */
+    overflow: clip;
+}
+
+.signals-page .day-head {
+    position: sticky;
+    top: calc(var(--navbar-height, 0px) + var(--signals-head-height, 0px));
+    z-index: 2;
 }

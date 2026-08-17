@@ -117,9 +117,15 @@
 }
 
 html,
-body,
-#root {
+body {
     height: 100%;
+}
+
+/* As tall as the page rather than the screen. A sticky child can only travel
+   the height of its parent, and the navbar lives in here, so capping this at
+   the viewport let the bar scroll away after the first screenful. */
+#root {
+    min-height: 100%;
 }
 
 /* One week's page is longer than the viewport and the next is not, and losing

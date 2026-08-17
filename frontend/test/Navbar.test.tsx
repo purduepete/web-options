@@ -73,6 +73,13 @@ describe('Navbar on desktop', () => {
         expect(menu.getAttribute('aria-expanded')).toBe('false');
     });
 
+    it('publishes its height for the headers that pin below it', () => {
+        renderNavbar();
+
+        // jsdom measures everything as nothing, so only the wiring is checked.
+        expect(document.documentElement.style.getPropertyValue('--navbar-height')).toBe('0px');
+    });
+
     it('opens and closes the menu from Ctrl+backslash', async () => {
         const user = userEvent.setup();
         renderNavbar();

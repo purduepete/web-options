@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { usePublishedHeight } from '../hooks/usePublishedHeight';
 import {
     ActivityIcon,
     CalendarIcon,
@@ -43,6 +44,9 @@ export function Navbar({
     const [openSection, setOpenSection] = useState<string | null>(null);
     const { pathname } = useLocation();
     const navRef = useRef<HTMLElement>(null);
+
+    // The pages pin their own headers under this one.
+    usePublishedHeight(navRef, '--navbar-height');
 
     const closeAll = useCallback(() => {
         setMenuOpen(false);
