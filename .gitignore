@@ -10,6 +10,9 @@ dist/
 # Pid files and logs written by scripts/weboptions.ps1
 .run/
 
+# Scratch dumps of the source, made to hand a whole area to a reviewer
+src_files.txt
+
 # Never commit the real API key / secrets
 server/secrets.ini
 .secrets/
