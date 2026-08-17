@@ -691,6 +691,24 @@ npm run keys -- --revoke 3</code></pre>
                                 </td>
                             </tr>
                             <tr>
+                                <td class="k">Log says <code>did not start: Missing ...\backend\dist\server.js</code></td>
+                                <td>
+                                    The build outputs were wiped, usually by a <code>git clean -xdf</code>, which takes
+                                    <code>backend\dist</code>, <code>frontend\dist</code>, <code>.run</code> and
+                                    <code>node_modules</code> with it. Run <code>npm ci</code> then
+                                    <code>npm run build</code> before starting the task. If
+                                    <code>tsc is not recognized</code>, that confirms
+                                    <code>node_modules</code> went too.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="k">Log file <code>.run\weboptions.log</code> does not exist</td>
+                                <td>
+                                    <code>serve.ps1</code> writes a line before it does anything else, so a missing log
+                                    means it never ran. The task did not launch, rather than the app failing.
+                                </td>
+                            </tr>
+                            <tr>
                                 <td class="k">Page loads, no data, says it cannot reach the server</td>
                                 <td>
                                     The static files are being served but the API is not answering. Almost always means
