@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0b0e16" />
+        <title>weboptions — Site Review</title>
+        <script>
+            // Set the theme before first paint so there is no flash of the wrong palette.
+            (function () {
+                try {
+                    var t = localStorage.getItem('theme');
+                    if (t !== 'light' && t !== 'dark')
+                        t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', t);
+                    var m = document.querySelector('meta[name="theme-color"]');
+                    if (m) m.setAttribute('content', t === 'light' ? '#f5f7fb' : '#0b0e16');
+                } catch (e) {
+                    /* private mode: fall through to the dark default */
+                }
+            })();
+        </script>
+        <style>
+            :root {
+                --radius: 0;
+                --bg: #0b0e16;
+                --surface: #141a28;
+                --surface-2: #1d2538;
+                --surface-3: #28324a;
+                --text: #e7ecf5;
+                --muted: #9aa6bd;
+                --border: #28324a;
+                --border-strong: #3a465f;
+                --accent: #6366f1;
+                --accent-2: #8b5cf6;
+                --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                --on-accent: #fff;
+                --glass: rgba(20, 26, 40, 0.72);
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+                --keep: #34d399;
+                --cut: #f87171;
+                --gate: #fbbf24;
+            }
+            :root[data-theme='light'] {
+                --bg: #f5f7fb;
+                --surface: #ffffff;
+                --surface-2: #f1f3f9;
+                --surface-3: #e5e9f2;
+                --text: #1a2233;
+                --muted: #5b6678;
+                --border: #e5e9f2;
+                --border-strong: #cdd5e4;
+                --glass: rgba(255, 255, 255, 0.72);
+                --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                --keep: #059669;
+                --cut: #dc2626;
+                --gate: #b45309;
+            }
+            @media (prefers-color-scheme: light) {
+                :root:not([data-theme='dark']) {
+                    --bg: #f5f7fb;
+                    --surface: #ffffff;
+                    --surface-2: #f1f3f9;
+                    --surface-3: #e5e9f2;
+                    --text: #1a2233;
+                    --muted: #5b6678;
+                    --border: #e5e9f2;
+                    --border-strong: #cdd5e4;
+                    --glass: rgba(255, 255, 255, 0.72);
+                    --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.08);
+                    --keep: #059669;
+                    --cut: #dc2626;
+                    --gate: #b45309;
+                }
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                line-height: 1.55;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
+            }
+            .bar {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 14px 24px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+            .bar h1 {
+                font-size: 17px;
+                margin: 0;
+                letter-spacing: -0.01em;
+                font-weight: 650;
+            }
+            .bar .tag {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--on-accent);
+                background: var(--accent-grad);
+                padding: 3px 8px;
+            }
+            .bar .spacer {
+                flex: 1;
+            }
+            .icon-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                cursor: pointer;
+                background: var(--surface);
+                color: var(--text);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                transition:
+                    background 0.15s ease,
+                    border-color 0.15s ease,
+                    transform 0.15s ease;
+            }
+            .icon-btn:hover {
+                background: var(--surface-2);
+                border-color: var(--border-strong);
+            }
+            .icon-btn:active {
+                transform: translateY(1px) scale(0.99);
+            }
+
+            main {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 28px 24px 80px;
+            }
+            .lede {
+                color: var(--muted);
+                max-width: 78ch;
+                margin: 0 0 32px;
+            }
+            .lede b {
+                color: var(--text);
+                font-weight: 620;
+            }
+
+            section {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                padding: 22px 24px 26px;
+                margin-bottom: 28px;
+            }
+            section > h2 {
+                font-size: 15px;
+                margin: 0 0 4px;
+                letter-spacing: -0.01em;
+                font-weight: 650;
+                display: flex;
+                align-items: center;
+                gap: 9px;
+            }
+            section > h2 svg {
+                color: var(--accent-2);
+                flex: none;
+            }
+            section > p.sub {
+                margin: 0 0 18px;
+                color: var(--muted);
+                font-size: 13.5px;
+                max-width: 90ch;
+            }
+            section h3 {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: var(--muted);
+                font-weight: 650;
+                margin: 26px 0 10px;
+            }
+            section h3:first-of-type {
+                margin-top: 6px;
+            }
+
+            .figure {
+                width: 100%;
+                overflow-x: auto;
+                margin-bottom: 6px;
+            }
+            .figure svg {
+                display: block;
+                min-width: 900px;
+                width: 100%;
+                height: auto;
+            }
+            .node {
+                fill: var(--surface-2);
+                stroke: var(--border-strong);
+                stroke-width: 1.25;
+            }
+            .node.now {
+                stroke: var(--accent);
+                stroke-width: 1.9;
+            }
+            .node.done {
+                stroke: var(--keep);
+                stroke-width: 1.9;
+            }
+            .node.gate {
+                stroke: var(--gate);
+                stroke-width: 1.75;
+            }
+            .edge {
+                fill: none;
+                stroke: var(--border-strong);
+                stroke-width: 1.5;
+            }
+            .head {
+                fill: var(--border-strong);
+            }
+            .t {
+                fill: var(--text);
+                font-size: 13px;
+                font-weight: 620;
+            }
+            .t.s {
+                fill: var(--muted);
+                font-size: 11px;
+                font-weight: 450;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13.5px;
+            }
+            th {
+                text-align: left;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: var(--muted);
+                font-weight: 650;
+                padding: 0 12px 8px 0;
+                border-bottom: 1px solid var(--border-strong);
+                white-space: nowrap;
+            }
+            td {
+                padding: 9px 12px 9px 0;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+            }
+            tr:last-child td {
+                border-bottom: none;
+            }
+            td.w {
+                width: 30%;
+                color: var(--text);
+                font-weight: 620;
+            }
+            td.m {
+                color: var(--muted);
+            }
+
+            .pill {
+                display: inline-block;
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                font-weight: 650;
+                padding: 2px 7px;
+                border: 1px solid var(--border-strong);
+                white-space: nowrap;
+            }
+            .pill.do {
+                color: var(--keep);
+                border-color: var(--keep);
+            }
+            .pill.no {
+                color: var(--cut);
+                border-color: var(--cut);
+            }
+            .pill.later {
+                color: var(--gate);
+                border-color: var(--gate);
+            }
+
+            .notes {
+                margin: 16px 0 0;
+                padding: 0;
+                list-style: none;
+                display: grid;
+                gap: 8px;
+            }
+            .notes li {
+                font-size: 13px;
+                color: var(--muted);
+                padding-left: 16px;
+                position: relative;
+            }
+            .notes li::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 8px;
+                width: 6px;
+                height: 6px;
+                background: var(--accent-2);
+            }
+            .notes li b {
+                color: var(--text);
+                font-weight: 620;
+            }
+
+            .cols {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 24px;
+            }
+            .verdict {
+                border: 1px solid var(--border-strong);
+                padding: 16px 18px;
+                background: var(--surface-2);
+            }
+            .verdict h4 {
+                margin: 0 0 2px;
+                font-size: 13.5px;
+                font-weight: 650;
+            }
+            .verdict .who {
+                font-size: 11px;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                margin: 0 0 10px;
+            }
+            .verdict p {
+                margin: 0;
+                font-size: 13px;
+                color: var(--muted);
+            }
+
+            code {
+                font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+                font-size: 12.5px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 1px 5px;
+            }
+            footer {
+                color: var(--muted);
+                font-size: 12.5px;
+                text-align: center;
+                padding-bottom: 40px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="bar">
+                <h1>weboptions — Site Review</h1>
+                <span class="tag">step 0 complete · parity gate green</span>
+                <span class="spacer"></span>
+                <button
+                    class="icon-btn"
+                    id="themeBtn"
+                    type="button"
+                    aria-label="Toggle colour theme"
+                    title="Toggle theme"
+                >
+                    <svg
+                        id="sunIcon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path
+                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+                        ></path>
+                    </svg>
+                    <svg
+                        id="moonIcon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        style="display: none"
+                    >
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <p class="lede">
+                Seven pages, seven routes, 293 passing tests. Reviewed on three axes: against
+                <code>webportfolio</code>, for internal consistency, and for what the roadmap actually needs.
+                <b>24 findings.</b> Two independent reviews, GPT-5.5 and MAI-Code-1.1-Flash, both returned
+                APPROVE-WITH-CHANGES and both moved the same item to the front of the queue.
+            </p>
+
+            <!-- ============================================================ 1 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12 9v4M12 17h.01"></path>
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    </svg>
+                    What the review changed
+                </h2>
+                <p class="sub">
+                    My draft put the UI cleanup first and the migration last. Both reviewers rejected that order for the
+                    same reason, without seeing each other's answer.
+                </p>
+                <ul class="notes">
+                    <li>
+                        <b>The Flask baseline gets frozen first.</b> The old server is still live and still hardcodes
+                        port 5057, the port the Express backend wants. Every week both stacks coexist, the parity target
+                        drifts. Capture the golden JSON before touching another line of React, or Phase 8 is measuring
+                        against a moving reference.
+                    </li>
+                    <li>
+                        <b>Failure states outrank cosmetics.</b> A revoked key, an unreachable database, a stopped API
+                        and a genuinely empty week currently all look similar. That is worth more than a shared heading
+                        component.
+                    </li>
+                    <li>
+                        <b>My page-contract test was wrong.</b> I proposed asserting every route renders exactly one
+                        non-empty <code>h1</code>. Two pages deliberately render an empty one while loading, which is
+                        the behaviour I committed this morning. The contract should be about behaviour: one landmark,
+                        a real accessible name once loaded, errors announced, title and focus updated on navigation.
+                    </li>
+                    <li>
+                        <b>Six items were cut outright</b> as over-built for a 7-page single-user local app. See the cut
+                        list below.
+                    </li>
+                    <li>
+                        <b>The whole operations story was missing.</b> Neither my draft nor the phase diagram says how
+                        jimbrownhome starts the app after a reboot, where the logs go, how credentials rotate, or what
+                        gets backed up.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ============================================================ 2 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+                    </svg>
+                    The revised order
+                </h2>
+                <p class="sub">
+                    Six steps. Step 0 is the one that unblocks everything else, and nothing after it is safe to start
+                    until the fixtures exist.
+                </p>
+                <div class="figure">
+                    <svg viewBox="0 0 1240 150" role="img" aria-label="Six work steps in order">
+                        <defs>
+                            <marker
+                                id="ar"
+                                viewBox="0 0 10 10"
+                                refX="9"
+                                refY="5"
+                                markerWidth="6"
+                                markerHeight="6"
+                                orient="auto-start-reverse"
+                            >
+                                <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+                            </marker>
+                        </defs>
+
+                        <path class="edge" marker-end="url(#ar)" d="M196,60 L222,60"></path>
+                        <path class="edge" marker-end="url(#ar)" d="M368,60 L394,60"></path>
+                        <path class="edge" marker-end="url(#ar)" d="M540,60 L566,60"></path>
+                        <path class="edge" marker-end="url(#ar)" d="M712,60 L738,60"></path>
+                        <path class="edge" marker-end="url(#ar)" d="M884,60 L910,60"></path>
+
+                        <rect class="node done" x="26" y="26" width="170" height="68"></rect>
+                        <text class="t" x="111" y="50" text-anchor="middle">0 · Freeze</text>
+                        <text class="t s" x="111" y="68" text-anchor="middle">port + golden JSON</text>
+                        <text class="t s" x="111" y="84" text-anchor="middle">parity harness</text>
+
+                        <rect class="node now" x="222" y="26" width="170" height="68"></rect>
+                        <text class="t" x="307" y="50" text-anchor="middle">1 · Failure states</text>
+                        <text class="t s" x="307" y="68" text-anchor="middle">key · DB · offline</text>
+                        <text class="t s" x="307" y="84" text-anchor="middle">runbook · backup</text>
+
+                        <rect class="node" x="394" y="26" width="170" height="68"></rect>
+                        <text class="t" x="479" y="50" text-anchor="middle">2 · Page contract</text>
+                        <text class="t s" x="479" y="68" text-anchor="middle">PageHead · WeekNav</text>
+                        <text class="t s" x="479" y="84" text-anchor="middle">titles · a11y</text>
+
+                        <rect class="node gate" x="566" y="26" width="170" height="68"></rect>
+                        <text class="t" x="651" y="50" text-anchor="middle">3 · Retire Flask</text>
+                        <text class="t s" x="651" y="68" text-anchor="middle">parity gate passes</text>
+                        <text class="t s" x="651" y="84" text-anchor="middle">delete · rewrite README</text>
+
+                        <rect class="node gate" x="738" y="26" width="170" height="68"></rect>
+                        <text class="t" x="823" y="50" text-anchor="middle">4 · Deploy</text>
+                        <text class="t s" x="823" y="68" text-anchor="middle">jimbrownhome</text>
+                        <text class="t s" x="823" y="84" text-anchor="middle">service · TZ pin</text>
+
+                        <rect class="node" x="910" y="26" width="170" height="68"></rect>
+                        <text class="t" x="995" y="50" text-anchor="middle">5 · Features</text>
+                        <text class="t s" x="995" y="68" text-anchor="middle">Symbol Lookup</text>
+                        <text class="t s" x="995" y="84" text-anchor="middle">Export · Week Explorer</text>
+
+                        <rect class="node done" x="1106" y="20" width="14" height="14"></rect>
+                        <text class="t s" x="1128" y="31">done</text>
+                        <rect class="node now" x="1106" y="46" width="14" height="14"></rect>
+                        <text class="t s" x="1128" y="57">next</text>
+                        <rect class="node gate" x="1106" y="72" width="14" height="14"></rect>
+                        <text class="t s" x="1128" y="83">irreversible</text>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- ============================================================ 3 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="3" width="18" height="18"></rect>
+                        <path d="M9 3v18M3 9h6"></path>
+                    </svg>
+                    Step 0 · Freeze the baseline
+                </h2>
+                <p class="sub">
+                    Done. The fixtures are captured and the gate runs green on all 6 checks, so every step below now
+                    has something to be measured against.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Work</th>
+                            <th>Why</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="w">Read the Flask port from an env var</td>
+                            <td class="m">
+                                <code>server/server.py</code> hardcodes 5057, which the Express backend also binds. The
+                                two stacks cannot run at once, so golden JSON has never been captured.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Capture golden JSON</td>
+                            <td class="m">
+                                Current week, one prior week, the earliest week, plus <code>/api/earliest-week</code>,
+                                <code>/api/calendars</code> and one <code>/api/calendars/:date</code>. Commit the
+                                fixtures.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Write the parity harness, and keep it</td>
+                            <td class="m">
+                                GPT-5.5's note: do not let Phase 8 be a one-time ceremony. The harness stays after the
+                                Flask code is deleted, as a regression test against the recorded shape.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <ul class="notes">
+                    <li>
+                        <b>The Flask server was already broken.</b> It could not open a database connection at all. Its
+                        connection string set <code>SERVER=</code> with no <code>tcp:</code> prefix and no port, so ODBC
+                        negotiated its own protocol and landed on Named Pipes, which Azure SQL refuses. Had the capture
+                        waited until Phase 8, the reference would simply have been gone.
+                    </li>
+                    <li>
+                        <b>The gate passes, 6 of 6.</b> Identical health, identical earliest week, and byte-identical
+                        signal payloads for 2026-08-10, 2026-08-03 and 2026-07-13, including all 129 trades in the
+                        current week. <code>generatedAt</code> is the only field ignored.
+                    </li>
+                    <li>
+                        One endpoint diverges on purpose. Flask listed HTML files off disk, so
+                        <code>/api/calendars</code> returned a <code>filename</code>; the Node route reads ingested rows
+                        and returns <code>title</code> and <code>tradeCount</code> instead. The gate checks that the same
+                        weeks come back in the same order and lets the rest differ.
+                    </li>
+                    <li>
+                        Opt-in, so the offline suite is unaffected:
+                        <code>$env:WEBOPTIONS_PARITY='1'; npm test -- --run parity</code>. Default runs skip it.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ============================================================ 4 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    Step 1 · Failure states and operations
+                </h2>
+                <p class="sub">
+                    The part both reviewers said was missing entirely. For an app that lives on one box in the house,
+                    this is what "ready" actually means.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Work</th>
+                            <th>Why</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="w">Five distinct failure messages</td>
+                            <td class="m">
+                                Bad or revoked key, SQL login rejected, SQL unreachable, API process down, and a
+                                genuinely empty week are five different problems. One generic error wastes an evening
+                                later.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">A readiness check that touches SQL</td>
+                            <td class="m">
+                                <code>/healthz</code> only proves the Node process is alive. It says nothing about
+                                whether <code>weboptions_ro</code> can still connect or still holds its grants.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Unauthorized handling on the settings pages</td>
+                            <td class="m">
+                                AppearancePage and ApiKeyPage assume the gate still holds. A key revoked while a tab
+                                sits open needs a visible way back in.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Safe-area insets</td>
+                            <td class="m">
+                                No <code>env(safe-area-inset-*)</code> anywhere, on an app used on iPad and phone with
+                                three stacked sticky layers.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">The jimbrownhome runbook</td>
+                            <td class="m">
+                                Startup after reboot, where secrets live, the log path, how to restart, how to tell it
+                                is healthy, and what to do when it is not.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Rotation and backup, written down</td>
+                            <td class="m">
+                                How the read-only SQL password rotates, how an API key is minted and revoked, and what
+                                gets backed up: <code>.secrets</code>, <code>opt.api_key</code>, migration history, the
+                                golden fixtures.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Delete <code>/calendars</code></td>
+                            <td class="m">
+                                Decided. The index route, page, CSS and tests come out. Latest Calendar plus the arrow
+                                keys already walks the whole archive, so a second way in earns nothing.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ 5 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <rect x="3" y="3" width="18" height="18"></rect>
+                        <path d="M3 9h18M9 21V9"></path>
+                    </svg>
+                    Step 2 · The page contract
+                </h2>
+                <p class="sub">
+                    Seven pages that were written at different times and do the same things differently. This is the
+                    cheap part, and it is what makes the next three pages quick to add.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Finding</th>
+                            <th>Now</th>
+                            <th>Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="w">Error class lives in the wrong file</td>
+                            <td class="m">
+                                <code>.signals-error</code> defined in LiveSignalsPage.css, used by 4 pages
+                            </td>
+                            <td class="m">Rename to <code>.page-error</code>, move to index.css</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Page wrapper</td>
+                            <td class="m"><code>main</code> className on 3 of 7 pages</td>
+                            <td class="m">All 7, through one <code>PageHead</code></td>
+                        </tr>
+                        <tr>
+                            <td class="w">Heading block</td>
+                            <td class="m"><code>.page-head</code> on 2 of 7; the rest render a bare h1</td>
+                            <td class="m">One component with an optional actions slot</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Week navigation written twice</td>
+                            <td class="m">LiveSignalsPage and CalendarWeekPage, separate disabled logic</td>
+                            <td class="m">Extract <code>WeekNav</code></td>
+                        </tr>
+                        <tr>
+                            <td class="w">Tab title never changes</td>
+                            <td class="m">Every route is "Web Options" in the tab and in history</td>
+                            <td class="m">Per-route title, set alongside focus on navigation</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Calendar week page is the poorer twin</td>
+                            <td class="m">
+                                Same trade shape, same grouping, but no symbol filter and no t/c/b/a/o isolate keys
+                            </td>
+                            <td class="m">Finish what the shared arrow-key hook started</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Accessibility has never been swept</td>
+                            <td class="m">
+                                No focus management on route change, no dialog focus trap audit, no contrast check on
+                                the 9 highlight colours
+                            </td>
+                            <td class="m">One pass, then a behaviour test to hold it</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Heading case</td>
+                            <td class="m">Menu says "API Key", the page says "API key"</td>
+                            <td class="m">Decided. Title Case in the menu, sentence case in headings</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ============================================================ 6 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M5 12h14M12 5l7 7-7 7"></path>
+                    </svg>
+                    Steps 3 to 5 · Retire, deploy, then build
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Step</th>
+                            <th>Work</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="w">3 · Retire Flask</td>
+                            <td class="m">
+                                Run the parity gate against the frozen fixtures. Delete <code>server/</code> and
+                                <code>web/</code>. Rewrite the README, which still describes the Flask app as the
+                                product and never mentions Node, React, the <code>opt</code> schema, the migrations or
+                                the operator tooling. Keep the fixtures and the harness.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">4 · Deploy</td>
+                            <td class="m">
+                                jimbrownhome, as a managed service with the timezone pinned, against the runbook written
+                                in step 1 rather than improvised on the night.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">5 · Export</td>
+                            <td class="m">
+                                First, by decision. A <code>toCsv()</code> in <code>shared/</code> so signals and
+                                calendars serialise the same way. Small and low risk, which is what you want for the
+                                first change made against the home box rather than the laptop.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">5 · Symbol Lookup</td>
+                            <td class="m">
+                                The first query that is not week-scoped, so it sets the pattern for every analytics page
+                                after it. Filter server-side, add the index, cap the rows. Do not fetch every week and
+                                filter in the browser.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">5 · Week Explorer</td>
+                            <td class="m">
+                                Needs multi-week fetch and a comparison layout. The grid is hard-wired to one Monday to
+                                Friday, so this is the largest of the three.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <ul class="notes">
+                    <li>
+                        The three disabled entries in <code>navModel.ts</code> already name this roadmap. Week Explorer,
+                        Symbol Lookup and Export are shown in the menu as coming, which is a good pattern and worth
+                        keeping.
+                    </li>
+                    <li>
+                        <b>Charts wait.</b> Pick the library when the first chart's data shape is known. Recharts is the
+                        obvious default because webportfolio already uses it, but choosing now buys nothing.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ============================================================ 7 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path>
+                    </svg>
+                    Cut from the plan
+                </h2>
+                <p class="sub">
+                    Everything here was in my draft. Both reviewers argued it is scaffolding for an app ten times this
+                    size, so it is out until something concrete needs it.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th></th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="w">Tooltip component</td>
+                            <td><span class="pill no">cut</span></td>
+                            <td class="m">No control exists that cannot be labelled clearly instead.</td>
+                        </tr>
+                        <tr>
+                            <td class="w">ContextMenu component</td>
+                            <td><span class="pill no">cut</span></td>
+                            <td class="m">Extra accessibility and touch burden for a 7-page local app.</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Route-level code splitting</td>
+                            <td><span class="pill no">cut</span></td>
+                            <td class="m">Seven pages on localhost. Revisit if the bundle becomes visibly bad.</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Bookmarks in the palette</td>
+                            <td><span class="pill no">cut</span></td>
+                            <td class="m">The browser already does bookmarks well.</td>
+                        </tr>
+                        <tr>
+                            <td class="w">Action commands to exercise the toasts</td>
+                            <td><span class="pill no">cut</span></td>
+                            <td class="m">
+                                Backwards. Add commands when real actions exist: export, copy CSV, jump to latest.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">A separate <code>#SYM</code> palette mode</td>
+                            <td><span class="pill later">folded in</span></td>
+                            <td class="m">
+                                If it filters the current page it is not data search. If it searches history it is
+                                Symbol Lookup, so build it there.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Picking a chart library now</td>
+                            <td><span class="pill later">defer</span></td>
+                            <td class="m">Decide when the first chart's data shape is known.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Findings I raised that are not actually problems</h3>
+                <ul class="notes">
+                    <li>
+                        <b>No charts</b> is a roadmap dependency, not readiness debt. Both reviewers said so
+                        independently.
+                    </li>
+                    <li>
+                        <b>The toast system being called once</b> is not a smell. Toasts should be rare in a read-mostly
+                        dashboard.
+                    </li>
+                    <li>
+                        <b>Title case in the menu versus sentence case in headings</b> is a choice, not an error. Menu
+                        labels can reasonably differ from page headings.
+                    </li>
+                    <li>
+                        <b><code>.signals-error</code> used across pages</b> is naming debt, not functional debt. Worth
+                        fixing while nearby, not worth a dedicated slot.
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ============================================================ 8 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    The two reviews
+                </h2>
+                <p class="sub">
+                    Different families, per the review policy: primary Claude Opus 5, reviewed by GPT and MAI. Neither
+                    saw the other's answer.
+                </p>
+                <div class="cols">
+                    <div class="verdict">
+                        <h4>APPROVE-WITH-CHANGES</h4>
+                        <p class="who">GPT-5.5</p>
+                        <p>
+                            "The order is too UI-cleanup-heavy before the migration risk is retired. Every new
+                            React/Node change made while Flask is still live increases the chance that parity becomes a
+                            moving target." Also caught that the page-contract test conflicts with the deliberate empty
+                            loading heading, and argued the whole local-operations story was absent: "production ready
+                            mostly means you can restart it on the home box, rotate credentials, recover config, and
+                            know why it is blank."
+                        </p>
+                    </div>
+                    <div class="verdict">
+                        <h4>APPROVE-WITH-CHANGES</h4>
+                        <p class="who">MAI-Code-1.1-Flash</p>
+                        <p>
+                            "The sequence is wrong in one important way." Same conclusion, reached separately: freeze
+                            the baseline first, because coexisting stacks on one port mean "your comparison is
+                            compromised and your plan is invalid." Called the feature-before-migration ordering basic
+                            project hygiene rather than architecture, and flagged the same missing operations work:
+                            backup, rollback, observability, credential rotation, and a real jimbrownhome install story.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================ 9 -->
+            <section>
+                <h2>
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"></path>
+                    </svg>
+                    Decisions taken
+                </h2>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td class="w"><code>/calendars</code></td>
+                            <td class="m">
+                                Delete it. The route, page, CSS and tests come out in step 1. Latest Calendar plus the
+                                arrow keys is the archive.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">Heading case</td>
+                            <td class="m">
+                                Title Case in the menu, sentence case in headings. "API Key" in the mega menu, "API key"
+                                as the page title.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w">First feature after deploy</td>
+                            <td class="m">
+                                Export, then Symbol Lookup, then Week Explorer. The smallest change goes first now that
+                                it is running somewhere other than the laptop.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <footer>Site review · 2026-08-16 · reviewed by GPT-5.5 and MAI-Code-1.1-Flash · step 0 complete</footer>
+        </main>
+
+        <script>
+            (function () {
+                var btn = document.getElementById('themeBtn');
+                var sun = document.getElementById('sunIcon');
+                var moon = document.getElementById('moonIcon');
+                var meta = document.querySelector('meta[name="theme-color"]');
+
+                function paint(theme) {
+                    document.documentElement.setAttribute('data-theme', theme);
+                    if (meta) meta.setAttribute('content', theme === 'light' ? '#f5f7fb' : '#0b0e16');
+                    sun.style.display = theme === 'dark' ? '' : 'none';
+                    moon.style.display = theme === 'dark' ? 'none' : '';
+                }
+
+                paint(document.documentElement.getAttribute('data-theme') || 'dark');
+
+                btn.addEventListener('click', function () {
+                    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    try {
+                        localStorage.setItem('theme', next);
+                    } catch (e) {
+                        /* private mode */
+                    }
+                    paint(next);
+                });
+            })();
+        </script>
+    </body>
+</html>
