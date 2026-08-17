@@ -1,8 +1,9 @@
 /**
- * Ported verbatim from server.py, with pyodbc positional `?` rebound to named
- * parameters. Semantics must not drift: partition by (report_date, contract_key),
- * prefer the tier-bucketed row over a Top-Picks-only row, OR is_top_pick across
- * duplicates, puts only.
+ * Ported verbatim from the retired Flask server, with pyodbc positional `?`
+ * rebound to named parameters. Semantics must not drift: partition by
+ * (report_date, contract_key), prefer the tier-bucketed row over a
+ * Top-Picks-only row, OR is_top_pick across duplicates, puts only. The parity
+ * gate in test/parity.test.ts is what proves it has not drifted.
  *
  * The week bounds bind as VARCHAR(10) and are CAST to DATE inside T-SQL on purpose.
  * Binding a JS Date lets the driver's UTC conversion decide which calendar day the

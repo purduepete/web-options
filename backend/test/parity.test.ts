@@ -1,9 +1,10 @@
 /**
  * Parity gate: the Node API against golden JSON recorded from the Flask server.
  *
- * The fixtures in test/fixtures/golden were captured by scripts/capture-golden.ps1
- * while both stacks were running. They stay in the repo after server/ is deleted,
- * because at that point they are the only record of what the old behaviour was.
+ * The fixtures in test/fixtures/golden were captured while both stacks were
+ * running, shortly before `server/` was deleted. They are now the only record of
+ * what the old behaviour was, which is why this suite outlived the code it was
+ * written to compare against.
  *
  * This suite needs a live backend and a real key, so it is opt-in:
  *

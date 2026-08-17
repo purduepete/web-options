@@ -1,7 +1,9 @@
 import type { IsoDate } from '@weboptions/shared';
 
 /**
- * Week math ported from server.py `_monday_of` / `_week_start_for_publish_date`.
+ * Week math ported from the retired Flask server's `_monday_of` and
+ * `_week_start_for_publish_date`. The behaviour it had to match is recorded in
+ * test/fixtures/golden.
  *
  * Deliberately machine-local, matching Python's `date.today()`. That was safe in
  * Flask only because the server and the user were the same machine; on

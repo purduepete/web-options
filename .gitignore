@@ -14,7 +14,10 @@ dist/
 src_files.txt
 
 # Never commit the real API key / secrets
-server/secrets.ini
 .secrets/
 .env
 .env.local
+
+# The retired Flask app kept its key here. The directory is gone from git, but
+# the untracked file survives on disk until it is deleted by hand.
+secrets.ini
