@@ -131,7 +131,7 @@ Set-Content -Path $CaddyfilePath -Value $caddyfileContent -Encoding utf8
 Write-Log "wrote $CaddyfilePath"
 
 # --- 4. Trust the local CA once, interactively, so browsers stop warning -----
-Write-Log 'run once, interactively, to install the local CA into the Windows trust store: & "' + $CaddyExe + '" trust --config "' + $CaddyfilePath + '"'
+Write-Log "run once, interactively, to install the local CA into the Windows trust store: & `"$CaddyExe`" trust --config `"$CaddyfilePath`""
 
 # --- 5. Register the hidden logon task ----------------------------------------
 $TaskName = 'WebOptionsTLS'
