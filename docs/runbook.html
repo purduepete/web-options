@@ -472,7 +472,9 @@ curl http://localhost:5057/readyz</code></pre>
                     </p>
                     <pre><code>npm run install-task -- -Start</code></pre>
                     <p>
-                        Re-running that is safe, and it is the fix when the task has drifted. It registers this:
+                        Re-running that is safe, and it is the fix when the task has drifted. It registers this. Note
+                        the <code>-Force</code>: without it, re-registering an existing task fails with "cannot create
+                        a file when that file already exists".
                     </p>
                     <pre><code>$pwsh = (Get-Command pwsh).Source
 
@@ -486,7 +488,7 @@ $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" 
     -LogonType S4U -RunLevel Limited
 
 Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
-    -Settings $set -Principal $principal</code></pre>
+    -Settings $set -Principal $principal -Force</code></pre>
                     <p>
                         <code>ExecutionTimeLimit</code> of zero matters. The default kills a task after 3 days, which
                         would look exactly like a random unexplained outage.
