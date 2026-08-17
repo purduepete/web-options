@@ -23,12 +23,54 @@ export class UnauthorizedError extends Error {
     }
 }
 
+/** Thrown when the request never reached a server at all. */
+export class NetworkError extends Error {
+    constructor(message = 'the server did not answer') {
+        super(message);
+        this.name = 'NetworkError';
+    }
+}
+
+/** Thrown when the server answered but its database did not. */
+export class ServiceUnavailableError extends Error {
+    readonly code: string;
+    constructor(code: string) {
+        super(code);
+        this.name = 'ServiceUnavailableError';
+        this.code = code;
+    }
+}
+
+/**
+ * Turns a failure into something worth reading. An unreachable server, a rejected
+ * database login and a genuine bug are three different evenings, so they should
+ * not share one message.
+ */
+export function describeFailure(error: unknown): string {
+    if (error instanceof NetworkError) {
+        return 'Cannot reach the Web Options server. Check that it is running.';
+    }
+    if (error instanceof ServiceUnavailableError) {
+        return error.code === 'database_login_failed'
+            ? 'The server is running, but the database rejected its login. The password may have been rotated.'
+            : 'The server is running, but it cannot reach the database.';
+    }
+    if (error instanceof Error) return error.message;
+    return 'Something went wrong.';
+}
+
 async function getJson<T>(path: string, key?: string): Promise<T> {
     const apiKey = key ?? readKey();
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (apiKey) headers['X-API-Key'] = apiKey;
 
-    const response = await fetch(path, { headers });
+    let response: Response;
+    try {
+        response = await fetch(path, { headers });
+    } catch {
+        throw new NetworkError();
+    }
+
     if (response.status === 401) {
         throw new UnauthorizedError();
     }
@@ -36,7 +78,17 @@ async function getJson<T>(path: string, key?: string): Promise<T> {
         throw new NotFoundError();
     }
     if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
+        // This API only ever answers JSON, so an error that is not JSON came from
+        // something in front of it. The dev proxy dresses a dead API up as a 500
+        // of its own, which would otherwise read as a bug in the server.
+        if (!(response.headers.get('content-type') ?? '').includes('application/json')) {
+            throw new NetworkError();
+        }
+        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        if (response.status === 503) {
+            throw new ServiceUnavailableError(body.code ?? 'database_unreachable');
+        }
+        throw new Error(`The server returned ${response.status}.`);
     }
     return (await response.json()) as T;
 }

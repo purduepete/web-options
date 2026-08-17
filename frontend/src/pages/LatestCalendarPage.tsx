@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { UnauthorizedError, fetchCalendars } from '../api';
+import { UnauthorizedError, describeFailure, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { Loading } from '../components/Loading';
 
@@ -28,7 +28,7 @@ export function LatestCalendarPage() {
                     forget();
                     return;
                 }
-                setError(cause.message);
+                setError(describeFailure(cause));
             });
         return () => {
             cancelled = true;

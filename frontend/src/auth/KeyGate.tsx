@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { UnauthorizedError, describeFailure } from '../api';
 import { ThemeControls } from '../theme/ThemeControls';
 import { useApiKey } from './ApiKeyProvider';
 
@@ -16,8 +17,9 @@ export function KeyGate() {
         setError(null);
         try {
             await submit(key.trim(), remember);
-        } catch {
-            setError('That key was rejected.');
+        } catch (cause) {
+            // A key that was never checked is not a key that was refused.
+            setError(cause instanceof UnauthorizedError ? 'That key was rejected.' : describeFailure(cause));
         } finally {
             setBusy(false);
         }

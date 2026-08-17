@@ -5,6 +5,10 @@
     background: rgb(var(--surface-rgb) / 80%);
     backdrop-filter: blur(12px);
     border-bottom: var(--border-width) solid var(--border);
+    /* Installed to the home screen there is no browser chrome above this, so the
+       bar itself has to keep out from under the notch. The published height is
+       measured, so the sticky heads below follow whatever this becomes. */
+    padding-top: env(safe-area-inset-top);
 }
 
 .navbar-bar {
@@ -12,6 +16,8 @@
     align-items: center;
     gap: 1rem;
     padding: 0.5rem 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 .brand {

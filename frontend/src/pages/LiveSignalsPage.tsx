@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { WeekSignalsResponse } from '@weboptions/shared';
-import { UnauthorizedError, fetchEarliestWeek, fetchWeekSignals } from '../api';
+import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
 import { buildGroups, filterDaysBySymbol, shiftWeek } from '../signals/grouping';
@@ -46,7 +46,7 @@ export function LiveSignalsPage() {
                     forget();
                     return;
                 }
-                setError(cause.message);
+                setError(describeFailure(cause));
                 setData(null);
             })
             .finally(() => {
@@ -104,7 +104,7 @@ export function LiveSignalsPage() {
             .then((result) => {
                 if (result.weekStart) setWeekParam(result.weekStart);
             })
-            .catch((cause: Error) => setError(cause.message));
+            .catch((cause: Error) => setError(describeFailure(cause)));
     }, [setWeekParam]);
 
     const isolateGroup = useCallback(

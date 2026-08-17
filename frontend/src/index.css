@@ -145,9 +145,14 @@ body {
 }
 
 /* Every page is a `main`, and none of them should sit flush against the
-   viewport edge or run under the fixed navbar. */
+   viewport edge or run under the fixed navbar. On a phone or an iPad the edge
+   is not where the screen ends: the insets keep text clear of the rounded
+   corners in landscape and of the home indicator at the foot. */
 main {
     padding: 1.5rem;
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     animation: enter 260ms ease-out;
 }
 

@@ -19,7 +19,6 @@ vi.mock('../src/auth/ApiKeyProvider', () => ({
     useApiKey: () => ({ status: 'ready', forget: () => {} }),
 }));
 
-const { CalendarsIndexPage } = await import('../src/pages/CalendarsIndexPage');
 const { CalendarWeekPage } = await import('../src/pages/CalendarWeekPage');
 const { LatestCalendarPage } = await import('../src/pages/LatestCalendarPage');
 const { NotFoundError } = await import('../src/api');
@@ -91,90 +90,6 @@ beforeEach(() => {
     fetchCalendar.mockReset();
     // The week page asks for the archive too, to build its navigation.
     fetchCalendars.mockResolvedValue({ calendars: [] });
-});
-
-describe('CalendarsIndexPage', () => {
-    function renderIndex() {
-        return render(
-            <MemoryRouter>
-                <CalendarsIndexPage />
-            </MemoryRouter>,
-        );
-    }
-
-    it('badges only the newest week', async () => {
-        fetchCalendars.mockResolvedValue({
-            calendars: [
-                {
-                    publishDate: '2026-08-10',
-                    weekStart: '2026-08-10',
-                    weekEnd: '2026-08-14',
-                    title: null,
-                    tradeCount: 9,
-                },
-                {
-                    publishDate: '2026-08-03',
-                    weekStart: '2026-08-03',
-                    weekEnd: '2026-08-07',
-                    title: null,
-                    tradeCount: 4,
-                },
-            ],
-        });
-        renderIndex();
-
-        const cards = await screen.findAllByRole('listitem');
-        expect(screen.getAllByText('Latest')).toHaveLength(1);
-        expect(within(cards[0]!).getByText('Latest')).toBeTruthy();
-        expect(within(cards[0]!).getByRole('heading', { name: 'Aug 10 – Aug 14' })).toBeTruthy();
-    });
-
-    it('counts the trades and links to the week', async () => {
-        fetchCalendars.mockResolvedValue({
-            calendars: [
-                {
-                    publishDate: '2026-08-10',
-                    weekStart: '2026-08-10',
-                    weekEnd: '2026-08-14',
-                    title: null,
-                    tradeCount: 1,
-                },
-            ],
-        });
-        renderIndex();
-
-        expect(await screen.findByText('1 trade')).toBeTruthy();
-        expect(screen.getByRole('link', { name: 'Open calendar' }).getAttribute('href')).toBe('/calendars/2026-08-10');
-    });
-
-    it('mentions the publish date only when it is not the Monday', async () => {
-        fetchCalendars.mockResolvedValue({
-            calendars: [
-                {
-                    publishDate: '2026-08-09',
-                    weekStart: '2026-08-10',
-                    weekEnd: '2026-08-14',
-                    title: null,
-                    tradeCount: 3,
-                },
-            ],
-        });
-        renderIndex();
-
-        expect(await screen.findByText('3 trades · published 08/09/2026')).toBeTruthy();
-    });
-
-    it('says the archive is empty rather than showing a bare list', async () => {
-        fetchCalendars.mockResolvedValue({ calendars: [] });
-        renderIndex();
-        expect(await screen.findByText('No weekly calendars have been ingested yet.')).toBeTruthy();
-    });
-
-    it('reports a failure', async () => {
-        fetchCalendars.mockRejectedValue(new Error('nope'));
-        renderIndex();
-        expect((await screen.findByRole('alert')).textContent).toContain('nope');
-    });
 });
 
 describe('CalendarWeekPage', () => {

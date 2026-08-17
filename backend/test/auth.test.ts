@@ -101,6 +101,6 @@ describe('api key gate', () => {
         vi.spyOn(authRepository, 'findActiveKey').mockRejectedValue(new Error('login failed for weboptions_ro'));
         const response = await request(createApp(config)).get('/api/health').set('x-api-key', VALID_KEY);
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: 'internal error' });
+        expect(response.body).toEqual({ error: 'internal error', code: 'internal' });
     });
 });

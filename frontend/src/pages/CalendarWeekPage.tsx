@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { CalendarSummary, CalendarWeek } from '@weboptions/shared';
-import { NotFoundError, UnauthorizedError, fetchCalendar, fetchCalendars } from '../api';
+import { NotFoundError, UnauthorizedError, describeFailure, fetchCalendar, fetchCalendars } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
@@ -58,7 +58,11 @@ export function CalendarWeekPage() {
                     forget();
                     return;
                 }
-                setError(cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : cause.message);
+                setError(
+                    cause instanceof NotFoundError
+                        ? 'No calendar was ingested for that date.'
+                        : describeFailure(cause),
+                );
             });
         return () => {
             cancelled = true;

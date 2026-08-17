@@ -8,7 +8,6 @@ import { RecentlyVisitedProvider } from './navigation/RecentlyVisitedProvider';
 import { ApiKeyPage } from './pages/ApiKeyPage';
 import { AppearancePage } from './pages/AppearancePage';
 import { CalendarWeekPage } from './pages/CalendarWeekPage';
-import { CalendarsIndexPage } from './pages/CalendarsIndexPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -41,7 +40,6 @@ function Gate() {
                     <Routes>
                         <Route element={<Layout />}>
                             <Route index element={<LiveSignalsPage />} />
-                            <Route path="calendars" element={<CalendarsIndexPage />} />
                             <Route path="calendars/latest" element={<LatestCalendarPage />} />
                             <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
                             <Route path="settings/appearance" element={<AppearancePage />} />
