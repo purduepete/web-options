@@ -158,6 +158,16 @@ Write-Host "registered $TaskName as $($task.Principal.UserId), logon type $($tas
 Write-Host "  runs: $wscript $argument"
 
 if ($Start) {
+    # The task's MultipleInstances=IgnoreNew means Start-ScheduledTask is a
+    # no-op while caddy.exe is already running, so a config change (like this
+    # run's Caddyfile) would never actually take effect on a re-run. Stop any
+    # existing process first so the task always starts fresh.
+    $running = Get-Process -Name 'caddy' -ErrorAction SilentlyContinue
+    if ($running) {
+        Write-Log "stopping $($running.Count) existing caddy.exe process(es) so the new config takes effect"
+        $running | Stop-Process -Force
+        Start-Sleep -Seconds 1
+    }
     Start-ScheduledTask -TaskName $TaskName
     Start-Sleep -Seconds 2
     Write-Host "started $TaskName. Check https://$($lanIp):$HttpsPort/healthz in a few seconds (self-signed cert warning is expected until 'caddy trust' is run)."
