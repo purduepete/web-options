@@ -159,19 +159,18 @@ main {
     animation: enter 260ms ease-out;
 }
 
-/* The two grid pages are the only ones wide enough to need reining in. Below
-   the 1100px layout breakpoint the day columns are the constraint, so the
-   gutter stays the 1.5rem above. */
+/* The two grid pages are the only ones wide enough to need reining in. Tablets
+    keep a substantial gutter so their wider screens do not stretch the cards. */
 @media (min-width: 641px) {
     main.signals-page,
     main.calendar-week-page {
-        padding-left: max(2.5%, env(safe-area-inset-left));
-        padding-right: max(2.5%, env(safe-area-inset-right));
+          padding-left: max(10%, env(safe-area-inset-left));
+          padding-right: max(10%, env(safe-area-inset-right));
     }
 }
 
 /* A 13 inch iPad is 1366 CSS px in landscape, so width alone cannot tell it
-   from a laptop. The pointer does: a tablet keeps the 2.5% above. */
+    from a laptop. The pointer does: a tablet keeps the 10% above. */
 @media (min-width: 1101px) and (hover: hover) and (pointer: fine) {
     main.signals-page,
     main.calendar-week-page {
