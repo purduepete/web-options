@@ -1,4 +1,3 @@
-import type { CalendarSummary } from '@weboptions/shared';
 import { THEME_PREFERENCES, type ThemePreference } from '@weboptions/shared';
 import { navigableItems, type NavItem } from '../navigation/navModel';
 import type { Command } from './commandModel';
@@ -18,7 +17,6 @@ export interface BuildCommandsArgs {
     navigate: (path: string) => void;
     favorites: readonly NavItem[];
     recent: readonly NavItem[];
-    calendars: readonly CalendarSummary[];
     preference: ThemePreference;
     setPreference: (preference: ThemePreference) => void;
     forget: () => void;
@@ -32,7 +30,6 @@ export function buildCommands({
     navigate,
     favorites,
     recent,
-    calendars,
     preference,
     setPreference,
     forget,
@@ -58,18 +55,6 @@ export function buildCommands({
     favorites.forEach((item) => addPage(item, 'Favourites', FAVORITE_BOOST));
     recent.forEach((item) => addPage(item, 'Recent', RECENT_BOOST));
     navigableItems().forEach((item) => addPage(item, 'Pages'));
-
-    for (const week of calendars) {
-        commands.push({
-            id: `calendar:${week.publishDate}`,
-            label: `Week of ${week.publishDate}`,
-            hint: week.title ?? `${week.tradeCount} trades`,
-            keywords: `${week.weekStart} ${week.weekEnd} calendar week`,
-            group: 'Calendars',
-            icon: 'calendar',
-            run: () => navigate(`/calendars/${encodeURIComponent(week.publishDate)}`),
-        });
-    }
 
     for (const candidate of THEME_PREFERENCES) {
         if (candidate === preference) continue;

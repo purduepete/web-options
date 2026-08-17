@@ -5,7 +5,6 @@ import type { Command, CommandIcon, CommandResult } from './commandModel';
 import type { Range } from './fuzzy';
 import { rankCommands } from './fuzzy';
 import {
-    CalendarIcon,
     ClockIcon,
     KeyIcon,
     PageIcon,
@@ -18,7 +17,6 @@ import './CommandPalette.css';
 
 const ICONS: Record<CommandIcon, ComponentType<SVGProps<SVGSVGElement>>> = {
     page: PageIcon,
-    calendar: CalendarIcon,
     action: SlidersIcon,
     theme: SunIcon,
     key: KeyIcon,

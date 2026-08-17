@@ -1,19 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CalendarSummary } from '@weboptions/shared';
 import { buildCommands } from '../src/search/buildCommands';
 import { findNavItem } from '../src/navigation/navModel';
 import type { NavItem } from '../src/navigation/navModel';
-
-const CALENDARS: readonly CalendarSummary[] = [
-    {
-        publishDate: '2026-01-05',
-        weekStart: '2026-01-05',
-        weekEnd: '2026-01-09',
-        title: 'New year kick-off',
-        tradeCount: 19,
-    },
-    { publishDate: '2025-12-29', weekStart: '2025-12-29', weekEnd: '2026-01-02', title: null, tradeCount: 7 },
-];
 
 function item(id: string): NavItem {
     const found = findNavItem(id);
@@ -26,7 +14,6 @@ function build(overrides: Partial<Parameters<typeof buildCommands>[0]> = {}) {
         navigate: vi.fn(),
         favorites: [],
         recent: [],
-        calendars: [],
         preference: 'midnight',
         setPreference: vi.fn(),
         forget: vi.fn(),
@@ -75,23 +62,10 @@ describe('buildCommands', () => {
         expect(commands[0]?.group).toBe('Favourites');
     });
 
-    it('turns each ingested week into a command', () => {
-        const navigate = vi.fn();
-        const commands = build({ calendars: CALENDARS, navigate });
-        const week = commands.find((command) => command.id === 'calendar:2026-01-05');
-
-        expect(week?.group).toBe('Calendars');
-        expect(week?.label).toContain('2026-01-05');
-        expect(week?.hint).toBe('New year kick-off');
-        expect(week?.keywords).toContain('2026-01-09');
-
-        week?.run();
-        expect(navigate).toHaveBeenCalledWith('/calendars/2026-01-05');
-    });
-
-    it('falls back to the trade count when a week has no title', () => {
-        const commands = build({ calendars: CALENDARS });
-        expect(commands.find((command) => command.id === 'calendar:2025-12-29')?.hint).toBe('7 trades');
+    it('leaves the individual weeks out: the calendar page steps through them', () => {
+        const commands = build();
+        expect(commands.some((command) => command.group === 'Calendars')).toBe(false);
+        expect(ids(commands).some((id) => id.startsWith('calendar:'))).toBe(false);
     });
 
     it('offers one theme action per preference and skips the current one', () => {
@@ -115,7 +89,7 @@ describe('buildCommands', () => {
     });
 
     it('gives every command a unique id', () => {
-        const commands = build({ calendars: CALENDARS, favorites: [item('/')], recent: [item('/calendars/latest')] });
+        const commands = build({ favorites: [item('/')], recent: [item('/calendars/latest')] });
         expect(new Set(ids(commands)).size).toBe(commands.length);
     });
 });

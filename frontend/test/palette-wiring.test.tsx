@@ -91,18 +91,14 @@ describe('command palette wiring', () => {
         expect(screen.queryByRole('dialog')).toBeNull();
     });
 
-    it('lists the ingested weeks it fetched on first open', async () => {
+    it('leaves the individual weeks out, even when some are ingested', async () => {
         const user = userEvent.setup();
         renderApp();
 
         await user.keyboard('{Control>}k{/Control}');
-        await screen.findByRole('option', { name: /Week of 2026-01-05/ });
+        await screen.findByRole('dialog');
 
-        await user.keyboard('kick');
-        expect(screen.getAllByRole('option')).toHaveLength(1);
-
-        await user.keyboard('{Enter}');
-        expect(screen.getByText('one week page')).toBeTruthy();
+        expect(screen.queryAllByRole('option', { name: /Week of/ })).toHaveLength(0);
     });
 
     it('changes the theme from an action', async () => {

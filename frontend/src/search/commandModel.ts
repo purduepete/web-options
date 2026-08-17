@@ -5,7 +5,7 @@
  */
 
 /** Icon names, not components, so this module stays plain TypeScript. */
-export type CommandIcon = 'page' | 'calendar' | 'action' | 'theme' | 'key' | 'star' | 'clock';
+export type CommandIcon = 'page' | 'action' | 'theme' | 'key' | 'star' | 'clock';
 
 export interface Command {
     /** Stable and unique; also the React key and the DOM id suffix. */
