@@ -161,12 +161,34 @@ of the old behaviour. Keep them.
 - **SELECT-only, enforced by the database.** `weboptions_ro` holds SELECT on `opt`
   and nothing else, so a bug cannot write to the trading data.
 - **The real trust boundary is the home LAN.** The API key is a nuisance control
-  against naive access, not authentication. There is no TLS.
+  against naive access, not authentication.
 - **The key is per browser, not per page.** It is typed in once and stored, rather
   than injected into the served HTML the way the Flask version did. View-source no
   longer hands it out.
 - Never print, log or commit anything under `.secrets`, or webportfolio's
   `config.ini`.
+
+## TLS
+
+The Node app itself still only speaks plain HTTP on 5057; nothing about it changed.
+`scripts/install-tls.ps1` puts [Caddy](https://caddyserver.com) in front of it as a
+second, minimal process that terminates TLS and reverse-proxies back to
+`127.0.0.1:5057`, using a locally-trusted self-signed cert (`tls internal`) rather
+than a real CA, since this never leaves the home LAN.
+
+```powershell
+# elevated shell, one time
+./scripts/install-tls.ps1 -Start
+# also once, interactively, so this machine's browsers stop warning:
+& scripts\caddy\caddy.exe trust --config scripts\Caddyfile
+```
+
+That registers a `WebOptionsTLS` logon task the same way `install-task.ps1`
+registers `WebOptions` itself: hidden window, starts at logon, no console. Browse
+to `https://<lan-ip>:5443` instead of `http://<lan-ip>:5057`. Other devices on the
+LAN will still see a self-signed warning unless Caddy's local CA root is exported
+and imported into their trust stores too; that's optional; the connection is
+encrypted either way.
 
 ## What used to be here
 
