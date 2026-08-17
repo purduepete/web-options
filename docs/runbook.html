@@ -468,21 +468,35 @@ curl http://localhost:5057/readyz</code></pre>
                     <p>
                         The task runs a launcher script rather than <code>node</code> directly, because it has to read
                         the password out of <code>.secrets</code> and set the timezone first. Register it once, from an
-                        elevated shell.
+                        elevated shell, signed in as the account that owns the checkout.
                     </p>
-                    <pre><code>$action  = New-ScheduledTaskAction -Execute 'pwsh.exe' `
+                    <pre><code>$pwsh = (Get-Command pwsh).Source
+
+$action  = New-ScheduledTaskAction -Execute $pwsh `
     -Argument '-NoProfile -WindowStyle Hidden -File C:\Files\Dev\main\weboptions\scripts\serve.ps1' `
     -WorkingDirectory 'C:\Files\Dev\main\weboptions'
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $set     = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" `
+    -LogonType S4U -RunLevel Limited
 
 Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
-    -Settings $set -User 'SYSTEM' -RunLevel Limited</code></pre>
+    -Settings $set -Principal $principal</code></pre>
                     <p>
                         <code>ExecutionTimeLimit</code> of zero matters. The default kills a task after 3 days, which
                         would look exactly like a random unexplained outage.
                     </p>
+                    <div class="note warn">
+                        <p>
+                            Do not run this task as <code>SYSTEM</code>. Node is installed per user here, by Scoop, so
+                            it sits on the user PATH and not the machine PATH. <code>SYSTEM</code> cannot see it, and
+                            the task dies before the launcher gets far enough to say why. <code>S4U</code> runs it as
+                            you without storing a password, so it resolves <code>node</code> exactly as it does when you
+                            run it by hand. Both absolute paths above are deliberate for the same reason:
+                            <code>pwsh</code> may also be a per-user install.
+                        </p>
+                    </div>
                     <p>The launcher sets the environment and then runs node in the foreground:</p>
                     <table>
                         <thead>
