@@ -320,7 +320,7 @@
                             </tr>
                             <tr>
                                 <td class="k">Started by</td>
-                                <td>Task Scheduler, at boot, running whether or not anyone logs in</td>
+                                <td>Task Scheduler, when the Azure AD user logs in, through a hidden WScript launcher</td>
                             </tr>
                             <tr>
                                 <td class="k">Secrets</td>
@@ -361,11 +361,13 @@
                     <pre><code>curl http://jimbrownhome:5057/readyz</code></pre>
                     <div class="note warn">
                         <p>
-                            <strong>On the server itself, use <code>127.0.0.1</code>, never <code>localhost</code>.</strong>
+                            <strong
+                                >On the server itself, use <code>127.0.0.1</code>, never <code>localhost</code>.</strong
+                            >
                             The server binds <code>0.0.0.0</code>, which is IPv4 only, and Windows resolves
                             <code>localhost</code> to the IPv6 <code>::1</code> first. Nothing listens there, so you get
-                            "Unable to connect to the remote server" from a server that is running perfectly and
-                            serving other machines.
+                            "Unable to connect to the remote server" from a server that is running perfectly and serving
+                            other machines.
                         </p>
                     </div>
                     <table>
@@ -490,16 +492,20 @@ curl http://127.0.0.1:5057/readyz</code></pre>
                         the <code>-Force</code>: without it, re-registering an existing task fails with "cannot create a
                         file when that file already exists".
                     </p>
-                    <pre><code>$pwsh = (Get-Command pwsh).Source
+                    <pre><code>$pwsh   = (Get-Command pwsh).Source
+$wscript = Join-Path $env:SystemRoot 'System32\wscript.exe'
+$hidden  = 'C:\Files\Dev\main\weboptions\scripts\start-hidden.vbs'
+$serve   = 'C:\Files\Dev\main\weboptions\scripts\serve.ps1'
 
-$action  = New-ScheduledTaskAction -Execute $pwsh `
-    -Argument '-NoProfile -NonInteractive -WindowStyle Hidden -File C:\Files\Dev\main\weboptions\scripts\serve.ps1' `
+$action  = New-ScheduledTaskAction -Execute $wscript `
+    -Argument "`"$hidden`" `"$pwsh`" `"$serve`"" `
     -WorkingDirectory 'C:\Files\Dev\main\weboptions'
-$trigger = New-ScheduledTaskTrigger -AtStartup
+$trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
 $set     = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0 `
+    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" `
-    -LogonType S4U -RunLevel Limited
+    -LogonType Interactive -RunLevel Limited
 
 Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
     -Settings $set -Principal $principal -Force</code></pre>
@@ -509,22 +515,19 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                     </p>
                     <div class="note warn">
                         <p>
-                            <strong>A PowerShell window that opens at boot and stays open</strong> means the task was
-                            registered with an <code>Interactive</code> logon type, or through the GUI with "run only
-                            when user is logged on". That draws the launcher on your desktop, and the launcher holds the
-                            console for as long as node runs, so the window never closes. Closing it kills the server.
-                            Re-run <code>npm run install-task</code> to put it back on <code>S4U</code>, which has no
-                            desktop to draw on. <code>-WindowStyle Hidden</code> alone does not fix this.
+                            <strong>A PowerShell window that opens at logon and stays open</strong> means the task is
+                            running <code>pwsh.exe</code> directly. <code>-WindowStyle Hidden</code> does not reliably
+                            prevent Windows from allocating that console. Re-run <code>scripts\install-task.ps1</code>
+                            so the task starts through <code>wscript.exe</code> and <code>start-hidden.vbs</code>.
                         </p>
                     </div>
                     <div class="note warn">
                         <p>
                             Do not run this task as <code>SYSTEM</code>. Node is installed per user here, by Scoop, so
                             it sits on the user PATH and not the machine PATH. <code>SYSTEM</code> cannot see it, and
-                            the task dies before the launcher gets far enough to say why. <code>S4U</code> runs it as
-                            you without storing a password, so it resolves <code>node</code> exactly as it does when you
-                            run it by hand. Both absolute paths above are deliberate for the same reason:
-                            <code>pwsh</code> may also be a per-user install.
+                            the task dies before the launcher gets far enough to say why. The interactive user token
+                            resolves <code>node</code> exactly as it does when you run it by hand. Both absolute paths
+                            above are deliberate for the same reason: <code>pwsh</code> may also be a per-user install.
                         </p>
                     </div>
                     <p>The launcher sets the environment and then runs node in the foreground:</p>
@@ -691,14 +694,16 @@ npm run keys -- --revoke 3</code></pre>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="k">Log says <code>did not start: Missing ...\backend\dist\server.js</code></td>
+                                <td class="k">
+                                    Log says <code>did not start: Missing ...\backend\dist\server.js</code>
+                                </td>
                                 <td>
                                     The build outputs were wiped, usually by a <code>git clean -xdf</code>, which takes
                                     <code>backend\dist</code>, <code>frontend\dist</code>, <code>.run</code> and
                                     <code>node_modules</code> with it. Run <code>npm ci</code> then
                                     <code>npm run build</code> before starting the task. If
-                                    <code>tsc is not recognized</code>, that confirms
-                                    <code>node_modules</code> went too.
+                                    <code>tsc is not recognized</code>, that confirms <code>node_modules</code> went
+                                    too.
                                 </td>
                             </tr>
                             <tr>

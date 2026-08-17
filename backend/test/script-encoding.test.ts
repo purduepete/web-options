@@ -7,7 +7,7 @@ import path from 'node:path';
 const scriptsDir = path.resolve(__dirname, '../../scripts');
 
 describe('launcher scripts', () => {
-    const scripts = fs.readdirSync(scriptsDir).filter((name) => name.endsWith('.ps1'));
+    const scripts = fs.readdirSync(scriptsDir).filter((name) => /\.(ps1|vbs)$/.test(name));
 
     it('finds the scripts', () => {
         expect(scripts.length).toBeGreaterThan(0);

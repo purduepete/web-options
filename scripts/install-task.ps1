@@ -4,10 +4,8 @@
 
 .DESCRIPTION
     Registering this by hand is what lets the settings drift. The one that
-    matters is the logon type: an Interactive principal runs the launcher on your
-    desktop, so a PowerShell window opens at boot and stays open for as long as
-    the server runs. S4U runs it as you in a session with no desktop, so nothing
-    is ever drawn.
+    matters is the launcher: wscript creates no console, then waits for the
+    hidden PowerShell process so Task Scheduler owns the server lifetime.
 
     Re-running this is safe. It overwrites the existing task.
 
@@ -37,6 +35,10 @@ $Launcher = Join-Path $Root 'scripts\serve.ps1'
 if (-not (Test-Path $Launcher)) {
     throw "Missing $Launcher."
 }
+$HiddenLauncher = Join-Path $Root 'scripts\start-hidden.vbs'
+if (-not (Test-Path $HiddenLauncher)) {
+    throw "Missing $HiddenLauncher."
+}
 
 # Both of these may be per-user installs, so the task needs absolute paths.
 $pwshCommand = Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue |
@@ -50,25 +52,27 @@ if ($existing) {
     Write-Host "replacing the existing $TaskName task (logon type was $($existing.Principal.LogonType))"
 }
 
-$argument = "-NoProfile -NonInteractive -WindowStyle Hidden -File `"$Launcher`""
+$wscript = Join-Path $env:SystemRoot 'System32\wscript.exe'
+$argument = "`"$HiddenLauncher`" `"$($pwshCommand.Source)`" `"$Launcher`""
 if ($Port -ne 5057) {
-    $argument += " -Port $Port"
+    $argument += " $Port"
 }
 
-$action = New-ScheduledTaskAction -Execute $pwshCommand.Source -Argument $argument -WorkingDirectory $Root
-$trigger = New-ScheduledTaskTrigger -AtStartup
+$action = New-ScheduledTaskAction -Execute $wscript -Argument $argument -WorkingDirectory $Root
+$trigger = New-ScheduledTaskTrigger -AtLogOn -User $identity.Name
 # The default execution time limit kills the task after 3 days, which reads as a
 # random unexplained outage.
 $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0
-$principal = New-ScheduledTaskPrincipal -UserId $identity.Name -LogonType S4U -RunLevel Limited
+    -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0 `
+    -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$principal = New-ScheduledTaskPrincipal -UserId $identity.Name -LogonType Interactive -RunLevel Limited
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
     -Settings $settings -Principal $principal -Force | Out-Null
 
 $task = Get-ScheduledTask -TaskName $TaskName
 Write-Host "registered $TaskName as $($task.Principal.UserId), logon type $($task.Principal.LogonType)"
-Write-Host "  runs: $($pwshCommand.Source) $argument"
+Write-Host "  runs: $wscript $argument"
 
 if ($Start) {
     Start-ScheduledTask -TaskName $TaskName
