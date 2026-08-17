@@ -55,10 +55,13 @@ if (-not (Test-Path $HiddenLauncher)) {
 # existing instance before touching $LogFile at all, not just before the final
 # restart: a stale process would otherwise also keep running the old config
 # while this script rewrites the Caddyfile underneath it.
-$existingCaddy = Get-Process -Name 'caddy' -ErrorAction SilentlyContinue
-if ($existingCaddy) {
+# @(...) forces an array even for a single match: Get-Process returns a bare
+# Process object (no .Count) when exactly one process matches, which throws
+# under Set-StrictMode.
+$existingCaddy = @(Get-Process -Name 'caddy' -ErrorAction SilentlyContinue)
+if ($existingCaddy.Count -gt 0) {
     Write-Host "stopping $($existingCaddy.Count) existing caddy.exe process(es) before continuing"
-    $existingCaddy | Stop-Process -Force
+    $existingCaddy | ForEach-Object { Stop-Process -Id $_.Id -Force }
     Start-Sleep -Seconds 1
 }
 
