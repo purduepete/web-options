@@ -317,6 +317,40 @@ describe('CalendarWeekPage', () => {
             expect(button(name).hasAttribute('disabled')).toBe(true);
         }
     });
+
+    it('steps back through the archive on the left arrow', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderWeek('2026-08-10');
+        await waitFor(() => expect(button('Previous').hasAttribute('disabled')).toBe(false));
+
+        fireEvent.keyDown(window, { key: 'ArrowLeft' });
+
+        await waitFor(() => expect(fetchCalendar).toHaveBeenCalledWith('2026-08-03'));
+    });
+
+    it('steps forward through the archive on the right arrow', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderWeek('2026-08-10');
+        await waitFor(() => expect(button('Next').hasAttribute('disabled')).toBe(false));
+
+        fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+        await waitFor(() => expect(fetchCalendar).toHaveBeenCalledWith('2026-08-17'));
+    });
+
+    it('stays put when the arrow points past the end of the archive', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderWeek('2026-08-03');
+        await waitFor(() => expect(button('Next').hasAttribute('disabled')).toBe(false));
+        fetchCalendar.mockClear();
+
+        fireEvent.keyDown(window, { key: 'ArrowLeft' });
+
+        expect(fetchCalendar).not.toHaveBeenCalled();
+    });
 });
 
 describe('LatestCalendarPage', () => {

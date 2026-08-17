@@ -8,6 +8,7 @@ import { weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
 import { Loading } from '../components/Loading';
 import { usePublishedHeight } from '../hooks/usePublishedHeight';
+import { useWeekArrows } from '../hooks/useWeekArrows';
 import './CalendarWeekPage.css';
 
 /**
@@ -75,6 +76,8 @@ export function CalendarWeekPage() {
     const open = (entry: CalendarSummary | undefined) => {
         if (entry) navigate(`/calendars/${entry.publishDate}`);
     };
+
+    useWeekArrows({ onPrevious: () => open(older), onNext: () => open(newer) });
 
     return (
         <main className="calendar-week-page">

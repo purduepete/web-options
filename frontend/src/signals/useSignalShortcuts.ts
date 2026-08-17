@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
+import { isTyping, useWeekArrows } from '../hooks/useWeekArrows';
 import type { GroupId } from './grouping';
 
 /**
- * The page's single-key shortcuts.
+ * The page's single-key shortcuts. Stepping between weeks with the arrows is
+ * shared with the published calendars, so it lives in `useWeekArrows`.
  *
  * Anything with a modifier is left alone: Ctrl+K belongs to the command palette
  * and Ctrl+R belongs to the browser. Typing in a field is left alone too, or
@@ -24,14 +26,10 @@ interface Handlers {
     onToggleAllGroups: () => void;
 }
 
-function isTyping(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    if (target.isContentEditable) return true;
-    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
-}
-
 export function useSignalShortcuts(handlers: Handlers): void {
     const { onPreviousWeek, onNextWeek, onIsolateGroup, onToggleAllGroups } = handlers;
+
+    useWeekArrows({ onPrevious: onPreviousWeek, onNext: onNextWeek });
 
     useEffect(() => {
         function onKeyDown(event: globalThis.KeyboardEvent) {
@@ -39,13 +37,7 @@ export function useSignalShortcuts(handlers: Handlers): void {
             if (isTyping(event.target)) return;
 
             const key = event.key.toLowerCase();
-            if (key === 'arrowleft') {
-                event.preventDefault();
-                onPreviousWeek();
-            } else if (key === 'arrowright') {
-                event.preventDefault();
-                onNextWeek();
-            } else if (key === 'j') {
+            if (key === 'j') {
                 event.preventDefault();
                 onToggleAllGroups();
             } else if (key in ISOLATE_KEYS) {
@@ -56,5 +48,5 @@ export function useSignalShortcuts(handlers: Handlers): void {
 
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [onPreviousWeek, onNextWeek, onIsolateGroup, onToggleAllGroups]);
+    }, [onIsolateGroup, onToggleAllGroups]);
 }

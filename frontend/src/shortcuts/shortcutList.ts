@@ -33,4 +33,11 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
             { keys: ['j'], description: 'Collapse or expand every group' },
         ],
     },
+    {
+        title: 'Weekly calendars',
+        shortcuts: [
+            { keys: ['←'], description: 'Previous week' },
+            { keys: ['→'], description: 'Next week' },
+        ],
+    },
 ];
