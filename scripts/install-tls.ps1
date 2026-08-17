@@ -113,7 +113,7 @@ Write-Log "binding TLS listener to $lanIp`:$HttpsPort"
 # --- 3. Write the Caddyfile ----------------------------------------------------
 $caddyfileContent = @"
 {
-    admin off
+    admin localhost:2019
 }
 
 $($lanIp):$($HttpsPort) {
