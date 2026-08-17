@@ -156,11 +156,11 @@ describe('the page can always be as narrow as the phone', () => {
 });
 
 describe('a large tablet is not a desktop', () => {
-    it('gives grid pages 10 percent tablet gutters', () => {
+    it('gives grid pages 5 percent tablet gutters', () => {
         const tablet = mediaBlocks(indexCss).find(({ condition }) => /min-width:\s*641px/.test(condition));
 
-        expect(tablet?.body ?? '').toContain('padding-left: max(10%, env(safe-area-inset-left))');
-        expect(tablet?.body ?? '').toContain('padding-right: max(10%, env(safe-area-inset-right))');
+        expect(tablet?.body ?? '').toContain('padding-left: max(5%, env(safe-area-inset-left))');
+        expect(tablet?.body ?? '').toContain('padding-right: max(5%, env(safe-area-inset-right))');
     });
 
     it.each(sheets)('$name never decides on width alone above 1100px', ({ css }) => {
