@@ -13,6 +13,7 @@ function read(relative: string): string {
 }
 
 const indexCss = read('../src/index.css');
+const navbarCss = read('../src/navigation/Navbar.css');
 
 /** The body of the rule for a selector, with whitespace squashed. */
 function rule(selector: string): string {
@@ -38,5 +39,16 @@ describe('touch targets', () => {
         const block = indexCss.slice(start, indexCss.indexOf('\n}', indexCss.indexOf('\n    }', start)));
         expect(block).toContain('min-width: 44px');
         expect(block).toContain('min-height: 44px');
+    });
+
+    it('sizes the navbar triggers without asking the device what it is', () => {
+        const match = /\.search-trigger,\s*\.menu-trigger,\s*\.drawer-toggle \{([^}]*)\}/.exec(navbarCss);
+        expect(match).toBeTruthy();
+        const block = match?.[1] ?? '';
+        expect(block).toContain('min-width: 44px');
+        expect(block).toContain('min-height: 44px');
+        // One level of indent means top level: an iPad asks for the desktop site,
+        // so a media query aimed at touch skips the device that needs this.
+        expect(/^ {4}min-width/m.test(block)).toBe(true);
     });
 });

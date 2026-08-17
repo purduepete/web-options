@@ -76,12 +76,15 @@
     color: var(--text);
 }
 
-/* These hold nothing but an icon, so the room a fingertip needs goes around it. */
-@media (pointer: coarse) {
-    .search-trigger,
-    .drawer-toggle {
-        justify-content: center;
-    }
+/* Sized for a fingertip whatever the device claims to be: an iPad asks for the
+   desktop site by default and answers `pointer: fine`, so a media query aimed at
+   touch never reaches the one device that needs this. */
+.search-trigger,
+.menu-trigger,
+.drawer-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
 }
 
 .rotated {
