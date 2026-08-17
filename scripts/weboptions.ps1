@@ -9,8 +9,8 @@
 
     By default the API connects as weboptions_ro, the SELECT-only login the
     deployed service uses, reading its password from .secrets. Pass -Operator to
-    connect with the webportfolio config.ini credentials instead — only needed
-    when running the migration or key-management tools against a live server.
+    connect with the webportfolio config.ini credentials instead, which is only
+    needed when running the migration or key-management tools against a live server.
 
 .EXAMPLE
     ./scripts/weboptions.ps1 start
@@ -133,7 +133,7 @@ function Start-Service([hashtable] $Service) {
     $blocker = Get-ListenerPid $Service.Port
     if ($blocker) {
         $name = (Get-Process -Id $blocker -ErrorAction SilentlyContinue).ProcessName
-        throw "Port $($Service.Port) is held by $name (pid $blocker). The Flask prototype uses 5057 too — stop it first."
+        throw "Port $($Service.Port) is held by $name (pid $blocker). The production server uses 5057 too, so stop it first: Stop-ScheduledTask -TaskName WebOptions"
     }
 
     $log = Get-LogFile $Service.Name
