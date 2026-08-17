@@ -42,7 +42,7 @@ if (-not (Test-Path $HiddenLauncher)) {
 
 # Both of these may be per-user installs, so the task needs absolute paths.
 $pwshCommand = Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+Select-Object -First 1
 if (-not $pwshCommand) {
     throw 'pwsh is not on PATH for this account.'
 }
