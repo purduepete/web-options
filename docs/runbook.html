@@ -470,10 +470,14 @@ curl http://localhost:5057/readyz</code></pre>
                         the password out of <code>.secrets</code> and set the timezone first. Register it once, from an
                         elevated shell, signed in as the account that owns the checkout.
                     </p>
+                    <pre><code>npm run install-task -- -Start</code></pre>
+                    <p>
+                        Re-running that is safe, and it is the fix when the task has drifted. It registers this:
+                    </p>
                     <pre><code>$pwsh = (Get-Command pwsh).Source
 
 $action  = New-ScheduledTaskAction -Execute $pwsh `
-    -Argument '-NoProfile -WindowStyle Hidden -File C:\Files\Dev\main\weboptions\scripts\serve.ps1' `
+    -Argument '-NoProfile -NonInteractive -WindowStyle Hidden -File C:\Files\Dev\main\weboptions\scripts\serve.ps1' `
     -WorkingDirectory 'C:\Files\Dev\main\weboptions'
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $set     = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
@@ -487,6 +491,16 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                         <code>ExecutionTimeLimit</code> of zero matters. The default kills a task after 3 days, which
                         would look exactly like a random unexplained outage.
                     </p>
+                    <div class="note warn">
+                        <p>
+                            <strong>A PowerShell window that opens at boot and stays open</strong> means the task was
+                            registered with an <code>Interactive</code> logon type, or through the GUI with "run only
+                            when user is logged on". That draws the launcher on your desktop, and the launcher holds
+                            the console for as long as node runs, so the window never closes. Closing it kills the
+                            server. Re-run <code>npm run install-task</code> to put it back on <code>S4U</code>, which
+                            has no desktop to draw on. <code>-WindowStyle Hidden</code> alone does not fix this.
+                        </p>
+                    </div>
                     <div class="note warn">
                         <p>
                             Do not run this task as <code>SYSTEM</code>. Node is installed per user here, by Scoop, so

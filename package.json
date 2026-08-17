@@ -22,6 +22,7 @@
         "serve:stop": "pwsh -NoProfile -File scripts/weboptions.ps1 stop",
         "serve:status": "pwsh -NoProfile -File scripts/weboptions.ps1 status",
         "start": "pwsh -NoProfile -File scripts/serve.ps1",
+        "install-task": "pwsh -NoProfile -File scripts/install-task.ps1",
         "test": "vitest run",
         "test:watch": "vitest",
         "migrate": "tsx backend/tools/migrate.ts",
