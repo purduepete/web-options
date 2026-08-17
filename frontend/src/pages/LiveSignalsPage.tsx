@@ -140,7 +140,7 @@ export function LiveSignalsPage() {
 
     return (
         <main className="signals-page">
-            <div className="signals-head">
+            <div className="page-head">
                 <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : 'VADER daily put recommendations'}</h1>
 
                 <div className="week-nav">

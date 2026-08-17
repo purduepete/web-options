@@ -79,24 +79,31 @@ export function CalendarWeekPage() {
     return (
         <main className="calendar-week-page">
             <div className="calendar-head" ref={headRef}>
-                <div className="week-nav">
-                    <button type="button" onClick={() => open(earliest)} disabled={!earliest || earliest === current}>
-                        First
-                    </button>
-                    <button type="button" onClick={() => open(older)} disabled={!older}>
-                        Previous
-                    </button>
-                    <button type="button" onClick={() => open(newer)} disabled={!newer}>
-                        Next
-                    </button>
-                    <button type="button" onClick={() => open(latest)} disabled={!latest || latest === current}>
-                        Latest
-                    </button>
+                <div className="page-head">
+                    <h1>
+                        {week
+                            ? (week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`)
+                            : 'Weekly options calendar'}
+                    </h1>
+
+                    <div className="week-nav">
+                        <button type="button" onClick={() => open(earliest)} disabled={!earliest || earliest === current}>
+                            First
+                        </button>
+                        <button type="button" onClick={() => open(older)} disabled={!older}>
+                            Previous
+                        </button>
+                        <button type="button" onClick={() => open(newer)} disabled={!newer}>
+                            Next
+                        </button>
+                        <button type="button" onClick={() => open(latest)} disabled={!latest || latest === current}>
+                            Latest
+                        </button>
+                    </div>
                 </div>
 
                 {week && (
                     <section className="macro-banner enter">
-                        <h1>{week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`}</h1>
                         <p className="macro-meta">
                             {weekRangeLabel(week.weekStart, week.weekEnd)} · published {formatMDY(week.publishDate)}
                         </p>

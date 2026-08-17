@@ -233,6 +233,21 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* The title, with the week controls sharing its line. Both the live signals and
+   the published calendars open this way, so it lives here. */
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.page-head h1 {
+    flex: 1 1 auto;
+    margin: 0;
+    font-size: 1.15rem;
+}
+
 /* First / Previous / Next / Latest. Shared by the live signals page and the
    published calendars, so it lives here rather than with either of them. */
 .week-nav {

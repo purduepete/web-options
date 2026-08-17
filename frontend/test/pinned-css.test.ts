@@ -32,7 +32,7 @@ describe('pinned headers', () => {
     });
 
     it('leaves the week bar to scroll away', () => {
-        expect(signalsCss).not.toMatch(/\.signals-head\s*\{[^}]*position:\s*sticky/);
+        expect(indexCss).not.toMatch(/\.page-head\s*\{[^}]*position:\s*sticky/);
     });
 
     it('stops the day card being a scroll container of its own', () => {

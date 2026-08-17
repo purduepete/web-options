@@ -252,10 +252,14 @@ describe('CalendarWeekPage', () => {
 
         const head = container.querySelector('.calendar-head');
         expect(head).toBeTruthy();
-        expect(head?.querySelector('.week-nav')).toBeTruthy();
         expect(head?.querySelector('.macro-banner')).toBeTruthy();
         // The day names stop underneath it, so its height has to be measured.
         expect(document.documentElement.style.getPropertyValue('--calendar-head-height')).not.toBe('');
+
+        // The same opening row as the live signals page: title, then the weeks.
+        const row = head?.querySelector('.page-head');
+        expect(row?.querySelector('h1')?.textContent).toBe('Rally week');
+        expect(row?.querySelector('.week-nav')).toBeTruthy();
     });
 
     it('steps through the archive instead of linking to a list of it', async () => {
