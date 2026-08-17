@@ -359,6 +359,15 @@
                         process is answering, which it will keep doing happily while the database is unreachable.
                     </p>
                     <pre><code>curl http://jimbrownhome:5057/readyz</code></pre>
+                    <div class="note warn">
+                        <p>
+                            <strong>On the server itself, use <code>127.0.0.1</code>, never <code>localhost</code>.</strong>
+                            The server binds <code>0.0.0.0</code>, which is IPv4 only, and Windows resolves
+                            <code>localhost</code> to the IPv6 <code>::1</code> first. Nothing listens there, so you get
+                            "Unable to connect to the remote server" from a server that is running perfectly and
+                            serving other machines.
+                        </p>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -439,7 +448,7 @@ npm ci                 # npm install if you want to allow lockfile drift
 npm run build          # shared -> backend -> frontend, in that order
 
 Start-ScheduledTask -TaskName WebOptions
-curl http://localhost:5057/readyz</code></pre>
+curl http://127.0.0.1:5057/readyz</code></pre>
                     <p>
                         <code>npm run build</code> is the whole thing. It compiles <code>shared</code> first because
                         both other workspaces import it, then the backend, then Vite bundles the front end into
@@ -478,8 +487,8 @@ curl http://localhost:5057/readyz</code></pre>
                     <pre><code>pwsh -NoProfile -File scripts/install-task.ps1 -Start</code></pre>
                     <p>
                         Re-running that is safe, and it is the fix when the task has drifted. It registers this. Note
-                        the <code>-Force</code>: without it, re-registering an existing task fails with "cannot create
-                        a file when that file already exists".
+                        the <code>-Force</code>: without it, re-registering an existing task fails with "cannot create a
+                        file when that file already exists".
                     </p>
                     <pre><code>$pwsh = (Get-Command pwsh).Source
 
@@ -502,10 +511,10 @@ Register-ScheduledTask -TaskName WebOptions -Action $action -Trigger $trigger `
                         <p>
                             <strong>A PowerShell window that opens at boot and stays open</strong> means the task was
                             registered with an <code>Interactive</code> logon type, or through the GUI with "run only
-                            when user is logged on". That draws the launcher on your desktop, and the launcher holds
-                            the console for as long as node runs, so the window never closes. Closing it kills the
-                            server. Re-run <code>npm run install-task</code> to put it back on <code>S4U</code>, which
-                            has no desktop to draw on. <code>-WindowStyle Hidden</code> alone does not fix this.
+                            when user is logged on". That draws the launcher on your desktop, and the launcher holds the
+                            console for as long as node runs, so the window never closes. Closing it kills the server.
+                            Re-run <code>npm run install-task</code> to put it back on <code>S4U</code>, which has no
+                            desktop to draw on. <code>-WindowStyle Hidden</code> alone does not fix this.
                         </p>
                     </div>
                     <div class="note warn">
