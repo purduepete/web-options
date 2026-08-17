@@ -88,7 +88,11 @@ export function CalendarWeekPage() {
                     <h1>{week ? (week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`) : ''}</h1>
 
                     <div className="week-nav">
-                        <button type="button" onClick={() => open(earliest)} disabled={!earliest || earliest === current}>
+                        <button
+                            type="button"
+                            onClick={() => open(earliest)}
+                            disabled={!earliest || earliest === current}
+                        >
                             First
                         </button>
                         <button type="button" onClick={() => open(older)} disabled={!older}>

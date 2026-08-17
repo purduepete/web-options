@@ -444,7 +444,9 @@
                         stroke-linejoin="round"
                     >
                         <path d="M12 9v4M12 17h.01"></path>
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <path
+                            d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                        ></path>
                     </svg>
                     What the review changed
                 </h2>
@@ -467,8 +469,8 @@
                     <li>
                         <b>My page-contract test was wrong.</b> I proposed asserting every route renders exactly one
                         non-empty <code>h1</code>. Two pages deliberately render an empty one while loading, which is
-                        the behaviour I committed this morning. The contract should be about behaviour: one landmark,
-                        a real accessible name once loaded, errors announced, title and focus updated on navigation.
+                        the behaviour I committed this morning. The contract should be about behaviour: one landmark, a
+                        real accessible name once loaded, errors announced, title and focus updated on navigation.
                     </li>
                     <li>
                         <b>Six items were cut outright</b> as over-built for a 7-page single-user local app. See the cut
@@ -584,8 +586,8 @@
                     Step 0 · Freeze the baseline
                 </h2>
                 <p class="sub">
-                    Done. The fixtures are captured and the gate runs green on all 6 checks, so every step below now
-                    has something to be measured against.
+                    Done. The fixtures are captured and the gate runs green on all 6 checks, so every step below now has
+                    something to be measured against.
                 </p>
                 <table>
                     <thead>
@@ -634,8 +636,8 @@
                     <li>
                         One endpoint diverges on purpose. Flask listed HTML files off disk, so
                         <code>/api/calendars</code> returned a <code>filename</code>; the Node route reads ingested rows
-                        and returns <code>title</code> and <code>tradeCount</code> instead. The gate checks that the same
-                        weeks come back in the same order and lets the rest differ.
+                        and returns <code>title</code> and <code>tradeCount</code> instead. The gate checks that the
+                        same weeks come back in the same order and lets the rest differ.
                     </li>
                     <li>
                         Opt-in, so the offline suite is unaffected:

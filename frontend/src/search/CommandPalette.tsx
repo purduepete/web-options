@@ -4,15 +4,7 @@ import { createPortal } from 'react-dom';
 import type { Command, CommandIcon, CommandResult } from './commandModel';
 import type { Range } from './fuzzy';
 import { rankCommands } from './fuzzy';
-import {
-    ClockIcon,
-    KeyIcon,
-    PageIcon,
-    SearchIcon,
-    SlidersIcon,
-    StarIcon,
-    SunIcon,
-} from '../components/icons';
+import { ClockIcon, KeyIcon, PageIcon, SearchIcon, SlidersIcon, StarIcon, SunIcon } from '../components/icons';
 import './CommandPalette.css';
 
 const ICONS: Record<CommandIcon, ComponentType<SVGProps<SVGSVGElement>>> = {
