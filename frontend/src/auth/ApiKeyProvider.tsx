@@ -1,7 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MeResponse } from '@weboptions/shared';
-import { fetchMe } from '../api';
+import { fetchMe, UnauthorizedError } from '../api';
 import { clearKey, isRemembered, readKey, saveKey } from './keyStore';
+
+/** Roughly three seconds of patience, which covers an API restarting underneath us. */
+const VERIFY_ATTEMPTS = 5;
+const VERIFY_RETRY_MS = 600;
 
 type Status = 'checking' | 'locked' | 'unlocked';
 
@@ -28,20 +32,38 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
             return;
         }
         let cancelled = false;
+
         // A stored key can have been revoked since the last visit, so it is checked
-        // rather than trusted.
-        fetchMe(stored)
-            .then((me) => {
-                if (cancelled) return;
-                setIdentity(me);
-                setStatus('unlocked');
-            })
-            .catch(() => {
-                if (cancelled) return;
-                clearKey();
-                setRemembered(false);
-                setStatus('locked');
-            });
+        // rather than trusted. Only an outright rejection counts: the API is often
+        // still starting up while the page is already being served, and throwing the
+        // key away over an unreachable server means retyping it after every restart.
+        async function verify(key: string) {
+            for (let attempt = 1; !cancelled; attempt++) {
+                try {
+                    const me = await fetchMe(key);
+                    if (cancelled) return;
+                    setIdentity(me);
+                    setStatus('unlocked');
+                    return;
+                } catch (error) {
+                    if (cancelled) return;
+                    if (error instanceof UnauthorizedError) {
+                        clearKey();
+                        setRemembered(false);
+                        setStatus('locked');
+                        return;
+                    }
+                    if (attempt >= VERIFY_ATTEMPTS) {
+                        // Keep the key and let each page report the outage itself.
+                        setStatus('unlocked');
+                        return;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, VERIFY_RETRY_MS));
+                }
+            }
+        }
+
+        void verify(stored);
         return () => {
             cancelled = true;
         };

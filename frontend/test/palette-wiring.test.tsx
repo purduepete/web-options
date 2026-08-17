@@ -3,20 +3,24 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-vi.mock('../src/api', () => ({
-    fetchCalendars: vi.fn(async () => ({
-        calendars: [
-            {
-                publishDate: '2026-01-05',
-                weekStart: '2026-01-05',
-                weekEnd: '2026-01-09',
-                title: 'New year kick-off',
-                tradeCount: 19,
-            },
-        ],
-    })),
-    fetchMe: vi.fn(async () => ({ label: 'test', scopes: [] })),
-}));
+vi.mock('../src/api', async () => {
+    const actual = await vi.importActual<typeof import('../src/api')>('../src/api');
+    return {
+        UnauthorizedError: actual.UnauthorizedError,
+        fetchCalendars: vi.fn(async () => ({
+            calendars: [
+                {
+                    publishDate: '2026-01-05',
+                    weekStart: '2026-01-05',
+                    weekEnd: '2026-01-09',
+                    title: 'New year kick-off',
+                    tradeCount: 19,
+                },
+            ],
+        })),
+        fetchMe: vi.fn(async () => ({ label: 'test', scopes: [] })),
+    };
+});
 
 import { ApiKeyProvider } from '../src/auth/ApiKeyProvider';
 import { Layout } from '../src/components/Layout';
