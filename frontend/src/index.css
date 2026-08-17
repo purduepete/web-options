@@ -122,6 +122,11 @@ body,
     height: 100%;
 }
 
+/* #root never remounts, so this plays once: the first paint of the session. */
+#root {
+    animation: shell-in 320ms ease-out;
+}
+
 body {
     margin: 0;
     background: var(--bg);
@@ -136,6 +141,28 @@ body {
    viewport edge or run under the fixed navbar. */
 main {
     padding: 1.5rem;
+    animation: page-in 220ms ease-out;
+}
+
+@keyframes shell-in {
+    from {
+        opacity: 0;
+    }
+}
+
+/* Rising a few pixels reads as the page arriving rather than blinking. */
+@keyframes page-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #root,
+    main {
+        animation: none;
+    }
 }
 
 h1,
