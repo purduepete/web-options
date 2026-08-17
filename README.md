@@ -190,6 +190,20 @@ LAN will still see a self-signed warning unless Caddy's local CA root is exporte
 and imported into their trust stores too; that's optional; the connection is
 encrypted either way.
 
+**Trusting it on another device (e.g. a laptop):** `caddy trust` only touches the
+trust store on the machine it ran on. To stop the warning on another device, copy
+that machine's copy of the CA root over and import it there too:
+
+```powershell
+# on jimbrownhome, put the CA root somewhere the other device can reach it
+Copy-Item "$env:APPDATA\Caddy\pki\authorities\local\root.crt" "$env:OneDrive\Caddy-Local-CA.crt"
+
+# on the other device, elevated
+certutil -addstore -f "ROOT" "$env:OneDrive\Caddy-Local-CA.crt"
+```
+
+Fully restart the browser afterwards (see below); a refresh isn't enough.
+
 **Still shows "Not secure" after `caddy trust` succeeds?** Chromium browsers (Edge,
 Chrome) cache trust decisions per running process, so a page refresh isn't enough.
 Fully restart the browser: type `edge://restart` in the address bar, or close every
