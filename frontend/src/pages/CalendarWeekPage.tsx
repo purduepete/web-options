@@ -35,9 +35,7 @@ export function CalendarWeekPage() {
                     forget();
                     return;
                 }
-                setError(
-                    cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : cause.message,
-                );
+                setError(cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : cause.message);
             });
         return () => {
             cancelled = true;
@@ -60,7 +58,7 @@ export function CalendarWeekPage() {
 
             {week && (
                 <>
-                    <section className="macro-banner">
+                    <section className="macro-banner enter">
                         <h1>{week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`}</h1>
                         <p className="macro-meta">
                             {weekRangeLabel(week.weekStart, week.weekEnd)} · published {formatMDY(week.publishDate)}

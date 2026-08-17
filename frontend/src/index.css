@@ -122,11 +122,6 @@ body,
     height: 100%;
 }
 
-/* #root never remounts, so this plays once: the first paint of the session. */
-#root {
-    animation: shell-in 320ms ease-out;
-}
-
 body {
     margin: 0;
     background: var(--bg);
@@ -141,26 +136,25 @@ body {
    viewport edge or run under the fixed navbar. */
 main {
     padding: 1.5rem;
-    animation: page-in 220ms ease-out;
+    animation: enter 260ms ease-out;
 }
 
-@keyframes shell-in {
-    from {
-        opacity: 0;
-    }
+/* Data lands hundreds of milliseconds after the page frame it belongs to, so
+   its arrival has to be animated on its own or nobody sees it. */
+.enter {
+    animation: enter 260ms ease-out;
 }
 
-/* Rising a few pixels reads as the page arriving rather than blinking. */
-@keyframes page-in {
+@keyframes enter {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(8px);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #root,
-    main {
+    main,
+    .enter {
         animation: none;
     }
 }

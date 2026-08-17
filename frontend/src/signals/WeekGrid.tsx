@@ -1,15 +1,7 @@
 import type { DaySignals, Trade } from '@weboptions/shared';
 import type { SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
-import {
-    formatDayLabel,
-    formatDelta,
-    formatDte,
-    formatMDY,
-    formatMoney,
-    formatPercent,
-    formatStrike,
-} from './format';
+import { formatDayLabel, formatDelta, formatDte, formatMDY, formatMoney, formatPercent, formatStrike } from './format';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
 
@@ -42,7 +34,7 @@ export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter 
 
     return (
         <div
-            className="week-grid"
+            className="week-grid enter"
             style={{ gridTemplateRows: `repeat(${totalRows}, auto)` }}
             data-testid="week-grid"
         >

@@ -34,7 +34,7 @@ export function CalendarGrid({ days }: { days: CalendarDay[] }) {
     }
 
     return (
-        <div className="calendar-grid" data-testid="calendar-grid">
+        <div className="calendar-grid enter" data-testid="calendar-grid">
             {days.map((day) => (
                 <CalendarDayCard key={`${day.name}-${day.date}`} day={day} />
             ))}

@@ -29,16 +29,15 @@ function mediaBlock(condition: string): string {
 }
 
 describe('page entrance', () => {
-    it('fades the shell in once and rises each page in on arrival', () => {
-        expect(indexCss).toMatch(/#root\s*\{[^}]*animation:\s*shell-in/);
-        expect(indexCss).toMatch(/main\s*\{[^}]*animation:\s*page-in/);
-        expect(indexCss).toContain('@keyframes shell-in');
-        expect(indexCss).toContain('@keyframes page-in');
+    it('animates the page frame and the data that arrives after it', () => {
+        expect(indexCss).toMatch(/main\s*\{[^}]*animation:\s*enter/);
+        expect(indexCss).toMatch(/\.enter\s*\{[^}]*animation:\s*enter/);
+        expect(indexCss).toContain('@keyframes enter');
     });
 
     it('holds still for anyone who asked motion to stop', () => {
         const reduced = mediaBlock('(prefers-reduced-motion: reduce)');
 
-        expect(reduced).toMatch(/#root,\s*main\s*\{[^}]*animation:\s*none/);
+        expect(reduced).toMatch(/main,\s*\.enter\s*\{[^}]*animation:\s*none/);
     });
 });

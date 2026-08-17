@@ -53,7 +53,7 @@ export function CalendarsIndexPage() {
             {calendars?.length === 0 && <p className="empty-week">No weekly calendars have been ingested yet.</p>}
 
             {calendars && calendars.length > 0 && (
-                <ul className="calendar-cards">
+                <ul className="calendar-cards enter">
                     {calendars.map((calendar) => (
                         <li key={calendar.publishDate} className="calendar-card">
                             <div className="calendar-card-head">
