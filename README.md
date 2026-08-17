@@ -190,6 +190,20 @@ LAN will still see a self-signed warning unless Caddy's local CA root is exporte
 and imported into their trust stores too; that's optional; the connection is
 encrypted either way.
 
+**Still shows "Not secure" after `caddy trust` succeeds?** Chromium browsers (Edge,
+Chrome) cache trust decisions per running process, so a page refresh isn't enough.
+Fully restart the browser: type `edge://restart` in the address bar, or close every
+window and confirm no `msedge.exe` is left in Task Manager, then reopen. If it's
+still untrusted after that, confirm the CA actually landed in the Windows store:
+
+```powershell
+certutil -user -store Root | Select-String "Caddy Local Authority"
+```
+
+If nothing is found, `caddy trust` installed to a different store context than the
+browser reads from; re-run it from the same interactive Windows logon session the
+browser runs under.
+
 ## What used to be here
 
 A Flask app in `server/` served two static pages from `web/`, reading calendar HTML
