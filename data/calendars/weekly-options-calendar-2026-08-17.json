@@ -1,0 +1,66 @@
+{
+  "publishDate": "2026-08-17",
+  "title": null,
+  "macro": [
+    { "label": "S&P 500: 7,785.76", "text": "Stocks are expensive, which pushes call strikes closer to the current price than usual. Consider widening them." },
+    { "label": "VIX: 14.25", "text": "Fear is low, so buyers pay less for options and premium is thin. Consider selling fewer contracts and picking better ones." },
+    { "label": "10-Year Treasury: 4.69%", "text": "Rising rates hurt utilities, REITs, and telecoms; better to leave those alone this week." },
+    { "label": "3-Month T-Bill: 3.74%", "text": "Every trade taken has to clearly beat this yield." }
+  ],
+  "days": [
+    {
+      "name": "Monday", "date": "Aug 17",
+      "rule": "Calls only, not puts. The market is calm and nothing on the calendar threatens much. Write covered calls on names with clean earnings calendars; save put capital for Wednesday, when it pays better.",
+      "event": "Start of the Monday-Tuesday calls window.",
+      "trades": [
+        { "ticker": "NVDA", "type": "call", "strike": "$230C", "expiry": "2026-08-24", "dte": 10, "delta": "0.34", "ann": "36.8%", "premium": "$227", "collateral": "$22,516", "risk": "aggressive", "note": "Expires the Monday before Nvidia's earnings, so exposure closes before the report." },
+        { "ticker": "CSCO", "type": "call", "strike": "$115C", "expiry": "2026-09-18", "dte": 35, "delta": "0.40", "ann": "26.1%", "premium": "$280", "collateral": "$11,168", "risk": "balanced", "note": "Sells into last week's post-earnings volatility drop." },
+        { "ticker": "IBM", "type": "call", "strike": "$245C", "expiry": "2026-09-18", "dte": 35, "delta": "0.36", "ann": "26.0%", "premium": "$585", "collateral": "$23,432", "risk": "balanced", "note": "No earnings until October; strike sits 4.6% above spot." },
+        { "ticker": "UBER", "type": "call", "strike": "$80C", "expiry": "2026-09-18", "dte": 35, "delta": "0.33", "ann": "20.7%", "premium": "$151", "collateral": "$7,595", "risk": "balanced", "note": "Already reported; strike 5.3% above spot with strong open interest for an easy exit." },
+        { "ticker": "NFLX", "type": "call", "strike": "$83C", "expiry": "2026-09-18", "dte": 35, "delta": "0.30", "ann": "18.5%", "premium": "$139", "collateral": "$7,816", "risk": "conservative", "note": "6.2% out of the money with a tight bid-ask spread." }
+      ]
+    },
+    {
+      "name": "Tuesday", "date": "Aug 18",
+      "rule": "Still calls, not puts, as the Monday-Tuesday window continues. Same logic: clean earnings calendars, save puts for Wednesday.",
+      "event": "Home Depot reports Tuesday.",
+      "trades": [
+        { "ticker": "NVDA", "type": "call", "strike": "$230C", "expiry": "2026-08-24", "dte": 10, "delta": "0.34", "ann": "36.8%", "premium": "$227", "collateral": "$22,516", "risk": "aggressive", "note": "Expires the Monday before Nvidia's earnings, so exposure closes before the report." },
+        { "ticker": "CSCO", "type": "call", "strike": "$115C", "expiry": "2026-09-18", "dte": 35, "delta": "0.40", "ann": "26.1%", "premium": "$280", "collateral": "$11,168", "risk": "balanced", "note": "Sells into last week's post-earnings volatility drop." },
+        { "ticker": "IBM", "type": "call", "strike": "$245C", "expiry": "2026-09-18", "dte": 35, "delta": "0.36", "ann": "26.0%", "premium": "$585", "collateral": "$23,432", "risk": "balanced", "note": "No earnings until October; strike sits 4.6% above spot." },
+        { "ticker": "UBER", "type": "call", "strike": "$80C", "expiry": "2026-09-18", "dte": 35, "delta": "0.33", "ann": "20.7%", "premium": "$151", "collateral": "$7,595", "risk": "balanced", "note": "Already reported; strike 5.3% above spot with strong open interest for an easy exit." },
+        { "ticker": "NFLX", "type": "call", "strike": "$83C", "expiry": "2026-09-18", "dte": 35, "delta": "0.30", "ann": "18.5%", "premium": "$139", "collateral": "$7,816", "risk": "conservative", "note": "6.2% out of the money with a tight bid-ask spread." }
+      ]
+    },
+    {
+      "name": "Wednesday", "date": "Aug 19",
+      "rule": "No new risk until 11:15 AM Pacific. The FOMC minutes are the only event this week that can reprice volatility; once they're out, the puts below are worth selling.",
+      "event": "FOMC minutes at 11:15 AM Pacific. Target, Lowe's, and TJX report; Analog Devices reports Wednesday morning.",
+      "trades": [
+        { "ticker": "ORCL", "type": "put", "strike": "$145P", "expiry": "2026-08-28", "dte": 14, "delta": "-0.34", "ann": "70.6%", "premium": "$392.50", "collateral": "$14,500", "risk": "aggressive", "note": "Highest yield on the list; the only Oracle expiry ahead of its September earnings." },
+        { "ticker": "KLAC", "type": "put", "strike": "$192P", "expiry": "2026-09-18", "dte": 35, "delta": "-0.33", "ann": "47.0%", "premium": "$865", "collateral": "$19,200", "risk": "aggressive", "note": "Largest premium here; opens after Analog Devices reports Wednesday morning." },
+        { "ticker": "NOW", "type": "put", "strike": "$115P", "expiry": "2026-09-18", "dte": 35, "delta": "-0.28", "ann": "31.7%", "premium": "$350", "collateral": "$11,500", "risk": "balanced", "note": "7.3% below spot; enterprise software is insulated from the retail story." },
+        { "ticker": "ZTS", "type": "put", "strike": "$70P", "expiry": "2026-09-18", "dte": 35, "delta": "-0.27", "ann": "17.9%", "premium": "$120", "collateral": "$7,000", "risk": "conservative", "note": "Animal health, far removed from Thursday's retail risk." },
+        { "ticker": "MRK", "type": "put", "strike": "$130P", "expiry": "2026-09-18", "dte": 35, "delta": "-0.28", "ann": "15.8%", "premium": "$197.50", "collateral": "$13,000", "risk": "conservative", "note": "Defensive pharma name with nothing on its calendar this window." },
+        { "ticker": "CSCO", "type": "put", "strike": "$105P", "expiry": "2026-09-18", "dte": 35, "delta": "-0.22", "ann": "13.4%", "premium": "$134.50", "collateral": "$10,500", "risk": "conservative", "note": "Lowest delta on the list, 6.0% below a stock that already sold off." }
+      ]
+    },
+    {
+      "name": "Thursday", "date": "Aug 20",
+      "rule": "No new positions. Walmart and Ross set the tone for retail-adjacent names; let the moves settle before acting. Consider closing short-dated retail puts before the open.",
+      "event": "Walmart and Ross report Thursday.",
+      "trades": []
+    },
+    {
+      "name": "Friday", "date": "Aug 21",
+      "rule": "Wait for the open. August contracts expire today; let pinning effects clear before placing new semiconductor calls.",
+      "event": "August options expiration.",
+      "trades": [
+        { "ticker": "GFS", "type": "call", "strike": "$60C", "expiry": "2026-09-18", "dte": 35, "delta": "0.35", "ann": "41.1%", "premium": "$215", "collateral": "$5,458", "risk": "aggressive", "note": "Smallest collateral requirement on the list, fits a smaller account." },
+        { "ticker": "ON", "type": "call", "strike": "$90C", "expiry": "2026-09-18", "dte": 35, "delta": "0.35", "ann": "37.3%", "premium": "$296", "collateral": "$8,266", "risk": "balanced", "note": "8.9% above spot, placed once Analog Devices' earnings and Friday's expiration are behind it." },
+        { "ticker": "FTNT", "type": "call", "strike": "$170C", "expiry": "2026-09-18", "dte": 35, "delta": "0.35", "ann": "29.7%", "premium": "$455", "collateral": "$16,001", "risk": "balanced", "note": "Already reported in early August; 6.2% out of the money." },
+        { "ticker": "FCX", "type": "call", "strike": "$75C", "expiry": "2026-09-18", "dte": 35, "delta": "0.23", "ann": "18.5%", "premium": "$118", "collateral": "$6,650", "risk": "conservative", "note": "Widest cushion here at 12.8% above spot." }
+      ]
+    }
+  ]
+}
