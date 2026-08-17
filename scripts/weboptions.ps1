@@ -216,6 +216,19 @@ function Invoke-Stop {
     }
 }
 
+function Show-BootTask {
+    # On the deployment box the production server is the scheduled task, not these
+    # dev processes, so a bare 'api stopped' reads as bad news when it is not.
+    $task = Get-ScheduledTask -TaskName 'WebOptions' -ErrorAction SilentlyContinue
+    if (-not $task) { return }
+
+    $info = Get-ScheduledTaskInfo -TaskName 'WebOptions' -ErrorAction SilentlyContinue
+    $detail = if ($info) { "last run $($info.LastRunTime), result $($info.LastTaskResult)" } else { 'no run history' }
+    $color = if ($task.State -eq 'Running') { 'Green' } else { 'Yellow' }
+    Write-Host "  task WebOptions  $($task.State)  $detail" -ForegroundColor $color
+    Write-Host '  (production serves 5057 from that task; the api line above tracks dev only)' -ForegroundColor DarkGray
+}
+
 function Invoke-Status {
     foreach ($service in $Services.Values) {
         $running = Get-RunningPid $service
@@ -226,6 +239,7 @@ function Invoke-Status {
             Write-Host "  $($service.Name)  stopped  port $($service.Port)" -ForegroundColor DarkGray
         }
     }
+    Show-BootTask
 }
 
 switch ($Action) {
