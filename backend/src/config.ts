@@ -14,6 +14,7 @@ export interface AppConfig {
     port: number;
     host: string;
     nodeEnv: string;
+    webRoot: string | null;
 }
 
 function readIniFallback(configPath: string): Partial<DbConfig> {
@@ -29,6 +30,23 @@ function readIniFallback(configPath: string): Partial<DbConfig> {
         user: section.username ?? section.user,
         password: section.password,
     };
+}
+
+/**
+ * Unset in development, where Vite serves the app and proxies here. Set in
+ * production, where this process is the only one running. A set-but-wrong path
+ * fails at startup rather than quietly serving an API with no app in front of it.
+ */
+function resolveWebRoot(value: string | undefined): string | null {
+    if (!value) return null;
+    const root = path.resolve(value);
+    if (!fs.existsSync(path.join(root, 'index.html'))) {
+        throw new Error(
+            `WEBOPTIONS_WEB_ROOT is ${root}, but there is no index.html there. ` +
+                'Run npm run build first, or point it at frontend/dist.',
+        );
+    }
+    return root;
 }
 
 /**
@@ -60,5 +78,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         port: Number(env.PORT ?? 5057),
         host: env.HOST ?? '0.0.0.0',
         nodeEnv: env.NODE_ENV ?? 'development',
+        webRoot: resolveWebRoot(env.WEBOPTIONS_WEB_ROOT),
     };
 }

@@ -15,6 +15,7 @@ const config: AppConfig = {
     port: 5057,
     host: '0.0.0.0',
     nodeEnv: 'test',
+    webRoot: null,
 };
 
 const week: CalendarWeek = {

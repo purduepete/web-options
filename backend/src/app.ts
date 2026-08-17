@@ -1,4 +1,5 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+import path from 'node:path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -39,6 +40,20 @@ export function createApp(config: AppConfig): Express {
     app.use('/api', (_req, res) => {
         res.status(404).json({ error: 'not found' });
     });
+
+    if (config.webRoot) {
+        const webRoot = config.webRoot;
+        app.use(express.static(webRoot, { index: false }));
+        // Deep links like /calendars/2026-08-10 are client-side routes, so no file
+        // matches them and the app shell has to answer instead of a 404.
+        app.use((req, res, next) => {
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                next();
+                return;
+            }
+            res.sendFile(path.join(webRoot, 'index.html'));
+        });
+    }
 
     app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
         // Never leak connection strings or driver internals to the client.

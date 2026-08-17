@@ -18,11 +18,11 @@ Everything is read-only. No write path to the trading data exists in this code.
 
 npm workspaces, no TypeScript project references.
 
-| Workspace  | What it is                                      |
-| ---------- | ----------------------------------------------- |
+| Workspace  | What it is                                       |
+| ---------- | ------------------------------------------------ |
 | `shared`   | `@weboptions/shared` - types and theme constants |
-| `backend`  | Express 5 API and the operator tools            |
-| `frontend` | React 19 and Vite                               |
+| `backend`  | Express 5 API and the operator tools             |
+| `frontend` | React 19 and Vite                                |
 
 `database/migrations` holds the numbered SQL that builds the `opt` schema.
 `docs/site-review.html` is the current plan and the reasoning behind it.
@@ -57,6 +57,23 @@ launch, but if a tool complains:
 Remove-Item Env:DB_SERVER,Env:DB_NAME,Env:DB_USER,Env:DB_PASSWORD -ErrorAction SilentlyContinue
 ```
 
+## Running it for real
+
+In development, Vite serves the app and proxies `/api`. In production there is no
+Vite, so the API serves the built front end itself. One process, one port.
+
+```powershell
+npm run build
+$env:WEBOPTIONS_WEB_ROOT = 'frontend\dist'
+npm start
+```
+
+Without `WEBOPTIONS_WEB_ROOT` the API runs but serves no app. Point it at a folder
+with no `index.html` and the process refuses to start rather than serving nothing.
+
+`docs/runbook.html` covers the rest: the Task Scheduler entry, the update procedure,
+what to check when something looks wrong.
+
 ## First-time setup
 
 Run these with `-Operator` credentials, in order.
@@ -88,18 +105,18 @@ moment to catch a newsletter that has changed its markup.
 
 Everything under `/api` needs an `X-API-Key` header.
 
-| Route                      | Key | What it answers                                      |
-| -------------------------- | --- | ---------------------------------------------------- |
-| `GET /healthz`             | no  | Liveness. The process is answering, nothing more.    |
-| `GET /readyz`              | no  | Readiness. Reads a row from `opt.api_key`, so it     |
-|                            |     | also proves the login, the schema and the grants.    |
-| `GET /api/health`          | yes | Liveness behind the key.                             |
-| `GET /api/me`              | yes | The label and prefix of the key being used.          |
-| `GET /api/week-signals`    | yes | This week's signals. `?week=YYYY-MM-DD` for any      |
-|                            |     | other, normalised to that week's Monday.             |
-| `GET /api/earliest-week`   | yes | The Monday of the earliest week on record.           |
-| `GET /api/calendars`       | yes | Every ingested week, newest first.                   |
-| `GET /api/calendars/:date` | yes | One week, keyed on publish date.                     |
+| Route                      | Key | What it answers                                   |
+| -------------------------- | --- | ------------------------------------------------- |
+| `GET /healthz`             | no  | Liveness. The process is answering, nothing more. |
+| `GET /readyz`              | no  | Readiness. Reads a row from `opt.api_key`, so it  |
+|                            |     | also proves the login, the schema and the grants. |
+| `GET /api/health`          | yes | Liveness behind the key.                          |
+| `GET /api/me`              | yes | The label and prefix of the key being used.       |
+| `GET /api/week-signals`    | yes | This week's signals. `?week=YYYY-MM-DD` for any   |
+|                            |     | other, normalised to that week's Monday.          |
+| `GET /api/earliest-week`   | yes | The Monday of the earliest week on record.        |
+| `GET /api/calendars`       | yes | Every ingested week, newest first.                |
+| `GET /api/calendars/:date` | yes | One week, keyed on publish date.                  |
 
 Failures are meant to be told apart rather than guessed at. A 401 means the key was
 refused. A 503 carries a `code` of `database_login_failed` or
@@ -143,4 +160,3 @@ straight out of OneDrive. It was deleted once the parity gate passed against it.
 then it could not open a database connection at all: its ODBC string named the host
 with no protocol prefix and no port, so the driver settled on Named Pipes and Azure
 SQL refused it.
-
