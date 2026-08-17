@@ -17,6 +17,7 @@ import {
 } from '../components/icons';
 import { useFavorites } from './FavoritesProvider';
 import { useRecentlyVisited } from './RecentlyVisitedProvider';
+import { ThemeToggle } from './ThemeToggle';
 import { MAX_FAVORITES } from './navLists';
 import { NAV_SECTIONS, type NavItem, type NavSection } from './navModel';
 import './Navbar.css';
@@ -99,6 +100,8 @@ export function Navbar({
                 </Link>
 
                 <div className="bar-right">
+                    <ThemeToggle />
+
                     {onOpenSearch && (
                         <button
                             type="button"

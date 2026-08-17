@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { FavoritesProvider } from '../src/navigation/FavoritesProvider';
 import { RecentlyVisitedProvider } from '../src/navigation/RecentlyVisitedProvider';
+import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { Navbar } from '../src/navigation/Navbar';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
@@ -25,15 +26,17 @@ function setViewport(kind: 'desktop' | 'mobile') {
 function renderNavbar(initialPath = '/') {
     return render(
         <MemoryRouter initialEntries={[initialPath]}>
-            <FavoritesProvider>
-                <RecentlyVisitedProvider>
-                    <Navbar />
-                    <Routes>
-                        <Route path="/" element={<p>live signals</p>} />
-                        <Route path="/calendars" element={<p>calendars</p>} />
-                    </Routes>
-                </RecentlyVisitedProvider>
-            </FavoritesProvider>
+            <ThemeProvider>
+                <FavoritesProvider>
+                    <RecentlyVisitedProvider>
+                        <Navbar />
+                        <Routes>
+                            <Route path="/" element={<p>live signals</p>} />
+                            <Route path="/calendars" element={<p>calendars</p>} />
+                        </Routes>
+                    </RecentlyVisitedProvider>
+                </FavoritesProvider>
+            </ThemeProvider>
         </MemoryRouter>,
     );
 }
@@ -103,6 +106,18 @@ describe('Navbar on desktop', () => {
         expect(screen.queryByRole('link', { name: /Week Explorer/ })).toBeNull();
         // A placeholder cannot be favourited either.
         expect(screen.queryByRole('button', { name: /Favourite Week Explorer/ })).toBeNull();
+    });
+
+    it('cycles the theme from the bar and comes back around', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe('midnight');
+        for (const expected of ['light', 'dark', 'midnight']) {
+            // Re-queried each time: the label names the theme it is showing.
+            await user.click(screen.getByRole('button', { name: /^Theme:/ }));
+            expect(document.documentElement.getAttribute('data-theme')).toBe(expected);
+        }
     });
 
     it('closes the panel once a destination is chosen', async () => {
