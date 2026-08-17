@@ -100,8 +100,6 @@ export function Navbar({
                 </Link>
 
                 <div className="bar-right">
-                    <ThemeToggle />
-
                     {onOpenSearch && (
                         <button
                             type="button"
@@ -113,6 +111,8 @@ export function Navbar({
                             <SearchIcon />
                         </button>
                     )}
+
+                    <ThemeToggle />
 
                     {isDesktop && (
                         <button
