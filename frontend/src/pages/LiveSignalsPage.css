@@ -10,10 +10,13 @@
     position: relative;
     display: flex;
     align-items: center;
+    /* The head wraps this onto its own line before it has to shrink. */
+    flex: 0 1 12rem;
 }
 
 .symbol-filter input {
-    width: 12rem;
+    width: 100%;
+    max-width: 12rem;
     padding-right: 2rem;
     font-size: 0.85rem;
     letter-spacing: 0.04em;

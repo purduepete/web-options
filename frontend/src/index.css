@@ -142,6 +142,9 @@ body {
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    /* An OCC symbol or a pasted link has no space to break at, and one of them
+       inside a day card is enough to widen the whole column past the screen. */
+    overflow-wrap: break-word;
 }
 
 /* Every page is a `main`, and none of them should sit flush against the
@@ -154,6 +157,27 @@ main {
     padding-right: max(1.5rem, env(safe-area-inset-right));
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     animation: enter 260ms ease-out;
+}
+
+/* The two grid pages are the only ones wide enough to need reining in. Below
+   the 1100px layout breakpoint the day columns are the constraint, so the
+   gutter stays the 1.5rem above. */
+@media (min-width: 641px) {
+    main.signals-page,
+    main.calendar-week-page {
+        padding-left: max(2.5%, env(safe-area-inset-left));
+        padding-right: max(2.5%, env(safe-area-inset-right));
+    }
+}
+
+/* A 13 inch iPad is 1366 CSS px in landscape, so width alone cannot tell it
+   from a laptop. The pointer does: a tablet keeps the 2.5% above. */
+@media (min-width: 1101px) and (hover: hover) and (pointer: fine) {
+    main.signals-page,
+    main.calendar-week-page {
+        padding-left: max(15%, env(safe-area-inset-left));
+        padding-right: max(15%, env(safe-area-inset-right));
+    }
 }
 
 /* Data lands hundreds of milliseconds after the page frame it belongs to, so
@@ -257,6 +281,7 @@ button:disabled {
    published calendars, so it lives here rather than with either of them. */
 .week-nav {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
 }
 
