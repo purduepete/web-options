@@ -92,7 +92,7 @@ beforeEach(() => {
 describe('LiveSignalsPage', () => {
     it('titles the page with the week it actually loaded', async () => {
         renderPage();
-        expect(await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' })).toBeTruthy();
     });
 
     it('draws a card per day with the trade count in its header', async () => {
@@ -133,7 +133,7 @@ describe('LiveSignalsPage', () => {
     it('steps back a week and records it in the URL', async () => {
         const user = userEvent.setup();
         renderPage();
-        await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
+        await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
         await user.click(screen.getByRole('button', { name: 'Previous' }));
 
@@ -161,14 +161,14 @@ describe('LiveSignalsPage', () => {
 
     it('will not step forward when the server says there is nothing there', async () => {
         renderPage();
-        await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
+        await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
         expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
         expect(screen.getByRole('button', { name: 'Current' }).hasAttribute('disabled')).toBe(true);
     });
 
     it('keeps the two step buttons next to each other', async () => {
         renderPage();
-        await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
+        await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
         const nav = document.querySelector('.week-nav');
         const labels = [...(nav?.querySelectorAll('button') ?? [])].map((button) => button.textContent);
@@ -180,7 +180,7 @@ describe('LiveSignalsPage', () => {
         const user = userEvent.setup();
         fetchEarliestWeek.mockResolvedValue({ weekStart: '2025-01-06' });
         renderPage();
-        await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
+        await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
         await user.click(screen.getByRole('button', { name: 'First' }));
 

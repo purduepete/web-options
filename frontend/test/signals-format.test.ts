@@ -19,7 +19,7 @@ describe('signal formatters', () => {
     });
 
     it('writes the week title the way the Flask page did', () => {
-        expect(formatWeekTitle('2025-08-11', '2025-08-15')).toBe('Week of Aug 11 to Aug 15');
+        expect(formatWeekTitle('2025-08-11', '2025-08-15')).toBe('Week of Aug 11 – Aug 15');
     });
 
     it('writes expiries month first', () => {

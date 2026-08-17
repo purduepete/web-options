@@ -20,7 +20,7 @@ export function formatDayLabel(iso: string): string {
 }
 
 export function formatWeekTitle(weekStart: string, weekEnd: string): string {
-    return `Week of ${formatDayLabel(weekStart)} to ${formatDayLabel(weekEnd)}`;
+    return `Week of ${formatDayLabel(weekStart)} – ${formatDayLabel(weekEnd)}`;
 }
 
 /** Expiries are read at a glance, so they keep the US month-first shape. */
