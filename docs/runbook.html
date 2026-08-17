@@ -431,7 +431,7 @@ Get-ScheduledTask   -TaskName WebOptions | Get-ScheduledTaskInfo</code></pre>
                         The build is not committed, so a pull alone changes nothing that is running. Every update is
                         these five steps, in this order.
                     </p>
-                    <pre><code>cd C:\weboptions
+                    <pre><code>cd C:\Files\Dev\main\weboptions
 Stop-ScheduledTask -TaskName WebOptions
 
 git pull
@@ -471,8 +471,8 @@ curl http://localhost:5057/readyz</code></pre>
                         elevated shell.
                     </p>
                     <pre><code>$action  = New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument '-NoProfile -WindowStyle Hidden -File C:\weboptions\scripts\serve.ps1' `
-    -WorkingDirectory 'C:\weboptions'
+    -Argument '-NoProfile -WindowStyle Hidden -File C:\Files\Dev\main\weboptions\scripts\serve.ps1' `
+    -WorkingDirectory 'C:\Files\Dev\main\weboptions'
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $set     = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 0
