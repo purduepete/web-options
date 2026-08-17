@@ -122,6 +122,12 @@ body,
     height: 100%;
 }
 
+/* One week's page is longer than the viewport and the next is not, and losing
+   the scrollbar between them shifted the whole page sideways. */
+html {
+    scrollbar-gutter: stable;
+}
+
 body {
     margin: 0;
     background: var(--bg);

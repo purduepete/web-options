@@ -40,4 +40,8 @@ describe('page entrance', () => {
 
         expect(reduced).toMatch(/main,\s*\.enter\s*\{[^}]*animation:\s*none/);
     });
+
+    it('does not slide sideways when the new page needs no scrollbar', () => {
+        expect(indexCss).toMatch(/html\s*\{[^}]*scrollbar-gutter:\s*stable/);
+    });
 });
