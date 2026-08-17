@@ -6,14 +6,28 @@
     animation: loading-in 0.4s ease-out;
 }
 
-/* The one round corner in the app: a squared ring would not read as spinning. */
+/* Drawn as an SVG arc rather than a bordered box: box borders meet at mitred
+   45-degree joints, which read as flat chords once the ring starts turning. */
 .spinner {
     width: 2.25rem;
     height: 2.25rem;
-    border: 3px solid var(--border);
-    border-top-color: var(--highlight);
-    border-radius: 50%;
     animation: spin 0.9s linear infinite;
+}
+
+.spinner circle {
+    fill: none;
+    stroke-width: 3;
+}
+
+.spinner-track {
+    stroke: var(--border);
+}
+
+/* A quarter of the circumference, which is 2 * pi * 16.5. */
+.spinner-arc {
+    stroke: var(--highlight);
+    stroke-linecap: round;
+    stroke-dasharray: 26 104;
 }
 
 @keyframes spin {

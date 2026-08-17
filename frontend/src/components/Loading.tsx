@@ -18,7 +18,10 @@ export function Loading({ label = 'Loading' }: Props) {
 
     return (
         <div className="loading">
-            <div className="spinner" role="status" aria-label={label} />
+            <svg className="spinner" viewBox="0 0 36 36" role="status" aria-label={label}>
+                <circle className="spinner-track" cx="18" cy="18" r="16.5" />
+                <circle className="spinner-arc" cx="18" cy="18" r="16.5" />
+            </svg>
         </div>
     );
 }

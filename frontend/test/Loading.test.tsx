@@ -20,6 +20,6 @@ describe('Loading', () => {
         act(() => vi.advanceTimersByTime(250));
         const status = screen.getByRole('status');
         expect(status.getAttribute('aria-label')).toBe('Loading this week');
-        expect(status.className).toBe('spinner');
+        expect(status.getAttribute('class')).toBe('spinner');
     });
 });
