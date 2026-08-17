@@ -182,9 +182,19 @@ describe('CalendarWeekPage', () => {
         renderWeek();
 
         expect(await screen.findByRole('heading', { name: 'Rally week' })).toBeTruthy();
-        expect(screen.getByText('Aug 10 – Aug 14 · published 08/10/2026')).toBeTruthy();
+        expect(screen.getByText('published 08/10/2026')).toBeTruthy();
         expect(screen.getByText('S&P 500 at a record close')).toBeTruthy();
         expect(screen.getByText('Give new calls extra room.')).toBeTruthy();
+    });
+
+    it('closes the macro read with the publication date, and states the week once', async () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        const { container } = renderWeek();
+        await screen.findByRole('heading', { name: 'Rally week' });
+
+        // The range is the heading's job when there is no title, not a subtitle's.
+        expect(screen.queryByText(/Aug 10 – Aug 14 ·/)).toBeNull();
+        expect(container.querySelector('.macro-banner > :last-child')?.className).toBe('macro-meta');
     });
 
     it('falls back to the week range when the newsletter had no title', async () => {

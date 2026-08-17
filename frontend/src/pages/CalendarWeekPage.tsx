@@ -104,10 +104,6 @@ export function CalendarWeekPage() {
 
                 {week && (
                     <section className="macro-banner enter">
-                        <p className="macro-meta">
-                            {weekRangeLabel(week.weekStart, week.weekEnd)} · published {formatMDY(week.publishDate)}
-                        </p>
-
                         {week.macro.length > 0 && (
                             <ul className="macro-grid">
                                 {week.macro.map((note) => (
@@ -118,6 +114,8 @@ export function CalendarWeekPage() {
                                 ))}
                             </ul>
                         )}
+
+                        <p className="macro-meta">published {formatMDY(week.publishDate)}</p>
                     </section>
                 )}
             </div>
