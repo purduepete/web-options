@@ -76,6 +76,14 @@
     color: var(--text);
 }
 
+/* These hold nothing but an icon, so the room a fingertip needs goes around it. */
+@media (pointer: coarse) {
+    .search-trigger,
+    .drawer-toggle {
+        justify-content: center;
+    }
+}
+
 .rotated {
     transform: rotate(180deg);
 }

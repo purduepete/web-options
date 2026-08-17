@@ -203,6 +203,15 @@ button svg {
     pointer-events: none;
 }
 
+/* A fingertip is a far blunter instrument than a cursor, and an icon button sized
+   to its icon is about half of what can be hit reliably. */
+@media (pointer: coarse) {
+    button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
 button:hover:not(:disabled) {
     background: var(--surface-2);
 }

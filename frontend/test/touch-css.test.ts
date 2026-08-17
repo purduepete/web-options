@@ -31,4 +31,12 @@ describe('touch targets', () => {
     it('does not make a tap wait to see whether it is a double tap', () => {
         expect(rule('button')).toContain('touch-action: manipulation');
     });
+
+    it('gives a fingertip the 44px it needs, and only a fingertip', () => {
+        const start = indexCss.indexOf('@media (pointer: coarse)');
+        expect(start).toBeGreaterThan(-1);
+        const block = indexCss.slice(start, indexCss.indexOf('\n}', indexCss.indexOf('\n    }', start)));
+        expect(block).toContain('min-width: 44px');
+        expect(block).toContain('min-height: 44px');
+    });
 });
