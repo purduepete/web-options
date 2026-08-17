@@ -45,15 +45,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Calendars',
         items: [
             {
-                id: '/calendars',
-                label: 'All Calendars',
-                description: 'Every ingested weekly newsletter',
-                path: '/calendars',
-            },
-            {
                 id: '/calendars/latest',
-                label: 'Latest Calendar',
-                description: 'Jump straight to the newest week',
+                label: 'Weekly Calendars',
+                // The week page steps back through the archive, so the newest
+                // one is the way in to all of them.
+                description: 'The newest published week',
                 path: '/calendars/latest',
             },
         ],

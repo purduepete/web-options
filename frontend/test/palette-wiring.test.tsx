@@ -39,6 +39,7 @@ function renderApp() {
                                 <Route element={<Layout />}>
                                     <Route index element={<p>live signals page</p>} />
                                     <Route path="calendars" element={<p>calendars page</p>} />
+                                    <Route path="calendars/latest" element={<p>latest week page</p>} />
                                     <Route path="calendars/:publishDate" element={<p>one week page</p>} />
                                 </Route>
                             </Routes>
@@ -73,10 +74,10 @@ describe('command palette wiring', () => {
         await user.keyboard('{Control>}k{/Control}');
         expect(screen.getByRole('dialog')).toBeTruthy();
 
-        await user.keyboard('all calendars{Enter}');
+        await user.keyboard('weekly calendars{Enter}');
 
         expect(screen.queryByRole('dialog')).toBeNull();
-        expect(screen.getByText('calendars page')).toBeTruthy();
+        expect(screen.getByText('latest week page')).toBeTruthy();
     });
 
     it('opens from the navbar search button and closes on the second Ctrl+K', async () => {

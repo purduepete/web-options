@@ -43,7 +43,7 @@ describe('buildCommands', () => {
         const commands = build();
 
         expect(ids(commands)).toContain('page:/');
-        expect(ids(commands)).toContain('page:/calendars');
+        expect(ids(commands)).toContain('page:/calendars/latest');
         expect(ids(commands)).toContain('page:/settings/appearance');
         expect(ids(commands).some((id) => id.includes('week-explorer'))).toBe(false);
         expect(ids(commands).some((id) => id.includes('symbol-lookup'))).toBe(false);
@@ -53,25 +53,25 @@ describe('buildCommands', () => {
         const navigate = vi.fn();
         const commands = build({ navigate });
 
-        commands.find((command) => command.id === 'page:/calendars')?.run();
+        commands.find((command) => command.id === 'page:/calendars/latest')?.run();
 
-        expect(navigate).toHaveBeenCalledWith('/calendars');
+        expect(navigate).toHaveBeenCalledWith('/calendars/latest');
     });
 
     it('lists favourites and recents first, boosted, and does not repeat them under Pages', () => {
-        const commands = build({ favorites: [item('/calendars')], recent: [item('/settings/key')] });
+        const commands = build({ favorites: [item('/calendars/latest')], recent: [item('/settings/key')] });
 
-        expect(ids(commands).slice(0, 2)).toEqual(['page:/calendars', 'page:/settings/key']);
+        expect(ids(commands).slice(0, 2)).toEqual(['page:/calendars/latest', 'page:/settings/key']);
         expect(commands[0]?.group).toBe('Favourites');
         expect(commands[1]?.group).toBe('Recent');
         expect(commands[0]?.boost).toBeGreaterThan(commands[1]?.boost ?? 0);
-        expect(ids(commands).filter((id) => id === 'page:/calendars')).toHaveLength(1);
+        expect(ids(commands).filter((id) => id === 'page:/calendars/latest')).toHaveLength(1);
     });
 
     it('prefers the favourite entry when a page is both favourite and recent', () => {
-        const commands = build({ favorites: [item('/calendars')], recent: [item('/calendars')] });
+        const commands = build({ favorites: [item('/calendars/latest')], recent: [item('/calendars/latest')] });
 
-        expect(ids(commands).filter((id) => id === 'page:/calendars')).toHaveLength(1);
+        expect(ids(commands).filter((id) => id === 'page:/calendars/latest')).toHaveLength(1);
         expect(commands[0]?.group).toBe('Favourites');
     });
 
@@ -115,7 +115,7 @@ describe('buildCommands', () => {
     });
 
     it('gives every command a unique id', () => {
-        const commands = build({ calendars: CALENDARS, favorites: [item('/')], recent: [item('/calendars')] });
+        const commands = build({ calendars: CALENDARS, favorites: [item('/')], recent: [item('/calendars/latest')] });
         expect(new Set(ids(commands)).size).toBe(commands.length);
     });
 });

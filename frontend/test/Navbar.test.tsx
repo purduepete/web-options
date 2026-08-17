@@ -129,7 +129,7 @@ describe('Navbar on desktop', () => {
         // fireEvent, not user-event: user-event would send a mousedown that the
         // outside-click handler sees first, so this would pass for the wrong
         // reason (and jsdom would try a real document navigation).
-        fireEvent.click(screen.getByRole('link', { name: /All Calendars/ }));
+        fireEvent.click(screen.getByRole('link', { name: /Weekly Calendars/ }));
 
         expect(menu.getAttribute('aria-expanded')).toBe('false');
     });
@@ -153,12 +153,12 @@ describe('Navbar on desktop', () => {
 
     it('records the current page as recently visited', async () => {
         const user = userEvent.setup();
-        renderNavbar('/calendars');
+        renderNavbar('/calendars/latest');
 
         await user.click(screen.getByRole('button', { name: /Menu/ }));
 
         const recent = screen.getByRole('heading', { name: /Recently visited/ }).parentElement;
-        expect(recent?.textContent).toContain('All Calendars');
+        expect(recent?.textContent).toContain('Weekly Calendars');
     });
 });
 
