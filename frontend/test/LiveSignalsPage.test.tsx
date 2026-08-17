@@ -16,8 +16,12 @@ vi.mock('../src/api', async () => {
     };
 });
 
+// Stable like the real provider, whose forget() is a useCallback: a fresh
+// identity here would refire the fetch effect on every render.
+const apiKey = { status: 'ready', forget: () => {} };
+
 vi.mock('../src/auth/ApiKeyProvider', () => ({
-    useApiKey: () => ({ status: 'ready', forget: () => {} }),
+    useApiKey: () => apiKey,
 }));
 
 const { LiveSignalsPage } = await import('../src/pages/LiveSignalsPage');
@@ -136,6 +140,25 @@ describe('LiveSignalsPage', () => {
         await waitFor(() => expect(fetchWeekSignals).toHaveBeenLastCalledWith('2025-08-04'));
     });
 
+    it('clears the old week while the next one is on the way', async () => {
+        let arrive: (value: WeekSignalsResponse) => void = () => {};
+        fetchWeekSignals.mockResolvedValueOnce(week()).mockReturnValueOnce(
+            new Promise<WeekSignalsResponse>((resolve) => {
+                arrive = resolve;
+            }),
+        );
+
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await user.click(screen.getByRole('button', { name: 'Previous' }));
+        await waitFor(() => expect(screen.queryByRole('region', { name: 'Monday Aug 11' })).toBeNull());
+
+        arrive(week({ weekStart: '2025-08-04', weekEnd: '2025-08-08' }));
+        expect(await screen.findByRole('region', { name: 'Monday Aug 11' })).toBeTruthy();
+    });
+
     it('will not step forward when the server says there is nothing there', async () => {
         renderPage();
         await screen.findByRole('heading', { name: 'Week of Aug 11 to Aug 15' });
@@ -201,10 +224,7 @@ describe('LiveSignalsPage', () => {
         const user = userEvent.setup();
         fetchWeekSignals.mockResolvedValue(
             week({
-                days: [
-                    day('2025-08-11', 'Monday', [trade('AAPL')]),
-                    day('2025-08-12', 'Tuesday', [trade('AMD')]),
-                ],
+                days: [day('2025-08-11', 'Monday', [trade('AAPL')]), day('2025-08-12', 'Tuesday', [trade('AMD')])],
             }),
         );
         renderPage();
@@ -272,10 +292,11 @@ describe('LiveSignalsPage', () => {
     it('lists each risk group as a heading under its day', async () => {
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
-        expect(within(monday).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
-            'Top Picks (1)',
-            'Aggressive (1)',
-        ]);
+        expect(
+            within(monday)
+                .getAllByRole('heading', { level: 3 })
+                .map((h) => h.textContent),
+        ).toEqual(['Top Picks (1)', 'Aggressive (1)']);
     });
 
     it('says so when the week is empty rather than showing a bare grid', async () => {

@@ -189,7 +189,7 @@ export function LiveSignalsPage() {
 
             {loading && <Loading label="Loading this week" />}
 
-            {data && !error && (
+            {data && !loading && !error && (
                 <WeekGrid
                     days={days}
                     groups={groups}
