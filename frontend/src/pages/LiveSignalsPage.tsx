@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, fetchEarliestWeek, fetchWeekSignals } from '../api';
@@ -8,6 +8,7 @@ import { buildGroups, filterDaysBySymbol, shiftWeek } from '../signals/grouping'
 import type { GroupId } from '../signals/grouping';
 import { formatWeekTitle } from '../signals/format';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
+import { shortcutSection } from '../shortcuts/shortcutList';
 import { CloseIcon } from '../components/icons';
 import './LiveSignalsPage.css';
 
@@ -203,22 +204,12 @@ export function LiveSignalsPage() {
             <details className="shortcuts">
                 <summary>Keyboard shortcuts</summary>
                 <dl>
-                    <dt>←</dt>
-                    <dd>Previous week</dd>
-                    <dt>→</dt>
-                    <dd>Next week</dd>
-                    <dt>t</dt>
-                    <dd>Top picks only</dd>
-                    <dt>c</dt>
-                    <dd>Conservative only</dd>
-                    <dt>b</dt>
-                    <dd>Balanced only</dd>
-                    <dt>a</dt>
-                    <dd>Aggressive only</dd>
-                    <dt>o</dt>
-                    <dd>Other only</dd>
-                    <dt>j</dt>
-                    <dd>Collapse or expand every group</dd>
+                    {shortcutSection('Live signals').shortcuts.map((shortcut) => (
+                        <Fragment key={shortcut.keys.join('+')}>
+                            <dt>{shortcut.keys.join(' ')}</dt>
+                            <dd>{shortcut.description}</dd>
+                        </Fragment>
+                    ))}
                 </dl>
             </details>
         </main>

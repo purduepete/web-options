@@ -1,0 +1,99 @@
+.shortcuts-root {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+}
+
+.shortcuts-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--overlay);
+    backdrop-filter: blur(2px);
+}
+
+.shortcuts-dialog {
+    position: relative;
+    width: min(460px, calc(100vw - 2rem));
+    margin: 8vh auto 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 84vh;
+    background: rgb(var(--surface-rgb) / 96%);
+    backdrop-filter: blur(16px);
+    border: var(--border-width) solid var(--border);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
+}
+
+.shortcuts-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.9rem;
+    border-bottom: var(--border-width) solid var(--border);
+}
+
+.shortcuts-head h2 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.shortcuts-close {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+    padding: 0.2rem;
+}
+
+.shortcuts-close:hover:not(:disabled) {
+    background: transparent;
+    color: var(--text);
+}
+
+.shortcuts-body {
+    padding: 0.9rem;
+    overflow-y: auto;
+}
+
+.shortcuts-section + .shortcuts-section {
+    margin-top: 1.25rem;
+}
+
+.shortcuts-section h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.shortcuts-section dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    gap: 0.4rem 0.9rem;
+    margin: 0;
+}
+
+.shortcuts-section dt {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    white-space: nowrap;
+}
+
+.shortcuts-section dd {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.shortcuts-section kbd {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    background: var(--surface-2);
+    border: var(--border-width) solid var(--border);
+    color: var(--text);
+}
