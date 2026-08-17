@@ -127,7 +127,7 @@ function Start-Service([hashtable] $Service) {
     $existing = Get-RunningPid $Service
     if ($existing) {
         Write-Host "  $($Service.Name) already listening on $($Service.Port) (pid $existing)" -ForegroundColor DarkGray
-        return
+        return $false
     }
 
     $blocker = Get-ListenerPid $Service.Port
@@ -146,35 +146,48 @@ function Start-Service([hashtable] $Service) {
         -PassThru
     Set-Content -Path (Get-PidFile $Service.Name) -Value $proc.Id -Encoding ascii
     Write-Host "  $($Service.Name) starting (pid $($proc.Id)), log $log"
+    return $true
 }
 
 function Invoke-Start {
     New-Item -ItemType Directory -Path $RunDir -Force | Out-Null
     Write-Host 'Starting weboptions...' -ForegroundColor Cyan
 
+    $launched = @{}
     try {
         Set-BackendCredentials
-        Start-Service $Services.api
+        $launched[$Services.api.Name] = Start-Service $Services.api
     }
     finally {
         Clear-BackendCredentials
     }
 
-    if (-not $ApiOnly) { Start-Service $Services.web }
+    if (-not $ApiOnly) { $launched[$Services.web.Name] = Start-Service $Services.web }
 
     $failed = $false
     foreach ($service in $Services.Values) {
         if ($ApiOnly -and $service.Name -eq 'web') { continue }
         if (Wait-Ready $service.Probe) {
             Write-Host "  $($service.Name) ready on $($service.Port)" -ForegroundColor Green
+            continue
         }
-        else {
-            $failed = $true
-            Write-Host "  $($service.Name) did not answer on $($service.Port)" -ForegroundColor Red
-            Write-Host "  --- tail of $(Get-LogFile $service.Name) ---" -ForegroundColor Red
-            Get-Content (Get-LogFile $service.Name) -Tail 15 -ErrorAction SilentlyContinue
-            Get-Content "$(Get-LogFile $service.Name).err" -Tail 15 -ErrorAction SilentlyContinue
+
+        $failed = $true
+        Write-Host "  $($service.Name) did not answer on $($service.Port)" -ForegroundColor Red
+
+        # The log is only rewritten when this run launches the process. Printing an
+        # older run's crash as if it were current has sent a debugging session
+        # chasing a bug that was already fixed.
+        if (-not $launched[$service.Name]) {
+            Write-Host "  Something was already holding $($service.Port), so this run started nothing." -ForegroundColor Yellow
+            Write-Host "  Whatever is there is not answering. Run 'stop' then 'start' to replace it." -ForegroundColor Yellow
+            continue
         }
+
+        $log = Get-LogFile $service.Name
+        Write-Host "  --- tail of $log ---" -ForegroundColor Red
+        Get-Content $log -Tail 15 -ErrorAction SilentlyContinue
+        Get-Content "$log.err" -Tail 15 -ErrorAction SilentlyContinue
     }
 
     if ($failed) { exit 1 }
