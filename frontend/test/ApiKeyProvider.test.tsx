@@ -51,6 +51,15 @@ describe('ApiKeyProvider startup check', () => {
         expect(screen.getByTestId('status').textContent).toBe('unlocked');
     });
 
+    it('shows the app straight away rather than waiting out the check', () => {
+        localStorage.setItem(STORAGE_KEY, 'woak_stored');
+        fetchMe.mockReturnValue(new Promise(() => {}));
+
+        renderProvider();
+
+        expect(screen.getByTestId('status').textContent).toBe('unlocked');
+    });
+
     it('forgets a key the API actually rejects', async () => {
         localStorage.setItem(STORAGE_KEY, 'woak_revoked');
         fetchMe.mockRejectedValue(new UnauthorizedError());

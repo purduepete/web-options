@@ -7,7 +7,7 @@ import { clearKey, isRemembered, readKey, saveKey } from './keyStore';
 const VERIFY_ATTEMPTS = 5;
 const VERIFY_RETRY_MS = 600;
 
-type Status = 'checking' | 'locked' | 'unlocked';
+type Status = 'locked' | 'unlocked';
 
 interface ApiKeyState {
     status: Status;
@@ -21,29 +21,26 @@ interface ApiKeyState {
 const ApiKeyContext = createContext<ApiKeyState | null>(null);
 
 export function ApiKeyProvider({ children }: { children: ReactNode }) {
-    const [status, setStatus] = useState<Status>('checking');
+    const [status, setStatus] = useState<Status>(() => (readKey() ? 'unlocked' : 'locked'));
     const [identity, setIdentity] = useState<MeResponse | null>(null);
     const [remembered, setRemembered] = useState(isRemembered);
 
     useEffect(() => {
         const stored = readKey();
-        if (!stored) {
-            setStatus('locked');
-            return;
-        }
+        if (!stored) return;
         let cancelled = false;
 
         // A stored key can have been revoked since the last visit, so it is checked
-        // rather than trusted. Only an outright rejection counts: the API is often
-        // still starting up while the page is already being served, and throwing the
-        // key away over an unreachable server means retyping it after every restart.
+        // rather than trusted -- but behind the app rather than in front of it, so a
+        // return visit does not wait out a round trip on a spinner. Only an outright
+        // rejection counts: the API is often still starting up while the page is
+        // already being served, and throwing the key away over an unreachable server
+        // means retyping it after every restart.
         async function verify(key: string) {
             for (let attempt = 1; !cancelled; attempt++) {
                 try {
                     const me = await fetchMe(key);
-                    if (cancelled) return;
-                    setIdentity(me);
-                    setStatus('unlocked');
+                    if (!cancelled) setIdentity(me);
                     return;
                 } catch (error) {
                     if (cancelled) return;
@@ -53,11 +50,8 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
                         setStatus('locked');
                         return;
                     }
-                    if (attempt >= VERIFY_ATTEMPTS) {
-                        // Keep the key and let each page report the outage itself.
-                        setStatus('unlocked');
-                        return;
-                    }
+                    // Out of patience: keep the key and let each page report the outage itself.
+                    if (attempt >= VERIFY_ATTEMPTS) return;
                     await new Promise((resolve) => setTimeout(resolve, VERIFY_RETRY_MS));
                 }
             }
