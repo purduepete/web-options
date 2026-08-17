@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
-import { usePublishedHeight } from '../hooks/usePublishedHeight';
 import { WeekGrid } from '../signals/WeekGrid';
 import { buildGroups, filterDaysBySymbol, shiftWeek } from '../signals/grouping';
 import type { GroupId } from '../signals/grouping';
@@ -31,11 +30,6 @@ export function LiveSignalsPage() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-
-    // The day heads pin under this bar, which wraps to a second row when the
-    // window is narrow.
-    const headRef = useRef<HTMLDivElement>(null);
-    usePublishedHeight(headRef, '--signals-head-height');
 
     useEffect(() => {
         let cancelled = false;
@@ -146,7 +140,7 @@ export function LiveSignalsPage() {
 
     return (
         <main className="signals-page">
-            <div className="signals-head" ref={headRef}>
+            <div className="signals-head">
                 <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : 'VADER daily put recommendations'}</h1>
 
                 <div className="week-nav">

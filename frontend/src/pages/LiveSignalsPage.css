@@ -7,17 +7,10 @@
 }
 
 .signals-head {
-    position: sticky;
-    top: var(--navbar-height, 0px);
-    z-index: 5;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
-    /* The grid slides underneath, so the bar brings its own backdrop and holds
-       a little clear space open below itself. */
-    padding-bottom: 0.75rem;
-    background: var(--bg);
 }
 
 .signals-head h1 {
@@ -83,6 +76,6 @@
 
 .signals-page .day-head {
     position: sticky;
-    top: calc(var(--navbar-height, 0px) + var(--signals-head-height, 0px));
+    top: var(--navbar-height, 0px);
     z-index: 2;
 }

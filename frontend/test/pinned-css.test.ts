@@ -23,19 +23,15 @@ describe('pinned headers', () => {
         expect(indexCss).not.toMatch(/#root\s*\{[^}]*[^-]height:\s*100%/);
     });
 
-    it('hangs the signals bar off the measured navbar', () => {
-        expect(signalsCss).toMatch(/\.signals-head\s*\{[^}]*position:\s*sticky/);
-        expect(signalsCss).toMatch(/\.signals-head\s*\{[^}]*top:\s*var\(--navbar-height/);
-        // Without a backdrop the grid scrolls through the bar.
-        expect(signalsCss).toMatch(/\.signals-head\s*\{[^}]*background:/);
-    });
-
-    it('hangs the day names off the navbar and the bar together', () => {
+    it('hangs the day names off the measured navbar', () => {
         const rule = /\.signals-page \.day-head\s*\{([^}]*)\}/.exec(signalsCss)?.[1] ?? '';
 
         expect(rule).toContain('position: sticky');
         expect(rule).toContain('--navbar-height');
-        expect(rule).toContain('--signals-head-height');
+    });
+
+    it('leaves the week bar to scroll away', () => {
+        expect(signalsCss).not.toMatch(/\.signals-head\s*\{[^}]*position:\s*sticky/);
     });
 
     it('stops the day card being a scroll container of its own', () => {
