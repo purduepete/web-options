@@ -37,9 +37,10 @@ export function LatestCalendarPage() {
 
     if (publishDate) return <Navigate to={`/calendars/${publishDate}`} replace />;
 
+    // No heading: this is a stop on the way to a week, and naming it would only
+    // put a third title in front of the reader before the week's own arrives.
     return (
         <main>
-            <h1>Latest calendar</h1>
             {error ? (
                 <p className="signals-error" role="alert">
                     {error}

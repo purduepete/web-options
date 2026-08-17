@@ -95,6 +95,12 @@ describe('LiveSignalsPage', () => {
         expect(await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' })).toBeTruthy();
     });
 
+    it('says nothing until it knows the week, rather than naming itself twice', () => {
+        // The row still holds its shape, so the week arrives without a jump.
+        const { container } = renderPage();
+        expect(container.querySelector('.page-head h1')?.textContent).toBe('');
+    });
+
     it('draws a card per day with the trade count in its header', async () => {
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });

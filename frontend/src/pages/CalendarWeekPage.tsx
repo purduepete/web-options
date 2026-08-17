@@ -80,11 +80,9 @@ export function CalendarWeekPage() {
         <main className="calendar-week-page">
             <div className="calendar-head" ref={headRef}>
                 <div className="page-head">
-                    <h1>
-                        {week
-                            ? (week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`)
-                            : 'Weekly options calendar'}
-                    </h1>
+                    {/* Empty until the week is known: a name that is replaced a
+                        moment later reads as a page that changed underfoot. */}
+                    <h1>{week ? (week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`) : ''}</h1>
 
                     <div className="week-nav">
                         <button type="button" onClick={() => open(earliest)} disabled={!earliest || earliest === current}>

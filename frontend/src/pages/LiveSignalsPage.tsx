@@ -141,7 +141,9 @@ export function LiveSignalsPage() {
     return (
         <main className="signals-page">
             <div className="page-head">
-                <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : 'VADER daily put recommendations'}</h1>
+                {/* Empty until the week is known: a name that is replaced a
+                    moment later reads as a page that changed underfoot. */}
+                <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : ''}</h1>
 
                 <div className="week-nav">
                     <button type="button" onClick={goEarliest} disabled={!data?.hasPriorWeekData}>

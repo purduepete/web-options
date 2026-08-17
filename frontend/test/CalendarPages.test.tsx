@@ -21,6 +21,7 @@ vi.mock('../src/auth/ApiKeyProvider', () => ({
 
 const { CalendarsIndexPage } = await import('../src/pages/CalendarsIndexPage');
 const { CalendarWeekPage } = await import('../src/pages/CalendarWeekPage');
+const { LatestCalendarPage } = await import('../src/pages/LatestCalendarPage');
 const { NotFoundError } = await import('../src/api');
 
 function trade(ticker: string, extra: Partial<CalendarTrade> = {}): CalendarTrade {
@@ -203,6 +204,14 @@ describe('CalendarWeekPage', () => {
         expect(await screen.findByRole('heading', { name: 'Week of Aug 10 – Aug 14' })).toBeTruthy();
     });
 
+    it('says nothing until it knows the week, rather than naming itself twice', () => {
+        fetchCalendar.mockResolvedValue(calendar());
+        const { container } = renderWeek();
+
+        // The row still holds its shape, so the week arrives without a jump.
+        expect(container.querySelector('.page-head h1')?.textContent).toBe('');
+    });
+
     it('draws a card per day carrying its rule and its event', async () => {
         fetchCalendar.mockResolvedValue(calendar());
         renderWeek();
@@ -307,5 +316,30 @@ describe('CalendarWeekPage', () => {
         for (const name of ['First', 'Previous', 'Next', 'Latest']) {
             expect(button(name).hasAttribute('disabled')).toBe(true);
         }
+    });
+});
+
+describe('LatestCalendarPage', () => {
+    function renderLatest() {
+        return render(
+            <MemoryRouter initialEntries={['/calendars/latest']}>
+                <Routes>
+                    <Route path="/calendars/latest" element={<LatestCalendarPage />} />
+                    <Route path="/calendars/:publishDate" element={<p>the week itself</p>} />
+                </Routes>
+            </MemoryRouter>,
+        );
+    }
+
+    it('hands the reader to the newest week', async () => {
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderLatest();
+        expect(await screen.findByText('the week itself')).toBeTruthy();
+    });
+
+    it('is a stop on the way, so it does not name itself', () => {
+        fetchCalendars.mockResolvedValue({ calendars: archive() });
+        renderLatest();
+        expect(screen.queryByRole('heading')).toBeNull();
     });
 });
