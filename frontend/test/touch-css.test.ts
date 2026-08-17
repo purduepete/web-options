@@ -21,7 +21,10 @@ function rule(selector: string): string {
     expect(start).toBeGreaterThan(-1);
     const open = indexCss.indexOf('{', start);
     const close = indexCss.indexOf('}', open);
-    return indexCss.slice(open + 1, close).replace(/\s+/g, ' ').trim();
+    return indexCss
+        .slice(open + 1, close)
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 describe('touch targets', () => {
