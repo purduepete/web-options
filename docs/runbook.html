@@ -446,29 +446,26 @@ Get-ScheduledTask -TaskName WebOptions | Get-ScheduledTaskInfo</code></pre>
                 <h2>Update: pull and rebuild</h2>
                 <div class="body">
                     <p>
-                        The build is not committed, so a pull alone changes nothing that is running. Every update is
-                        these five steps, in this order.
+                        The build is not committed, so a pull alone changes nothing that is running. Run the guarded
+                        update command from the repository instead. It refuses local changes and database migrations,
+                        pulls with fast-forward only, installs dependencies when the lockfile changed, builds, restarts
+                        the listener, and waits for the database readiness check.
                     </p>
                     <pre><code>cd C:\Files\Dev\main\weboptions
-Stop-ScheduledTask -TaskName WebOptions
-
-git pull
-npm ci                 # npm install if you want to allow lockfile drift
-npm run build          # shared -> backend -> frontend, in that order
-
-Start-ScheduledTask -TaskName WebOptions
-curl http://127.0.0.1:5057/readyz</code></pre>
+npm run update</code></pre>
                     <p>
-                        <code>npm run build</code> is the whole thing. It compiles <code>shared</code> first because
-                        both other workspaces import it, then the backend, then Vite bundles the front end into
-                        <code>frontend\dist</code>. That last folder is what the server hands to the browser.
+                        The first update after this command was introduced needs one manual <code>git pull</code> so the
+                        script exists locally. After that, <code>npm run update</code> handles the pull too. The running
+                        service stays in place until the pull and build succeed.
                     </p>
                     <div class="note">
                         <p>
                             <strong>Run the migrations only when the numbered SQL changed.</strong> Check
                             <code>database\migrations</code> in the diff. If it did, run
                             <code>npm run migrate</code> with operator credentials, not the read-only login, and do it
-                            before starting the task.
+                            before starting the task. The update command remembers the blocked commit. After the
+                            migrations succeed, finish with
+                            <code>pwsh -NoProfile -File scripts/update.ps1 -MigrationsApplied</code>.
                         </p>
                     </div>
                     <p>
