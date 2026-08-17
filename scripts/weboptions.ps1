@@ -90,6 +90,11 @@ function Wait-Ready([string] $Url, [int] $TimeoutSeconds = 45) {
 }
 
 function Set-BackendCredentials {
+    # Vite serves the app in dev. A WEBOPTIONS_WEB_ROOT left over from a production
+    # run makes the backend refuse to start, and a relative one resolves against
+    # backend/ rather than the repo root, which reads as a nonsense path.
+    Remove-Item Env:WEBOPTIONS_WEB_ROOT -ErrorAction SilentlyContinue
+
     if ($Operator) {
         if (-not (Test-Path $OperatorConfig)) {
             throw "Operator mode needs $OperatorConfig, which is not on this machine."

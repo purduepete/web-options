@@ -61,8 +61,10 @@ try {
 }
 finally {
     # The child already holds its own copy. Leaving these set is what makes the
-    # operator tools connect read-only later and fail in a confusing way.
-    Remove-Item Env:DB_SERVER, Env:DB_NAME, Env:DB_USER, Env:DB_PASSWORD -ErrorAction SilentlyContinue
+    # operator tools connect read-only later, and makes the dev server refuse to
+    # start because it inherits a web root it should never have.
+    Remove-Item Env:DB_SERVER, Env:DB_NAME, Env:DB_USER, Env:DB_PASSWORD, `
+        Env:WEBOPTIONS_WEB_ROOT, Env:NODE_ENV, Env:PORT, Env:TZ -ErrorAction SilentlyContinue
 }
 
 "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] weboptions exited with $exit" |

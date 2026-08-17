@@ -74,6 +74,10 @@ to start if the build is missing rather than serving a blank page.
 
 Everything it prints goes to `.run\weboptions.log` as well as the console.
 
+Set `WEBOPTIONS_WEB_ROOT` yourself only if you know why. It has to be absolute, or
+it resolves against whatever directory the process started in rather than the repo
+root, and the dev server refuses to start while it is set at all.
+
 `docs/runbook.html` covers the rest: the Task Scheduler entry, the update procedure,
 what to check when something looks wrong.
 

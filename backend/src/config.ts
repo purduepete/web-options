@@ -41,9 +41,11 @@ function resolveWebRoot(value: string | undefined): string | null {
     if (!value) return null;
     const root = path.resolve(value);
     if (!fs.existsSync(path.join(root, 'index.html'))) {
+        const relative = path.isAbsolute(value) ? '' : ` (${value}, resolved against ${process.cwd()})`;
         throw new Error(
-            `WEBOPTIONS_WEB_ROOT is ${root}, but there is no index.html there. ` +
-                'Run npm run build first, or point it at frontend/dist.',
+            `WEBOPTIONS_WEB_ROOT is ${root}${relative}, but there is no index.html there. ` +
+                'Run npm run build first, or point it at frontend/dist. In development ' +
+                'it should not be set at all, since Vite serves the app.',
         );
     }
     return root;

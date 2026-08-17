@@ -91,4 +91,10 @@ describe('resolving the web root', () => {
             fs.rmSync(empty, { recursive: true, force: true });
         }
     });
+
+    // A relative value resolves against the working directory, not the repo root,
+    // so the reported path looks invented unless the message says what it used.
+    it('names the working directory when the path was relative', () => {
+        expect(() => loadConfig({ ...env, WEBOPTIONS_WEB_ROOT: 'no-such-web-root' })).toThrow(/resolved against/);
+    });
 });
