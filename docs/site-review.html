@@ -379,7 +379,7 @@
         <header>
             <div class="bar">
                 <h1>weboptions — Site Review</h1>
-                <span class="tag">step 0 complete · parity gate green</span>
+                <span class="tag">step 0 complete · step 1 all but the runbook</span>
                 <span class="spacer"></span>
                 <button
                     class="icon-btn"
@@ -534,7 +534,7 @@
 
                         <rect class="node now" x="222" y="26" width="170" height="68"></rect>
                         <text class="t" x="307" y="50" text-anchor="middle">1 · Failure states</text>
-                        <text class="t s" x="307" y="68" text-anchor="middle">key · DB · offline</text>
+                        <text class="t s" x="307" y="68" text-anchor="middle">key · DB · offline ✓</text>
                         <text class="t s" x="307" y="84" text-anchor="middle">runbook · backup</text>
 
                         <rect class="node" x="394" y="26" width="170" height="68"></rect>
@@ -554,8 +554,8 @@
 
                         <rect class="node" x="910" y="26" width="170" height="68"></rect>
                         <text class="t" x="995" y="50" text-anchor="middle">5 · Features</text>
-                        <text class="t s" x="995" y="68" text-anchor="middle">Symbol Lookup</text>
-                        <text class="t s" x="995" y="84" text-anchor="middle">Export · Week Explorer</text>
+                        <text class="t s" x="995" y="68" text-anchor="middle">Export</text>
+                        <text class="t s" x="995" y="84" text-anchor="middle">Symbol Lookup · Explorer</text>
 
                         <rect class="node done" x="1106" y="20" width="14" height="14"></rect>
                         <text class="t s" x="1128" y="31">done</text>
@@ -665,7 +665,8 @@
                 </h2>
                 <p class="sub">
                     The part both reviewers said was missing entirely. For an app that lives on one box in the house,
-                    this is what "ready" actually means.
+                    this is what "ready" actually means. Four of the seven are built; the two operations write-ups need
+                    decisions only you can make.
                 </p>
                 <table>
                     <thead>
@@ -676,7 +677,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="w">Five distinct failure messages</td>
+                            <td class="w"><span class="pill do">done</span> Five distinct failure messages</td>
                             <td class="m">
                                 Bad or revoked key, SQL login rejected, SQL unreachable, API process down, and a
                                 genuinely empty week are five different problems. One generic error wastes an evening
@@ -684,35 +685,36 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">A readiness check that touches SQL</td>
+                            <td class="w"><span class="pill do">done</span> A readiness check that touches SQL</td>
                             <td class="m">
                                 <code>/healthz</code> only proves the Node process is alive. It says nothing about
                                 whether <code>weboptions_ro</code> can still connect or still holds its grants.
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">Unauthorized handling on the settings pages</td>
+                            <td class="w"><span class="pill no">dropped</span> Unauthorized handling on the settings pages</td>
                             <td class="m">
-                                AppearancePage and ApiKeyPage assume the gate still holds. A key revoked while a tab
-                                sits open needs a visible way back in.
+                                Both pages turned out to be static: they read the identity the provider already holds
+                                and fetch nothing. There is no request to fail. The gap was really in the key prompt,
+                                which called a key bad whenever anything went wrong, and that is fixed.
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">Safe-area insets</td>
+                            <td class="w"><span class="pill do">done</span> Safe-area insets</td>
                             <td class="m">
                                 No <code>env(safe-area-inset-*)</code> anywhere, on an app used on iPad and phone with
                                 three stacked sticky layers.
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">The jimbrownhome runbook</td>
+                            <td class="w"><span class="pill later">needs you</span> The jimbrownhome runbook</td>
                             <td class="m">
                                 Startup after reboot, where secrets live, the log path, how to restart, how to tell it
-                                is healthy, and what to do when it is not.
+                                is healthy, and what to do when it is not. None of that can be invented for you.
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">Rotation and backup, written down</td>
+                            <td class="w"><span class="pill later">needs you</span> Rotation and backup, written down</td>
                             <td class="m">
                                 How the read-only SQL password rotates, how an API key is minted and revoked, and what
                                 gets backed up: <code>.secrets</code>, <code>opt.api_key</code>, migration history, the
@@ -720,14 +722,38 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="w">Delete <code>/calendars</code></td>
+                            <td class="w"><span class="pill do">done</span> Delete <code>/calendars</code></td>
                             <td class="m">
-                                Decided. The index route, page, CSS and tests come out. Latest Calendar plus the arrow
-                                keys already walks the whole archive, so a second way in earns nothing.
+                                The index route, page, CSS and tests came out. Latest Calendar plus the arrow keys
+                                already walks the whole archive, so a second way in earned nothing.
                             </td>
                         </tr>
                     </tbody>
                 </table>
+                <ul class="notes">
+                    <li>
+                        <b>The dev proxy was hiding the very state this was for.</b> Vite answers a refused connection
+                        with a 500 of its own, so "the API is not running" arrived looking like a bug in the API. This
+                        one only answers JSON, so an error body that is not JSON is now read as the server being down.
+                        Confirmed by killing the process: the page says so in words, and keeps the key.
+                    </li>
+                    <li>
+                        <b>One query covers four things.</b> <code>/readyz</code> reads a row from
+                        <code>opt.api_key</code>, which proves in a single round trip that the server is reachable, the
+                        login works, the schema is deployed and the grants are still there. <code>/healthz</code> is
+                        left alone as pure liveness, since that is what a service manager wants.
+                    </li>
+                    <li>
+                        Driver codes are classified rather than pattern-matched on message text.
+                        <code>ELOGIN</code> means a rotated password and says so; the socket and timeout codes mean the
+                        database is out of reach. Anything else stays a 500, so an outage and a mistake never blur.
+                    </li>
+                    <li>
+                        The insets use <code>max()</code> against the design value, not the raw <code>env()</code>. On a
+                        device with no inset the naive version would have dropped the gutter to nothing. Asserted in
+                        <code>safe-area-css.test.ts</code>, since jsdom has no notch to render.
+                    </li>
+                </ul>
             </section>
 
             <!-- ============================================================ 5 -->
@@ -1057,7 +1083,7 @@
                         <tr>
                             <td class="w"><code>/calendars</code></td>
                             <td class="m">
-                                Delete it. The route, page, CSS and tests come out in step 1. Latest Calendar plus the
+                                Delete it. Done: the route, page, CSS and tests are gone. Latest Calendar plus the
                                 arrow keys is the archive.
                             </td>
                         </tr>
@@ -1079,7 +1105,10 @@
                 </table>
             </section>
 
-            <footer>Site review · 2026-08-16 · reviewed by GPT-5.5 and MAI-Code-1.1-Flash · step 0 complete</footer>
+            <footer>
+                Site review · 2026-08-16 · reviewed by GPT-5.5 and MAI-Code-1.1-Flash · step 0 complete, step 1 all but
+                the runbook
+            </footer>
         </main>
 
         <script>
