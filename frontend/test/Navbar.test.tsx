@@ -72,6 +72,19 @@ describe('Navbar on desktop', () => {
         expect(menu.getAttribute('aria-expanded')).toBe('false');
     });
 
+    it('opens and closes the menu from Ctrl+backslash', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        const menu = screen.getByRole('button', { name: /Menu/ });
+
+        await user.keyboard('{Control>}\\{/Control}');
+        expect(menu.getAttribute('aria-expanded')).toBe('true');
+
+        await user.keyboard('{Control>}\\{/Control}');
+        expect(menu.getAttribute('aria-expanded')).toBe('false');
+    });
+
     it('shows placeholders without making them links', async () => {
         const user = userEvent.setup();
         renderNavbar();
@@ -162,5 +175,13 @@ describe('Navbar on mobile', () => {
 
         await user.keyboard('{Escape}');
         expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+    });
+
+    it('opens the drawer from Ctrl+backslash, since there is no panel here', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        await user.keyboard('{Control>}\\{/Control}');
+        expect(screen.getByRole('button', { name: 'Close menu' })).toBeTruthy();
     });
 });

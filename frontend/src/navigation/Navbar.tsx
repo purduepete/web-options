@@ -59,7 +59,16 @@ export function Navbar({
 
     useEffect(() => {
         function onKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') closeAll();
+            if (event.key === 'Escape') {
+                closeAll();
+                return;
+            }
+            // Ctrl+\ opens the menu, next to the Ctrl+K that opens the search.
+            if (event.key === '\\' && (event.ctrlKey || event.metaKey) && !event.altKey) {
+                event.preventDefault();
+                if (isDesktop) setMenuOpen((open) => !open);
+                else setDrawerOpen((open) => !open);
+            }
         }
         function onPointerDown(event: MouseEvent) {
             if (!navRef.current?.contains(event.target as Node | null)) closeAll();
@@ -70,7 +79,7 @@ export function Navbar({
             document.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('mousedown', onPointerDown);
         };
-    }, [closeAll]);
+    }, [closeAll, isDesktop]);
 
     function toggleSection(id: string) {
         setOpenSection((current) => (current === id ? null : id));
@@ -102,6 +111,7 @@ export function Navbar({
                             className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
                             aria-expanded={menuOpen}
                             aria-controls="mega-panel"
+                            title="Menu (Ctrl \)"
                             onClick={() => setMenuOpen((open) => !open)}
                         >
                             Menu
