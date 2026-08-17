@@ -204,6 +204,22 @@ certutil -addstore -f "ROOT" "$env:OneDrive\Caddy-Local-CA.crt"
 
 Fully restart the browser afterwards (see below); a refresh isn't enough.
 
+**Trusting it on an iPad / iPhone:** iOS treats a root CA as a configuration
+profile and needs two separate steps, install then enable.
+
+1. Get `Caddy-Local-CA.crt` onto the device: open the OneDrive app (it's the same
+   file copied above), tap it, and share it to Files, or AirDrop it from a Mac.
+   Opening it prompts "Profile Downloaded".
+2. Install the profile: **Settings → General → VPN & Device Management** → tap the
+   downloaded profile → **Install** (enter the passcode).
+3. Enable full trust, which step 2 does not do on its own: **Settings → General →
+   About → Certificate Trust Settings** → turn on trust for "Caddy Local
+   Authority".
+4. Close and reopen Safari, then browse to `https://<lan-ip>:5443`.
+
+Without step 3, iOS installs the profile but Safari still shows the untrusted
+warning; that's the step people usually miss.
+
 **Still shows "Not secure" after `caddy trust` succeeds?** Chromium browsers (Edge,
 Chrome) cache trust decisions per running process, so a page refresh isn't enough.
 Fully restart the browser: type `edge://restart` in the address bar, or close every
