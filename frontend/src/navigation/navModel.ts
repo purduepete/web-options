@@ -55,18 +55,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         ],
     },
     {
-        id: 'reports',
-        label: 'Reports',
-        items: [
-            {
-                id: '/reports/latest',
-                label: 'Weekly Report',
-                description: 'The newest weekly results review',
-                path: '/reports/latest',
-            },
-        ],
-    },
-    {
         id: 'tools',
         label: 'Tools',
         items: [
