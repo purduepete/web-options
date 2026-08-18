@@ -19,9 +19,9 @@ const PROBES: Probe[] = [
         run: (pool) => pool.request().query('SELECT TOP 1 id FROM opt.api_key'),
     },
     {
-        label: 'SELECT dbo.telegram_signal',
+        label: 'SELECT opt.telegram_signal',
         expect: 'allow',
-        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM dbo.telegram_signal'),
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM opt.telegram_signal'),
     },
     {
         label: 'INSERT opt.api_key',
@@ -35,9 +35,9 @@ const PROBES: Probe[] = [
             ),
     },
     {
-        label: 'UPDATE dbo.telegram_signal',
+        label: 'UPDATE opt.telegram_signal',
         expect: 'deny',
-        run: (pool) => pool.request().batch(`BEGIN TRAN; UPDATE dbo.telegram_signal SET symbol = symbol; ROLLBACK;`),
+        run: (pool) => pool.request().batch(`BEGIN TRAN; UPDATE opt.telegram_signal SET symbol = symbol; ROLLBACK;`),
     },
     {
         label: 'CREATE TABLE opt.probe',

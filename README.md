@@ -6,7 +6,7 @@ API, Azure SQL. It runs on the home LAN only and has no cloud hosting.
 Two things to look at:
 
 - **Live signals** - this week's VADER cash-secured-put signals from webportfolio's
-  `dbo.telegram_signal` table, laid out Monday to Friday and grouped by risk tier.
+  `opt.telegram_signal` table, laid out Monday to Friday and grouped by risk tier.
   Arrow keys walk backwards and forwards through the weeks.
 - **Weekly calendars** - each week's Substack-derived calendar, ingested into the
   `opt` schema rather than read off disk. Latest Calendar plus the arrow keys walks

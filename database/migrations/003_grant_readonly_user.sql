@@ -25,10 +25,10 @@ GO
 -- Includes opt.api_key, which the server must read to authenticate anyone at all.
 -- Accepted knowingly: the column holds SHA-256 of 36 random bytes, so the table is
 -- of no use to a reader, and the DENY below means it can never be written.
+-- telegram_signal moved from dbo to opt (webportfolio#596), so the schema-level
+-- grant above already covers it. The prior object-level
+-- `GRANT SELECT ON OBJECT::dbo.telegram_signal` is retired; do not reintroduce it.
 GRANT SELECT ON SCHEMA::opt TO weboptions_ro;
-GO
-
-GRANT SELECT ON OBJECT::dbo.telegram_signal TO weboptions_ro;
 GO
 
 -- Database scope, so it also covers tables and schemas that do not exist yet.

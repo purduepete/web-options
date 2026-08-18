@@ -40,7 +40,7 @@ WITH base AS (
             ORDER BY CASE WHEN s.tier IS NULL THEN 1 ELSE 0 END,
                      s.annualized_yield DESC
         ) AS rn
-    FROM dbo.telegram_signal s
+    FROM opt.telegram_signal s
     WHERE s.is_current = 1 AND s.parse_status = 'parsed' AND s.option_right = 'P'
       AND s.report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 )
@@ -54,13 +54,13 @@ ORDER BY report_date, tier, option_right, annualized_yield DESC
 
 export const EXISTS_QUERY = `
 SELECT TOP 1 1 AS found
-FROM dbo.telegram_signal
+FROM opt.telegram_signal
 WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
   AND report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 `;
 
 export const EARLIEST_DATE_QUERY = `
 SELECT MIN(report_date) AS earliest
-FROM dbo.telegram_signal
+FROM opt.telegram_signal
 WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
 `;
