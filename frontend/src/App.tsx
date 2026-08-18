@@ -9,8 +9,10 @@ import { ApiKeyPage } from './pages/ApiKeyPage';
 import { AppearancePage } from './pages/AppearancePage';
 import { CalendarWeekPage } from './pages/CalendarWeekPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
+import { LatestReportPage } from './pages/LatestReportPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ReportWeekPage } from './pages/ReportWeekPage';
 import { ThemeProvider } from './theme/ThemeProvider';
 
 export default function App() {
@@ -42,6 +44,8 @@ function Gate() {
                             <Route index element={<LiveSignalsPage />} />
                             <Route path="calendars/latest" element={<LatestCalendarPage />} />
                             <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
+                            <Route path="reports/latest" element={<LatestReportPage />} />
+                            <Route path="reports/:publishDate" element={<ReportWeekPage />} />
                             <Route path="settings/appearance" element={<AppearancePage />} />
                             <Route path="settings/key" element={<ApiKeyPage />} />
                             <Route path="*" element={<NotFoundPage />} />

@@ -4,12 +4,14 @@ import type {
     EarliestWeekResponse,
     HealthResponse,
     MeResponse,
+    ReportsIndexResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
 import { isIsoDate } from '@weboptions/shared';
 import type { AppConfig } from '../config';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { requireApiKey } from '../middleware/apiKey';
+import { fetchReport, listReports } from '../reports/repository';
 import { earliestWeekMonday, fetchWeek, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
 import { addDays, currentWeekMonday, parseWeekParam, toIsoDate } from '../weeks';
@@ -114,6 +116,33 @@ export function createApiRouter(config: AppConfig): Router {
                 return;
             }
             res.json(calendar);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/reports', async (_req, res, next) => {
+        try {
+            const body: ReportsIndexResponse = { reports: await listReports(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/reports/:publishDate', async (req, res, next) => {
+        const { publishDate } = req.params;
+        if (!isIsoDate(publishDate)) {
+            res.status(400).json({ error: 'publishDate must be YYYY-MM-DD' });
+            return;
+        }
+        try {
+            const report = await fetchReport(config.db, publishDate);
+            if (!report) {
+                res.status(404).json({ error: 'no report for that date' });
+                return;
+            }
+            res.json(report);
         } catch (error) {
             next(error);
         }

@@ -1,0 +1,55 @@
+{
+  "publishDate": "2026-08-16",
+  "title": "$6,853 in Weekly Options Income from Selling Puts and Calls: August 10-14 Review & Case Studies",
+  "sourceUrl": "https://themultiplier.substack.com/p/6853-in-weekly-options-income-from",
+  "metrics": {
+    "netPnl": 6853,
+    "closedLegs": 38,
+    "winningLegs": 35,
+    "rollLegs": 3,
+    "hitRate": 92.1,
+    "winnersAmount": 6911,
+    "rollCost": 58,
+    "collateral": 455150,
+    "returnPct": 1.51,
+    "newPositions": 38,
+    "newPremium": 12853,
+    "netCash": 8748,
+    "medianDaysHeld": 10,
+    "openPositionsTotal": 87,
+    "openCalls": 55,
+    "openPuts": 32,
+    "openGreen": 23,
+    "openYellow": 24,
+    "openRed": 40
+  },
+  "macro": [
+    { "label": "VIX", "text": "Opened 15.46 Monday, closed 14.25 Friday, the week's low." }
+  ],
+  "callouts": [
+    {
+      "ticker": "ALB",
+      "kind": "roll",
+      "headline": "Roll chain from $135 to $116 closed keeping ~97% of premium",
+      "body": "Walked the strike down three times as ALB fell, then the stock reversed and both final legs closed near max profit."
+    },
+    {
+      "ticker": "HOOD",
+      "kind": "roll",
+      "headline": "Defensive roll on a call pushed past 0.60 delta",
+      "body": "Rolled out and up for a net credit, moving the strike from $97 to $115 despite booking a $263 loss on the closed leg."
+    },
+    {
+      "ticker": "ORCL",
+      "kind": "assignment",
+      "headline": "Covered call finished in the money, shares called away at $135",
+      "body": "Stock closed well above the strike at expiry; the $297 premium is kept regardless."
+    },
+    {
+      "ticker": "ALB",
+      "kind": "assignment",
+      "headline": "Second ALB position headed for assignment on the $160 put",
+      "body": "Deep in the money with days left; cost basis after premium works out to roughly $144/share once assigned."
+    }
+  ]
+}

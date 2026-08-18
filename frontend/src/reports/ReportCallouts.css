@@ -1,0 +1,72 @@
+/* One card per notable-trade write-up (roll, assignment, close, note). */
+
+.report-callouts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.75rem;
+}
+
+.callout-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.875rem;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    border-left: 3px solid var(--highlight);
+    box-shadow: var(--shadow-xs);
+}
+
+.callout-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.callout-ticker {
+    font-weight: 700;
+    color: var(--text-heading);
+}
+
+.callout-kind {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.callout-kind.roll {
+    color: var(--balanced);
+}
+
+.callout-kind.assignment {
+    color: var(--aggressive);
+}
+
+.callout-kind.close {
+    color: var(--conservative);
+}
+
+.callout-headline {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.callout-body {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.no-callouts {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}

@@ -99,6 +99,63 @@ export interface CalendarsIndexResponse {
     calendars: CalendarSummary[];
 }
 
+/** Kind of notable-trade write-up on a weekly results report. Extensible: new
+ * values are an app-level allowlist change, not a schema migration. */
+export type ReportCalloutKind = 'roll' | 'assignment' | 'close' | 'note';
+
+export interface ReportCallout {
+    ticker: string;
+    kind: ReportCalloutKind;
+    headline: string;
+    body: string | null;
+}
+
+/** Headline metrics for one week's realized performance and open-position book.
+ * Percentages (hitRate, returnPct) are percentage points, e.g. 92.1 not 0.921,
+ * matching CalendarTrade.annualizedYield's convention. */
+export interface ReportMetrics {
+    netPnl: number | null;
+    closedLegs: number | null;
+    winningLegs: number | null;
+    rollLegs: number | null;
+    hitRate: number | null;
+    winnersAmount: number | null;
+    rollCost: number | null;
+    collateral: number | null;
+    returnPct: number | null;
+    newPositions: number | null;
+    newPremium: number | null;
+    netCash: number | null;
+    medianDaysHeld: number | null;
+    openPositionsTotal: number | null;
+    openCalls: number | null;
+    openPuts: number | null;
+    openGreen: number | null;
+    openYellow: number | null;
+    openRed: number | null;
+}
+
+export interface WeeklyReport {
+    publishDate: IsoDate;
+    title: string | null;
+    sourceUrl: string | null;
+    macro: MacroNote[];
+    metrics: ReportMetrics;
+    callouts: ReportCallout[];
+}
+
+export interface WeeklyReportSummary {
+    publishDate: IsoDate;
+    title: string | null;
+    netPnl: number | null;
+    hitRate: number | null;
+    calloutCount: number;
+}
+
+export interface ReportsIndexResponse {
+    reports: WeeklyReportSummary[];
+}
+
 export interface HealthResponse {
     status: 'ok';
 }

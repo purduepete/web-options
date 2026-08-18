@@ -3,7 +3,9 @@ import type {
     CalendarsIndexResponse,
     EarliestWeekResponse,
     MeResponse,
+    ReportsIndexResponse,
     WeekSignalsResponse,
+    WeeklyReport,
 } from '@weboptions/shared';
 import { readKey } from './auth/keyStore';
 
@@ -113,4 +115,12 @@ export function fetchCalendars(): Promise<CalendarsIndexResponse> {
 
 export function fetchCalendar(publishDate: string): Promise<CalendarWeek> {
     return getJson<CalendarWeek>(`/api/calendars/${encodeURIComponent(publishDate)}`);
+}
+
+export function fetchReports(): Promise<ReportsIndexResponse> {
+    return getJson<ReportsIndexResponse>('/api/reports');
+}
+
+export function fetchReport(publishDate: string): Promise<WeeklyReport> {
+    return getJson<WeeklyReport>(`/api/reports/${encodeURIComponent(publishDate)}`);
 }
