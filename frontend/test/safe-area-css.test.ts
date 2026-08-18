@@ -35,9 +35,9 @@ describe('safe areas', () => {
 
     it('never lets an inset shrink the padding below the design value', () => {
         // `padding-left: env(...)` alone is a regression on a device with no
-        // inset: it would drop 1.5rem of gutter to nothing.
-        expect(indexCss).toMatch(/padding-left:\s*max\(1\.5rem,\s*env\(safe-area-inset-left\)\)/);
-        expect(indexCss).toMatch(/padding-right:\s*max\(1\.5rem,\s*env\(safe-area-inset-right\)\)/);
+        // inset: it would drop the whole gutter to nothing.
+        expect(indexCss).toMatch(/padding-left:\s*max\(3%,\s*env\(safe-area-inset-left\)\)/);
+        expect(indexCss).toMatch(/padding-right:\s*max\(3%,\s*env\(safe-area-inset-right\)\)/);
     });
 
     it('drops the navbar below the notch when there is no browser chrome above it', () => {

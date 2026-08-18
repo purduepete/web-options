@@ -79,7 +79,7 @@ describe('ThemeProvider', () => {
         expect(meta.getAttribute('content')).toBe('#020617');
 
         await user.click(screen.getByRole('radio', { name: 'Light' }));
-        expect(meta.getAttribute('content')).toBe('#ffffff');
+        expect(meta.getAttribute('content')).toBe('#f9fafb');
 
         meta.remove();
     });

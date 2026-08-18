@@ -28,6 +28,7 @@
     padding: 0.875rem;
     background: var(--surface);
     border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
 }
 
 .macro-meta {
@@ -55,13 +56,14 @@
     gap: 0.2rem;
     padding: 0.625rem 0.75rem;
     background: var(--surface-2);
-    border: var(--border-width) solid var(--border);
+    border: var(--border-width) solid var(--border-soft);
     border-left: 3px solid var(--highlight);
     font-size: 0.78rem;
 }
 
 .macro-item b {
     font-size: 0.82rem;
+    color: var(--text-heading);
 }
 
 .macro-item span {

@@ -99,34 +99,36 @@ export function Navbar({
                     Web Options
                 </Link>
 
+                {isDesktop && (
+                    <button
+                        type="button"
+                        className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
+                        aria-expanded={menuOpen}
+                        aria-controls="mega-panel"
+                        title="Menu (Ctrl \)"
+                        onClick={() => setMenuOpen((open) => !open)}
+                    >
+                        Menu
+                        <ChevronDownIcon className={menuOpen ? 'rotated' : undefined} />
+                    </button>
+                )}
+
                 <div className="bar-right">
-                    {onOpenSearch && (
-                        <button
-                            type="button"
-                            className="search-trigger"
-                            aria-label="Search"
-                            title="Search (Ctrl K)"
-                            onClick={onOpenSearch}
-                        >
-                            <SearchIcon />
-                        </button>
-                    )}
+                    <div className="bar-tools">
+                        {onOpenSearch && (
+                            <button
+                                type="button"
+                                className="search-trigger"
+                                aria-label="Search"
+                                title="Search (Ctrl K)"
+                                onClick={onOpenSearch}
+                            >
+                                <SearchIcon />
+                            </button>
+                        )}
 
-                    <ThemeToggle />
-
-                    {isDesktop && (
-                        <button
-                            type="button"
-                            className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
-                            aria-expanded={menuOpen}
-                            aria-controls="mega-panel"
-                            title="Menu (Ctrl \)"
-                            onClick={() => setMenuOpen((open) => !open)}
-                        >
-                            Menu
-                            <ChevronDownIcon className={menuOpen ? 'rotated' : undefined} />
-                        </button>
-                    )}
+                        <ThemeToggle />
+                    </div>
 
                     {!isDesktop && (
                         <button

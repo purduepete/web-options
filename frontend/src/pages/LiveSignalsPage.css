@@ -35,7 +35,7 @@
 
 .symbol-filter-clear:hover {
     background: none;
-    color: var(--text);
+    color: var(--text-heading);
 }
 
 .signals-error {

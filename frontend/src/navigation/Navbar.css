@@ -2,58 +2,60 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: rgb(var(--surface-rgb) / 80%);
-    backdrop-filter: blur(12px);
-    border-bottom: var(--border-width) solid var(--border);
+    /* Opaque, not glassy. The page it sits over is a plain surface, so a blur
+       only smears the cards scrolling under it. */
+    background: var(--nav-bg);
+    border-bottom: var(--border-width) solid var(--border-chrome);
+    box-shadow: var(--shadow-xs);
     /* Installed to the home screen there is no browser chrome above this, so the
        bar itself has to keep out from under the notch. The published height is
        measured, so the sticky heads below follow whatever this becomes. */
     padding-top: env(safe-area-inset-top);
 }
 
+/* The bar tracks the mega panel below it: one capped, centred column rather than
+   a row stretched to the edges of a wide screen. */
 .navbar-bar {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
+    gap: 0.5rem;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem;
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
 }
 
 .brand {
+    font-size: 1.125rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: var(--text);
+    color: var(--highlight);
     text-decoration: none;
 }
 
 .brand:hover {
     color: var(--highlight);
     text-decoration: none;
+    opacity: 0.85;
 }
 
 .bar-right {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     margin-left: auto;
 }
 
-.search-trigger {
+/* Loose icon buttons on the bar itself. A filled chip around them reads as a
+   segmented control, and there are no modes here to segment between. */
+.bar-tools {
     display: inline-flex;
     align-items: center;
-    background: var(--surface-2);
-    border: var(--border-width) solid var(--border);
-    padding: 0.3rem;
-    color: var(--text-muted);
+    gap: 0.25rem;
 }
 
-.search-trigger:hover {
-    background: var(--surface-2);
-    color: var(--text);
-    border-color: var(--highlight);
-}
-
+.search-trigger,
 .theme-toggle {
     display: inline-flex;
     align-items: center;
@@ -63,6 +65,7 @@
     color: var(--text-muted);
 }
 
+.search-trigger:hover,
 .theme-toggle:hover {
     background: transparent;
     color: var(--text);
@@ -76,24 +79,31 @@
     gap: 0.35rem;
     background: transparent;
     border: var(--border-width) solid transparent;
-    padding: 0.4rem 0.7rem;
+    padding: 0.4rem 0.6rem;
     color: var(--text-muted);
 }
 
-.menu-trigger:hover:not(:disabled),
-.accordion-summary:hover:not(:disabled) {
+.menu-trigger {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.menu-trigger:hover:not(:disabled) {
     background: transparent;
     color: var(--text);
 }
 
+.accordion-summary:hover:not(:disabled) {
+    background: transparent;
+    color: var(--text-heading);
+}
+
 .menu-trigger.open {
-    color: var(--text);
-    border-color: var(--border);
-    background: var(--surface-2);
+    color: var(--text-heading);
 }
 
 .drawer-toggle {
-    color: var(--text);
+    color: var(--text-heading);
 }
 
 /* Sized for a fingertip whatever the device claims to be: an iPad asks for the
@@ -119,9 +129,9 @@
     top: 100%;
     left: 0;
     right: 0;
-    border-top: var(--border-width) solid var(--border);
-    border-bottom: var(--border-width) solid var(--border);
-    background: var(--surface);
+    border-top: var(--border-width) solid var(--border-chrome);
+    border-bottom: var(--border-width) solid var(--border-chrome);
+    background: var(--nav-bg);
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 15%);
     animation: mega-panel-in 160ms ease-out;
 }
@@ -154,25 +164,25 @@
 .nav-section-title {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin: 0 0 0.9rem;
-    font-size: 0.75rem;
-    font-weight: 700;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text);
+    letter-spacing: 0.05em;
+    color: var(--text-heading);
 }
 
 .nav-section-title svg {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     color: var(--highlight);
 }
 
 .pill-row {
-    margin-bottom: 1.25rem;
-    padding-bottom: 1.25rem;
-    border-bottom: var(--border-width) solid var(--border);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: var(--border-width) solid var(--border-chrome);
 }
 
 .pills {
@@ -188,21 +198,22 @@
     display: inline-flex;
     padding: 0.25rem 0.6rem;
     background: var(--surface-2);
-    border: var(--border-width) solid var(--border);
+    border: var(--border-width) solid var(--border-chrome);
     color: var(--text-muted);
     font-size: 0.8rem;
     text-decoration: none;
 }
 
 .pill:hover {
+    background: rgba(var(--highlight-rgb), 0.12);
     border-color: var(--highlight);
-    color: var(--text);
+    color: var(--highlight);
     text-decoration: none;
 }
 
 .drawer {
-    border-top: var(--border-width) solid var(--border);
-    background: var(--surface);
+    border-top: var(--border-width) solid var(--border-chrome);
+    background: var(--nav-bg);
 }
 
 .drawer > .pill-row {
@@ -211,7 +222,7 @@
 }
 
 .accordion + .accordion {
-    border-top: var(--border-width) solid var(--border);
+    border-top: var(--border-width) solid var(--border-chrome);
 }
 
 .accordion-summary {
@@ -219,7 +230,7 @@
     justify-content: space-between;
     padding: 0.75rem 1rem;
     font-weight: 600;
-    color: var(--text);
+    color: var(--text-heading);
 }
 
 .accordion-body {
@@ -232,7 +243,7 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.75rem;
 }
 
 .nav-item {
@@ -244,7 +255,7 @@
 .nav-link {
     flex: 1;
     color: var(--text-muted);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     text-decoration: none;
 }
 
@@ -255,7 +266,7 @@ a.nav-link:hover {
 }
 
 a.nav-link.active {
-    color: var(--text);
+    color: var(--text-heading);
     font-weight: 600;
 }
 
@@ -270,7 +281,7 @@ a.nav-link.active {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 0.05rem 0.3rem;
-    border: var(--border-width) solid var(--border);
+    border: var(--border-width) solid var(--border-chrome);
     color: var(--text-muted);
     vertical-align: middle;
 }
@@ -292,11 +303,17 @@ a.nav-link.active {
     opacity: 1;
 }
 
+/* Amber rather than the highlight colour, matching the sibling apps: a favourite
+   is a mark the user made, not another accent the theme owns. */
 .star[aria-pressed='true'] {
-    color: var(--highlight);
+    color: var(--star);
 }
 
 .star:hover:not(:disabled) {
     background: transparent;
-    color: var(--text);
+    color: var(--star);
+}
+
+.star[aria-pressed='true']:hover:not(:disabled) {
+    color: var(--star-strong);
 }

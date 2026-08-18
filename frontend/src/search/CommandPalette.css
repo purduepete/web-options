@@ -8,29 +8,36 @@
     position: absolute;
     inset: 0;
     background: var(--overlay);
-    backdrop-filter: blur(2px);
 }
 
 .palette {
     position: relative;
-    width: min(680px, calc(100vw - 2rem));
-    margin: 10vh auto 0;
+    width: min(840px, calc(100vw - 2rem));
+    margin: 15vh auto 0;
     display: flex;
     flex-direction: column;
-    max-height: 70vh;
-    background: rgb(var(--surface-rgb) / 96%);
-    backdrop-filter: blur(16px);
-    border: var(--border-width) solid var(--border);
-    box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
+    max-height: calc(100dvh - 15vh - 1rem);
+    background: var(--surface);
+    border: var(--border-width) solid var(--palette-border);
+    /* The one place the squared-corner house rule is waived, to match webportfolio. */
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
 .palette-input {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.75rem 0.9rem;
-    border-bottom: var(--border-width) solid var(--border);
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    border-bottom: var(--border-width) solid var(--palette-border);
     color: var(--text-muted);
+}
+
+.palette-input > svg {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .palette-input input {
@@ -38,9 +45,16 @@
     background: transparent;
     border: none;
     outline: none;
+    padding: 0;
     color: var(--text);
     font: inherit;
-    font-size: 1rem;
+    font-size: 0.875rem;
+}
+
+/* The band itself is the field, so the global focus ring would draw a second
+   box inside it. Specificity beats the themed :focus-visible rules. */
+.palette-input input:focus-visible {
+    box-shadow: none;
 }
 
 .palette-input input::placeholder {
@@ -50,7 +64,10 @@
 .palette-list {
     list-style: none;
     margin: 0;
-    padding: 0.35rem 0;
+    padding: 0.5rem 0;
+    max-height: 50vh;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -61,11 +78,11 @@
 }
 
 .palette-group {
-    margin: 0.5rem 0 0.2rem;
-    padding: 0 0.9rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    margin: 0;
+    padding: 0.375rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-muted);
 }
@@ -75,27 +92,38 @@
     grid-template-columns: auto 1fr;
     align-items: center;
     column-gap: 0.6rem;
-    padding: 0.45rem 0.9rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
     cursor: pointer;
     color: var(--text);
-    border-left: 3px solid transparent;
+}
+
+@media (pointer: coarse) {
+    .palette-option {
+        min-height: 2.75rem;
+    }
 }
 
 .palette-option > svg {
     color: var(--text-muted);
 }
 
+/* Hovering sets the active row, so there is no separate hover state. */
 .palette-option.selected {
-    background: rgb(var(--highlight-rgb) / 14%);
-    border-left-color: var(--highlight);
+    background: var(--surface-2);
 }
 
 .palette-option.selected > svg {
-    color: var(--highlight);
+    color: var(--text-heading);
+}
+
+.palette-option.selected .palette-hint {
+    color: var(--text-secondary);
 }
 
 .palette-label {
     font-weight: 600;
+    color: var(--text-heading);
 }
 
 .palette-label mark {
@@ -112,23 +140,24 @@
 
 .palette-status {
     margin: 0;
-    padding: 0.5rem 0.9rem;
+    padding: 0.5rem 1rem;
     font-size: 0.8rem;
     color: var(--text-muted);
-    border-top: var(--border-width) solid var(--border);
 }
 
 .palette-footer {
     margin: 0;
-    padding: 0 0.9rem 0.6rem;
+    padding: 0.5rem 1rem;
     font-size: 0.75rem;
     color: var(--text-muted);
+    border-top: var(--border-width) solid var(--palette-border);
 }
 
 .palette kbd {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 0.1rem 0.35rem;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    background: var(--surface-2);
     border: var(--border-width) solid var(--border);
     color: var(--text-muted);
 }

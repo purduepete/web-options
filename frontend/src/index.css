@@ -38,6 +38,26 @@
     --space: 0.5rem;
     --border-width: 1px;
 
+    /* The grey ramp is fixed and shared by all three themes. Only the four slots
+       below it move, which is what keeps the themes one design rather than three
+       unrelated palettes. */
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --ink: #111827;
+    --white: #ffffff;
+
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 5%);
+
+    /* A favourite is a mark the user made, not another accent the theme owns,
+       so the star holds the same amber in all three themes. */
+    --star: #eab308;
+    --star-strong: #ca8a04;
+
     --highlight: #6b8cae;
     --highlight-rgb: 107, 140, 174;
     --highlight-contrast: #0f172a;
@@ -48,14 +68,30 @@
 [data-theme='light'] {
     color-scheme: light;
 
-    --bg: #ffffff;
-    --surface: #f9fafb;
-    /* Same colour as --surface, in the form the translucent navbar needs. */
-    --surface-rgb: 249 250 251;
-    --surface-2: #f3f4f6;
-    --border: #e5e7eb;
-    --text: #111827;
-    --text-muted: #6b7280;
+    --c-gray-50: #f9fafb;
+    --c-gray-750: #1d2735;
+    --c-gray-800: #1f2937;
+    --c-gray-900: #111827;
+
+    --bg: var(--c-gray-50);
+    --bg-rgb: 249 250 251;
+    --surface: var(--white);
+    --surface-rgb: 255 255 255;
+    --surface-2: var(--gray-100);
+    --surface-hover: var(--gray-100);
+    /* The bar and the mega panel sit above the page in light and flush with it
+       in the dark themes, so they carry their own colour rather than reusing
+       either the page or the card one. */
+    --nav-bg: var(--white);
+    --nav-bg-rgb: 255 255 255;
+    --border: var(--gray-300);
+    --border-soft: var(--gray-200);
+    --border-chrome: var(--gray-200);
+    --palette-border: var(--gray-200);
+    --text-heading: var(--ink);
+    --text: var(--gray-700);
+    --text-secondary: var(--gray-600);
+    --text-muted: var(--gray-500);
     --overlay: rgb(17 24 39 / 45%);
 
     --put: #dc2626;
@@ -70,13 +106,27 @@
 [data-theme='dark'] {
     color-scheme: dark;
 
-    --bg: #111827;
-    --surface: #1f2937;
+    --c-gray-50: #f9fafb;
+    --c-gray-750: #1d2735;
+    --c-gray-800: #1f2937;
+    --c-gray-900: #111827;
+
+    --bg: var(--c-gray-900);
+    --bg-rgb: 17 24 39;
+    --surface: var(--c-gray-800);
     --surface-rgb: 31 41 55;
-    --surface-2: #1d2735;
-    --border: #374151;
-    --text: #f9fafb;
-    --text-muted: #9ca3af;
+    --surface-2: var(--c-gray-750);
+    --surface-hover: rgb(55 65 81 / 50%);
+    --nav-bg: var(--c-gray-900);
+    --nav-bg-rgb: 17 24 39;
+    --border: var(--gray-700);
+    --border-soft: var(--gray-700);
+    --border-chrome: var(--c-gray-800);
+    --palette-border: var(--gray-700);
+    --text-heading: var(--white);
+    --text: var(--gray-300);
+    --text-secondary: var(--gray-400);
+    --text-muted: var(--gray-400);
     --overlay: rgb(3 7 18 / 65%);
 
     --put: #f87171;
@@ -88,16 +138,32 @@
     --danger: #f87171;
 }
 
+/* Midnight moves the same three slots webportfolio's `.theme-midnight` moves,
+   and nothing else. The greys either side of them stay put. */
 [data-theme='midnight'] {
     color-scheme: dark;
 
-    --bg: #020617;
-    --surface: #0f172a;
+    --c-gray-50: #f9fafb;
+    --c-gray-750: #1e293b;
+    --c-gray-800: #0f172a;
+    --c-gray-900: #020617;
+
+    --bg: var(--c-gray-900);
+    --bg-rgb: 2 6 23;
+    --surface: var(--c-gray-800);
     --surface-rgb: 15 23 42;
-    --surface-2: #1e293b;
-    --border: #1e293b;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
+    --surface-2: var(--c-gray-750);
+    --surface-hover: rgb(55 65 81 / 50%);
+    --nav-bg: var(--c-gray-900);
+    --nav-bg-rgb: 2 6 23;
+    --border: var(--gray-700);
+    --border-soft: var(--gray-700);
+    --border-chrome: var(--c-gray-800);
+    --palette-border: var(--c-gray-750);
+    --text-heading: var(--white);
+    --text: var(--gray-300);
+    --text-secondary: var(--gray-400);
+    --text-muted: var(--gray-400);
     --overlay: rgb(2 6 23 / 70%);
 
     --put: #f87171;
@@ -114,6 +180,9 @@
 *::after {
     box-sizing: border-box;
     border-radius: var(--radius);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -139,9 +208,8 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
-    font-size: 15px;
+    font-optical-sizing: auto;
     line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
     /* An OCC symbol or a pasted link has no space to break at, and one of them
        inside a day card is enough to widen the whole column past the screen. */
     overflow-wrap: break-word;
@@ -152,11 +220,11 @@ body {
    is not where the screen ends: the insets keep text clear of the rounded
    corners in landscape and of the home indicator at the foot. */
 main {
-    padding: 1.5rem;
-    padding-left: max(1.5rem, env(safe-area-inset-left));
-    padding-right: max(1.5rem, env(safe-area-inset-right));
+    padding: 1.5rem 3%;
+    padding-left: max(3%, env(safe-area-inset-left));
+    padding-right: max(3%, env(safe-area-inset-right));
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
-    animation: enter 260ms ease-out;
+    animation: enter 500ms ease-in;
 }
 
 /* The two grid pages are the only ones wide enough to need reining in. Tablets
@@ -171,7 +239,7 @@ main {
 
 /* A 13 inch iPad is 1366 CSS px in landscape, so width alone cannot tell it
    from a laptop. The pointer does: a tablet keeps the 5% above. */
-@media (min-width: 1101px) and (hover: hover) and (pointer: fine) {
+@media (min-width: 1440px) and (hover: hover) and (pointer: fine) {
     main.signals-page,
     main.calendar-week-page {
         padding-left: max(15%, env(safe-area-inset-left));
@@ -182,13 +250,14 @@ main {
 /* Data lands hundreds of milliseconds after the page frame it belongs to, so
    its arrival has to be animated on its own or nobody sees it. */
 .enter {
-    animation: enter 260ms ease-out;
+    animation: enter 500ms ease-in;
 }
 
+/* Opacity only. A page that slides as well as fades reads as a heavier
+   transition than the one webportfolio uses for the same moment. */
 @keyframes enter {
     from {
         opacity: 0;
-        transform: translateY(8px);
     }
 }
 
@@ -204,6 +273,7 @@ h2,
 h3,
 h4 {
     margin: 0 0 0.5rem;
+    color: var(--text-heading);
     font-weight: 600;
     line-height: 1.25;
 }
@@ -253,7 +323,7 @@ button svg {
 }
 
 button:hover:not(:disabled) {
-    background: var(--surface-2);
+    background: var(--surface-hover);
 }
 
 button:disabled {
@@ -273,7 +343,8 @@ button:disabled {
 .page-head h1 {
     flex: 1 1 auto;
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
 /* First / Previous / Next / Latest. Shared by the live signals page and the
@@ -300,15 +371,32 @@ button.primary:hover:not(:disabled) {
     filter: brightness(1.1);
 }
 
-/* One visible focus style for everything, since nothing here is rounded. */
+/* One visible focus style for everything, since nothing here is rounded. A ring
+   tinted from the highlight rather than a hard outline, so the shape of the
+   control still reads through it. */
+:focus {
+    outline: none;
+}
+
 :focus-visible {
-    outline: 2px solid var(--highlight);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--highlight-rgb), 0.38);
+}
+
+/* The same ring reads brighter against a dark surface, so it is pulled back. */
+[data-theme='dark'] :focus-visible,
+[data-theme='midnight'] :focus-visible {
+    box-shadow: 0 0 0 2px rgba(var(--highlight-rgb), 0.32);
+}
+
+:focus:not(:focus-visible) {
+    box-shadow: none;
 }
 
 .surface {
     background: var(--surface);
     border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
 }
 
 .muted {
