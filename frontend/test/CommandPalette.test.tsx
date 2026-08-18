@@ -225,6 +225,61 @@ describe('CommandPalette', () => {
     });
 });
 
+/*
+ * Handing focus back to the trigger is right when the palette was dismissed from
+ * the keyboard and wrong when it was dismissed with the mouse: the browser reads
+ * a programmatic focus out of a text field as keyboard intent and paints a focus
+ * ring, so a click would leave a glowing button behind it.
+ */
+describe('CommandPalette focus restore', () => {
+    /** Renders a trigger, focuses it, opens the palette from it, and hands back a closer. */
+    function openFromTrigger() {
+        const trigger = document.createElement('button');
+        trigger.textContent = 'Search';
+        document.body.append(trigger);
+        trigger.focus();
+
+        const view = render(<CommandPalette open commands={COMMANDS} onClose={() => {}} />);
+        return {
+            trigger,
+            close: () => view.rerender(<CommandPalette open={false} commands={COMMANDS} onClose={() => {}} />),
+        };
+    }
+
+    it('gives focus back to whatever opened it when escape closes it', async () => {
+        const user = userEvent.setup();
+        const { trigger, close } = openFromTrigger();
+        expect(document.activeElement).toBe(screen.getByRole('combobox'));
+
+        await user.keyboard('{Escape}');
+        close();
+
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('leaves focus alone when a result is clicked', async () => {
+        const user = userEvent.setup();
+        const { trigger, close } = openFromTrigger();
+
+        const first = options()[0];
+        expect(first).toBeTruthy();
+        await user.click(first as HTMLElement);
+        close();
+
+        expect(document.activeElement).not.toBe(trigger);
+    });
+
+    it('leaves focus alone when tab closes it, because tab is a way out', async () => {
+        const user = userEvent.setup();
+        const { trigger, close } = openFromTrigger();
+
+        await user.tab();
+        close();
+
+        expect(document.activeElement).not.toBe(trigger);
+    });
+});
+
 /** `@testing-library/jest-dom` is not installed, so the name is read by hand. */
 function nameOf(element: HTMLElement): string {
     const id = element.getAttribute('aria-labelledby');

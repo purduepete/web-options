@@ -34,6 +34,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
     const restoreFocusTo = useRef<Element | null>(null);
+    const closeSource = useRef<'pointer' | 'keyboard' | 'tab' | null>(null);
     const baseId = useId();
 
     const results = useMemo(() => rankCommands(query, commands), [query, commands]);
@@ -50,12 +51,19 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
     useEffect(() => {
         if (!open) return;
         restoreFocusTo.current = document.activeElement;
+        closeSource.current = null;
         inputRef.current?.focus();
 
         return () => {
+            const previous = restoreFocusTo.current;
+            const source = closeSource.current;
+            closeSource.current = null;
+            // Handing focus back after a click would paint a focus ring on the
+            // trigger, because a restore out of a text field reads as keyboard
+            // intent. Tab means the user is deliberately leaving, so let them.
+            if (source === 'pointer' || source === 'tab') return;
             // Only take focus back if nothing else claimed it — a command that
             // navigates may well have moved focus somewhere more useful.
-            const previous = restoreFocusTo.current;
             if (document.activeElement !== document.body) return;
             if (previous instanceof HTMLElement && document.body.contains(previous)) previous.focus();
         };
@@ -95,8 +103,9 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
         setActive((current) => (current + delta + results.length) % results.length);
     }
 
-    function choose(result: CommandResult | undefined) {
+    function choose(result: CommandResult | undefined, source: 'pointer' | 'keyboard') {
         if (!result) return;
+        closeSource.current = source;
         result.command.run();
         onClose();
     }
@@ -105,6 +114,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
         switch (event.key) {
             case 'Escape':
                 event.preventDefault();
+                closeSource.current = 'keyboard';
                 onClose();
                 return;
             case 'ArrowDown':
@@ -125,11 +135,12 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
                 return;
             case 'Enter':
                 event.preventDefault();
-                choose(results[active]);
+                choose(results[active], 'keyboard');
                 return;
             case 'Tab':
                 // The palette is a search box, not a form. Tabbing means the
                 // user is done with it, so let focus leave and close behind it.
+                closeSource.current = 'tab';
                 onClose();
                 return;
             default:
@@ -143,7 +154,14 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
 
     return createPortal(
         <div className="palette-root" onKeyDown={onKeyDown}>
-            <div className="palette-backdrop" data-testid="palette-backdrop" onClick={onClose} />
+            <div
+                className="palette-backdrop"
+                data-testid="palette-backdrop"
+                onClick={() => {
+                    closeSource.current = 'pointer';
+                    onClose();
+                }}
+            />
 
             <div className="palette" role="dialog" aria-modal="true" aria-label="Command palette">
                 <div className="palette-input">
@@ -180,7 +198,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
                                         result={result}
                                         selected={index === active}
                                         onHover={() => setActive(index)}
-                                        onChoose={() => choose(result)}
+                                        onChoose={() => choose(result, 'pointer')}
                                     />
                                 ))}
                             </ul>

@@ -331,6 +331,36 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* Chrome is for pressing, not for reading, so a stray drag should not paint a
+   selection across it. Trade data is deliberately left out: a ticker or a price
+   still has to be selectable to be copied. */
+h1,
+h2,
+h3,
+h4,
+.badge,
+.palette-group,
+.palette-status,
+.palette-footer,
+.no-trades,
+.shortcuts-dialog,
+kbd {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+}
+
+/* These are pressed, so they keep whatever cursor they already had. */
+button,
+a,
+label,
+summary,
+.nav-link,
+.palette-option {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 /* The title, with the week controls sharing its line. Both the live signals and
    the published calendars open this way, so it lives here. */
 .page-head {
