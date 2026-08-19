@@ -102,6 +102,8 @@
     --top-pick: #7c3aed;
     --danger: #dc2626;
     --warning: #d97706;
+    --positive: #16a34a;
+    --negative: #dc2626;
 }
 
 [data-theme='dark'] {
@@ -138,6 +140,8 @@
     --top-pick: #8b5cf6;
     --danger: #f87171;
     --warning: #fbbf24;
+    --positive: #34d399;
+    --negative: #f87171;
 }
 
 /* Midnight moves the same three slots webportfolio's `.theme-midnight` moves,
@@ -176,6 +180,8 @@
     --top-pick: #8b5cf6;
     --danger: #f87171;
     --warning: #fbbf24;
+    --positive: #34d399;
+    --negative: #f87171;
 }
 
 *,

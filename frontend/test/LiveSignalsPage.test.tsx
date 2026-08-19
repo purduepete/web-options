@@ -434,8 +434,17 @@ describe('LiveSignalsPage number source', () => {
         const card = await tuesday();
 
         // Delta absolute: -0.31 against -0.20. Premium percent: 175 against 120.
-        expect(within(card).getByText('-0.11')).toBeTruthy();
-        expect(within(card).getByText('+45.8%')).toBeTruthy();
+        expect(within(card).getByText('(0.11)')).toBeTruthy();
+        expect(within(card).getByText('(45.8%)')).toBeTruthy();
+
+        expect(within(card).getByText('(0.11)').className).toContain('diff-down');
+        expect(within(card).getByText('(45.8%)').className).toContain('diff-up');
+
+        // Delta runs negative, so its arrow reads magnitude and points the other way.
+        const arrowOf = (text: string) =>
+            within(card).getByText(text).querySelector('.diff-arrow path')?.getAttribute('d') ?? '';
+        expect(arrowOf('(45.8%)')).toBeTruthy();
+        expect(arrowOf('(0.11)')).toBe(arrowOf('(45.8%)'));
     });
 
     it("hides the differences in VADER's own mode, where there is nothing to compare", async () => {
@@ -447,8 +456,8 @@ describe('LiveSignalsPage number source', () => {
         await user.click(screen.getByRole('radio', { name: 'VADER' }));
 
         const card = await tuesday();
-        expect(within(card).queryByText('-0.11')).toBeNull();
-        expect(within(card).queryByText('+45.8%')).toBeNull();
+        expect(within(card).queryByText('(0.11)')).toBeNull();
+        expect(within(card).queryByText('(45.8%)')).toBeNull();
     });
 
     it("leaves a fallen-back number undifferenced, since it is VADER's already", async () => {
@@ -456,7 +465,7 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         const card = await tuesday();
 
-        expect(within(card).getByText('-0.11')).toBeTruthy();
-        expect(within(card).queryByText('+45.8%')).toBeNull();
+        expect(within(card).getByText('(0.11)')).toBeTruthy();
+        expect(within(card).queryByText('(45.8%)')).toBeNull();
     });
 });

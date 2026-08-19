@@ -203,20 +203,63 @@ function percentDiff(source: NumberSource, actual: number | null, quoted: number
     return ((actual - quoted) / quoted) * 100;
 }
 
-function formatSigned(value: number, places: number, suffix: string): string {
-    // Round before reading the sign, so a rounding remainder cannot print "-0.00".
-    const rounded = Number(value.toFixed(places));
-    const sign = rounded > 0 ? '+' : rounded < 0 ? '-' : '';
-    return `${sign}${Math.abs(rounded).toFixed(places)}${suffix}`;
+function formatMagnitude(value: number, places: number, suffix: string): string {
+    return `(${Math.abs(value).toFixed(places)}${suffix})`;
 }
 
 const DELTA_DIFF_TITLE = "Captured delta minus VADER's.";
 const PREMIUM_DIFF_TITLE = "Captured premium against VADER's, as a percentage.";
 
-function Difference({ value, places, suffix, title }: { value: number; places: number; suffix: string; title: string }) {
+/**
+ * Colour always reads the raw sign. The arrow usually agrees, but delta passes
+ * invertArrow because puts run negative: a more negative delta is MORE delta,
+ * so the arrow points up while the colour stays red.
+ */
+function DiffArrow({ up }: { up: boolean }) {
     return (
-        <span className="value-diff" title={title}>
-            {formatSigned(value, places, suffix)}
+        <svg
+            className="diff-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+        >
+            {up ? <path d="M12 19V5m-7 7 7-7 7 7" /> : <path d="M12 5v14m7-7-7 7-7-7" />}
+        </svg>
+    );
+}
+
+function Difference({
+    value,
+    places,
+    suffix,
+    title,
+    invertArrow = false,
+}: {
+    value: number;
+    places: number;
+    suffix: string;
+    title: string;
+    invertArrow?: boolean;
+}) {
+    // Round before reading the sign, so a rounding remainder cannot print "-0.00".
+    const rounded = Number(value.toFixed(places));
+    const direction = rounded > 0 ? 'up' : rounded < 0 ? 'down' : 'flat';
+    const arrowUp = invertArrow ? direction === 'down' : direction === 'up';
+
+    return (
+        <span className={`value-diff diff-${direction}`} title={title}>
+            {direction !== 'flat' && (
+                <>
+                    <DiffArrow up={arrowUp} />
+                    <span className="sr-only">{arrowUp ? 'up ' : 'down '}</span>
+                </>
+            )}
+            {formatMagnitude(rounded, places, suffix)}
         </span>
     );
 }
@@ -257,7 +300,7 @@ function Ticket({
             <p className="delta-line">
                 &Delta; <Figure shown={delta} format={formatDelta} />
                 {deltaDiff !== null && (
-                    <Difference value={deltaDiff} places={2} suffix="" title={DELTA_DIFF_TITLE} />
+                    <Difference value={deltaDiff} places={2} suffix="" title={DELTA_DIFF_TITLE} invertArrow />
                 )}
             </p>
             <p className="stats">
