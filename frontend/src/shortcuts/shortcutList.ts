@@ -31,7 +31,7 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
             { keys: ['a'], description: 'Aggressive only' },
             { keys: ['o'], description: 'Other only' },
             { keys: ['j'], description: 'Collapse or expand every group' },
-            { keys: ['/'], description: 'Filter by symbol' },
+            { keys: ['/'], description: 'Filter by symbol, or !symbol to exclude' },
             { keys: ['e'], description: 'Next contracts filter' },
             { keys: ['m'], description: 'Next moneyness filter' },
             { keys: ['r'], description: 'Reset the menus' },
@@ -40,9 +40,10 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
     {
         title: 'Summary',
         shortcuts: [
-            { keys: ['/'], description: 'Filter by symbols' },
+            { keys: ['/'], description: 'Filter by symbols, or !symbol to exclude' },
             { keys: ['j'], description: 'Collapse or expand every month' },
-            { keys: ['r'], description: 'Clear the symbol filter' },
+            { keys: ['e'], description: 'Next contracts filter' },
+            { keys: ['r'], description: 'Clear every filter' },
         ],
     },
     {

@@ -50,12 +50,21 @@ describe('week grid stylesheets', () => {
     });
 
     it.each([
-        ['WeekGrid.css', weekGridCss],
-        ['CalendarGrid.css', calendarGridCss],
-    ])('%s only changes columns at a breakpoint', (_name, css) => {
+        ['WeekGrid.css', weekGridCss, '.day-card'],
+        ['CalendarGrid.css', calendarGridCss, '.calendar-day'],
+    ])('%s never strands a card in a grid without its rows', (_name, css, card) => {
+        const cardRule = new RegExp(`${card.replace('.', '\\.')}\\s*\\{[^}]*display:\\s*flex`);
+
         for (const block of mediaBlocks(css)) {
             expect(block).not.toMatch(/grid-template-rows/);
             expect(block).not.toMatch(/grid-row/);
+
+            // Narrower than the full week the container stops being a grid,
+            // because the cards' inline `grid-column` would otherwise invent
+            // tracks whatever the template says. The cards have to leave with
+            // it: one that is still a grid item when the rows go collapses its
+            // whole contents onto a single track.
+            if (/display:\s*flex/.test(block)) expect(block).toMatch(cardRule);
         }
     });
 

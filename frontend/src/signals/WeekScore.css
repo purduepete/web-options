@@ -38,3 +38,11 @@
 .score-drift.over b {
     color: var(--positive);
 }
+
+/* A phone has room for the count and the score on one line and nothing else, so
+   the score takes the far end and the drift drops to a line of its own. */
+@media (max-width: 640px) {
+    .score-otm {
+        margin-left: auto;
+    }
+}

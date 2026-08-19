@@ -11,10 +11,34 @@
     margin-right: 0.75rem;
 }
 
-/* Pinned to the end of the bar, the way the week navigation is on the live
-   signals page, so the reset stays beside the title. */
-.summary-page .page-head .symbol-filter {
+/* The pair is pinned to the end of the bar, the way the week navigation is on
+   the live signals page, so the title keeps the near end to itself. The menu
+   carries the margin because it is the first of the two and always there. */
+.summary-page .page-head .choice-menu {
     margin-left: auto;
+}
+
+/* A phone stacks the head instead: each control takes its own line, and neither
+   has an end of a row left to be pinned to. */
+@media (max-width: 640px) {
+    .summary-page .page-head .choice-menu {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .summary-page .page-head .symbol-filter {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: none;
+    }
+
+    /* A text input will not centre its own text when a minimum height stretches
+       it: the line stays at the top and takes the caret with it. The line box is
+       given the height instead, so the text sits in the middle of it. */
+    .summary-page .page-head .symbol-filter input {
+        padding-block: 0;
+        line-height: calc(44px - 2 * var(--border-width));
+    }
 }
 
 .summary-month {
@@ -36,6 +60,13 @@
 
 .summary-month-head:hover {
     background: var(--surface-hover);
+}
+
+/* Changing a filter refetches every open month. The numbers already read stay
+   where they are and only dim, so nothing collapses and rebuilds underneath. */
+.summary-month-body.is-stale {
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
 }
 
 /* Points down when the month is open, right when it is shut. */

@@ -6,8 +6,10 @@ import { useApiKey } from '../auth/ApiKeyProvider';
 import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
+import { ChevronDownIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { WeekNav } from '../components/WeekNav';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { usePublishedHeight } from '../hooks/usePublishedHeight';
 import { useWeekArrows } from '../hooks/useWeekArrows';
 import './CalendarWeekPage.css';
@@ -26,6 +28,10 @@ export function CalendarWeekPage() {
     const [calendars, setCalendars] = useState<CalendarSummary[]>([]);
     const [error, setError] = useState<string | null>(null);
     const headRef = useRef<HTMLDivElement>(null);
+    // The head is pinned, so on a phone a week's notes stand in front of the
+    // days they frame. Only a phone folds them, and it opens them closed.
+    const phone = useMediaQuery('(max-width: 640px)');
+    const [notesOpen, setNotesOpen] = useState(false);
 
     usePublishedHeight(headRef, '--calendar-head-height');
 
@@ -107,8 +113,21 @@ export function CalendarWeekPage() {
 
                 {week && (
                     <section className="macro-banner enter">
+                        {phone && week.macro.length > 0 && (
+                            <button
+                                type="button"
+                                className="macro-toggle"
+                                aria-expanded={notesOpen}
+                                aria-controls="macro-notes"
+                                onClick={() => setNotesOpen((open) => !open)}
+                            >
+                                <span>Week notes</span>
+                                <ChevronDownIcon width={14} height={14} className={notesOpen ? 'rotated' : ''} />
+                            </button>
+                        )}
+
                         {week.macro.length > 0 && (
-                            <ul className="macro-grid">
+                            <ul className="macro-grid" id="macro-notes" hidden={phone && !notesOpen}>
                                 {week.macro.map((note) => (
                                     <li key={note.label} className="macro-item">
                                         <b>{note.label}</b>

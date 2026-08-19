@@ -9,8 +9,17 @@
     font-size: 0.82rem;
 }
 
+/* The only column left to take up the slack. A fixed layout hands the leftover
+   to the sized columns otherwise, and the channel is the one width that has to
+   be exact. */
 .summary-col-week {
-    width: 20%;
+    width: auto;
+}
+
+/* The same measure as the spacer row's height, so the channel around the
+   aggregates is square. */
+.summary-col-gap {
+    width: 0.7rem;
 }
 
 .summary-col-group {
@@ -53,11 +62,6 @@
     white-space: nowrap;
 }
 
-/* The week column reads down the left edge, so its heading stays over it. */
-.summary-table thead th:first-child {
-    text-align: left;
-}
-
 /* The same colours the week grid gives its risk-group headings, so a column
    here and a section there are recognisably the same thing. */
 .summary-table thead th.summary-column-top-picks {
@@ -80,12 +84,23 @@
     border-top-color: var(--aggressive);
 }
 
-/* Not a risk group but the week's total, so it reads as a summing column. */
-.summary-table .summary-column-all {
-    background: var(--surface-2);
+/* Not a risk group but the week's total, so it stands off from the groups it
+   sums. The channel takes the page's own background rather than the card's, so
+   it reads as cut out of the table instead of as an empty cell in it. */
+.summary-table .summary-gap,
+.summary-table .summary-gap-row td {
+    padding: 0;
+    border: 0;
+    background: var(--bg);
 }
 
-.summary-table tbody th {
+.summary-table .summary-gap-row td {
+    height: 0.7rem;
+}
+
+/* The week column, down every row including the total's, so the shaded edge
+   runs the whole height of the table. */
+.summary-table th[scope='row'] {
     background: var(--surface-2);
     font-weight: 600;
 }
@@ -95,20 +110,18 @@
     text-decoration: none;
 }
 
-.summary-table tbody th a:hover {
-    color: var(--highlight);
-    text-decoration: underline;
-}
+/* A tap on a touch screen leaves `:hover` stuck on the row it landed in, so the
+   recolour would outlast the tap and sit under the text for the rest of the
+   visit. Only a pointer that can actually leave gets it. */
+@media (hover: hover) and (pointer: fine) {
+    .summary-table tbody th a:hover {
+        color: var(--highlight);
+        text-decoration: underline;
+    }
 
-.summary-table tbody tr:hover td {
-    background: var(--surface-hover);
-}
-
-/* The month against the same columns. Weighted like a heading and given a rule
-   above it so the eye stops before reading it as another week. */
-.summary-table .summary-total > * {
-    background: var(--surface-2);
-    border-top: 2px solid var(--border);
+    .summary-table tbody tr:hover td:not(.summary-gap) {
+        background: var(--surface-hover);
+    }
 }
 
 .summary-table .summary-total th {
@@ -181,6 +194,18 @@
     .summary-table td {
         border: 0;
         border-top: var(--border-width) solid var(--border-soft);
+    }
+
+    /* Stacked, each row is already a block of its own with air around it, so
+       the total needs no spacer of its own — only the aggregate cell inside a
+       row still has tiers to stand apart from. */
+    .summary-table .summary-gap-row {
+        display: none;
+    }
+
+    .summary-table .summary-gap {
+        height: 0.7rem;
+        border: 0;
     }
 
     .summary-table tr th:first-child {

@@ -1,4 +1,6 @@
+import { useCallback, useEffect, useState } from 'react';
 import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
+import { hasExpired } from '@weboptions/shared';
 import type { ExpiryFilter, MoneynessFilter, SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
 import {
@@ -11,10 +13,10 @@ import {
     formatPercent,
     formatSignedPercent,
     formatStrike,
-    hasExpired,
 } from './format';
 import { premiumDriftPercent, totalCollateral } from './summary';
 import { CautionBadge } from '../caution/CautionBadge';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
 
@@ -40,6 +42,8 @@ interface WeekGridProps {
     moneynessFilter: MoneynessFilter;
     /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
     numberSource: NumberSource;
+    /** The week in progress reads newest first on a phone; a finished week does not. */
+    currentWeek: boolean;
 }
 
 /**
@@ -47,7 +51,9 @@ interface WeekGridProps {
  * or the reader reads a quiet day where there was only a narrow question.
  */
 function emptyDayReason(symbolFilter: string, expiryFilter: ExpiryFilter, moneynessFilter: MoneynessFilter): string {
-    if (symbolFilter) return `No matches for "${symbolFilter}".`;
+    const typed = symbolFilter.trim();
+    if (typed.startsWith('!')) return `Nothing here but "${typed.slice(1).trim()}".`;
+    if (typed) return `No matches for "${typed}".`;
     if (expiryFilter === 'active') return 'Every signal this day has expired.';
     if (expiryFilter === 'expired') return 'Nothing this day has expired yet.';
     if (moneynessFilter !== 'all') return `Nothing this day closed ${moneynessFilter.toUpperCase()}.`;
@@ -63,7 +69,32 @@ export function WeekGrid({
     expiryFilter,
     moneynessFilter,
     numberSource,
+    currentWeek,
 }: WeekGridProps) {
+    // Only where the cards are stacked one under another. Across the full week
+    // they are columns sharing one set of rows, and folding one of them away
+    // would empty a column without shortening the week by a single line.
+    const stacked = useMediaQuery('(max-width: 1100px)');
+
+    // A phone reads one card at a time, and today is the card the reader wants
+    // first. A week already over has no today, so it keeps Monday at the top.
+    const phone = useMediaQuery('(max-width: 640px)');
+    const [foldedDays, setFoldedDays] = useState<ReadonlySet<string>>(new Set());
+
+    // Widening the window puts the cards back into columns, where a folded one
+    // is just an empty column with no way left to open it.
+    useEffect(() => {
+        if (!stacked) setFoldedDays(new Set());
+    }, [stacked]);
+
+    const toggleDay = useCallback((date: string) => {
+        setFoldedDays((current) => {
+            const next = new Set(current);
+            if (!next.delete(date)) next.add(date);
+            return next;
+        });
+    }, []);
+
     if (days.length === 0) {
         return <p className="empty-week">No signals landed for this week yet.</p>;
     }
@@ -72,13 +103,18 @@ export function WeekGrid({
     // rows always, so a day with nothing to show has a row for saying so.
     const totalRows = Math.max(2, 1 + groups.length * 2);
 
+    // Reversing the cards themselves rather than the container, since the column
+    // each card asks for is inert once they stack and a reversed flex direction
+    // would leave the reading order behind.
+    const ordered = phone && currentWeek ? [...days].reverse() : days;
+
     return (
         <div
             className="week-grid enter"
             style={{ gridTemplateRows: `repeat(${totalRows}, auto)` }}
             data-testid="week-grid"
         >
-            {days.map((day) => (
+            {ordered.map((day) => (
                 <DayCard
                     key={day.date}
                     day={day}
@@ -90,15 +126,21 @@ export function WeekGrid({
                     moneynessFilter={moneynessFilter}
                     numberSource={numberSource}
                     totalRows={totalRows}
+                    foldable={stacked}
+                    folded={foldedDays.has(day.date)}
+                    onToggleDay={toggleDay}
                 />
             ))}
         </div>
     );
 }
 
-interface DayCardProps extends Omit<WeekGridProps, 'days'> {
+interface DayCardProps extends Omit<WeekGridProps, 'days' | 'currentWeek'> {
     day: DaySignals;
     totalRows: number;
+    foldable: boolean;
+    folded: boolean;
+    onToggleDay: (date: string) => void;
 }
 
 function DayCard({
@@ -111,31 +153,55 @@ function DayCard({
     moneynessFilter,
     numberSource,
     totalRows,
+    foldable,
+    folded,
+    onToggleDay,
 }: DayCardProps) {
     const collateral = totalCollateral(day.trades);
+    const heading = (
+        <>
+            <span className="day-name">{day.name}</span>
+            <span className="day-date">
+                {formatDayLabel(day.date)} ({day.trades.length})
+                {collateral !== null && (
+                    <span
+                        className="day-collateral"
+                        title={`${formatMoney(collateral)} to secure every contract on this day.`}
+                    >
+                        {formatCompactMoney(collateral)}
+                        <span className="sr-only"> collateral</span>
+                    </span>
+                )}
+            </span>
+        </>
+    );
+
     return (
         <section
-            className="day-card"
+            className={`day-card${folded ? ' is-folded' : ''}`}
             aria-label={`${day.name} ${formatDayLabel(day.date)}`}
             style={{ gridRow: `1 / span ${totalRows}`, gridColumn: weekdayColumn(day.date) }}
         >
             <h2 className="day-head" style={{ gridRow: 1 }}>
-                <span className="day-name">{day.name}</span>
-                <span className="day-date">
-                    {formatDayLabel(day.date)} ({day.trades.length})
-                    {collateral !== null && (
-                        <span
-                            className="day-collateral"
-                            title={`${formatMoney(collateral)} to secure every contract on this day.`}
-                        >
-                            {formatCompactMoney(collateral)}
-                            <span className="sr-only"> collateral</span>
-                        </span>
-                    )}
-                </span>
+                {foldable ? (
+                    <button
+                        type="button"
+                        className="day-fold"
+                        aria-expanded={!folded}
+                        onClick={() => onToggleDay(day.date)}
+                    >
+                        {heading}
+                        <ChevronDownIcon width={16} height={16} className={folded ? 'is-folded' : ''} />
+                    </button>
+                ) : (
+                    heading
+                )}
             </h2>
 
-            {day.trades.length === 0 ? (
+            {/* Folded away rather than hidden in place: the card's contents are
+                grid items placed on named rows, and every way of hiding them
+                that leaves them in the layout leaves their rows behind too. */}
+            {folded ? null : day.trades.length === 0 ? (
                 <p className="no-trades" style={{ gridRow: 2 }}>
                     {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter)}
                 </p>

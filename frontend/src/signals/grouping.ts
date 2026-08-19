@@ -1,6 +1,5 @@
-import type { DaySignals, GroupId, NumberSource, Trade } from '@weboptions/shared';
-import { GROUP_IDS, GROUP_LABELS, groupIdForTrade, TIER_ORDER } from '@weboptions/shared';
-import { hasExpired } from './format';
+import type { DaySignals, ExpiryFilter, GroupId, NumberSource, Trade } from '@weboptions/shared';
+import { EXPIRY_FILTERS, GROUP_IDS, GROUP_LABELS, groupIdForTrade, hasExpired, TIER_ORDER } from '@weboptions/shared';
 
 /**
  * The grid's layout algebra, kept away from React so it can be reasoned about
@@ -13,14 +12,11 @@ import { hasExpired } from './format';
  */
 
 // Classification itself lives in shared, so the summary page's server-side
-// rollup and this grid can never drift apart on what counts as a top pick.
-export { TIER_ORDER };
-export type { GroupId };
-
-/** Whether the week shows every contract, only the live ones, or only the settled ones. */
-export const EXPIRY_FILTERS = ['all', 'active', 'expired'] as const;
-
-export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
+// rollup and this grid can never drift apart on what counts as a top pick. The
+// contracts filter is there for the same reason: the summary applies it before
+// the numbers are rolled up, where the browser never sees the trades at all.
+export { EXPIRY_FILTERS, TIER_ORDER };
+export type { ExpiryFilter, GroupId };
 
 /** Where the contract closed against its strike. Atm is a rounding edge, not a choice. */
 export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
@@ -42,16 +38,18 @@ export interface SignalGroup {
 }
 
 /**
- * Narrows every day's trades to those whose symbol contains `query`. Days are
- * kept even when they empty out, so the card still appears and can say that
- * nothing matched.
+ * Narrows every day's trades to those whose symbol contains `query`, or, when the
+ * query opens with a bang, to those whose symbol does not. Days are kept even when
+ * they empty out, so the card still appears and can say that nothing matched.
  */
 export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignals[] {
-    const needle = query.trim().toUpperCase();
+    const typed = query.trim().toUpperCase();
+    const drop = typed.startsWith('!');
+    const needle = drop ? typed.slice(1).trim() : typed;
     if (!needle) return days;
     return days.map((day) => ({
         ...day,
-        trades: day.trades.filter((trade) => trade.symbol.toUpperCase().includes(needle)),
+        trades: day.trades.filter((trade) => trade.symbol.toUpperCase().includes(needle) !== drop),
     }));
 }
 

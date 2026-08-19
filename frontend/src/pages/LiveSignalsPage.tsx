@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
 import type { WeekSignalsResponse } from '@weboptions/shared';
@@ -22,7 +23,8 @@ import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping
 import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
-import { CloseIcon, RotateCcwIcon, TableIcon } from '../components/icons';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { ChevronDownIcon, CloseIcon, RotateCcwIcon, SlidersIcon, TableIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { WeekNav } from '../components/WeekNav';
 import './LiveSignalsPage.css';
@@ -57,6 +59,9 @@ export function LiveSignalsPage() {
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
     const [numberSource, setNumberSource] = useNumberSource();
+    // Only a phone folds the filters away, and it opens them closed.
+    const phone = useMediaQuery('(max-width: 640px)');
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const symbolInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -158,9 +163,13 @@ export function LiveSignalsPage() {
     }, [setNumberSource, setParams]);
 
     const atMenuDefaults = numberSource === DEFAULT_NUMBER_SOURCE && expiry === 'all' && moneyness === 'all';
+    const filtersNarrowed = !atMenuDefaults || symbol !== '';
 
     // Selected, not just focused: the next symbol typed replaces the last one.
+    // On a phone the box may be folded away, and nothing hidden can take the
+    // caret, so the fold is opened in the DOM before the focus is aimed at it.
     const focusSymbolFilter = useCallback(() => {
+        flushSync(() => setFiltersOpen(true));
         symbolInputRef.current?.focus();
         symbolInputRef.current?.select();
     }, []);
@@ -251,23 +260,6 @@ export function LiveSignalsPage() {
                     )}
                 </span>
 
-                <NumberSourceMenu value={numberSource} onChange={setNumberSource} />
-
-                {/* Read across the whole week rather than a single card, so they
-                    sit with the other week-wide control and not inside the grid. */}
-                <ExpiryFilterMenu value={expiry} onChange={setExpiryParam} />
-
-                <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
-
-                {/* Absent while it would do nothing, so the bar only carries the
-                    control once there is something to undo. */}
-                {!atMenuDefaults && (
-                    <button type="button" className="menus-reset" onClick={resetMenus}>
-                        <RotateCcwIcon width={14} height={14} />
-                        <span>Reset</span>
-                    </button>
-                )}
-
                 <WeekNav
                     onFirst={goEarliest}
                     onPrevious={goPrevious}
@@ -282,31 +274,76 @@ export function LiveSignalsPage() {
                     }}
                 />
 
-                <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
-                    <input
-                        type="text"
-                        ref={symbolInputRef}
-                        value={symbol}
-                        onChange={(event) => setSymbolParam(event.target.value.toUpperCase())}
-                        onKeyDown={(event) => {
-                            // Leaves the box without touching what was typed.
-                            if (event.key === 'Escape') event.currentTarget.blur();
-                        }}
-                        placeholder="Filter by symbol"
-                        aria-label="Filter by symbol"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                    {symbol && (
-                        <button
-                            type="button"
-                            className="symbol-filter-clear"
-                            onClick={() => setSymbolParam('')}
-                            aria-label="Clear symbol filter"
-                        >
-                            <CloseIcon />
-                        </button>
-                    )}
+                {/* A phone has no room for a week's worth of controls above the
+                    week itself, so there they fold away behind one button. It is
+                    rendered only where it works: at every other width the bar is
+                    laid out as though this wrapper were not there at all. */}
+                {phone && (
+                    <button
+                        type="button"
+                        className={`filters-toggle${filtersNarrowed ? ' narrowed' : ''}`}
+                        aria-expanded={filtersOpen}
+                        aria-controls="signal-filters"
+                        onClick={() => setFiltersOpen((open) => !open)}
+                    >
+                        <SlidersIcon width={15} height={15} />
+                        <span>Filters</span>
+                        <ChevronDownIcon width={14} height={14} className={filtersOpen ? 'rotated' : ''} />
+                    </button>
+                )}
+
+                <div className="filter-bar" id="signal-filters" hidden={phone && !filtersOpen}>
+                    <NumberSourceMenu value={numberSource} onChange={setNumberSource} />
+
+                    {/* Read across the whole week rather than a single card, so they
+                        sit with the other week-wide control and not inside the grid. */}
+                    <ExpiryFilterMenu value={expiry} onChange={setExpiryParam} />
+
+                    <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
+
+                    {/* Held out of sight rather than out of the bar while it would
+                        do nothing: arriving between the menus and the week would
+                        take its width out of the row and push the symbol filter onto
+                        a line of its own. It keeps the space and gives up everything
+                        else — nothing to see, to press, to focus or to hear. */}
+                    <button
+                        type="button"
+                        className={`menus-reset${atMenuDefaults ? ' is-idle' : ''}`}
+                        onClick={resetMenus}
+                        disabled={atMenuDefaults}
+                        aria-hidden={atMenuDefaults || undefined}
+                        tabIndex={atMenuDefaults ? -1 : undefined}
+                    >
+                        <RotateCcwIcon width={14} height={14} />
+                        <span>Reset</span>
+                    </button>
+
+                    <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
+                        <input
+                            type="text"
+                            ref={symbolInputRef}
+                            value={symbol}
+                            onChange={(event) => setSymbolParam(event.target.value.toUpperCase())}
+                            onKeyDown={(event) => {
+                                // Leaves the box without touching what was typed.
+                                if (event.key === 'Escape') event.currentTarget.blur();
+                            }}
+                            placeholder="Filter by symbol"
+                            aria-label="Filter by symbol"
+                            autoComplete="off"
+                            spellCheck={false}
+                        />
+                        {symbol && (
+                            <button
+                                type="button"
+                                className="symbol-filter-clear"
+                                onClick={() => setSymbolParam('')}
+                                aria-label="Clear symbol filter"
+                            >
+                                <CloseIcon />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -330,6 +367,7 @@ export function LiveSignalsPage() {
                         expiryFilter={expiry}
                         moneynessFilter={moneyness}
                         numberSource={numberSource}
+                        currentWeek={data.isCurrentWeek}
                     />
                 </>
             )}

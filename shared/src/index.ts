@@ -170,6 +170,7 @@ export interface SignalMonthsResponse {
 export interface SignalSummaryResponse {
     month: string;
     symbols: string[];
+    expiry: ExpiryFilter;
     weeks: WeekSummaryRow[];
     /* Computed over every trade in the month, not by adding the weeks up, so the
        yields stay means rather than means of means. */
@@ -178,8 +179,42 @@ export interface SignalSummaryResponse {
 
 export const MAX_FILTER_SYMBOLS = 25;
 
+/** Whether a page shows every contract, only the settled ones, or only the live ones. */
+export const EXPIRY_FILTERS = ['all', 'expired', 'active'] as const;
+
+export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
+
+/** Reads the contracts filter. Anything unrecognised narrows nothing. */
+export function parseExpiryFilter(raw: unknown): ExpiryFilter {
+    return (EXPIRY_FILTERS as readonly unknown[]).includes(raw) ? (raw as ExpiryFilter) : 'all';
+}
+
+/** Today as a calendar date, in the zone the process runs in. Both ends pin that to Pacific. */
+function todayIso(): IsoDate {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+}
+
 /**
- * Reads the summary's comma-separated symbol filter.
+ * Compared as text rather than as dates: both are calendar days, and YYYY-MM-DD
+ * sorts the way it reads. Expiry day itself is not past, since the contract lives
+ * until that afternoon's close.
+ */
+export function hasExpired(expiration: IsoDate | null): boolean {
+    return expiration !== null && expiration < todayIso();
+}
+
+/** Lives here rather than on either side: the grid filters in the browser, the summary in SQL's stead. */
+export function matchesExpiry(trade: Trade, filter: ExpiryFilter): boolean {
+    return filter === 'all' || hasExpired(trade.expiration) === (filter === 'expired');
+}
+
+/**
+ * Reads the summary's comma-separated symbol filter. A leading `!` survives the
+ * read, since it is what marks the symbol as one to drop rather than one to keep;
+ * a bang on its own asks nothing of anybody and is dropped.
  *
  * Takes `unknown` because Express hands back an ARRAY for `?symbols=A&symbols=B`
  * and `undefined` for an absent param. Junk yields an empty filter rather than an
@@ -189,11 +224,36 @@ export function parseSymbolList(raw: unknown): string[] {
     if (typeof raw !== 'string') return [];
     const seen = new Set<string>();
     for (const part of raw.split(',')) {
-        const symbol = part.trim().toUpperCase();
-        if (symbol) seen.add(symbol);
+        const token = part.trim().toUpperCase();
+        const symbol = token.startsWith('!') ? `!${token.slice(1).trim()}` : token;
+        if (symbol && symbol !== '!') seen.add(symbol);
         if (seen.size >= MAX_FILTER_SYMBOLS) break;
     }
     return [...seen];
+}
+
+/** The typed tokens sorted into the two questions they ask. */
+export interface SymbolFilter {
+    include: ReadonlySet<string>;
+    exclude: ReadonlySet<string>;
+}
+
+/** Sorted once rather than per contract, since a month is a great many contracts. */
+export function splitSymbolFilter(tokens: readonly string[]): SymbolFilter {
+    const include = new Set<string>();
+    const exclude = new Set<string>();
+    for (const token of tokens) {
+        if (token.startsWith('!')) exclude.add(token.slice(1));
+        else include.add(token);
+    }
+    return { include, exclude };
+}
+
+/** A bang always wins, and a filter of nothing but bangs keeps everything else. */
+export function matchesSymbolFilter(symbol: string, filter: SymbolFilter): boolean {
+    const upper = symbol.toUpperCase();
+    if (filter.exclude.has(upper)) return false;
+    return filter.include.size === 0 || filter.include.has(upper);
 }
 
 /** One headline from a calendar's macro banner. */

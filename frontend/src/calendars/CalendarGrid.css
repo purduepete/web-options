@@ -12,17 +12,28 @@
     row-gap: 0;
 }
 
-/* Columns only — see the note in WeekGrid.css. Taking the rows away here
-   collapsed every day card onto a single track. */
+/* The same stack, and for the same reason — see the note in WeekGrid.css. The
+   cards leave the grid rather than being squeezed inside it, because their
+   weekday column is set inline and would otherwise invent tracks of its own. */
 @media (max-width: 1100px) {
     .calendar-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.875rem;
+    }
+
+    .calendar-day {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 calc(50% - 0.4375rem);
+        min-width: 0%;
     }
 }
 
 @media (max-width: 640px) {
-    .calendar-grid {
-        grid-template-columns: 1fr;
+    .calendar-day {
+        flex-basis: 100%;
     }
 }
 

@@ -9,10 +9,12 @@ import { EXPIRY_FILTERS, MONEYNESS_FILTERS, type ExpiryFilter, type MoneynessFil
  * name until a real choice is made, and then wears the highlight.
  */
 
+// The menu narrows a week on the signals page and a month on the summary, so
+// the descriptions say what a choice keeps rather than where it is keeping it.
 const EXPIRY_OPTIONS: Record<ExpiryFilter, Omit<ChoiceOption<ExpiryFilter>, 'value'>> = {
-    all: { label: 'All', description: 'Every contract this week' },
-    active: { label: 'Active', description: 'Not yet at its expiry date' },
+    all: { label: 'All', description: 'Every contract' },
     expired: { label: 'Expired', description: 'Already past its expiry date' },
+    active: { label: 'Active', description: 'Not yet at its expiry date' },
 };
 
 export function ExpiryFilterMenu({ value, onChange }: { value: ExpiryFilter; onChange: (next: ExpiryFilter) => void }) {

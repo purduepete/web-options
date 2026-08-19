@@ -130,7 +130,11 @@ describe('the page can always be as narrow as the phone', () => {
         // `auto-fit` reflows on its own; a counted `repeat()` has to be told.
         const narrow = mediaBlocks(css).find(({ condition }) => /max-width:\s*640px/.test(condition));
 
-        expect(narrow?.body ?? '').toMatch(/grid-template-columns:\s*1fr/);
+        // Either the tracks come down to one, or the children leave the grid
+        // altogether and stack. The week grid does the second: its cards carry
+        // an inline `grid-column`, which invents tracks of its own however
+        // narrow the template is told to be.
+        expect(narrow?.body ?? '').toMatch(/grid-template-columns:\s*1fr|flex-basis:\s*100%/);
     });
 
     it('breaks a symbol or a link rather than widening the column it sits in', () => {

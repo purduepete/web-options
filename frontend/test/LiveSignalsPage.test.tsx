@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -92,6 +92,11 @@ function groupHeadings(): string[] {
         .queryAllByRole('button', { expanded: true })
         .concat(grid.queryAllByRole('button', { expanded: false }))
         .map((button) => button.textContent ?? '');
+}
+
+/** Every day card's label, in document order. */
+function dayHeadings(): string[] {
+    return screen.getAllByRole('region').map((card) => card.getAttribute('aria-label') ?? '');
 }
 
 /** Every number inside `scope` that fell back to VADER, in document order. */
@@ -422,10 +427,16 @@ describe('LiveSignalsPage', () => {
 });
 
 describe('LiveSignalsPage menu reset', () => {
-    it('stays out of the bar while every menu is already at its default', async () => {
+    it('is out of reach while every menu is already at its default', async () => {
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
         expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+
+        // It stays in the bar all the same, holding the width it will want, so
+        // that narrowing a menu later does not reflow the row around it.
+        const idle = document.querySelector('.menus-reset');
+        expect(idle?.className).toContain('is-idle');
+        expect(idle?.getAttribute('disabled')).not.toBeNull();
     });
 
     it('puts all three menus back in one press', async () => {
@@ -457,6 +468,109 @@ describe('LiveSignalsPage menu reset', () => {
     });
 });
 
+/**
+ * Reports the widths a viewport of `width` would match, and nothing else: the
+ * hooks under test ask in `max-width` and jsdom answers no to everything.
+ */
+function pretendViewport(width: number) {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => {
+        const limit = /max-width:\s*(\d+)px/.exec(query)?.[1];
+        return {
+            matches: limit !== undefined && width <= Number(limit),
+            media: query,
+            onchange: null,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            addListener: () => {},
+            removeListener: () => {},
+            dispatchEvent: () => false,
+        };
+    }) as typeof window.matchMedia;
+    return () => {
+        window.matchMedia = original;
+    };
+}
+
+describe('LiveSignalsPage on a phone', () => {
+    let restore = () => {};
+
+    beforeEach(() => {
+        restore = pretendViewport(390);
+    });
+
+    afterEach(() => {
+        restore();
+    });
+
+    it('folds every filter away behind one button, and opens them all at once', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(screen.queryByRole('button', { name: /^Contracts:/ })).toBeNull();
+        expect(screen.queryByRole('textbox', { name: 'Filter by symbol' })).toBeNull();
+
+        await user.click(screen.getByRole('button', { name: 'Filters' }));
+
+        expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+        expect(screen.getByRole('textbox', { name: 'Filter by symbol' })).toBeTruthy();
+    });
+
+    it('leaves the week navigation out of the fold, so the weeks stay one press away', async () => {
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Previous week' })).toBeTruthy();
+    });
+
+    it('says so on the button when something is already narrowed', async () => {
+        renderPage('/?expiry=active');
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Filters' }).className).toContain('narrowed');
+    });
+
+    it('opens the fold rather than aiming the caret at a box nobody can see', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('/');
+
+        expect(screen.getByRole('textbox', { name: 'Filter by symbol' })).toBe(document.activeElement);
+    });
+
+    it('folds a day away by its own heading, and leaves the others alone', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(within(monday).getByText('AAPL $100P')).toBeTruthy();
+
+        await user.click(monday.querySelector('.day-fold') as HTMLElement);
+
+        expect(within(monday).queryByText('AAPL $100P')).toBeNull();
+        const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
+        expect(within(tuesday).getByText('AMD $100P')).toBeTruthy();
+    });
+
+    it('puts the newest day of the week in progress at the top', async () => {
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(dayHeadings()).toEqual(['Tuesday Aug 12', 'Monday Aug 11']);
+    });
+
+    it('leaves a week already over reading forwards', async () => {
+        fetchWeekSignals.mockResolvedValue(week({ isCurrentWeek: false }));
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(dayHeadings()).toEqual(['Monday Aug 11', 'Tuesday Aug 12']);
+    });
+});
+
 describe('LiveSignalsPage filter shortcuts', () => {
     it('hands the symbol box the caret, and its whole contents, on slash', async () => {
         const user = userEvent.setup();
@@ -479,10 +593,10 @@ describe('LiveSignalsPage filter shortcuts', () => {
         await screen.findByTestId('week-grid');
 
         await user.keyboard('e');
-        expect(screen.getByRole('button', { name: 'Contracts: Active' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Contracts: Expired' })).toBeTruthy();
 
         await user.keyboard('e');
-        expect(screen.getByRole('button', { name: 'Contracts: Expired' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Contracts: Active' })).toBeTruthy();
 
         await user.keyboard('e');
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();

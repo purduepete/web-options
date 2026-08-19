@@ -88,3 +88,27 @@
     font-size: 0.7rem;
     font-weight: 400;
 }
+
+/* On a phone the menus are stacked one to a line, so the trigger takes the line
+   it is given and the panel opens to the same width underneath it. A trigger
+   sized to its own label would leave a menu hanging off the middle of nowhere. */
+@media (max-width: 640px) {
+    .choice-menu {
+        width: 100%;
+    }
+
+    .choice-trigger {
+        justify-content: flex-start;
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .choice-panel {
+        width: 100%;
+        min-width: 0%;
+    }
+
+    .choice-item {
+        min-height: 44px;
+    }
+}

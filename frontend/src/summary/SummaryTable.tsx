@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { SUMMARY_COLUMNS, SUMMARY_COLUMN_LABELS } from '@weboptions/shared';
 import type { SummaryCell, SummaryColumn, WeekSummaryRow } from '@weboptions/shared';
@@ -22,6 +23,12 @@ const ALL_TITLE =
 /** Out of the contracts that have a close, not out of every signal. */
 function otmRate(cell: SummaryCell): number | null {
     return cell.priced === 0 ? null : (cell.otm / cell.priced) * 100;
+}
+
+/* The aggregates are set off by the air around them rather than by a heavier
+   line: in a table already ruled throughout, no line at all separates hardest. */
+function Gap() {
+    return <td className="summary-gap" aria-hidden="true" />;
 }
 
 function Cell({ cell }: { cell: SummaryCell }) {
@@ -84,21 +91,26 @@ export function SummaryTable({
             <colgroup>
                 <col className="summary-col-week" />
                 {SUMMARY_COLUMNS.map((column) => (
-                    <col key={column} className="summary-col-group" />
+                    <Fragment key={column}>
+                        {column === 'all' ? <col className="summary-col-gap" /> : null}
+                        <col className="summary-col-group" />
+                    </Fragment>
                 ))}
             </colgroup>
             <thead>
                 <tr>
                     <th scope="col">Week</th>
                     {SUMMARY_COLUMNS.map((column) => (
-                        <th
-                            key={column}
-                            scope="col"
-                            className={`summary-column-${column}`}
-                            title={column === 'all' ? ALL_TITLE : undefined}
-                        >
-                            {SUMMARY_COLUMN_LABELS[column]}
-                        </th>
+                        <Fragment key={column}>
+                            {column === 'all' ? <Gap /> : null}
+                            <th
+                                scope="col"
+                                className={`summary-column-${column}`}
+                                title={column === 'all' ? ALL_TITLE : undefined}
+                            >
+                                {SUMMARY_COLUMN_LABELS[column]}
+                            </th>
+                        </Fragment>
                     ))}
                 </tr>
             </thead>
@@ -110,30 +122,31 @@ export function SummaryTable({
                             <Link to={`/?week=${week.weekStart}`}>{formatWeekTitle(week.weekStart, week.weekEnd)}</Link>
                         </th>
                         {SUMMARY_COLUMNS.map((column) => (
-                            <td
-                                key={column}
-                                className={`summary-column-${column}`}
-                                data-label={SUMMARY_COLUMN_LABELS[column]}
-                            >
-                                <Cell cell={week.cells[column]} />
-                            </td>
+                            <Fragment key={column}>
+                                {column === 'all' ? <Gap /> : null}
+                                <td className={`summary-column-${column}`} data-label={SUMMARY_COLUMN_LABELS[column]}>
+                                    <Cell cell={week.cells[column]} />
+                                </td>
+                            </Fragment>
                         ))}
                     </tr>
                 ))}
             </tbody>
             <tfoot>
+                <tr className="summary-gap-row" aria-hidden="true">
+                    <td colSpan={SUMMARY_COLUMNS.length + 2} />
+                </tr>
                 <tr className="summary-total">
                     <th scope="row" data-label="Week">
                         {label}
                     </th>
                     {SUMMARY_COLUMNS.map((column) => (
-                        <td
-                            key={column}
-                            className={`summary-column-${column}`}
-                            data-label={SUMMARY_COLUMN_LABELS[column]}
-                        >
-                            <Cell cell={total[column]} />
-                        </td>
+                        <Fragment key={column}>
+                            {column === 'all' ? <Gap /> : null}
+                            <td className={`summary-column-${column}`} data-label={SUMMARY_COLUMN_LABELS[column]}>
+                                <Cell cell={total[column]} />
+                            </td>
+                        </Fragment>
                     ))}
                 </tr>
             </tfoot>

@@ -13,7 +13,8 @@ vi.mock('../src/api', async () => {
     return {
         ...actual,
         fetchSignalMonths: () => fetchSignalMonths(),
-        fetchSignalSummary: (month: string, symbols?: readonly string[]) => fetchSignalSummary(month, symbols),
+        fetchSignalSummary: (month: string, symbols?: readonly string[], expiry?: string) =>
+            fetchSignalSummary(month, symbols, expiry),
     };
 });
 
@@ -94,6 +95,11 @@ function renderPage(entry = '/summary') {
     );
 }
 
+/** The months showing numbers they have been told are out of date. */
+function waiting(): Element[] {
+    return Array.from(document.querySelectorAll('[aria-busy="true"]'));
+}
+
 beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -108,7 +114,7 @@ describe('SummaryPage', () => {
         await screen.findByRole('table');
 
         expect(fetchSignalSummary).toHaveBeenCalledTimes(1);
-        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', []);
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', [], 'all');
         expect(screen.getByRole('button', { name: /August 2026/ }).getAttribute('aria-expanded')).toBe('true');
         expect(screen.getByRole('button', { name: /July 2026/ }).getAttribute('aria-expanded')).toBe('false');
     });
@@ -217,7 +223,7 @@ describe('SummaryPage', () => {
 
         await user.click(july);
         await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
-        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-07', []);
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-07', [], 'all');
 
         await user.click(july);
         await user.click(july);
@@ -233,7 +239,7 @@ describe('SummaryPage', () => {
         await user.type(screen.getByLabelText(/Filter by symbols/), 'amd, nvda');
 
         await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
-        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', ['AMD', 'NVDA']);
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', ['AMD', 'NVDA'], 'all');
     });
 
     it('reloads every open month when the filter changes, in whatever order they answer', async () => {
@@ -247,17 +253,21 @@ describe('SummaryPage', () => {
         const pending = new Map<string, (value: unknown) => void>();
         fetchSignalSummary.mockImplementation((month: string) => new Promise((resolve) => pending.set(month, resolve)));
 
-        // Both months refetch under the new filter. The first answer lands and
-        // renders before the second arrives, which is where an effect that
-        // disowned its predecessor's requests would leave the other spinning.
+        // Both months refetch under the new filter. Neither table leaves the
+        // page while it waits — a spinner in their place would rebuild what the
+        // reader is looking at — and the one still waiting says so.
         await user.type(screen.getByLabelText(/Filter by symbols/), 'AMD');
         await waitFor(() => expect(pending.size).toBe(2));
+        expect(screen.getAllByRole('table').length).toBe(2);
+        expect(waiting().length).toBe(2);
 
         pending.get('2026-07')!({ ...AUGUST, month: '2026-07', symbols: ['AMD'] });
-        await waitFor(() => expect(screen.getAllByRole('table').length).toBe(1));
+        await waitFor(() => expect(waiting().length).toBe(1));
+        expect(screen.getAllByRole('table').length).toBe(2);
 
         pending.get('2026-08')!({ ...AUGUST, symbols: ['AMD'] });
-        await waitFor(() => expect(screen.getAllByRole('table').length).toBe(2));
+        await waitFor(() => expect(waiting().length).toBe(0));
+        expect(screen.getAllByRole('table').length).toBe(2);
     });
 
     it('reads the filter back out of the address it was given', async () => {
@@ -265,8 +275,38 @@ describe('SummaryPage', () => {
 
         await screen.findByRole('table');
 
-        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', ['AMD']);
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', ['AMD'], 'all');
         expect(screen.getByLabelText(/Filter by symbols/).getAttribute('value')).toBe('AMD');
+    });
+
+    it('narrows to the contracts chosen, and reads the choice back out of the address', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        await screen.findByRole('table');
+        await user.click(screen.getByRole('button', { name: /Contracts/ }));
+        await user.click(screen.getByRole('menuitemradio', { name: /Expired/ }));
+
+        await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', [], 'expired');
+    });
+
+    it('opens with the contracts filter the address asked for', async () => {
+        renderPage('/summary?expiry=active');
+
+        await screen.findByRole('table');
+
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', [], 'active');
+    });
+
+    it('clears only its own box when the symbol filter is crossed out', async () => {
+        const user = userEvent.setup();
+        renderPage('/summary?expiry=expired&symbols=AMD');
+
+        await screen.findByRole('table');
+        await user.click(screen.getByRole('button', { name: /Clear the symbol filter/ }));
+
+        await waitFor(() => expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', [], 'expired'));
     });
 
     it('serves the unfiltered numbers from memory once the filter is cleared', async () => {

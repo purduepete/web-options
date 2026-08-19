@@ -10,23 +10,41 @@
     row-gap: 0;
 }
 
-/* Day cards are placed into their real weekday column, so the grid stays five
-   columns wide at every width and these breakpoints only resize the leading
-   tracks — the same as the page this replaces.
+/* Day cards are placed into their real weekday column, so a Friday-only week
+   still lands on the right of the grid. That placement is inline, which is why
+   narrowing the tracks cannot narrow the week: a card asking for column five
+   makes the browser invent columns two through five as auto-sized tracks, and
+   five days of tickets then run clean off a phone.
 
-   They must not touch the rows. The cards inherit those with `subgrid`, and a
-   card whose rows are taken away collapses its whole contents into a single
-   track: the day head, the rule and the first risk group then paint on top of
-   one another. */
+   Below the full week the cards stop being grid items instead. Every inline
+   `grid-column` and `grid-row` goes inert with them, and a card lays its own
+   contents out in document order — the same order the rows put them in.
+
+   They must not simply lose the rows. The cards inherit those with `subgrid`,
+   and a card whose rows are taken away while it is still a grid item collapses
+   its whole contents into a single track: the day head, the rule and the first
+   risk group then paint on top of one another. */
 @media (max-width: 1100px) {
     .week-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.875rem;
+    }
+
+    .day-card {
+        display: flex;
+        flex-direction: column;
+        /* Two up, and an odd last card takes the whole width rather than
+           leaving half the row empty. */
+        flex: 1 1 calc(50% - 0.4375rem);
+        min-width: 0%;
     }
 }
 
 @media (max-width: 640px) {
-    .week-grid {
-        grid-template-columns: 1fr;
+    .day-card {
+        flex-basis: 100%;
     }
 }
 
@@ -64,6 +82,49 @@
     font-size: 0.75rem;
     opacity: 0.9;
     font-weight: 500;
+}
+
+/* Stacked, a week is five cards deep and a day already read is only something to
+   scroll past, so its heading becomes the control that folds it away. The button
+   eats the head's padding back so the whole bar is pressable rather than just the
+   words in it. Across the full week the heading is a heading again: the cards are
+   columns there, and folding one would empty a column without shortening a thing. */
+.day-fold {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    margin: -0.75rem -0.875rem;
+    padding: 0.75rem 0.875rem;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.day-fold:hover {
+    background: var(--surface-hover);
+}
+
+.day-fold .day-date {
+    margin-left: auto;
+}
+
+/* Points down while the day is open, right once it is folded. */
+.day-fold svg {
+    flex: none;
+    transition: transform 0.15s ease;
+}
+
+.day-fold svg.is-folded {
+    transform: rotate(-90deg);
+}
+
+/* Folded, the head is the whole card, and its rule would double the card's own. */
+.day-card.is-folded .day-head {
+    border-bottom: 0;
 }
 
 /* What the day would cost to put on, seamed off the date rather than given its

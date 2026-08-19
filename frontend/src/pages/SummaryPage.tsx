@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { parseSymbolList } from '@weboptions/shared';
-import type { SignalMonth, SignalSummaryResponse } from '@weboptions/shared';
+import { parseExpiryFilter, parseSymbolList } from '@weboptions/shared';
+import type { ExpiryFilter, SignalMonth, SignalSummaryResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchSignalMonths, fetchSignalSummary } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { SummaryTable } from '../summary/SummaryTable';
+import { ExpiryFilterMenu } from '../signals/FilterMenu';
+import { EXPIRY_FILTERS, cycle } from '../signals/grouping';
 import { isTyping } from '../hooks/useWeekArrows';
 import { ChevronDownIcon, CloseIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
@@ -37,6 +39,7 @@ export function SummaryPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
     const symbolsParam = params.get('symbols') ?? '';
+    const expiry = parseExpiryFilter(params.get('expiry'));
     const [draft, setDraft] = useState(symbolsParam);
     const [months, setMonths] = useState<SignalMonth[] | null>(null);
     const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -49,11 +52,16 @@ export function SummaryPage() {
     const [opening, setOpening] = useState(true);
     const filterInputRef = useRef<HTMLInputElement>(null);
     const inFlight = useRef(new Set<string>());
+    // A filter change gives every open month a new cache key, and dropping the
+    // table for a spinner while the answer comes back rebuilds the page under
+    // the reader. Each month keeps the numbers it last showed until then.
+    const lastShown = useRef<Record<string, SignalSummaryResponse>>({});
 
     const symbols = useMemo(() => parseSymbolList(symbolsParam), [symbolsParam]);
-    // The filter is part of a month's identity, not something applied afterwards:
-    // the server does the narrowing, so each filter has its own answer to cache.
-    const cacheKey = useCallback((month: string) => `${month}|${symbols.join(',')}`, [symbols]);
+    // Both filters are part of a month's identity, not something applied
+    // afterwards: the server does the narrowing before the numbers are rolled
+    // up, so each combination has its own answer to cache.
+    const cacheKey = useCallback((month: string) => `${month}|${symbols.join(',')}|${expiry}`, [symbols, expiry]);
 
     // Typing narrows the whole archive, so it waits for a pause rather than
     // asking the server again on every letter.
@@ -115,7 +123,7 @@ export function SummaryPage() {
             const key = cacheKey(month);
             if (summaries[key] || failed.has(key) || inFlight.current.has(key)) continue;
             inFlight.current.add(key);
-            fetchSignalSummary(month, symbols)
+            fetchSignalSummary(month, symbols, expiry)
                 .then((result) => {
                     setSummaries((current) => ({ ...current, [key]: result }));
                 })
@@ -131,7 +139,7 @@ export function SummaryPage() {
                     inFlight.current.delete(key);
                 });
         }
-    }, [expanded, summaries, failed, symbols, cacheKey, forget]);
+    }, [expanded, summaries, failed, symbols, expiry, cacheKey, forget]);
 
     const toggleMonth = useCallback((month: string) => {
         setExpanded((current) => {
@@ -146,12 +154,41 @@ export function SummaryPage() {
         setExpanded((current) => (all.some((month) => current.has(month)) ? new Set() : new Set(all)));
     }, [months]);
 
+    const setExpiry = useCallback(
+        (next: ExpiryFilter) => {
+            setParams(
+                (current) => {
+                    const updated = new URLSearchParams(current);
+                    if (next === 'all') updated.delete('expiry');
+                    else updated.set('expiry', next);
+                    return updated;
+                },
+                { replace: true },
+            );
+        },
+        [setParams],
+    );
+
+    const clearSymbols = useCallback(() => {
+        setDraft('');
+        setParams(
+            (current) => {
+                const updated = new URLSearchParams(current);
+                updated.delete('symbols');
+                return updated;
+            },
+            { replace: true },
+        );
+    }, [setParams]);
+
+    // The shortcut clears the whole head, where the cross clears only its own box.
     const reset = useCallback(() => {
         setDraft('');
         setParams(
             (current) => {
                 const updated = new URLSearchParams(current);
                 updated.delete('symbols');
+                updated.delete('expiry');
                 return updated;
             },
             { replace: true },
@@ -171,6 +208,9 @@ export function SummaryPage() {
             } else if (key === 'j') {
                 event.preventDefault();
                 toggleAllMonths();
+            } else if (key === 'e') {
+                event.preventDefault();
+                setExpiry(cycle(EXPIRY_FILTERS, expiry));
             } else if (key === 'r') {
                 event.preventDefault();
                 reset();
@@ -178,12 +218,14 @@ export function SummaryPage() {
         }
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [toggleAllMonths, reset]);
+    }, [toggleAllMonths, reset, setExpiry, expiry]);
 
     return (
         <main className="summary-page">
             <div className="page-head">
                 <h1>Summary</h1>
+
+                <ExpiryFilterMenu value={expiry} onChange={setExpiry} />
 
                 <div className={`symbol-filter${draft ? ' has-value' : ''}`}>
                     <input
@@ -203,7 +245,7 @@ export function SummaryPage() {
                         <button
                             type="button"
                             className="symbol-filter-clear"
-                            onClick={reset}
+                            onClick={clearSymbols}
                             aria-label="Clear the symbol filter"
                         >
                             <CloseIcon width={14} height={14} />
@@ -228,7 +270,10 @@ export function SummaryPage() {
                 months?.map((month) => {
                     const key = cacheKey(month.month);
                     const open = expanded.has(month.month);
-                    const summary = summaries[key];
+                    const fresh = summaries[key];
+                    if (fresh) lastShown.current[month.month] = fresh;
+                    const stale = fresh ? undefined : lastShown.current[month.month];
+                    const summary = fresh ?? stale;
                     const bodyId = `summary-month-${month.month}`;
                     return (
                         <section className="summary-month enter" key={month.month}>
@@ -245,11 +290,16 @@ export function SummaryPage() {
                                     {month.weekStarts.length} {month.weekStarts.length === 1 ? 'week' : 'weeks'}
                                 </span>
                             </button>
-                            <div className="summary-month-body" id={bodyId} hidden={!open}>
-                                {summary ? (
-                                    <SummaryTable label={month.label} weeks={summary.weeks} total={summary.total} />
-                                ) : failed.has(key) ? (
+                            <div
+                                className={`summary-month-body${stale ? ' is-stale' : ''}`}
+                                id={bodyId}
+                                hidden={!open}
+                                aria-busy={stale ? true : undefined}
+                            >
+                                {failed.has(key) && !fresh ? (
                                     <p className="summary-none">This month could not be loaded.</p>
+                                ) : summary ? (
+                                    <SummaryTable label={month.label} weeks={summary.weeks} total={summary.total} />
                                 ) : (
                                     <Loading />
                                 )}

@@ -15,6 +15,7 @@ import {
     isCautionSymbol,
     isIsoDate,
     normalizeCautionSymbols,
+    parseExpiryFilter,
     parseSymbolList,
 } from '@weboptions/shared';
 import type { AppConfig } from '../config';
@@ -129,6 +130,7 @@ export function createApiRouter(config: AppConfig): Router {
         }
 
         const symbols = parseSymbolList(req.query.symbols);
+        const expiry = parseExpiryFilter(req.query.expiry);
 
         try {
             const found = monthsFrom(await signalDates(config.db)).find((entry) => entry.month === month);
@@ -138,10 +140,11 @@ export function createApiRouter(config: AppConfig): Router {
             }
             const span = spanOf(found);
             const rows = await fetchRange(config.db, span.from, span.to);
-            const { weeks, total } = summarizeRange(rows, found.weekStarts, symbols);
+            const { weeks, total } = summarizeRange(rows, found.weekStarts, symbols, expiry);
             const body: SignalSummaryResponse = {
                 month,
                 symbols,
+                expiry,
                 weeks,
                 total,
             };

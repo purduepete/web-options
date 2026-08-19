@@ -3,6 +3,7 @@ import type {
     CalendarsIndexResponse,
     CautionSymbolsResponse,
     EarliestWeekResponse,
+    ExpiryFilter,
     MeResponse,
     SignalMonthsResponse,
     SignalSummaryResponse,
@@ -123,9 +124,14 @@ export function fetchSignalMonths(): Promise<SignalMonthsResponse> {
     return getJson<SignalMonthsResponse>('/api/signal-months');
 }
 
-export function fetchSignalSummary(month: string, symbols: readonly string[] = []): Promise<SignalSummaryResponse> {
+export function fetchSignalSummary(
+    month: string,
+    symbols: readonly string[] = [],
+    expiry: ExpiryFilter = 'all',
+): Promise<SignalSummaryResponse> {
     const query = new URLSearchParams({ month });
     if (symbols.length > 0) query.set('symbols', symbols.join(','));
+    if (expiry !== 'all') query.set('expiry', expiry);
     return getJson<SignalSummaryResponse>(`/api/signal-summary?${query}`);
 }
 

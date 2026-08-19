@@ -211,9 +211,22 @@
     text-decoration: none;
 }
 
+/* Hung off the bar like the desktop panel rather than sitting in the flow: in
+   the flow it grew the sticky header, which pushed the page — and every head
+   pinned under `--navbar-height` — down the moment the menu opened. */
 .drawer {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100dvh - var(--navbar-height, 3.5rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom);
     border-top: var(--border-width) solid var(--border-chrome);
+    border-bottom: var(--border-width) solid var(--border-chrome);
     background: var(--nav-bg);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 15%);
 }
 
 .drawer > .pill-row {
@@ -301,6 +314,14 @@ a.nav-link.active {
 .star:focus-visible,
 .star[aria-pressed='true'] {
     opacity: 1;
+}
+
+/* A fingertip cannot hover, so on the devices that only ever see the drawer the
+   star would be a control nobody could find. */
+@media (hover: none) {
+    .star {
+        opacity: 1;
+    }
 }
 
 /* Amber rather than the highlight colour, matching the sibling apps: a favourite

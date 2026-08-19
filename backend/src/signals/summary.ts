@@ -1,6 +1,10 @@
 import {
     SUMMARY_COLUMNS,
     groupIdForTrade,
+    matchesExpiry,
+    matchesSymbolFilter,
+    splitSymbolFilter,
+    type ExpiryFilter,
     type IsoDate,
     type SignalMonth,
     type SummaryCell,
@@ -140,7 +144,9 @@ function cellsFor(trades: Trade[]): Record<SummaryColumn, SummaryCell> {
 /**
  * One row per week in `weekStarts`, always — a symbol filter that empties a week
  * leaves an empty row behind rather than removing it, so the reader can see that
- * the week existed and the symbol was simply absent from it.
+ * the week existed and the symbol was simply absent from it. The contracts filter
+ * leaves the same hole for the same reason. A symbol written with a leading bang
+ * is one to drop rather than one to keep.
  *
  * The month total comes from the same trades in one pass, never from adding the
  * weekly cells up: a sum of weekly yields is not the month's yield.
@@ -149,8 +155,9 @@ export function summarizeRange(
     rows: SignalRow[],
     weekStarts: IsoDate[],
     symbols: string[],
+    expiry: ExpiryFilter = 'all',
 ): { weeks: WeekSummaryRow[]; total: Record<SummaryColumn, SummaryCell> } {
-    const wanted = new Set(symbols);
+    const wanted = splitSymbolFilter(symbols);
     const byWeek = new Map<IsoDate, Trade[]>();
     for (const weekStart of weekStarts) byWeek.set(weekStart, []);
     const kept: Trade[] = [];
@@ -159,7 +166,8 @@ export function summarizeRange(
         const reportDate = sqlDateToIso(row.report_date);
         if (!reportDate) continue;
         const trade = toTrade(row);
-        if (wanted.size > 0 && !wanted.has(trade.symbol.toUpperCase())) continue;
+        if (!matchesSymbolFilter(trade.symbol, wanted)) continue;
+        if (!matchesExpiry(trade, expiry)) continue;
         const week = byWeek.get(weekStartOf(reportDate));
         if (!week) continue;
         week.push(trade);

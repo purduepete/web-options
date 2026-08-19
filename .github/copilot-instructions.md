@@ -80,8 +80,43 @@ contract applies to existing pages and every page added under `frontend/src/page
 - Preserve `viewport-fit=cover` and use `env(safe-area-inset-*)` in addition to,
   rather than instead of, the normal page gutters.
 - Long symbols, URLs, and user-provided text must wrap inside their column.
-- The day-card calendar uses row subgrid for vertical alignment. Responsive rules
-  may change its columns, but must not remove or replace its subgrid rows.
+- A form control sizes itself from its own `size` or `cols` and will run off a
+  phone rather than admit it does not fit, so nothing may rely on the intrinsic
+  width of an `input`.
+- An element placed by an inline `grid-column` cannot be reflowed by a media
+  query: a card asking for column five makes the browser invent the tracks it
+  needs, however narrow the template has been told to be. The week grid and the
+  published calendar place their day cards that way, so below the full week the
+  cards leave the grid altogether and stack as flex children, which makes every
+  inline placement inert. Container and cards must leave together — a card that
+  is still a grid item when its rows go collapses its whole contents onto one
+  track, painting the day head, the rule and the first risk group on top of one
+  another.
+- A stacked order that differs from the desktop order is reordered in the DOM,
+  never with `row-reverse`/`column-reverse`, so reading order and tab order stay
+  with what is on screen. The week grid does this for the week in progress: on a
+  phone its day cards render newest first, while a week already over, and every
+  width that still shows the columns, keeps Monday first.
+- A wrapper added so a phone can fold a run of controls away must cost nothing
+  above its breakpoint. `display: contents` gives the wrapper up entirely, so
+  every control stays a direct child of the head and keeps wrapping against the
+  heading and the week navigation as before — but document order is now the
+  wrapper's order, so anything the head used to interleave has to be put back by
+  hand with `order`. The live signals head does exactly that for the week
+  navigation and the symbol filter.
+- `hidden` is only a default. The user-agent's `[hidden] { display: none }` is
+  beaten by any later rule of equal specificity — a class that sets
+  `display: contents` or `flex` — and always by an inline style. A wrapper that
+  must be able to disappear needs its own `[hidden]` rule, and a fold cannot be
+  built on an inline `display` at all.
+- A control the fold hides cannot take focus, so a shortcut that focuses one
+  opens the fold with `flushSync` first and focuses after the DOM has caught up.
+- A text input does not centre its own text the way a button does. Give one a
+  `min-height` to reach the 44px touch target and the line stays at the top of
+  the box, taking the caret with it. Give the line box the height instead —
+  `padding-block: 0` and `line-height: calc(44px - 2 * var(--border-width))` —
+  so the text sits in the middle and still measures the same as the triggers
+  beside it.
 
 Run `npm test -- --run frontend/test/responsive-css.test.ts frontend/test/grid-css.test.ts frontend/test/safe-area-css.test.ts`
 after changing page markup or CSS, then run `npm run build:frontend`.
@@ -115,7 +150,10 @@ reader watched something jump, flash, or fill in underneath them.
 - **A control that appears must not move the ones already there.** Put the single
   `margin-right: auto` that pins a control run on an element that is always
   present — a slot wrapper if the control itself is conditional. Never let two
-  `auto` margins split the free space in one row.
+  `auto` margins split the free space in one row. A control wide enough to
+  rewrap the row, like the signals reset, stays rendered and takes
+  `visibility: hidden` instead of leaving: it holds its width and gives up
+  everything else, so nothing shifts when it comes back.
 - **`Loading` already waits 250ms** before it shows, so a fast answer flashes
   nothing. Do not add a second delay, and do not mount it where an element that
   reserves the same space would do.

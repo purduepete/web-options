@@ -10,15 +10,24 @@
     position: relative;
     display: flex;
     align-items: center;
-    /* The head wraps this onto its own line before it has to shrink. */
-    flex: 0 1 12rem;
+    /* A wrapping flex row decides where an item goes from its basis, before any
+       shrinking, so a filter that asks for its full width wraps to a line of its
+       own the moment the reset button appears. It asks for less and grows into
+       whatever is left instead. Growth stops at its old width, which hands the
+       rest back to the auto margin that gathers the controls to the right. */
+    flex: 1 1 7rem;
+    min-width: 0%;
+    max-width: 12rem;
 }
 
 .symbol-filter input {
     width: 100%;
-    max-width: 12rem;
-    padding-right: 2rem;
-    font-size: 0.85rem;
+    min-width: 0%;
+    /* The box has to be built from the same padding and text size as a menu
+       trigger, or the taller default control stands proud of the row it shares.
+       The extra room on the right is for the clear cross. */
+    padding: 0.3rem 2rem 0.3rem 0.6rem;
+    font-size: 0.8rem;
     letter-spacing: 0.04em;
 }
 
@@ -85,6 +94,123 @@
     color: var(--highlight);
     font-size: 0.8rem;
     font-weight: 600;
+}
+
+/* Nothing to undo yet. It holds its place rather than leaving the bar, so that
+   narrowing a menu later does not reflow the row and push the symbol filter
+   onto a line of its own. Hidden this way it is neither pressable nor read out. */
+.menus-reset.is-idle {
+    visibility: hidden;
+}
+
+/* Except on a phone, where the bar is already several rows and a reserved gap in
+   one of them reads as a mistake rather than as restraint. */
+@media (max-width: 640px) {
+    .menus-reset.is-idle {
+        display: none;
+    }
+}
+
+/* Above a phone the filter bar is not a bar at all: `display: contents` hands
+   its controls straight back to the head, which lays them out in the one
+   wrapping row it always did. The wrapper is only a handle for folding them
+   away, so it must cost nothing where nothing is folded. Gathering them under
+   it did move the symbol filter ahead of the week navigation, which `order`
+   puts back rather than another wrapper. */
+.filter-bar {
+    display: contents;
+}
+
+/* The wrapper gathered the controls in document order, which put the symbol
+   filter ahead of the week navigation and the navigation ahead of the menus.
+   Both go back by hand rather than by another wrapper. */
+.signals-page .page-head > .week-nav {
+    order: 1;
+}
+
+.filter-bar > .symbol-filter {
+    order: 2;
+}
+
+/* `[hidden]` loses to a class in the cascade, so the wrapper has to hide itself. */
+.filter-bar[hidden] {
+    display: none;
+}
+
+/* Named rather than iconic: it is the only thing standing between the reader and
+   every control on the page, and it wears the highlight when it has something
+   folded behind it. */
+.filters-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.filters-toggle.narrowed {
+    border-color: var(--highlight);
+    color: var(--highlight);
+}
+
+.filters-toggle .rotated {
+    transform: rotate(180deg);
+}
+
+/* A phone reads the head as a stack, so each control takes a whole line: a row
+   of half-width menus on a 390px screen is four truncated words and nothing to
+   aim at. The week navigation stays above the fold-out, since a reader moving
+   through the weeks should not have to open the filters to do it. */
+@media (max-width: 640px) {
+    .signals-page .page-head > .week-nav {
+        order: 1;
+    }
+
+    .signals-page .page-head > .filters-toggle {
+        order: 2;
+    }
+
+    .signals-page .page-head > .filter-bar {
+        order: 3;
+    }
+
+    .filter-bar {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    /* The row's basis was a width. Down a column it would be a height, and the
+       filter would open seven rems tall. */
+    .filter-bar > .symbol-filter {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: none;
+    }
+
+    .filter-bar > .menus-reset {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .filters-toggle,
+    .filter-bar > .menus-reset {
+        min-height: 44px;
+    }
+
+    /* A text input will not centre its own text when a minimum height stretches
+       it: the line stays at the top and takes the caret with it. The line box is
+       given the height instead, so the text sits in the middle of it. */
+    .filter-bar .symbol-filter input {
+        padding-block: 0;
+        line-height: calc(44px - 2 * var(--border-width));
+    }
 }
 
 .signals-error {

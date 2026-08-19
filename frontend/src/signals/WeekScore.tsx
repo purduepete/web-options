@@ -22,7 +22,10 @@ export function WeekScore({ days, numberSource }: { days: DaySignals[]; numberSo
             </span>
 
             {priced > 0 && (
-                <span title={unpriced > 0 ? `${unpriced} have no close of their own yet.` : undefined}>
+                <span
+                    className="score-otm"
+                    title={unpriced > 0 ? `${unpriced} have no close of their own yet.` : undefined}
+                >
                     <b className={otm === priced ? 'clean' : undefined}>
                         {otm} of {priced}
                     </b>{' '}

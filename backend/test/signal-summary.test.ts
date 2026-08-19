@@ -257,6 +257,23 @@ describe('summarizeRange', () => {
         expect(total.all.signals).toBe(0);
         expect(total.all.premium).toBeNull();
     });
+
+    // Expirations either side of any clock this ever runs on, so the suite does
+    // not need today to be a particular day.
+    it('keeps only the contracts the expiry filter asks for', () => {
+        const rows = [row({ expiration: '2000-08-14' }), row({ symbol: 'NVDA', expiration: '2999-08-14' })];
+
+        expect(summarizeRange(rows, ['2026-08-10'], [], 'all').total.all.signals).toBe(2);
+        expect(summarizeRange(rows, ['2026-08-10'], [], 'active').total.all.signals).toBe(1);
+        expect(summarizeRange(rows, ['2026-08-10'], [], 'expired').total.all.signals).toBe(1);
+    });
+
+    it('leaves the week behind as an empty row when the expiry filter clears it', () => {
+        const { weeks } = summarizeRange([row({ expiration: '2000-08-14' })], ['2026-08-10'], [], 'active');
+
+        expect(weeks).toHaveLength(1);
+        expect(weeks[0]!.cells.all.signals).toBe(0);
+    });
 });
 
 describe('the summary routes without a key', () => {
@@ -326,5 +343,26 @@ describe('GET /api/signal-summary', () => {
         await get('/api/signal-summary?month=2026-08');
 
         expect(signalsRepository.fetchRange).toHaveBeenCalledWith(config.db, '2026-08-10', '2026-08-14');
+    });
+
+    it('narrows to the contracts asked for and echoes the choice back', async () => {
+        vi.spyOn(signalsRepository, 'fetchRange').mockResolvedValue([
+            row({ expiration: '2000-08-14' }),
+            row({ symbol: 'NVDA', expiration: '2999-08-14' }),
+        ]);
+
+        const response = await get('/api/signal-summary?month=2026-08&expiry=expired');
+
+        expect(response.status).toBe(200);
+        expect(response.body.expiry).toBe('expired');
+        expect(response.body.total.all.signals).toBe(1);
+    });
+
+    it('reads an expiry it does not know as no filter at all', async () => {
+        const response = await get('/api/signal-summary?month=2026-08&expiry=lapsed');
+
+        expect(response.status).toBe(200);
+        expect(response.body.expiry).toBe('all');
+        expect(response.body.total.all.signals).toBe(1);
     });
 });

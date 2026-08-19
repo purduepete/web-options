@@ -46,8 +46,8 @@ function day(date: string, name: string, trades: Trade[]): DaySignals {
 describe('cycle', () => {
     it('walks each filter all the way round and back to where it started', () => {
         expect(EXPIRY_FILTERS.reduce((at) => cycle(EXPIRY_FILTERS, at), 'all')).toBe('all');
-        expect(cycle(EXPIRY_FILTERS, 'all')).toBe('active');
-        expect(cycle(EXPIRY_FILTERS, 'expired')).toBe('all');
+        expect(cycle(EXPIRY_FILTERS, 'all')).toBe('expired');
+        expect(cycle(EXPIRY_FILTERS, 'active')).toBe('all');
         expect(cycle(MONEYNESS_FILTERS, 'itm')).toBe('otm');
         expect(cycle(MONEYNESS_FILTERS, 'otm')).toBe('all');
     });

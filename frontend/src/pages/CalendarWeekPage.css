@@ -31,6 +31,33 @@
     box-shadow: var(--shadow-xs);
 }
 
+/* Rendered only on a phone, where the notes fold away behind it. */
+.macro-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.4rem 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.macro-toggle .rotated {
+    transform: rotate(180deg);
+}
+
+.macro-toggle + .macro-grid {
+    margin-top: 0.875rem;
+}
+
+/* `[hidden]` loses to the class that sets `display: grid`. */
+.macro-grid[hidden] {
+    display: none;
+}
+
 .macro-meta {
     margin: 0;
     color: var(--text-muted);
@@ -39,6 +66,11 @@
 
 .macro-grid + .macro-meta {
     margin-top: 0.875rem;
+}
+
+/* Folded, the meta follows the toggle, which brings its own padding. */
+.macro-grid[hidden] + .macro-meta {
+    margin-top: 0.5rem;
 }
 
 .macro-grid {

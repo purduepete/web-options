@@ -65,23 +65,6 @@ export function formatDte(value: number | null): string {
     return value == null ? 'n/a' : String(value);
 }
 
-/** Today as a local calendar date, in the shape the API sends. */
-function todayIso(): string {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${now.getFullYear()}-${month}-${day}`;
-}
-
-/**
- * Compared as text rather than as dates: both are calendar days, and YYYY-MM-DD
- * sorts the way it reads. Expiry day itself is not past, since the contract lives
- * until that afternoon's close.
- */
-export function hasExpired(expiration: string | null): boolean {
-    return expiration !== null && expiration < todayIso();
-}
-
 export function formatStrike(strike: number | null, right: OptionRight): string {
     return `${strike == null ? '' : `$${strike}`}${right}`;
 }
