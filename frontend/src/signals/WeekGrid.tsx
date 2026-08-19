@@ -1,4 +1,4 @@
-import type { DaySignals, Trade } from '@weboptions/shared';
+import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
 import type { SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
 import { formatDayLabel, formatDelta, formatDte, formatMDY, formatMoney, formatPercent, formatStrike } from './format';
@@ -21,9 +21,11 @@ interface WeekGridProps {
     onToggleGroup: (id: string) => void;
     /** Shown on an emptied day so the reader knows it was the filter, not the week. */
     symbolFilter: string;
+    /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
+    numberSource: NumberSource;
 }
 
-export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter }: WeekGridProps) {
+export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter, numberSource }: WeekGridProps) {
     if (days.length === 0) {
         return <p className="empty-week">No signals landed for this week yet.</p>;
     }
@@ -46,6 +48,7 @@ export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter 
                     collapsed={collapsed}
                     onToggleGroup={onToggleGroup}
                     symbolFilter={symbolFilter}
+                    numberSource={numberSource}
                     totalRows={totalRows}
                 />
             ))}
@@ -58,7 +61,7 @@ interface DayCardProps extends Omit<WeekGridProps, 'days'> {
     totalRows: number;
 }
 
-function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, totalRows }: DayCardProps) {
+function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, numberSource, totalRows }: DayCardProps) {
     return (
         <section
             className="day-card"
@@ -78,7 +81,7 @@ function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, totalRow
                 </p>
             ) : (
                 groups.map((group, index) => {
-                    const trades = groupTrades(group, day.trades);
+                    const trades = groupTrades(group, day.trades, numberSource);
                     if (trades.length === 0) return null;
                     const isCollapsed = collapsed.has(group.id);
                     return (
@@ -91,6 +94,7 @@ function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, totalRow
                             headingRow={2 + index * 2}
                             ticketsRow={3 + index * 2}
                             dayDate={day.date}
+                            numberSource={numberSource}
                         />
                     );
                 })
@@ -107,9 +111,19 @@ interface RiskGroupProps {
     headingRow: number;
     ticketsRow: number;
     dayDate: string;
+    numberSource: NumberSource;
 }
 
-function RiskGroup({ group, trades, collapsed, onToggle, headingRow, ticketsRow, dayDate }: RiskGroupProps) {
+function RiskGroup({
+    group,
+    trades,
+    collapsed,
+    onToggle,
+    headingRow,
+    ticketsRow,
+    dayDate,
+    numberSource,
+}: RiskGroupProps) {
     const listId = `tickets-${group.id}-${dayDate}`;
     return (
         <>
@@ -134,6 +148,7 @@ function RiskGroup({ group, trades, collapsed, onToggle, headingRow, ticketsRow,
                             key={`${trade.symbol}-${trade.strike}-${trade.expiration}-${index}`}
                             trade={trade}
                             showTierBadge={group.showTierBadge}
+                            numberSource={numberSource}
                         />
                     ))}
             </div>
@@ -141,7 +156,52 @@ function RiskGroup({ group, trades, collapsed, onToggle, headingRow, ticketsRow,
     );
 }
 
-function Ticket({ trade, showTierBadge }: { trade: Trade; showTierBadge: boolean }) {
+/**
+ * Which number a ticket shows, and whether it had to borrow VADER's.
+ *
+ * Fallback is per value rather than per ticket: a quote can carry a delta and a
+ * mark independently, and a week before capture began (2026-07-17) has neither.
+ * `fallback` stays false when there is nothing to fall back to, so an "n/a" is
+ * never dressed up as an estimate.
+ */
+interface Displayed {
+    value: number | null;
+    fallback: boolean;
+}
+
+function displayed(source: NumberSource, actual: number | null, quoted: number | null): Displayed {
+    if (source === 'quoted' || actual !== null) {
+        return { value: source === 'quoted' ? quoted : actual, fallback: false };
+    }
+    return { value: quoted, fallback: quoted !== null };
+}
+
+const FALLBACK_TITLE = 'No 7:30am quote was captured — showing the number VADER advertised.';
+
+function Figure({ shown, format }: { shown: Displayed; format: (value: number | null) => string }) {
+    if (!shown.fallback) return <b>{format(shown.value)}</b>;
+    return (
+        <b className="value-quoted" title={FALLBACK_TITLE}>
+            {format(shown.value)}
+            <span className="sr-only"> (VADER estimate)</span>
+        </b>
+    );
+}
+
+function Ticket({
+    trade,
+    showTierBadge,
+    numberSource,
+}: {
+    trade: Trade;
+    showTierBadge: boolean;
+    numberSource: NumberSource;
+}) {
+    const delta = displayed(numberSource, trade.actualDelta, trade.delta);
+    const premium = displayed(numberSource, trade.actualPremium, trade.premium);
+    const annualized = displayed(numberSource, trade.actualAnnualizedYield, trade.annualizedYield);
+    const illiquid = trade.actualIlliquid && !premium.fallback && numberSource === 'actual';
+
     return (
         <article className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}`}>
             <div className="ticket-row1">
@@ -160,14 +220,19 @@ function Ticket({ trade, showTierBadge }: { trade: Trade; showTierBadge: boolean
                 Exp <b>{formatMDY(trade.expiration)}</b> ({formatDte(trade.dte)} DTE)
             </p>
             <p className="delta-line">
-                &Delta; <b>{formatDelta(trade.delta)}</b>
+                &Delta; <Figure shown={delta} format={formatDelta} />
             </p>
             <p className="stats">
                 <span>
-                    <b>{formatPercent(trade.annualizedYield)}</b> ann.
+                    <Figure shown={annualized} format={formatPercent} /> ann.
                 </span>
                 <span>
-                    <b>{formatMoney(trade.premium)}</b> premium
+                    <Figure shown={premium} format={formatMoney} /> premium
+                    {illiquid && (
+                        <span className="illiquid" title="Wide bid/ask spread when this quote was captured.">
+                            !<span className="sr-only"> wide spread</span>
+                        </span>
+                    )}
                 </span>
                 <span>
                     <b>{formatMoney(trade.collateral)}</b> collateral

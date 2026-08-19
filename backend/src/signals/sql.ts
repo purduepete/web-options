@@ -8,6 +8,11 @@
  * The week bounds bind as VARCHAR(10) and are CAST to DATE inside T-SQL on purpose.
  * Binding a JS Date lets the driver's UTC conversion decide which calendar day the
  * query means; a string cannot drift.
+ *
+ * The entry-quote join is additive: opt.telegram_entry_quote is UNIQUE on
+ * (contract_key, report_date), so it can never multiply a row or disturb the dedup
+ * above. It joins the RAW s.contract_key, never the COALESCE fallback, because quote
+ * rows only ever exist for real hashes.
  */
 
 export const SIGNAL_QUERY = `
@@ -26,6 +31,9 @@ WITH base AS (
         s.collateral,
         s.collateral_bucket,
         COALESCE(s.tier, s.profile) AS tier,
+        q.delta AS actual_delta,
+        q.mark AS actual_mark,
+        q.is_illiquid_quote AS actual_illiquid,
         COALESCE(s.contract_key,
             CONCAT(s.symbol, '|', s.strike, '|', s.expiration)) AS contract_key,
         MAX(CAST(s.is_top_pick AS INT)) OVER (
@@ -41,12 +49,16 @@ WITH base AS (
                      s.annualized_yield DESC
         ) AS rn
     FROM opt.telegram_signal s
+    LEFT JOIN opt.telegram_entry_quote q
+           ON q.contract_key = s.contract_key
+          AND q.report_date = s.report_date
     WHERE s.is_current = 1 AND s.parse_status = 'parsed' AND s.option_right = 'P'
       AND s.report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 )
 SELECT
     report_date, symbol, sector, option_right, strike, expiration, dte, delta,
-    annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick
+    annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick,
+    actual_delta, actual_mark, actual_illiquid
 FROM base
 WHERE rn = 1
 ORDER BY report_date, tier, option_right, annualized_yield DESC

@@ -227,3 +227,26 @@
     color: var(--text-heading);
     font-weight: 600;
 }
+
+/* A number borrowed from VADER because no quote was captured. Deliberately
+   quiet: it is still the best number available, not an error. */
+.ticket b.value-quoted {
+    color: var(--text-muted);
+    text-decoration: underline dotted;
+    text-underline-offset: 0.2em;
+}
+
+/* The bid/ask was wide when the quote was taken, so the mark is soft. */
+.ticket .illiquid {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    margin-left: 0.25rem;
+    border: var(--border-width) solid var(--warning);
+    color: var(--warning);
+    font-size: 0.9em;
+    font-weight: 700;
+    line-height: 1;
+}

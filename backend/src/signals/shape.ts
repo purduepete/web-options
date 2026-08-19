@@ -17,6 +17,9 @@ export interface SignalRow {
     collateral_bucket: string | null;
     tier: string | null;
     is_top_pick: unknown;
+    actual_delta: unknown;
+    actual_mark: unknown;
+    actual_illiquid: unknown;
 }
 
 /**
@@ -48,20 +51,52 @@ function toInteger(value: unknown): number | null {
     return parsed === null ? null : Math.trunc(parsed);
 }
 
+function round(value: number, places: number): number {
+    const factor = 10 ** places;
+    return Math.round(value * factor) / factor;
+}
+
+/**
+ * VADER quotes a premium per CONTRACT (752 against a 17500 collateral); the captured
+ * `mark` is per SHARE. webportfolio settles the convention: it computes
+ * `breakeven = strike - mark` and `premium_dollars = mark * 100`.
+ */
+function toActualPremium(mark: unknown): number | null {
+    const parsed = toNumber(mark);
+    return parsed === null ? null : round(parsed * 100, 2);
+}
+
+/**
+ * Ours, not VADER's: the same formula run against the captured premium, so the yield
+ * on the card can never describe a premium the card is not showing.
+ */
+function toActualYield(premium: number | null, collateral: number | null, dte: number | null): number | null {
+    if (premium === null || collateral === null || collateral <= 0) return null;
+    if (dte === null || dte <= 0) return null;
+    return round((premium / collateral) * (365 / dte) * 100, 1);
+}
+
 export function toTrade(row: SignalRow): Trade {
+    const collateral = toNumber(row.collateral);
+    const dte = toInteger(row.dte);
+    const actualPremium = toActualPremium(row.actual_mark);
     return {
         symbol: row.symbol,
         sector: row.sector,
         optionRight: row.option_right as OptionRight,
         strike: toNumber(row.strike),
         expiration: sqlDateToIso(row.expiration),
-        dte: toInteger(row.dte),
+        dte,
         delta: toNumber(row.delta),
         annualizedYield: toNumber(row.annualized_yield),
         premium: toNumber(row.premium),
-        collateral: toNumber(row.collateral),
+        collateral,
         tier: row.tier,
         isTopPick: Boolean(toNumber(row.is_top_pick)),
+        actualDelta: toNumber(row.actual_delta),
+        actualPremium,
+        actualAnnualizedYield: toActualYield(actualPremium, collateral, dte),
+        actualIlliquid: Boolean(toNumber(row.actual_illiquid)),
     };
 }
 

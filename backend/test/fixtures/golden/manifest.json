@@ -2,7 +2,11 @@
   "capturedAt": "2026-08-16T20:56:19",
   "source": "server/server.py (Flask)",
   "volatileFields": [
-    "generatedAt"
+    "generatedAt",
+    "actualDelta",
+    "actualPremium",
+    "actualAnnualizedYield",
+    "actualIlliquid"
   ],
   "weeks": {
     "week-current": "2026-08-10",

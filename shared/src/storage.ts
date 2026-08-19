@@ -8,4 +8,5 @@ export const STORAGE_KEYS = {
     apiKey: 'weboptions_api_key',
     favorites: 'nav_favorites',
     recentlyVisited: 'nav_recently_visited',
+    signalNumberSource: 'weboptions_signal_number_source',
 } as const;

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { WeekSignalsResponse } from '@weboptions/shared';
+import { DEFAULT_NUMBER_SOURCE, NUMBER_SOURCES, STORAGE_KEYS } from '@weboptions/shared';
+import type { NumberSource, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
+import { NumberSourceToggle } from '../signals/NumberSourceToggle';
 import { buildGroups, filterDaysBySymbol, shiftWeek } from '../signals/grouping';
 import type { GroupId } from '../signals/grouping';
 import { formatWeekTitle } from '../signals/format';
@@ -18,8 +20,23 @@ import './LiveSignalsPage.css';
  * The URL is the state: `?week=` and `?symbol=` are what the back button
  * restores and what a shared link carries. Nothing is mirrored into component
  * state, so there is no two-way sync to keep honest. Which groups are collapsed
- * is deliberately NOT in the URL — it is a reading preference, not a view.
+ * is deliberately NOT in the URL — it is a reading preference, not a view. The
+ * same goes for which numbers are shown: it belongs to the reader, not the link.
  */
+
+function isNumberSource(value: string | null): value is NumberSource {
+    return NUMBER_SOURCES.includes(value as NumberSource);
+}
+
+function readNumberSource(): NumberSource {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEYS.signalNumberSource);
+        return isNumberSource(stored) ? stored : DEFAULT_NUMBER_SOURCE;
+    } catch {
+        return DEFAULT_NUMBER_SOURCE;
+    }
+}
+
 export function LiveSignalsPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
@@ -30,6 +47,16 @@ export function LiveSignalsPage() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+    const [numberSource, setNumberSourceState] = useState<NumberSource>(readNumberSource);
+
+    const setNumberSource = useCallback((next: NumberSource) => {
+        setNumberSourceState(next);
+        try {
+            localStorage.setItem(STORAGE_KEYS.signalNumberSource, next);
+        } catch {
+            // Storage blocked: the choice still applies for this session.
+        }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -181,6 +208,8 @@ export function LiveSignalsPage() {
                         </button>
                     )}
                 </div>
+
+                <NumberSourceToggle value={numberSource} onChange={setNumberSource} />
             </div>
 
             {error && (
@@ -198,6 +227,7 @@ export function LiveSignalsPage() {
                     collapsed={collapsed}
                     onToggleGroup={toggleGroup}
                     symbolFilter={symbol}
+                    numberSource={numberSource}
                 />
             )}
         </main>

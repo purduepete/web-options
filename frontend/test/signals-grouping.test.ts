@@ -16,6 +16,10 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         collateral: 10000,
         tier: 'Conservative',
         isTopPick: false,
+        actualDelta: -0.25,
+        actualPremium: 130,
+        actualAnnualizedYield: 12,
+        actualIlliquid: false,
         ...extra,
     };
 }
@@ -80,15 +84,15 @@ describe('buildGroups', () => {
 
         const groups = buildGroups(days);
         expect(groups.map((g) => g.id)).toEqual(['conservative', 'other']);
-        expect(groupTrades(groups[1]!, days[0]!.trades).map((t) => t.symbol)).toEqual(['AAPL', 'MSFT']);
+        expect(groupTrades(groups[1]!, days[0]!.trades, 'quoted').map((t) => t.symbol)).toEqual(['AAPL', 'MSFT']);
     });
 
     it('claims a top pick for Top Picks and nowhere else', () => {
         const trades = [trade('NVDA', { isTopPick: true, tier: 'Balanced' }), trade('MSFT', { tier: 'Balanced' })];
         const groups = buildGroups([day('2025-08-11', 'Monday', trades)]);
 
-        expect(groupTrades(groups[0]!, trades).map((t) => t.symbol)).toEqual(['NVDA']);
-        expect(groupTrades(groups[1]!, trades).map((t) => t.symbol)).toEqual(['MSFT']);
+        expect(groupTrades(groups[0]!, trades, 'quoted').map((t) => t.symbol)).toEqual(['NVDA']);
+        expect(groupTrades(groups[1]!, trades, 'quoted').map((t) => t.symbol)).toEqual(['MSFT']);
     });
 
     it('shows the tier badge only where the group name does not already say it', () => {
@@ -109,20 +113,40 @@ describe('groupTrades', () => {
             trade('AMD', { annualizedYield: 15 }),
         ];
         const group = buildGroups([day('2025-08-11', 'Monday', trades)])[0]!;
-        expect(groupTrades(group, trades).map((t) => t.symbol)).toEqual(['MSFT', 'AMD', 'AAPL']);
+        expect(groupTrades(group, trades, 'quoted').map((t) => t.symbol)).toEqual(['MSFT', 'AMD', 'AAPL']);
     });
 
     it('sinks a missing yield to the bottom instead of dropping the trade', () => {
         const trades = [trade('AAPL', { annualizedYield: null }), trade('MSFT', { annualizedYield: 3 })];
         const group = buildGroups([day('2025-08-11', 'Monday', trades)])[0]!;
-        expect(groupTrades(group, trades).map((t) => t.symbol)).toEqual(['MSFT', 'AAPL']);
+        expect(groupTrades(group, trades, 'quoted').map((t) => t.symbol)).toEqual(['MSFT', 'AAPL']);
     });
 
     it('leaves the array it was handed alone', () => {
         const trades = [trade('AAPL', { annualizedYield: 1 }), trade('MSFT', { annualizedYield: 9 })];
         const group = buildGroups([day('2025-08-11', 'Monday', trades)])[0]!;
-        groupTrades(group, trades);
+        groupTrades(group, trades, 'quoted');
         expect(trades.map((t) => t.symbol)).toEqual(['AAPL', 'MSFT']);
+    });
+
+    it('ranks on the captured yield in actual mode, not the advertised one', () => {
+        // Reversed against each other, so only the source being read can decide.
+        const trades = [
+            trade('AAPL', { annualizedYield: 30, actualAnnualizedYield: 4 }),
+            trade('MSFT', { annualizedYield: 5, actualAnnualizedYield: 26 }),
+        ];
+        const group = buildGroups([day('2025-08-11', 'Monday', trades)])[0]!;
+        expect(groupTrades(group, trades, 'actual').map((t) => t.symbol)).toEqual(['MSFT', 'AAPL']);
+        expect(groupTrades(group, trades, 'quoted').map((t) => t.symbol)).toEqual(['AAPL', 'MSFT']);
+    });
+
+    it('ranks an unquoted trade on the yield it falls back to displaying', () => {
+        const trades = [
+            trade('AAPL', { annualizedYield: 30, actualAnnualizedYield: null }),
+            trade('MSFT', { annualizedYield: 5, actualAnnualizedYield: 12 }),
+        ];
+        const group = buildGroups([day('2025-08-11', 'Monday', trades)])[0]!;
+        expect(groupTrades(group, trades, 'actual').map((t) => t.symbol)).toEqual(['AAPL', 'MSFT']);
     });
 });
 

@@ -18,6 +18,9 @@ function row(overrides: Partial<SignalRow> = {}): SignalRow {
         collateral_bucket: 'mid',
         tier: 'conservative',
         is_top_pick: 1,
+        actual_delta: '-0.224000',
+        actual_mark: '2.010000',
+        actual_illiquid: 0,
         ...overrides,
     };
 }
@@ -56,6 +59,10 @@ describe('toTrade', () => {
             collateral: 17500,
             tier: 'conservative',
             isTopPick: true,
+            actualDelta: -0.224,
+            actualPremium: 201,
+            actualAnnualizedYield: 38.1,
+            actualIlliquid: false,
         });
     });
 
@@ -71,6 +78,34 @@ describe('toTrade', () => {
     it('treats is_top_pick 0 as false and 1 as true', () => {
         expect(toTrade(row({ is_top_pick: 0 })).isTopPick).toBe(false);
         expect(toTrade(row({ is_top_pick: 1 })).isTopPick).toBe(true);
+    });
+
+    it('scales the per-share mark up to the per-contract premium VADER quotes', () => {
+        expect(toTrade(row({ actual_mark: '7.520000' })).actualPremium).toBe(752);
+    });
+
+    it('leaves every actual null when no quote was captured', () => {
+        const trade = toTrade(row({ actual_delta: null, actual_mark: null, actual_illiquid: null }));
+        expect(trade.actualDelta).toBeNull();
+        expect(trade.actualPremium).toBeNull();
+        expect(trade.actualAnnualizedYield).toBeNull();
+        expect(trade.actualIlliquid).toBe(false);
+    });
+
+    it('reports a zero premium as a zero yield rather than an unknown one', () => {
+        expect(toTrade(row({ actual_mark: '0.000000' })).actualAnnualizedYield).toBe(0);
+    });
+
+    it('refuses to annualize without a positive dte or collateral', () => {
+        expect(toTrade(row({ dte: 0 })).actualAnnualizedYield).toBeNull();
+        expect(toTrade(row({ dte: null })).actualAnnualizedYield).toBeNull();
+        expect(toTrade(row({ collateral: '0.00' })).actualAnnualizedYield).toBeNull();
+        expect(toTrade(row({ collateral: null })).actualAnnualizedYield).toBeNull();
+    });
+
+    it('surfaces the wide-spread flag as a boolean', () => {
+        expect(toTrade(row({ actual_illiquid: 1 })).actualIlliquid).toBe(true);
+        expect(toTrade(row({ actual_illiquid: 0 })).actualIlliquid).toBe(false);
     });
 });
 

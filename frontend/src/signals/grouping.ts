@@ -1,4 +1,4 @@
-import type { DaySignals, Trade } from '@weboptions/shared';
+import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
 
 /**
  * The grid's layout algebra, kept away from React so it can be reasoned about
@@ -78,12 +78,21 @@ export function buildGroups(days: DaySignals[]): SignalGroup[] {
     return groups;
 }
 
-/** This group's share of one day, richest annualised yield first. */
-export function groupTrades(group: SignalGroup, trades: Trade[]): Trade[] {
+/**
+ * This group's share of one day, richest annualised yield first.
+ *
+ * The sort follows whichever yield the tickets are showing. Ranking on a number
+ * the reader cannot see would put the cards in an order the page appears to
+ * contradict.
+ */
+export function groupTrades(group: SignalGroup, trades: Trade[], numberSource: NumberSource): Trade[] {
+    const yieldOf = (trade: Trade) =>
+        (numberSource === 'actual' ? (trade.actualAnnualizedYield ?? trade.annualizedYield) : trade.annualizedYield) ??
+        0;
     return trades
         .filter(group.matches)
         .slice()
-        .sort((a, b) => (b.annualizedYield ?? 0) - (a.annualizedYield ?? 0));
+        .sort((a, b) => yieldOf(b) - yieldOf(a));
 }
 
 /**

@@ -14,6 +14,18 @@ export type IsoDate = string;
 
 export type OptionRight = 'P' | 'C';
 
+/** Which set of numbers a signal card shows. */
+export const NUMBER_SOURCES = ['actual', 'quoted'] as const;
+export type NumberSource = (typeof NUMBER_SOURCES)[number];
+
+export const DEFAULT_NUMBER_SOURCE: NumberSource = 'actual';
+
+/**
+ * `delta`/`premium`/`annualizedYield` are what VADER advertised. The `actual*`
+ * fields are the 7:30am Pacific quote captured on the report date, and are null
+ * whenever no quote exists — capture began 2026-08-05, and no backfill is
+ * possible, so every earlier week is VADER's numbers only.
+ */
 export interface Trade {
     symbol: string;
     sector: string | null;
@@ -27,6 +39,10 @@ export interface Trade {
     collateral: number | null;
     tier: string | null;
     isTopPick: boolean;
+    actualDelta: number | null;
+    actualPremium: number | null;
+    actualAnnualizedYield: number | null;
+    actualIlliquid: boolean;
 }
 
 export interface DaySignals {

@@ -38,6 +38,23 @@
     color: var(--text-heading);
 }
 
+/* Actual / VADER. Sits at the end of the head and wraps with everything else. */
+.number-source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.number-source-option {
+    font-size: 0.8rem;
+}
+
+.number-source-option.selected {
+    border-color: var(--highlight);
+    background: rgba(var(--highlight-rgb), 0.15);
+    color: var(--text-heading);
+}
+
 .signals-error {
     margin: 0;
     padding: 0.75rem 0.875rem;

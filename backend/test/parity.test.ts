@@ -11,6 +11,9 @@
  *   $env:WEBOPTIONS_PARITY = '1'; npm test -- --run parity
  *
  * Optional overrides: WEBOPTIONS_PARITY_URL, WEBOPTIONS_PARITY_KEY.
+ *
+ * The `actual*` trade fields are in `volatileFields` because Flask never returned
+ * them; the gate still guards every field it did.
  */
 import fs from 'node:fs';
 import path from 'node:path';

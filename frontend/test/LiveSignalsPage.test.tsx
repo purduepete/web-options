@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { STORAGE_KEYS } from '@weboptions/shared';
 import type { DaySignals, Trade, WeekSignalsResponse } from '@weboptions/shared';
 
 const fetchWeekSignals = vi.fn();
@@ -40,6 +41,10 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         collateral: 10000,
         tier: 'Conservative',
         isTopPick: false,
+        actualDelta: null,
+        actualPremium: null,
+        actualAnnualizedYield: null,
+        actualIlliquid: false,
         ...extra,
     };
 }
@@ -83,10 +88,16 @@ function groupHeadings(): string[] {
         .map((button) => button.textContent ?? '');
 }
 
+/** Every number inside `scope` that fell back to VADER, in document order. */
+function quotedValues(scope: HTMLElement): string[] {
+    return Array.from(scope.querySelectorAll('.value-quoted')).map((node) => node.textContent ?? '');
+}
+
 beforeEach(() => {
     fetchWeekSignals.mockReset();
     fetchEarliestWeek.mockReset();
     fetchWeekSignals.mockResolvedValue(week());
+    localStorage.clear();
 });
 
 describe('LiveSignalsPage', () => {
@@ -125,10 +136,14 @@ describe('LiveSignalsPage', () => {
 
         expect(within(tuesday).getByText('AMD $100P')).toBeTruthy();
         expect(within(tuesday).getByText('08/15/2025')).toBeTruthy();
-        expect(within(tuesday).getByText('20.0%')).toBeTruthy();
-        expect(within(tuesday).getByText('$120')).toBeTruthy();
         expect(within(tuesday).getByText('$10,000')).toBeTruthy();
-        expect(within(tuesday).getByText('-0.20')).toBeTruthy();
+        // Nothing was quoted for these fixtures, so the advertised numbers stand
+        // in — each one marked, and named for a screen reader.
+        expect(quotedValues(tuesday)).toEqual([
+            '-0.20 (VADER estimate)',
+            '20.0% (VADER estimate)',
+            '$120 (VADER estimate)',
+        ]);
     });
 
     it('asks the server for the week named in the URL', async () => {
@@ -316,5 +331,100 @@ describe('LiveSignalsPage', () => {
         renderPage();
         expect(await screen.findByRole('alert')).toBeTruthy();
         expect(screen.queryByTestId('week-grid')).toBeNull();
+    });
+});
+
+describe('LiveSignalsPage number source', () => {
+    /** One Tuesday trade whose captured quote disagrees with VADER on every number. */
+    function quotedWeek(extra: Partial<Trade> = {}) {
+        return week({
+            days: [
+                day('2025-08-12', 'Tuesday', [
+                    trade('AMD', {
+                        delta: -0.2,
+                        annualizedYield: 20,
+                        premium: 120,
+                        actualDelta: -0.31,
+                        actualAnnualizedYield: 26.5,
+                        actualPremium: 175,
+                        ...extra,
+                    }),
+                ]),
+            ],
+        });
+    }
+
+    async function tuesday(): Promise<HTMLElement> {
+        return screen.findByRole('region', { name: 'Tuesday Aug 12' });
+    }
+
+    it('opens on the captured numbers, not the advertised ones', async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        const card = await tuesday();
+
+        expect(within(card).getByText('-0.31')).toBeTruthy();
+        expect(within(card).getByText('26.5%')).toBeTruthy();
+        expect(within(card).getByText('$175')).toBeTruthy();
+        // A real quote is never marked as borrowed.
+        expect(quotedValues(card)).toEqual([]);
+    });
+
+    it('swaps every number back to VADER when asked', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        await tuesday();
+
+        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+
+        const card = await tuesday();
+        expect(within(card).getByText('-0.20')).toBeTruthy();
+        expect(within(card).getByText('20.0%')).toBeTruthy();
+        expect(within(card).getByText('$120')).toBeTruthy();
+        // In VADER's own mode there is nothing to mark: these are the source.
+        expect(quotedValues(card)).toEqual([]);
+    });
+
+    it('remembers the choice for the next visit', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        const first = renderPage();
+        await tuesday();
+
+        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+        expect(localStorage.getItem(STORAGE_KEYS.signalNumberSource)).toBe('quoted');
+
+        first.unmount();
+        renderPage();
+        expect(within(await tuesday()).getByText('$120')).toBeTruthy();
+    });
+
+    it('ignores a stored value it does not recognise', async () => {
+        localStorage.setItem(STORAGE_KEYS.signalNumberSource, 'nonsense');
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        expect(within(await tuesday()).getByText('$175')).toBeTruthy();
+    });
+
+    it('falls back per value, so a half-captured quote keeps what it has', async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualPremium: null, actualAnnualizedYield: null }));
+        renderPage();
+        const card = await tuesday();
+
+        expect(within(card).getByText('-0.31')).toBeTruthy();
+        expect(quotedValues(card)).toEqual(['20.0% (VADER estimate)', '$120 (VADER estimate)']);
+    });
+
+    it('flags a premium taken across a wide spread', async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualIlliquid: true }));
+        renderPage();
+        expect(within(await tuesday()).getByText(/wide spread/)).toBeTruthy();
+    });
+
+    it('drops the spread flag when the premium is not the captured one', async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualIlliquid: true, actualPremium: null }));
+        renderPage();
+        expect(within(await tuesday()).queryByText(/wide spread/)).toBeNull();
     });
 });
