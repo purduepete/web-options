@@ -34,6 +34,14 @@ export function formatPercent(value: number | null): string {
     return value == null ? 'n/a' : `${value.toFixed(1)}%`;
 }
 
+/** Always carries its sign, so `+3.2%` reads as clearly above as `-3.2%` reads below. */
+export function formatSignedPercent(value: number | null): string {
+    if (value == null) return 'n/a';
+    // Round before reading the sign, so a rounding remainder cannot print "-0.0%".
+    const rounded = Number(value.toFixed(1));
+    return `${rounded > 0 ? '+' : ''}${rounded.toFixed(1)}%`;
+}
+
 export function formatMoney(value: number | null): string {
     return value == null ? 'n/a' : `$${MONEY.format(value)}`;
 }
@@ -44,6 +52,23 @@ export function formatDelta(value: number | null): string {
 
 export function formatDte(value: number | null): string {
     return value == null ? 'n/a' : String(value);
+}
+
+/** Today as a local calendar date, in the shape the API sends. */
+function todayIso(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Compared as text rather than as dates: both are calendar days, and YYYY-MM-DD
+ * sorts the way it reads. Expiry day itself is not past, since the contract lives
+ * until that afternoon's close.
+ */
+export function hasExpired(expiration: string | null): boolean {
+    return expiration !== null && expiration < todayIso();
 }
 
 export function formatStrike(strike: number | null, right: OptionRight): string {

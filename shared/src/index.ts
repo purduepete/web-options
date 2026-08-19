@@ -14,6 +14,9 @@ export type IsoDate = string;
 
 export type OptionRight = 'P' | 'C';
 
+/** Where the underlying closed relative to the strike. */
+export type Moneyness = 'itm' | 'otm' | 'atm';
+
 /** Which set of numbers a signal card shows. */
 export const NUMBER_SOURCES = ['actual', 'quoted'] as const;
 export type NumberSource = (typeof NUMBER_SOURCES)[number];
@@ -25,6 +28,11 @@ export const DEFAULT_NUMBER_SOURCE: NumberSource = 'actual';
  * fields are the 7:30am Pacific quote captured on the report date, and are null
  * whenever no quote exists — capture began 2026-08-05, and no backfill is
  * possible, so every earlier week is VADER's numbers only.
+ *
+ * The `close*` fields and the moneyness derived from them come from the separate
+ * end-of-day snapshot, and describe the MOST RECENT close on or after the report
+ * date rather than the report date's own. They are null until that contract has
+ * been captured at least once, which for the current day is always.
  */
 export interface Trade {
     symbol: string;
@@ -43,6 +51,10 @@ export interface Trade {
     actualPremium: number | null;
     actualAnnualizedYield: number | null;
     actualIlliquid: boolean;
+    closeDate: IsoDate | null;
+    closeUnderlying: number | null;
+    moneyness: Moneyness | null;
+    percentFromStrike: number | null;
 }
 
 export interface DaySignals {

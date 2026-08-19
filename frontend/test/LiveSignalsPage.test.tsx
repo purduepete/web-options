@@ -45,6 +45,10 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         actualPremium: null,
         actualAnnualizedYield: null,
         actualIlliquid: false,
+        closeDate: null,
+        closeUnderlying: null,
+        moneyness: null,
+        percentFromStrike: null,
         ...extra,
     };
 }
@@ -467,5 +471,74 @@ describe('LiveSignalsPage number source', () => {
 
         expect(within(card).getByText('(0.11)')).toBeTruthy();
         expect(within(card).queryByText('(45.8%)')).toBeNull();
+    });
+});
+
+describe('LiveSignalsPage moneyness', () => {
+    function closedWeek(extra: Partial<Trade> = {}) {
+        return week({
+            days: [
+                day('2025-08-12', 'Tuesday', [
+                    trade('AMD', {
+                        strike: 100,
+                        closeDate: '2025-08-14',
+                        closeUnderlying: 103.2,
+                        moneyness: 'otm',
+                        percentFromStrike: 3.2,
+                        ...extra,
+                    }),
+                ]),
+            ],
+        });
+    }
+
+    async function tuesday(): Promise<HTMLElement> {
+        return screen.findByRole('region', { name: 'Tuesday Aug 12' });
+    }
+
+    function badge(card: HTMLElement): HTMLElement | null {
+        return card.querySelector('.moneyness');
+    }
+
+    it('reads a close above the strike as out of the money', async () => {
+        fetchWeekSignals.mockResolvedValue(closedWeek());
+        renderPage();
+        const found = badge(await tuesday());
+
+        expect(found?.className).toContain('otm');
+        expect(found?.textContent).toContain('OTM');
+        expect(found?.textContent).toContain('+3.2%');
+        expect(found?.getAttribute('title')).toContain('8/14/2025');
+    });
+
+    it('reads a close below the strike as in the money, signed negative', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            closedWeek({ closeUnderlying: 94.5, moneyness: 'itm', percentFromStrike: -5.5 }),
+        );
+        renderPage();
+        const found = badge(await tuesday());
+
+        expect(found?.className).toContain('itm');
+        expect(found?.textContent).toContain('ITM');
+        expect(found?.textContent).toContain('-5.5%');
+    });
+
+    it('renders nothing at all for a contract with no close', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            closedWeek({ closeDate: null, closeUnderlying: null, moneyness: null, percentFromStrike: null }),
+        );
+        renderPage();
+        expect(badge(await tuesday())).toBeNull();
+    });
+
+    it("stays put in VADER's mode, being an outcome rather than a competing quote", async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(closedWeek());
+        renderPage();
+        await tuesday();
+
+        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+
+        expect(badge(await tuesday())?.textContent).toContain('OTM');
     });
 });

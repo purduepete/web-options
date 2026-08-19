@@ -14,6 +14,7 @@ function read(relative: string): string {
 
 const indexCss = read('../src/index.css');
 const navbarCss = read('../src/navigation/Navbar.css');
+const signalsCss = read('../src/pages/LiveSignalsPage.css');
 
 /** The body of the rule for a selector, with whitespace squashed. */
 function rule(selector: string): string {
@@ -55,5 +56,15 @@ describe('touch targets', () => {
         // One level of indent means top level: an iPad asks for the desktop site,
         // so a media query aimed at touch skips the device that needs this.
         expect(/^ {4}min-width/m.test(block)).toBe(true);
+    });
+
+    it('gives the number-source pill one target rather than two', () => {
+        const start = signalsCss.indexOf('@media (pointer: coarse)');
+        expect(start).toBeGreaterThan(-1);
+        const block = signalsCss.slice(start);
+        // The pill carries the 44px so the halves do not each claim their own and
+        // stack it into something half again the height of the head beside it.
+        expect(/\.number-source \{[^}]*min-height: 44px/.test(block)).toBe(true);
+        expect(/\.number-source-option \{[^}]*min-height: auto/.test(block)).toBe(true);
     });
 });

@@ -142,6 +142,19 @@
     color: var(--text-muted);
 }
 
+/* Pushed to the trailing edge so the ratios line up down the column, and left in
+   the muted colour until every priced contract cleared its strike. */
+.otm-score {
+    margin-left: auto;
+    padding-left: 0.4rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+}
+.otm-score.clean {
+    color: var(--positive);
+}
+
 .tickets {
     display: flex;
     flex-direction: column;
@@ -164,22 +177,67 @@
     border-left-color: var(--call);
 }
 
+/* Hatched rather than dimmed: an expired contract is settled history, but its
+   numbers still have to be readable. The shorthand above set the colour, so this
+   only layers an image over it. */
+.ticket.is-expired {
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent 0 10px,
+        color-mix(in srgb, var(--text-muted) 7%, transparent) 10px 11px
+    );
+}
+
+/* Three children, not two: `space-between` would strand the middle badge and shift
+   it whenever the tier badge is absent. The ticker takes the free space instead,
+   and the badges travel as one unit so a narrow card never drops one alone. */
 .ticket-row1 {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
 }
 
 .ticker {
+    flex: 1 1 auto;
+    min-width: 0%;
+    overflow-wrap: anywhere;
     font-weight: 700;
     font-size: 0.92rem;
     color: var(--text-heading);
 }
 
+/* The badge cluster, pinned to the trailing edge of the ticker's row. */
+.ticket-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 0 1 auto;
+    min-width: 0%;
+    /* Keeps the cluster on the right edge whether it shares the ticker's line or
+       wraps below it. Collapses to nothing when there is no room to give. */
+    margin-left: auto;
+}
+
+/* Both badges are conditional, and an empty flex item still eats the row's gap. */
+.ticket-badges:empty {
+    display: none;
+}
+
+/* Only Top Picks shows two badges at once, and side by side they crowd the ticker
+   off its own row on a narrow card. Everywhere else a lone badge stays inline. */
+.ticket-badges.stacked {
+    flex-direction: column;
+    align-items: flex-end;
+}
+
 .top-pick,
-.tier-badge {
+.tier-badge,
+.moneyness {
     flex-shrink: 0;
     padding: 0.1rem 0.375rem;
     border: var(--border-width) solid var(--border-soft);
@@ -187,6 +245,20 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+}
+
+/* In the money is assignment risk on a cash-secured put, so it reads as the loss colour. */
+.moneyness.itm {
+    color: var(--negative);
+    border-color: var(--negative);
+}
+.moneyness.otm {
+    color: var(--positive);
+    border-color: var(--positive);
+}
+.moneyness.atm {
+    color: var(--text-muted);
+    border-color: var(--text-muted);
 }
 
 .top-pick {
@@ -260,6 +332,19 @@
     height: 0.8em;
     margin-right: 0.1em;
     vertical-align: -0.08em;
+}
+
+/* Past tense, so it stays quieter than the outcome badge above it. */
+.ticket .expired {
+    margin-left: 0.4rem;
+    padding: 0 0.3rem;
+    border: var(--border-width) solid var(--border-soft);
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
 }
 
 /* The bid/ask was wide when the quote was taken, so the mark is soft. */

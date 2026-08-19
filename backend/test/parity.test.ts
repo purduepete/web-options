@@ -14,6 +14,11 @@
  *
  * The `actual*` trade fields are in `volatileFields` because Flask never returned
  * them; the gate still guards every field it did.
+ *
+ * `isCurrentWeek` and `hasNextWeekData` are volatile for a different reason: they
+ * are computed against today's date, so the recorded values were only ever right
+ * during the week of the capture. They are covered by week-signals-routes.test.ts,
+ * which fixes the clock instead of trusting a fixture.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -95,7 +100,11 @@ describe.skipIf(!ENABLED)('parity with the recorded Flask responses', () => {
     // The one endpoint that is allowed to differ. Flask listed HTML files off
     // disk; the Node route reads ingested rows, so it drops `filename` and adds
     // `title` and `tradeCount`. Only the identity of each week has to survive.
-    it('lists the same calendar weeks, in the same order', async () => {
+    //
+    // Containment, not equality: the list is newest-first and grows by one every
+    // time a calendar is ingested, so the recorded weeks settle at the tail.
+    // Nothing recorded may be dropped or reordered; anything newer is expected.
+    it('still lists every calendar week it did, in the same order', async () => {
         interface Entry {
             publishDate: string;
             weekStart: string;
@@ -108,8 +117,9 @@ describe.skipIf(!ENABLED)('parity with the recorded Flask responses', () => {
         });
 
         const live = (await get('/api/calendars')) as { calendars: Entry[] };
-        const recorded = golden<{ calendars: Entry[] }>('calendars');
+        const recorded = golden<{ calendars: Entry[] }>('calendars').calendars.map(identity);
 
-        expect(live.calendars.map(identity)).toEqual(recorded.calendars.map(identity));
+        expect(live.calendars.length).toBeGreaterThanOrEqual(recorded.length);
+        expect(live.calendars.slice(-recorded.length).map(identity)).toEqual(recorded);
     });
 });

@@ -35,6 +35,12 @@ Each signal carries two sets of numbers, and the UI toggles between them.
 - **Capture began 2026-08-05** and runs each trading morning. There is no
   backfill, and none is possible — an expired contract cannot be re-priced. Any
   date before that has signals but no captured numbers.
+- `opt.telegram_contract_price` is the separate END-OF-DAY snapshot, one row per
+  `(contract_key, price_date)` with a `market_session` of `regular_close` /
+  `after_hours` / `missed` / `holiday`. WebOptions reads only the most recent
+  `regular_close` row per contract, for the moneyness badge. The capture job that
+  fills it lives in webportfolio, so a missing day is upstream, not a bug here —
+  and today's signals never have a close until that evening.
 - A missing quote is normal, not a bug: an individual contract can come back
   unquoted on a given morning. Treat a per-contract gap as data, and fall back to
   VADER's number with the `.value-quoted` dotted underline rather than blanking

@@ -58,7 +58,15 @@ describe('unselectable chrome', () => {
     });
 
     it('keeps a trade copyable, because that is the part worth copying', () => {
-        for (const selector of ['.ticket', '.ticker', '.tier-badge', '.contract', '.event-banner', '.rule-box']) {
+        for (const selector of [
+            '.ticket',
+            '.ticker',
+            '.tier-badge',
+            '.moneyness',
+            '.contract',
+            '.event-banner',
+            '.rule-box',
+        ]) {
             expect(chrome.selectors).not.toContain(selector);
             expect(pressable.selectors).not.toContain(selector);
         }

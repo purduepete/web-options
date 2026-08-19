@@ -20,6 +20,10 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         actualPremium: 130,
         actualAnnualizedYield: 12,
         actualIlliquid: false,
+        closeDate: null,
+        closeUnderlying: null,
+        moneyness: null,
+        percentFromStrike: null,
         ...extra,
     };
 }

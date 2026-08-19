@@ -1,4 +1,11 @@
-import { DAY_NAMES, type DaySignals, type IsoDate, type OptionRight, type Trade } from '@weboptions/shared';
+import {
+    DAY_NAMES,
+    type DaySignals,
+    type IsoDate,
+    type Moneyness,
+    type OptionRight,
+    type Trade,
+} from '@weboptions/shared';
 import { addDays, toIsoDate } from '../weeks';
 
 /** One row as the driver hands it back. Dates arrive as Date, decimals as string or number. */
@@ -20,6 +27,8 @@ export interface SignalRow {
     actual_delta: unknown;
     actual_mark: unknown;
     actual_illiquid: unknown;
+    close_date: unknown;
+    close_underlying: unknown;
 }
 
 /**
@@ -76,15 +85,36 @@ function toActualYield(premium: number | null, collateral: number | null, dte: n
     return round((premium / collateral) * (365 / dte) * 100, 1);
 }
 
+/** Right-aware so a call would read correctly; today the query is puts only. */
+function toMoneyness(right: OptionRight, strike: number | null, underlying: number | null): Moneyness | null {
+    if (strike === null || strike <= 0 || underlying === null) return null;
+    if (underlying === strike) return 'atm';
+    const below = underlying < strike;
+    return (right === 'P' ? below : !below) ? 'itm' : 'otm';
+}
+
+/**
+ * Signed against the STRIKE, so it reads negative for an in-the-money put and
+ * positive for one out of the money regardless of right. A strike at or below
+ * zero is nonsense and would flip the sign, so it yields nothing.
+ */
+function toPercentFromStrike(strike: number | null, underlying: number | null): number | null {
+    if (strike === null || strike <= 0 || underlying === null) return null;
+    return round(((underlying - strike) / strike) * 100, 1);
+}
+
 export function toTrade(row: SignalRow): Trade {
     const collateral = toNumber(row.collateral);
     const dte = toInteger(row.dte);
     const actualPremium = toActualPremium(row.actual_mark);
+    const optionRight = row.option_right as OptionRight;
+    const strike = toNumber(row.strike);
+    const closeUnderlying = toNumber(row.close_underlying);
     return {
         symbol: row.symbol,
         sector: row.sector,
-        optionRight: row.option_right as OptionRight,
-        strike: toNumber(row.strike),
+        optionRight,
+        strike,
         expiration: sqlDateToIso(row.expiration),
         dte,
         delta: toNumber(row.delta),
@@ -97,6 +127,10 @@ export function toTrade(row: SignalRow): Trade {
         actualPremium,
         actualAnnualizedYield: toActualYield(actualPremium, collateral, dte),
         actualIlliquid: Boolean(toNumber(row.actual_illiquid)),
+        closeDate: sqlDateToIso(row.close_date),
+        closeUnderlying,
+        moneyness: toMoneyness(optionRight, strike, closeUnderlying),
+        percentFromStrike: toPercentFromStrike(strike, closeUnderlying),
     };
 }
 

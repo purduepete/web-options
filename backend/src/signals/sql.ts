@@ -13,6 +13,10 @@
  * (contract_key, report_date), so it can never multiply a row or disturb the dedup
  * above. It joins the RAW s.contract_key, never the COALESCE fallback, because quote
  * rows only ever exist for real hashes.
+ *
+ * The end-of-day APPLY is additive for the same reason: TOP 1 cannot multiply a row.
+ * It must stay inside this CTE and correlate on the RAW s.contract_key — correlating
+ * on the COALESCE dedup key would change row identity and break the parity gate.
  */
 
 export const SIGNAL_QUERY = `
@@ -34,6 +38,8 @@ WITH base AS (
         q.delta AS actual_delta,
         q.mark AS actual_mark,
         q.is_illiquid_quote AS actual_illiquid,
+        c.price_date AS close_date,
+        c.underlying_price AS close_underlying,
         COALESCE(s.contract_key,
             CONCAT(s.symbol, '|', s.strike, '|', s.expiration)) AS contract_key,
         MAX(CAST(s.is_top_pick AS INT)) OVER (
@@ -52,13 +58,23 @@ WITH base AS (
     LEFT JOIN opt.telegram_entry_quote q
            ON q.contract_key = s.contract_key
           AND q.report_date = s.report_date
+    OUTER APPLY (
+        SELECT TOP 1 p.price_date, p.underlying_price
+        FROM opt.telegram_contract_price p
+        WHERE p.contract_key = s.contract_key
+          AND p.underlying_price IS NOT NULL
+          AND p.market_session = 'regular_close'
+          AND p.price_date >= s.report_date
+          AND (s.expiration IS NULL OR p.price_date <= s.expiration)
+        ORDER BY p.price_date DESC, p.captured_at_utc DESC
+    ) c
     WHERE s.is_current = 1 AND s.parse_status = 'parsed' AND s.option_right = 'P'
       AND s.report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 )
 SELECT
     report_date, symbol, sector, option_right, strike, expiration, dte, delta,
     annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick,
-    actual_delta, actual_mark, actual_illiquid
+    actual_delta, actual_mark, actual_illiquid, close_date, close_underlying
 FROM base
 WHERE rn = 1
 ORDER BY report_date, tier, option_right, annualized_yield DESC

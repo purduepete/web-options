@@ -1,7 +1,7 @@
 import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
 import type { SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
-import { formatDayLabel, formatDelta, formatDte, formatMDY, formatMoney, formatPercent, formatStrike } from './format';
+import { formatDayLabel, formatDelta, formatDte, formatMDY, formatMoney, formatPercent, formatSignedPercent, formatStrike, hasExpired } from './format';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
 
@@ -125,6 +125,8 @@ function RiskGroup({
     numberSource,
 }: RiskGroupProps) {
     const listId = `tickets-${group.id}-${dayDate}`;
+    const priced = trades.filter((trade) => trade.moneyness !== null);
+    const otm = priced.filter((trade) => trade.moneyness === 'otm').length;
     return (
         <>
             {/* A heading as well as a button: the groups are how the card is
@@ -139,6 +141,17 @@ function RiskGroup({
                 >
                     <ChevronDownIcon />
                     {group.label} ({trades.length})
+                    {/* Counted against the contracts that have a close, not the whole
+                        group, so a day with partial coverage still reads truthfully. */}
+                    {priced.length > 0 && (
+                        <span
+                            className={`otm-score${otm === priced.length ? ' clean' : ''}`}
+                            title={`${otm} of ${priced.length} closed out of the money`}
+                        >
+                            {otm}/{priced.length}
+                            <span className="sr-only"> out of the money</span>
+                        </span>
+                    )}
                 </button>
             </h3>
             <div className="tickets" id={listId} style={{ gridRow: ticketsRow }} hidden={collapsed}>
@@ -264,6 +277,33 @@ function Difference({
     );
 }
 
+const MONEYNESS_LABELS = {
+    itm: 'in the money',
+    otm: 'out of the money',
+    atm: 'at the money',
+} as const;
+
+/**
+ * Where the underlying last closed against the strike. This is an outcome rather
+ * than a competing quote, so unlike every Figure on the ticket it is not gated by
+ * the Actual/VADER toggle. Nothing renders until that contract has a close.
+ */
+function MoneynessBadge({ trade }: { trade: Trade }) {
+    if (trade.moneyness === null) return null;
+    // Cents, not formatMoney: rounded to the dollar these two stop reconciling
+    // with the percentage beside them.
+    const dollars = (value: number | null) => (value == null ? 'n/a' : `$${value.toFixed(2)}`);
+    const title =
+        `${trade.symbol} closed at ${dollars(trade.closeUnderlying)}` +
+        ` on ${formatMDY(trade.closeDate)}, against a ${dollars(trade.strike)} strike.`;
+    return (
+        <span className={`moneyness ${trade.moneyness}`} title={title}>
+            {trade.moneyness.toUpperCase()}
+            <span className="sr-only"> ({MONEYNESS_LABELS[trade.moneyness]})</span> {formatSignedPercent(trade.percentFromStrike)}
+        </span>
+    );
+}
+
 function Ticket({
     trade,
     showTierBadge,
@@ -279,23 +319,34 @@ function Ticket({
     const illiquid = trade.actualIlliquid && !premium.fallback && numberSource === 'actual';
     const deltaDiff = absoluteDiff(numberSource, trade.actualDelta, trade.delta);
     const premiumDiff = percentDiff(numberSource, trade.actualPremium, trade.premium);
+    const expired = hasExpired(trade.expiration);
 
     return (
-        <article className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}`}>
+        <article className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}${expired ? ' is-expired' : ''}`}>
             <div className="ticket-row1">
                 <span className="ticker">
                     {trade.symbol} {formatStrike(trade.strike, trade.optionRight)}
                 </span>
-                {showTierBadge ? (
-                    <span className={`tier-badge ${(trade.tier ?? '').toLowerCase()}`}>
-                        {trade.tier ?? 'Unclassified'}
-                    </span>
-                ) : (
-                    trade.isTopPick && <span className="top-pick">Top pick</span>
-                )}
+                <span className={showTierBadge ? 'ticket-badges stacked' : 'ticket-badges'}>
+                    <MoneynessBadge trade={trade} />
+                    {showTierBadge ? (
+                        <span className={`tier-badge ${(trade.tier ?? '').toLowerCase()}`}>
+                            {trade.tier ?? 'Unclassified'}
+                        </span>
+                    ) : (
+                        trade.isTopPick && <span className="top-pick">Top pick</span>
+                    )}
+                </span>
             </div>
             <p className="contract">
                 Exp <b>{formatMDY(trade.expiration)}</b> ({formatDte(trade.dte)} DTE)
+                {/* DTE is as of the day the signal was published, so on an old week it
+                    never counts down to zero on its own. */}
+                {expired && (
+                    <span className="expired" title="This contract has already expired.">
+                        Expired
+                    </span>
+                )}
             </p>
             <p className="delta-line">
                 &Delta; <Figure shown={delta} format={formatDelta} />

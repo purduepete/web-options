@@ -6,7 +6,13 @@
     "actualDelta",
     "actualPremium",
     "actualAnnualizedYield",
-    "actualIlliquid"
+    "actualIlliquid",
+    "closeDate",
+    "closeUnderlying",
+    "moneyness",
+    "percentFromStrike",
+    "isCurrentWeek",
+    "hasNextWeekData"
   ],
   "weeks": {
     "week-current": "2026-08-10",

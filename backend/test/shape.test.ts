@@ -21,6 +21,8 @@ function row(overrides: Partial<SignalRow> = {}): SignalRow {
         actual_delta: '-0.224000',
         actual_mark: '2.010000',
         actual_illiquid: 0,
+        close_date: new Date(Date.UTC(2026, 7, 18)),
+        close_underlying: '180.25',
         ...overrides,
     };
 }
@@ -63,6 +65,10 @@ describe('toTrade', () => {
             actualPremium: 201,
             actualAnnualizedYield: 38.1,
             actualIlliquid: false,
+            closeDate: '2026-08-18',
+            closeUnderlying: 180.25,
+            moneyness: 'otm',
+            percentFromStrike: 3,
         });
     });
 
@@ -106,6 +112,50 @@ describe('toTrade', () => {
     it('surfaces the wide-spread flag as a boolean', () => {
         expect(toTrade(row({ actual_illiquid: 1 })).actualIlliquid).toBe(true);
         expect(toTrade(row({ actual_illiquid: 0 })).actualIlliquid).toBe(false);
+    });
+
+    it('calls a put in the money when the underlying closed below the strike', () => {
+        const trade = toTrade(row({ close_underlying: '166.25' }));
+        expect(trade.moneyness).toBe('itm');
+        expect(trade.percentFromStrike).toBe(-5);
+    });
+
+    it('calls a put out of the money when the underlying closed above the strike', () => {
+        const trade = toTrade(row({ close_underlying: '183.75' }));
+        expect(trade.moneyness).toBe('otm');
+        expect(trade.percentFromStrike).toBe(5);
+    });
+
+    it('calls an exact match at the money, with no band around it', () => {
+        const trade = toTrade(row({ close_underlying: '175.00' }));
+        expect(trade.moneyness).toBe('atm');
+        expect(trade.percentFromStrike).toBe(0);
+    });
+
+    it('reads a call the other way round', () => {
+        expect(toTrade(row({ option_right: 'C', close_underlying: '183.75' })).moneyness).toBe('itm');
+        expect(toTrade(row({ option_right: 'C', close_underlying: '166.25' })).moneyness).toBe('otm');
+    });
+
+    it('leaves every close field null when no end-of-day row was captured', () => {
+        const trade = toTrade(row({ close_date: null, close_underlying: null }));
+        expect(trade.closeDate).toBeNull();
+        expect(trade.closeUnderlying).toBeNull();
+        expect(trade.moneyness).toBeNull();
+        expect(trade.percentFromStrike).toBeNull();
+    });
+
+    it('cannot place a close against a missing or non-positive strike', () => {
+        for (const strike of [null, '0.00', '-10.00']) {
+            const trade = toTrade(row({ strike }));
+            expect(trade.moneyness).toBeNull();
+            expect(trade.percentFromStrike).toBeNull();
+        }
+    });
+
+    it('rounds the distance from strike to one place', () => {
+        expect(toTrade(row({ close_underlying: '178.4567' })).percentFromStrike).toBe(2);
+        expect(toTrade(row({ close_underlying: '176.1234' })).percentFromStrike).toBe(0.6);
     });
 });
 
