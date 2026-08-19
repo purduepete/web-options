@@ -31,6 +31,16 @@
     letter-spacing: 0.04em;
 }
 
+/* Every button in the row grows to the 44px touch target on a coarse pointer,
+   and only a button does, so an input left at its own height stands short
+   beside them. The line box takes the height so the text stays centred in it. */
+@media (pointer: coarse) {
+    .symbol-filter input {
+        padding-block: 0;
+        line-height: calc(44px - 2 * var(--border-width));
+    }
+}
+
 .symbol-filter-clear {
     position: absolute;
     right: 0;
