@@ -30,6 +30,7 @@ describe('buildCommands', () => {
         const commands = build();
 
         expect(ids(commands)).toContain('page:/');
+        expect(ids(commands)).toContain('page:/summary');
         expect(ids(commands)).toContain('page:/calendars/latest');
         expect(ids(commands)).toContain('page:/settings/appearance');
         expect(ids(commands).some((id) => id.includes('week-explorer'))).toBe(false);

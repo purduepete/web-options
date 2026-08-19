@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { DEFAULT_NUMBER_SOURCE, NUMBER_SOURCES, STORAGE_KEYS } from '@weboptions/shared';
-import type { NumberSource, WeekSignalsResponse } from '@weboptions/shared';
+import { Link, useSearchParams } from 'react-router-dom';
+import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
+import type { WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
@@ -19,9 +19,10 @@ import {
     shiftWeek,
 } from '../signals/grouping';
 import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping';
-import { formatWeekTitle } from '../signals/format';
+import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
+import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
-import { CloseIcon, RotateCcwIcon } from '../components/icons';
+import { CloseIcon, RotateCcwIcon, TableIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { WeekNav } from '../components/WeekNav';
 import './LiveSignalsPage.css';
@@ -36,25 +37,12 @@ import './LiveSignalsPage.css';
  * same goes for which numbers are shown: it belongs to the reader, not the link.
  */
 
-function isNumberSource(value: string | null): value is NumberSource {
-    return NUMBER_SOURCES.includes(value as NumberSource);
-}
-
 function readExpiryFilter(value: string | null): ExpiryFilter {
     return EXPIRY_FILTERS.includes(value as ExpiryFilter) ? (value as ExpiryFilter) : 'all';
 }
 
 function readMoneynessFilter(value: string | null): MoneynessFilter {
     return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
-}
-
-function readNumberSource(): NumberSource {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEYS.signalNumberSource);
-        return isNumberSource(stored) ? stored : DEFAULT_NUMBER_SOURCE;
-    } catch {
-        return DEFAULT_NUMBER_SOURCE;
-    }
 }
 
 export function LiveSignalsPage() {
@@ -68,17 +56,8 @@ export function LiveSignalsPage() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-    const [numberSource, setNumberSourceState] = useState<NumberSource>(readNumberSource);
+    const [numberSource, setNumberSource] = useNumberSource();
     const symbolInputRef = useRef<HTMLInputElement>(null);
-
-    const setNumberSource = useCallback((next: NumberSource) => {
-        setNumberSourceState(next);
-        try {
-            localStorage.setItem(STORAGE_KEYS.signalNumberSource, next);
-        } catch {
-            // Storage blocked: the choice still applies for this session.
-        }
-    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -249,9 +228,28 @@ export function LiveSignalsPage() {
     return (
         <main className="signals-page">
             <div className="page-head">
-                {/* Empty until the week is known: a name that is replaced a
-                    moment later reads as a page that changed underfoot. */}
-                <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : ''}</h1>
+                <h1>
+                    {data ? (
+                        formatWeekTitle(data.weekStart, data.weekEnd)
+                    ) : (
+                        /* Unnamed until the week is known, but holding the room a
+                           name will take, so nothing shifts when it arrives. */
+                        <span className="week-title-spacer" aria-hidden="true">
+                            {WEEK_TITLE_SPACER}
+                        </span>
+                    )}
+                </h1>
+
+                {/* This week is one row of the summary, so the way out to the
+                    rest of them belongs beside its name — but only once there is
+                    a week to leave. The slot holds the control run in place. */}
+                <span className="summary-link-slot">
+                    {data && (
+                        <Link className="summary-link" to="/summary" title="Summary" aria-label="Summary">
+                            <TableIcon width={16} height={16} />
+                        </Link>
+                    )}
+                </span>
 
                 <NumberSourceMenu value={numberSource} onChange={setNumberSource} />
 

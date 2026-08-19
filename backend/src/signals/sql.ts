@@ -92,3 +92,15 @@ SELECT MIN(report_date) AS earliest
 FROM opt.telegram_signal
 WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
 `;
+
+/**
+ * Every date that has signals at all, which is what the summary's month index is
+ * built from. Deliberately the DISTINCT dates rather than a rollup: the grouping
+ * into weeks and months is week math, and week math lives in weeks.ts.
+ */
+export const SIGNAL_DATES_QUERY = `
+SELECT DISTINCT report_date
+FROM opt.telegram_signal
+WHERE is_current = 1 AND parse_status = 'parsed' AND option_right = 'P'
+ORDER BY report_date
+`;

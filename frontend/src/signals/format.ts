@@ -9,6 +9,7 @@ import type { OptionRight } from '@weboptions/shared';
 
 const MONEY = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const COMPACT_MONEY = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 });
+const PADDED_DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
 
 function toLocalDate(iso: string): Date {
     const [year, month, day] = iso.split('-').map(Number);
@@ -20,9 +21,13 @@ export function formatDayLabel(iso: string): string {
     return toLocalDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Zero-padded, so the title keeps one width as the weeks step past. */
 export function formatWeekTitle(weekStart: string, weekEnd: string): string {
-    return `Week of ${formatDayLabel(weekStart)} – ${formatDayLabel(weekEnd)}`;
+    return `Week of ${PADDED_DAY.format(toLocalDate(weekStart))} – ${PADDED_DAY.format(toLocalDate(weekEnd))}`;
 }
+
+/** A whole title's worth of room, held open while the real week is still loading. */
+export const WEEK_TITLE_SPACER = formatWeekTitle('2026-08-17', '2026-08-21');
 
 /** Expiries are read at a glance, so they keep the US month-first shape. */
 export function formatMDY(iso: string | null): string {

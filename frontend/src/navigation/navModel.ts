@@ -33,6 +33,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/',
             },
             {
+                id: '/summary',
+                label: 'Summary',
+                description: 'Every week rolled up by risk group',
+                path: '/summary',
+            },
+            {
                 id: 'week-explorer',
                 label: 'Week Explorer',
                 description: 'Compare several weeks side by side',

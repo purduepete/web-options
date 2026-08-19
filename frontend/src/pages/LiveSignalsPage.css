@@ -38,16 +38,40 @@
     color: var(--text-heading);
 }
 
-/* The title stops growing so the menus land beside it, and the week controls
-   take over the space instead. The trailing margin widens the shared gap without
-   indenting the first menu on the line below once the head wraps. */
+/* The title stops growing so the icon lands beside it. */
 .signals-page .page-head h1 {
     flex: 0 1 auto;
-    margin-right: 0.75rem;
 }
 
-.signals-page .page-head .week-nav {
-    margin-left: auto;
+.signals-page .week-title-spacer {
+    visibility: hidden;
+}
+
+/* The auto margin gathers every control to the right, so none of them move when
+   a longer or shorter week is named, or when the icon itself arrives. */
+.signals-page .summary-link-slot {
+    display: inline-flex;
+    margin-right: auto;
+}
+
+/* Quiet by design: the week is the page, and this only offers a way off it. */
+.signals-page .summary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    color: var(--text-muted);
+}
+
+.signals-page .summary-link:hover {
+    color: var(--text-heading);
+}
+
+@media (pointer: coarse) {
+    .signals-page .summary-link {
+        min-width: 44px;
+        min-height: 44px;
+    }
 }
 
 /* Sized like a menu trigger so the bar keeps one rhythm, but in the highlight

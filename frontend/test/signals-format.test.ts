@@ -22,6 +22,10 @@ describe('signal formatters', () => {
         expect(formatWeekTitle('2025-08-11', '2025-08-15')).toBe('Week of Aug 11 – Aug 15');
     });
 
+    it('pads the days in the week title, so its width never changes', () => {
+        expect(formatWeekTitle('2025-08-04', '2025-08-08')).toBe('Week of Aug 04 – Aug 08');
+    });
+
     it('writes expiries month first', () => {
         expect(formatMDY('2025-08-15')).toBe('08/15/2025');
     });

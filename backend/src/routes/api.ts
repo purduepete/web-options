@@ -5,6 +5,8 @@ import type {
     EarliestWeekResponse,
     HealthResponse,
     MeResponse,
+    SignalMonthsResponse,
+    SignalSummaryResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
 import {
@@ -13,14 +15,16 @@ import {
     isCautionSymbol,
     isIsoDate,
     normalizeCautionSymbols,
+    parseSymbolList,
 } from '@weboptions/shared';
 import type { AppConfig } from '../config';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
 import { requireApiKey } from '../middleware/apiKey';
-import { earliestWeekMonday, fetchWeek, weekHasData } from '../signals/repository';
+import { earliestWeekMonday, fetchRange, fetchWeek, signalDates, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
-import { addDays, currentWeekMonday, parseWeekParam, toIsoDate } from '../weeks';
+import { monthsFrom, spanOf, summarizeRange } from '../signals/summary';
+import { addDays, currentWeekMonday, fromIsoDate, parseWeekParam, toIsoDate } from '../weeks';
 
 /** Matches Python's `datetime.now().isoformat(timespec="seconds")`: local, no offset. */
 function localTimestamp(now: Date = new Date()): string {
@@ -94,6 +98,53 @@ export function createApiRouter(config: AppConfig): Router {
     router.get('/earliest-week', async (_req, res, next) => {
         try {
             const body: EarliestWeekResponse = { weekStart: await earliestWeekMonday(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/signal-months', async (_req, res, next) => {
+        try {
+            const body: SignalMonthsResponse = { months: monthsFrom(await signalDates(config.db)) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/signal-summary', async (req, res, next) => {
+        const month = req.query.month;
+        // A `YYYY-MM` shape alone would accept 2026-13, so the month has to survive
+        // being parsed as a real date and formatted back.
+        if (typeof month !== 'string' || !/^\d{4}-\d{2}$/.test(month)) {
+            res.status(400).json({ error: 'month must be YYYY-MM' });
+            return;
+        }
+        try {
+            if (toIsoDate(fromIsoDate(`${month}-01`)).slice(0, 7) !== month) throw new RangeError(month);
+        } catch {
+            res.status(400).json({ error: 'month must be YYYY-MM' });
+            return;
+        }
+
+        const symbols = parseSymbolList(req.query.symbols);
+
+        try {
+            const found = monthsFrom(await signalDates(config.db)).find((entry) => entry.month === month);
+            if (!found) {
+                res.status(404).json({ error: 'no signals for that month' });
+                return;
+            }
+            const span = spanOf(found);
+            const rows = await fetchRange(config.db, span.from, span.to);
+            const { weeks, total } = summarizeRange(rows, found.weekStarts, symbols);
+            const body: SignalSummaryResponse = {
+                month,
+                symbols,
+                weeks,
+                total,
+            };
             res.json(body);
         } catch (error) {
             next(error);

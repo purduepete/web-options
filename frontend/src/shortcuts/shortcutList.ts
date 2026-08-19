@@ -38,6 +38,14 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
         ],
     },
     {
+        title: 'Summary',
+        shortcuts: [
+            { keys: ['/'], description: 'Filter by symbols' },
+            { keys: ['j'], description: 'Collapse or expand every month' },
+            { keys: ['r'], description: 'Clear the symbol filter' },
+        ],
+    },
+    {
         title: 'Weekly calendars',
         shortcuts: [
             { keys: ['←'], description: 'Previous week' },

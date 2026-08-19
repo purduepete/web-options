@@ -1,4 +1,5 @@
-import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
+import type { DaySignals, GroupId, NumberSource, Trade } from '@weboptions/shared';
+import { GROUP_IDS, GROUP_LABELS, groupIdForTrade, TIER_ORDER } from '@weboptions/shared';
 import { hasExpired } from './format';
 
 /**
@@ -11,10 +12,10 @@ import { hasExpired } from './format';
  * grid rows however many tickets sit above them in any one column.
  */
 
-/** Risk tiers, least to most. Anything else falls through to `other`. */
-export const TIER_ORDER = ['conservative', 'balanced', 'aggressive'] as const;
-
-export type GroupId = 'top-picks' | (typeof TIER_ORDER)[number] | 'other';
+// Classification itself lives in shared, so the summary page's server-side
+// rollup and this grid can never drift apart on what counts as a top pick.
+export { TIER_ORDER };
+export type { GroupId };
 
 /** Whether the week shows every contract, only the live ones, or only the settled ones. */
 export const EXPIRY_FILTERS = ['all', 'active', 'expired'] as const;
@@ -38,22 +39,6 @@ export interface SignalGroup {
     /** Top picks come from every tier, so only that group spells the tier out. */
     showTierBadge: boolean;
     matches: (trade: Trade) => boolean;
-}
-
-const LABELS: Record<GroupId, string> = {
-    'top-picks': 'Top Picks',
-    conservative: 'Conservative',
-    balanced: 'Balanced',
-    aggressive: 'Aggressive',
-    other: 'Other',
-};
-
-function tierOf(trade: Trade): string {
-    return (trade.tier ?? '').toLowerCase();
-}
-
-function isKnownTier(trade: Trade): boolean {
-    return (TIER_ORDER as readonly string[]).includes(tierOf(trade));
 }
 
 /**
@@ -97,27 +82,14 @@ export function filterDaysByMoneyness(days: DaySignals[], filter: MoneynessFilte
 
 /** The groups at least one day this week can fill, in the order they are drawn. */
 export function buildGroups(days: DaySignals[]): SignalGroup[] {
-    const groups: SignalGroup[] = [];
     const someTradeIs = (predicate: (trade: Trade) => boolean) => days.some((day) => day.trades.some(predicate));
 
-    const isTopPick = (trade: Trade) => trade.isTopPick;
-    if (someTradeIs(isTopPick)) {
-        groups.push({ id: 'top-picks', label: LABELS['top-picks'], showTierBadge: true, matches: isTopPick });
-    }
-
-    for (const tier of TIER_ORDER) {
-        const matches = (trade: Trade) => !trade.isTopPick && tierOf(trade) === tier;
-        if (someTradeIs(matches)) {
-            groups.push({ id: tier, label: LABELS[tier], showTierBadge: false, matches });
-        }
-    }
-
-    const isOther = (trade: Trade) => !trade.isTopPick && !isKnownTier(trade);
-    if (someTradeIs(isOther)) {
-        groups.push({ id: 'other', label: LABELS.other, showTierBadge: false, matches: isOther });
-    }
-
-    return groups;
+    return GROUP_IDS.filter((id) => someTradeIs((trade) => groupIdForTrade(trade) === id)).map((id) => ({
+        id,
+        label: GROUP_LABELS[id],
+        showTierBadge: id === 'top-picks',
+        matches: (trade: Trade) => groupIdForTrade(trade) === id,
+    }));
 }
 
 /**

@@ -74,7 +74,14 @@ describe('stored lists', () => {
 describe('nav model', () => {
     it('exposes only real routes as navigable', () => {
         const ids = navigableItems().map((item) => item.id);
-        expect(ids).toEqual(['/', '/calendars/latest', '/settings/appearance', '/settings/caution', '/settings/key']);
+        expect(ids).toEqual([
+            '/',
+            '/summary',
+            '/calendars/latest',
+            '/settings/appearance',
+            '/settings/caution',
+            '/settings/key',
+        ]);
     });
 
     it('keeps placeholders findable but not navigable', () => {

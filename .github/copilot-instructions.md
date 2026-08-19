@@ -85,3 +85,37 @@ contract applies to existing pages and every page added under `frontend/src/page
 
 Run `npm test -- --run frontend/test/responsive-css.test.ts frontend/test/grid-css.test.ts frontend/test/safe-area-css.test.ts`
 after changing page markup or CSS, then run `npm run build:frontend`.
+
+## Page loading contract
+
+A page should arrive once and hold still. Every rule below exists because a
+reader watched something jump, flash, or fill in underneath them.
+
+- **Settle once, not twice.** A page whose data comes in stages waits for the
+  stages a reader would see as one arrival before it reveals anything. The
+  summary page fetches the month index and then the month it opens; it holds a
+  single spinner across both rather than spinning, resolving, and spinning again.
+  Two spinners in sequence is the failure this rule prevents.
+- **Once revealed, stay revealed.** Refetching under a changed filter must not
+  send the page back to a spinner. Gate the first arrival only, and let later
+  answers swap in place.
+- **Fade the late data in.** The page frame animates itself through `main`, but
+  data that lands after it needs the shared `enter` class or nobody sees it
+  arrive. Both use the same opacity-only `enter` keyframe in
+  [index.css](frontend/src/index.css) — no sliding, and both are switched off
+  under `prefers-reduced-motion`. [motion-css.test.ts](frontend/test/motion-css.test.ts)
+  guards this.
+- **Never let a heading fill in.** A static title renders on the first frame. A
+  title derived from data renders a full-length invisible spacer instead, so the
+  head opens at the width it will keep — see `WEEK_TITLE_SPACER` in
+  [format.ts](frontend/src/signals/format.ts). An empty heading that later gains
+  text is the same jump by another name.
+- **Withhold controls that lead somewhere the page has not reached.** The live
+  signals summary link waits for the week, since there is nothing to leave yet.
+- **A control that appears must not move the ones already there.** Put the single
+  `margin-right: auto` that pins a control run on an element that is always
+  present — a slot wrapper if the control itself is conditional. Never let two
+  `auto` margins split the free space in one row.
+- **`Loading` already waits 250ms** before it shows, so a fast answer flashes
+  nothing. Do not add a second delay, and do not mount it where an element that
+  reserves the same space would do.

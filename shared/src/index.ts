@@ -58,6 +58,35 @@ export interface Trade {
     percentFromStrike: number | null;
 }
 
+/** Risk tiers, least to most. Anything else falls through to `other`. */
+export const TIER_ORDER = ['conservative', 'balanced', 'aggressive'] as const;
+
+export type GroupId = 'top-picks' | (typeof TIER_ORDER)[number] | 'other';
+
+export const GROUP_IDS: readonly GroupId[] = ['top-picks', ...TIER_ORDER, 'other'];
+
+export const GROUP_LABELS: Record<GroupId, string> = {
+    'top-picks': 'Top Picks',
+    conservative: 'Conservative',
+    balanced: 'Balanced',
+    aggressive: 'Aggressive',
+    other: 'Other',
+};
+
+/**
+ * The one place a trade's risk group is decided. Both the week grid and the
+ * server-side summary rollup go through here, so the two can never disagree
+ * about which column a ticket belongs in.
+ *
+ * A top pick is ONLY ever a top pick: it is drawn from every tier, so counting
+ * it under its tier as well would double it.
+ */
+export function groupIdForTrade(trade: Trade): GroupId {
+    if (trade.isTopPick) return 'top-picks';
+    const tier = (trade.tier ?? '').toLowerCase();
+    return (TIER_ORDER as readonly string[]).includes(tier) ? (tier as GroupId) : 'other';
+}
+
 export interface DaySignals {
     name: string;
     date: IsoDate;
@@ -77,6 +106,94 @@ export interface WeekSignalsResponse {
 
 export interface EarliestWeekResponse {
     weekStart: IsoDate | null;
+}
+
+/**
+ * The summary's columns: the named risk groups, then the week's total. `other`
+ * is deliberately absent — it only ever catches a tier we do not recognise, and
+ * a column that is empty every month is noise. Those trades still reach `all`.
+ */
+export type SummaryColumn = Exclude<GroupId, 'other'> | 'all';
+
+export const SUMMARY_COLUMNS: readonly SummaryColumn[] = ['top-picks', ...TIER_ORDER, 'all'];
+
+export const SUMMARY_COLUMN_LABELS: Record<SummaryColumn, string> = {
+    'top-picks': GROUP_LABELS['top-picks'],
+    conservative: GROUP_LABELS.conservative,
+    balanced: GROUP_LABELS.balanced,
+    aggressive: GROUP_LABELS.aggressive,
+    all: 'All',
+};
+
+/**
+ * `priced` is the denominator for `otm`: a contract with no close yet has no
+ * moneyness and belongs to neither side. `captured` counts contracts that had a
+ * real captured quote, so a cell leaning on VADER's fallback can say so.
+ *
+ * The figures are the captured numbers, falling back per contract to the ones
+ * VADER advertised. The summary offers no choice between the two: a month-wide
+ * total mixing captured and advertised numbers is the only honest one there is.
+ *
+ * `premium` and `collateral` are sums, so on their own they measure how many
+ * signals a group got. `annualizedYield` is the comparable figure: it is
+ * weighted by collateral, so a $20k put outweighs a $200 one instead of each
+ * counting once.
+ */
+export interface SummaryCell {
+    signals: number;
+    priced: number;
+    otm: number;
+    captured: number;
+    premium: number | null;
+    collateral: number | null;
+    annualizedYield: number | null;
+}
+
+export interface WeekSummaryRow {
+    weekStart: IsoDate;
+    weekEnd: IsoDate;
+    cells: Record<SummaryColumn, SummaryCell>;
+}
+
+/** A month of the summary, keyed `YYYY-MM` and filed by the month of each week's MONDAY. */
+export interface SignalMonth {
+    month: string;
+    label: string;
+    weekStarts: IsoDate[];
+}
+
+export interface SignalMonthsResponse {
+    months: SignalMonth[];
+}
+
+/** `symbols` echoes back what the server actually applied, not what was typed. */
+export interface SignalSummaryResponse {
+    month: string;
+    symbols: string[];
+    weeks: WeekSummaryRow[];
+    /* Computed over every trade in the month, not by adding the weeks up, so the
+       yields stay means rather than means of means. */
+    total: Record<SummaryColumn, SummaryCell>;
+}
+
+export const MAX_FILTER_SYMBOLS = 25;
+
+/**
+ * Reads the summary's comma-separated symbol filter.
+ *
+ * Takes `unknown` because Express hands back an ARRAY for `?symbols=A&symbols=B`
+ * and `undefined` for an absent param. Junk yields an empty filter rather than an
+ * error: a stray comma should narrow nothing, not break the page.
+ */
+export function parseSymbolList(raw: unknown): string[] {
+    if (typeof raw !== 'string') return [];
+    const seen = new Set<string>();
+    for (const part of raw.split(',')) {
+        const symbol = part.trim().toUpperCase();
+        if (symbol) seen.add(symbol);
+        if (seen.size >= MAX_FILTER_SYMBOLS) break;
+    }
+    return [...seen];
 }
 
 /** One headline from a calendar's macro banner. */

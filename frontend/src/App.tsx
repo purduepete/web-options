@@ -13,6 +13,7 @@ import { CautionPage } from './pages/CautionPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { SummaryPage } from './pages/SummaryPage';
 import { ThemeProvider } from './theme/ThemeProvider';
 
 export default function App() {
@@ -43,6 +44,7 @@ function Gate() {
                         <Routes>
                             <Route element={<Layout />}>
                                 <Route index element={<LiveSignalsPage />} />
+                                <Route path="summary" element={<SummaryPage />} />
                                 <Route path="calendars/latest" element={<LatestCalendarPage />} />
                                 <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
                                 <Route path="settings/appearance" element={<AppearancePage />} />

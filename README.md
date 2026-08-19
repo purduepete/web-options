@@ -3,11 +3,14 @@
 Personal, single-user dashboards for options-trading data. React front end, Express
 API, Azure SQL. It runs on the home LAN only and has no cloud hosting.
 
-Two things to look at:
+Three things to look at:
 
 - **Live signals** - this week's VADER cash-secured-put signals from webportfolio's
   `opt.telegram_signal` table, laid out Monday to Friday and grouped by risk tier.
   Arrow keys walk backwards and forwards through the weeks.
+- **Summary** - every week rolled up by risk group, a month at a time, so the weeks
+  can be read against each other rather than one at a time. Weeks are filed by their
+  Monday, so a month can carry a few of the next month's days.
 - **Weekly calendars** - each week's Substack-derived calendar, ingested into the
   `opt` schema rather than read off disk. Latest Calendar plus the arrow keys walks
   the whole archive.
@@ -133,6 +136,10 @@ Everything under `/api` needs an `X-API-Key` header.
 | `GET /api/week-signals`    | yes | This week's signals. `?week=YYYY-MM-DD` for any   |
 |                            |     | other, normalised to that week's Monday.          |
 | `GET /api/earliest-week`   | yes | The Monday of the earliest week on record.        |
+| `GET /api/signal-months`   | yes | Every month that has signals, newest first, with  |
+|                            |     | the week starts each one covers.                  |
+| `GET /api/signal-summary`  | yes | One month rolled up by week and risk group.       |
+|                            |     | `?month=YYYY-MM`, plus `?symbols=` to narrow it.  |
 | `GET /api/calendars`       | yes | Every ingested week, newest first.                |
 | `GET /api/calendars/:date` | yes | One week, keyed on publish date.                  |
 | `GET /api/caution-symbols` | yes | The global caution list.                          |

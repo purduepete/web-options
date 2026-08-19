@@ -192,6 +192,17 @@ export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function TableIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M3 15h18" />
+            <path d="M12 9v12" />
+        </svg>
+    );
+}
+
 export function SearchIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>

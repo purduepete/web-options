@@ -1,0 +1,119 @@
+/* The month list. Each month is a disclosure whose body is one table. */
+
+.summary-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.summary-page .page-head h1 {
+    flex: 0 1 auto;
+    margin-right: 0.75rem;
+}
+
+/* Pinned to the end of the bar, the way the week navigation is on the live
+   signals page, so the reset stays beside the title. */
+.summary-page .page-head .symbol-filter {
+    margin-left: auto;
+}
+
+.summary-month {
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+}
+
+.summary-month-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 0.875rem;
+    background: none;
+    border: 0;
+    color: var(--text-heading);
+    text-align: left;
+}
+
+.summary-month-head:hover {
+    background: var(--surface-hover);
+}
+
+/* Points down when the month is open, right when it is shut. */
+.summary-month-head svg {
+    flex: none;
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+}
+
+.summary-month-head svg.is-open {
+    transform: none;
+}
+
+.summary-month-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.summary-month-count {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+/* Flush inside the month's border, the way a day card's contents sit inside
+   theirs on the live signals page, so both pages start at the same gutter. */
+.summary-month-body {
+    padding: 0;
+}
+
+.summary-none {
+    margin: 0;
+    padding: 0.75rem 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Inside a month there is no page gutter to lean on, so it carries the same one
+   the table's cells do. */
+.summary-month-body .summary-none {
+    padding: 0.75rem 0.875rem;
+}
+
+/* The rows become bordered blocks below this, so they need a gutter of their
+   own rather than sitting against the month's own border. */
+@media (max-width: 700px) {
+    .summary-month-body {
+        padding: 0 0.75rem 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .summary-month-head svg {
+        transition: none;
+    }
+}
+
+/* A collapsed month has never been fetched, so print cannot open it. It keeps
+   its heading and says as much, rather than leaving a gap the reader would
+   mistake for a month with no signals. */
+@media print {
+    .summary-page .symbol-filter,
+    .summary-month-head svg {
+        display: none;
+    }
+
+    .summary-month {
+        break-inside: avoid;
+        background: none;
+    }
+
+    .summary-month-head {
+        padding-left: 0;
+        padding-right: 0;
+        background: none;
+    }
+
+    .summary-month-head[aria-expanded='false'] .summary-month-count::after {
+        content: ' — not shown';
+    }
+}

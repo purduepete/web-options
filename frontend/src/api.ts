@@ -4,6 +4,8 @@ import type {
     CautionSymbolsResponse,
     EarliestWeekResponse,
     MeResponse,
+    SignalMonthsResponse,
+    SignalSummaryResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
 import { readKey } from './auth/keyStore';
@@ -115,6 +117,16 @@ export function fetchWeekSignals(week?: string): Promise<WeekSignalsResponse> {
 
 export function fetchEarliestWeek(): Promise<EarliestWeekResponse> {
     return getJson<EarliestWeekResponse>('/api/earliest-week');
+}
+
+export function fetchSignalMonths(): Promise<SignalMonthsResponse> {
+    return getJson<SignalMonthsResponse>('/api/signal-months');
+}
+
+export function fetchSignalSummary(month: string, symbols: readonly string[] = []): Promise<SignalSummaryResponse> {
+    const query = new URLSearchParams({ month });
+    if (symbols.length > 0) query.set('symbols', symbols.join(','));
+    return getJson<SignalSummaryResponse>(`/api/signal-summary?${query}`);
 }
 
 export function fetchCalendars(): Promise<CalendarsIndexResponse> {

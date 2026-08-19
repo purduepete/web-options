@@ -121,7 +121,9 @@ describe('LiveSignalsPage', () => {
     it('says nothing until it knows the week, rather than naming itself twice', () => {
         // The row still holds its shape, so the week arrives without a jump.
         const { container } = renderPage();
-        expect(container.querySelector('.page-head h1')?.textContent).toBe('');
+        const heading = container.querySelector('.page-head h1');
+        expect(heading?.querySelector('.week-title-spacer')?.getAttribute('aria-hidden')).toBe('true');
+        expect(screen.queryByRole('heading', { name: /Week of/ })).toBeNull();
     });
 
     it('draws a card per day with the trade count in its header', async () => {

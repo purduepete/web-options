@@ -239,10 +239,11 @@ main {
     animation: enter 500ms ease-in;
 }
 
-/* The two grid pages are the only ones wide enough to need reining in. Tablets
-   keep a moderate gutter so their wider screens do not stretch the cards. */
+/* The wide data pages are the only ones that need reining in. Tablets keep a
+   moderate gutter so their wider screens do not stretch the cards. */
 @media (min-width: 641px) {
     main.signals-page,
+    main.summary-page,
     main.calendar-week-page {
         padding-left: max(5%, env(safe-area-inset-left));
         padding-right: max(5%, env(safe-area-inset-right));
@@ -253,6 +254,7 @@ main {
    from a laptop. The pointer does: a tablet keeps the 5% above. */
 @media (min-width: 1440px) and (hover: hover) and (pointer: fine) {
     main.signals-page,
+    main.summary-page,
     main.calendar-week-page {
         padding-left: max(15%, env(safe-area-inset-left));
         padding-right: max(15%, env(safe-area-inset-right));
