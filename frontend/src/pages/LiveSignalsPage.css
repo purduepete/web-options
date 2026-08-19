@@ -38,21 +38,47 @@
     color: var(--text-heading);
 }
 
-/* Actual / VADER. Sits at the end of the head and wraps with everything else. */
+/* Actual / VADER, sitting with the title rather than out at the end of the bar.
+   The title stops growing so the pill lands beside it, and the week controls
+   take over the space instead. */
+.signals-page .page-head h1 {
+    flex: 0 1 auto;
+}
+
+.signals-page .page-head .week-nav {
+    margin-left: auto;
+}
+
+/* A segmented pill. A DELIBERATE exception to the squared-corner rule, like the
+   command palette: the shape is what says these two are one control. */
 .number-source {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: 0.2rem;
+    padding: 0.2rem;
+    background: var(--surface-2);
+    border: var(--border-width) solid var(--border);
+    border-radius: 999px;
 }
 
 .number-source-option {
+    padding: 0.2rem 0.8rem;
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-muted);
     font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.number-source-option:hover:not(:disabled) {
+    background: none;
+    color: var(--text-heading);
 }
 
 .number-source-option.selected {
-    border-color: var(--highlight);
-    background: rgba(var(--highlight-rgb), 0.15);
-    color: var(--text-heading);
+    background: var(--highlight);
+    color: var(--highlight-contrast);
 }
 
 .signals-error {

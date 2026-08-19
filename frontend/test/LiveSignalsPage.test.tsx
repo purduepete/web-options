@@ -427,4 +427,36 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         expect(within(await tuesday()).queryByText(/wide spread/)).toBeNull();
     });
+
+    it('shows how far each captured number moved from VADER', async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        const card = await tuesday();
+
+        // Delta absolute: -0.31 against -0.20. Premium percent: 175 against 120.
+        expect(within(card).getByText('-0.11')).toBeTruthy();
+        expect(within(card).getByText('+45.8%')).toBeTruthy();
+    });
+
+    it("hides the differences in VADER's own mode, where there is nothing to compare", async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        await tuesday();
+
+        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+
+        const card = await tuesday();
+        expect(within(card).queryByText('-0.11')).toBeNull();
+        expect(within(card).queryByText('+45.8%')).toBeNull();
+    });
+
+    it("leaves a fallen-back number undifferenced, since it is VADER's already", async () => {
+        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualPremium: null }));
+        renderPage();
+        const card = await tuesday();
+
+        expect(within(card).getByText('-0.11')).toBeTruthy();
+        expect(within(card).queryByText('+45.8%')).toBeNull();
+    });
 });

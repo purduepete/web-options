@@ -236,6 +236,15 @@
     text-underline-offset: 0.2em;
 }
 
+/* How far the captured number moved from VADER's. Sits beside the figure it
+   qualifies and stays quieter than it, so the number still reads first. */
+.ticket .value-diff {
+    margin-left: 0.3em;
+    color: var(--text-muted);
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+}
+
 /* The bid/ask was wide when the quote was taken, so the mark is soft. */
 .ticket .illiquid {
     display: inline-flex;

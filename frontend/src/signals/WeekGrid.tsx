@@ -188,6 +188,39 @@ function Figure({ shown, format }: { shown: Displayed; format: (value: number | 
     );
 }
 
+/**
+ * How far the captured number landed from the advertised one, signed against
+ * VADER: a minus sign means the market was worse than the signal promised.
+ * Only meaningful while the captured numbers are the ones on screen.
+ */
+function absoluteDiff(source: NumberSource, actual: number | null, quoted: number | null): number | null {
+    if (source !== 'actual' || actual === null || quoted === null) return null;
+    return actual - quoted;
+}
+
+function percentDiff(source: NumberSource, actual: number | null, quoted: number | null): number | null {
+    if (source !== 'actual' || actual === null || quoted === null || quoted === 0) return null;
+    return ((actual - quoted) / quoted) * 100;
+}
+
+function formatSigned(value: number, places: number, suffix: string): string {
+    // Round before reading the sign, so a rounding remainder cannot print "-0.00".
+    const rounded = Number(value.toFixed(places));
+    const sign = rounded > 0 ? '+' : rounded < 0 ? '-' : '';
+    return `${sign}${Math.abs(rounded).toFixed(places)}${suffix}`;
+}
+
+const DELTA_DIFF_TITLE = "Captured delta minus VADER's.";
+const PREMIUM_DIFF_TITLE = "Captured premium against VADER's, as a percentage.";
+
+function Difference({ value, places, suffix, title }: { value: number; places: number; suffix: string; title: string }) {
+    return (
+        <span className="value-diff" title={title}>
+            {formatSigned(value, places, suffix)}
+        </span>
+    );
+}
+
 function Ticket({
     trade,
     showTierBadge,
@@ -201,6 +234,8 @@ function Ticket({
     const premium = displayed(numberSource, trade.actualPremium, trade.premium);
     const annualized = displayed(numberSource, trade.actualAnnualizedYield, trade.annualizedYield);
     const illiquid = trade.actualIlliquid && !premium.fallback && numberSource === 'actual';
+    const deltaDiff = absoluteDiff(numberSource, trade.actualDelta, trade.delta);
+    const premiumDiff = percentDiff(numberSource, trade.actualPremium, trade.premium);
 
     return (
         <article className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}`}>
@@ -221,13 +256,20 @@ function Ticket({
             </p>
             <p className="delta-line">
                 &Delta; <Figure shown={delta} format={formatDelta} />
+                {deltaDiff !== null && (
+                    <Difference value={deltaDiff} places={2} suffix="" title={DELTA_DIFF_TITLE} />
+                )}
             </p>
             <p className="stats">
                 <span>
                     <Figure shown={annualized} format={formatPercent} /> ann.
                 </span>
                 <span>
-                    <Figure shown={premium} format={formatMoney} /> premium
+                    <Figure shown={premium} format={formatMoney} />
+                    {premiumDiff !== null && (
+                        <Difference value={premiumDiff} places={1} suffix="%" title={PREMIUM_DIFF_TITLE} />
+                    )}{' '}
+                    premium
                     {illiquid && (
                         <span className="illiquid" title="Wide bid/ask spread when this quote was captured.">
                             !<span className="sr-only"> wide spread</span>

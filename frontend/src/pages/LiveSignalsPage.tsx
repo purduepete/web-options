@@ -172,6 +172,8 @@ export function LiveSignalsPage() {
                     moment later reads as a page that changed underfoot. */}
                 <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : ''}</h1>
 
+                <NumberSourceToggle value={numberSource} onChange={setNumberSource} />
+
                 <div className="week-nav">
                     <button type="button" onClick={goEarliest} disabled={!data?.hasPriorWeekData}>
                         First
@@ -208,8 +210,6 @@ export function LiveSignalsPage() {
                         </button>
                     )}
                 </div>
-
-                <NumberSourceToggle value={numberSource} onChange={setNumberSource} />
             </div>
 
             {error && (
