@@ -40,9 +40,11 @@
 
 /* Actual / VADER, sitting with the title rather than out at the end of the bar.
    The title stops growing so the pill lands beside it, and the week controls
-   take over the space instead. */
+   take over the space instead. The trailing margin widens the shared gap without
+   indenting the pill on the line below once the head wraps. */
 .signals-page .page-head h1 {
     flex: 0 1 auto;
+    margin-right: 0.75rem;
 }
 
 .signals-page .page-head .week-nav {
