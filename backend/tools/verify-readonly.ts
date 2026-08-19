@@ -60,6 +60,34 @@ const PROBES: Probe[] = [
         expect: 'deny',
         run: (pool) => pool.request().batch('BEGIN TRAN; DELETE FROM opt.calendar_week; ROLLBACK;'),
     },
+    // The optcfg carve-out. These four probes are the whole of the write surface:
+    // rows in one table may be replaced, and nothing else about it may change.
+    {
+        label: 'SELECT optcfg.caution_symbol',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM optcfg.caution_symbol'),
+    },
+    {
+        label: 'INSERT optcfg.caution_symbol',
+        expect: 'allow',
+        run: (pool) =>
+            pool.request().batch(`BEGIN TRAN; INSERT INTO optcfg.caution_symbol (symbol) VALUES ('PROBE'); ROLLBACK;`),
+    },
+    {
+        label: 'DELETE optcfg.caution_symbol',
+        expect: 'allow',
+        run: (pool) => pool.request().batch('BEGIN TRAN; DELETE FROM optcfg.caution_symbol; ROLLBACK;'),
+    },
+    {
+        label: 'UPDATE optcfg.caution_symbol (rows are replaced, never edited)',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; UPDATE optcfg.caution_symbol SET symbol = symbol; ROLLBACK;'),
+    },
+    {
+        label: 'CREATE TABLE optcfg.probe',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('CREATE TABLE optcfg.probe (id INT)'),
+    },
 ];
 
 async function main(): Promise<void> {

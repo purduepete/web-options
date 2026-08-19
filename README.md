@@ -12,7 +12,9 @@ Two things to look at:
   `opt` schema rather than read off disk. Latest Calendar plus the arrow keys walks
   the whole archive.
 
-Everything is read-only. No write path to the trading data exists in this code.
+The trading data is read-only. The one thing this app writes is its own caution
+list, and it writes it to its own schema. See
+[Security notes](#security-notes).
 
 ## Layout
 
@@ -24,7 +26,8 @@ npm workspaces, no TypeScript project references.
 | `backend`  | Express 5 API and the operator tools             |
 | `frontend` | React 19 and Vite                                |
 
-`database/migrations` holds the numbered SQL that builds the `opt` schema.
+`database/migrations` holds the numbered SQL that builds the `opt` schema and the
+writable `optcfg` one.
 `docs/site-review.html` is the current plan and the reasoning behind it.
 
 ## Running it in development
@@ -132,6 +135,8 @@ Everything under `/api` needs an `X-API-Key` header.
 | `GET /api/earliest-week`   | yes | The Monday of the earliest week on record.        |
 | `GET /api/calendars`       | yes | Every ingested week, newest first.                |
 | `GET /api/calendars/:date` | yes | One week, keyed on publish date.                  |
+| `GET /api/caution-symbols` | yes | The global caution list.                          |
+| `PUT /api/caution-symbols` | yes | Replaces it. The only write in the app.           |
 
 Failures are meant to be told apart rather than guessed at. A 401 means the key was
 refused. A 503 carries a `code` of `database_login_failed` or
@@ -158,10 +163,17 @@ of the old behaviour. Keep them.
 
 ## Security notes
 
-- **SELECT-only, enforced by the database.** `weboptions_ro` holds SELECT on `opt`
-  and nothing else, so a bug cannot write to the trading data.
+- **SELECT-only on the trading data, enforced by the database.** `weboptions_ro`
+  holds SELECT on `opt` and an explicit DENY on writing to it, so a bug cannot
+  touch the signals or the calendars.
+- **One writable table, in its own schema.** `optcfg.caution_symbol` is the caution
+  list, and `optcfg` is the only schema the login can write to. A DENY at schema
+  scope beats a GRANT at object scope in SQL Server, which is why the writable
+  table could not simply live in `opt`. `npm run verify-readonly` connects as the
+  service login and proves the split rather than asserting it.
 - **The real trust boundary is the home LAN.** The API key is a nuisance control
-  against naive access, not authentication.
+  against naive access, not authentication. Anyone holding a key can replace the
+  caution list; nothing else about the database is theirs to change.
 - **The key is per browser, not per page.** It is typed in once and stored, rather
   than injected into the served HTML the way the Flask version did. View-source no
   longer hands it out.

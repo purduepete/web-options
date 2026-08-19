@@ -1,0 +1,13 @@
+/* Shared by the live grid and the calendar grid, so it lives with the badge
+   rather than in either sheet. */
+.caution-flag {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.3rem;
+    color: var(--warning);
+    vertical-align: -0.15em;
+}
+
+.caution-flag svg {
+    flex: 0 0 auto;
+}

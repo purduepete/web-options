@@ -11,9 +11,11 @@
 -- webportfolio's data including its own dbo.user_api_keys hashes. weboptions needs
 -- exactly two things, so it is granted exactly two things.
 --
--- The DENY is belt and braces. GRANT alone is enough today, but DENY outranks any
--- future GRANT or role membership, so a later "just add it to db_datawriter for a
--- minute" cannot quietly reopen the write path.
+-- NO LONGER THE WHOLE STORY. This file used to end with a database-scoped
+-- `DENY INSERT, UPDATE, DELETE, ALTER`. The caution list (007-009) needs one
+-- writable table, and a database-scoped DENY outranks any GRANT below it, so the
+-- deny is now issued per schema in 009 instead. Read 009 alongside this one; the
+-- write path is still closed everywhere except `optcfg`.
 --
 -- The user itself is created by `npm run create-readonly-user`, not here, because
 -- creating it requires a password and no password belongs in a committed file.
@@ -29,8 +31,4 @@ GO
 -- grant above already covers it. The prior object-level
 -- `GRANT SELECT ON OBJECT::dbo.telegram_signal` is retired; do not reintroduce it.
 GRANT SELECT ON SCHEMA::opt TO weboptions_ro;
-GO
-
--- Database scope, so it also covers tables and schemas that do not exist yet.
-DENY INSERT, UPDATE, DELETE, ALTER TO weboptions_ro;
 GO

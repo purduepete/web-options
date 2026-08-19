@@ -10,13 +10,22 @@ the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader
   use terminal commands rather than the grep/file search tools.
 - Both apps share one PROD database, `sqlgkhw25ijhyzzy.database.windows.net` /
   `webportfolio`, schema `opt` (never `dbo`).
-- This repo connects as `weboptions_ro`, which holds `SELECT` on the `opt` schema
-  and a database-scoped `DENY INSERT, UPDATE, DELETE, ALTER`. Never write to the
-  shared tables from here, and do not widen that login. See
-  [003_grant_readonly_user.sql](database/migrations/003_grant_readonly_user.sql).
-- Migrations in `database/migrations` cover only what WebOptions owns: the schema
-  itself, `opt.api_key`, and the `opt.calendar_*` tables. Anything named
-  `telegram_*` belongs to webportfolio; changes to it go in that repo.
+- This repo connects as `weboptions_ro`, which holds `SELECT` on the `opt` schema,
+  an explicit `DENY INSERT, UPDATE, DELETE` on every other schema, and a
+  database-scoped `DENY ALTER`. Never write to the shared tables from here. See
+  [003_grant_readonly_user.sql](database/migrations/003_grant_readonly_user.sql)
+  and [009_grant_caution_symbol_write.sql](database/migrations/009_grant_caution_symbol_write.sql).
+- There is exactly one exception: the `optcfg` schema, which WebOptions owns
+  outright and can write to. It holds `optcfg.caution_symbol`, the global caution
+  list the app saves from Settings. A DENY at schema scope beats a GRANT at object
+  scope, so a writable table cannot live in `opt` — anything new that WebOptions
+  needs to write goes in `optcfg`. Widening the login further needs a reason.
+- Migrations in `database/migrations` cover only what WebOptions owns: the `opt`
+  schema itself, `opt.api_key`, the `opt.calendar_*` tables, and all of `optcfg`.
+  Anything named `telegram_*` belongs to webportfolio; changes to it go in that
+  repo.
+- `npm run verify-readonly` connects as the service login and probes what it can
+  and cannot do. Run it after touching any grant.
 - Ad-hoc read-only queries: the password is in `.secrets\weboptions_ro.password`,
   and the server/database/user constants are in
   [scripts/weboptions.ps1](scripts/weboptions.ps1). Clear `DB_*` from the

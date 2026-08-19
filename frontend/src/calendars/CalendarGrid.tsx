@@ -11,6 +11,7 @@ import {
     formatStrike,
 } from '../signals/format';
 import { AlertIcon, CheckIcon } from '../components/icons';
+import { CautionBadge } from '../caution/CautionBadge';
 // The day card, ticket and risk-group styling lives with the live grid. Import
 // it here too, before our own sheet, so a calendar opened cold is styled and so
 // the overrides below always win the cascade.
@@ -97,6 +98,7 @@ function CalendarTicket({ trade }: { trade: CalendarTrade }) {
             <div className="ticket-row1">
                 <span className="ticker">
                     {trade.ticker} {formatStrike(trade.strike, trade.optionRight)}
+                    <CautionBadge symbol={trade.ticker} />
                 </span>
             </div>
             <p className="contract">

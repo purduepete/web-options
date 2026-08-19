@@ -83,6 +83,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/settings/appearance',
             },
             {
+                id: '/settings/caution',
+                label: 'Caution Symbols',
+                description: 'Underlyings to flag on every ticket',
+                path: '/settings/caution',
+            },
+            {
                 id: '/settings/key',
                 label: 'API Key',
                 description: 'The key this browser is using',

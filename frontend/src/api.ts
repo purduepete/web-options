@@ -1,6 +1,7 @@
 import type {
     CalendarWeek,
     CalendarsIndexResponse,
+    CautionSymbolsResponse,
     EarliestWeekResponse,
     MeResponse,
     WeekSignalsResponse,
@@ -59,14 +60,14 @@ export function describeFailure(error: unknown): string {
     return 'Something went wrong.';
 }
 
-async function getJson<T>(path: string, key?: string): Promise<T> {
+async function send<T>(path: string, init: RequestInit, key?: string): Promise<T> {
     const apiKey = key ?? readKey();
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: 'application/json', ...(init.headers as Record<string, string>) };
     if (apiKey) headers['X-API-Key'] = apiKey;
 
     let response: Response;
     try {
-        response = await fetch(path, { headers });
+        response = await fetch(path, { ...init, headers });
     } catch {
         throw new NetworkError();
     }
@@ -84,13 +85,22 @@ async function getJson<T>(path: string, key?: string): Promise<T> {
         if (!(response.headers.get('content-type') ?? '').includes('application/json')) {
             throw new NetworkError();
         }
-        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        const body = (await response.json().catch(() => ({}))) as { code?: string; error?: string };
         if (response.status === 503) {
             throw new ServiceUnavailableError(body.code ?? 'database_unreachable');
+        }
+        // A rejected save says which entry was wrong, and that is the whole point
+        // of the message, so it is passed through rather than replaced.
+        if (response.status === 400 && body.error) {
+            throw new Error(body.error);
         }
         throw new Error(`The server returned ${response.status}.`);
     }
     return (await response.json()) as T;
+}
+
+function getJson<T>(path: string, key?: string): Promise<T> {
+    return send<T>(path, {}, key);
 }
 
 /** Takes the key explicitly so a candidate can be checked before it is stored. */
@@ -113,4 +123,16 @@ export function fetchCalendars(): Promise<CalendarsIndexResponse> {
 
 export function fetchCalendar(publishDate: string): Promise<CalendarWeek> {
     return getJson<CalendarWeek>(`/api/calendars/${encodeURIComponent(publishDate)}`);
+}
+
+export function fetchCautionSymbols(): Promise<CautionSymbolsResponse> {
+    return getJson<CautionSymbolsResponse>('/api/caution-symbols');
+}
+
+export function saveCautionSymbols(symbols: readonly string[]): Promise<CautionSymbolsResponse> {
+    return send<CautionSymbolsResponse>('/api/caution-symbols', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+    });
 }

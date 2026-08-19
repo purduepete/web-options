@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ApiKeyProvider, useApiKey } from './auth/ApiKeyProvider';
 import { KeyGate } from './auth/KeyGate';
+import { CautionProvider } from './caution/CautionProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { FavoritesProvider } from './navigation/FavoritesProvider';
@@ -8,6 +9,7 @@ import { RecentlyVisitedProvider } from './navigation/RecentlyVisitedProvider';
 import { ApiKeyPage } from './pages/ApiKeyPage';
 import { AppearancePage } from './pages/AppearancePage';
 import { CalendarWeekPage } from './pages/CalendarWeekPage';
+import { CautionPage } from './pages/CautionPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -35,20 +37,23 @@ function Gate() {
 
     return (
         <BrowserRouter>
-            <FavoritesProvider>
-                <RecentlyVisitedProvider>
-                    <Routes>
-                        <Route element={<Layout />}>
-                            <Route index element={<LiveSignalsPage />} />
-                            <Route path="calendars/latest" element={<LatestCalendarPage />} />
-                            <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
-                            <Route path="settings/appearance" element={<AppearancePage />} />
-                            <Route path="settings/key" element={<ApiKeyPage />} />
-                            <Route path="*" element={<NotFoundPage />} />
-                        </Route>
-                    </Routes>
-                </RecentlyVisitedProvider>
-            </FavoritesProvider>
+            <CautionProvider>
+                <FavoritesProvider>
+                    <RecentlyVisitedProvider>
+                        <Routes>
+                            <Route element={<Layout />}>
+                                <Route index element={<LiveSignalsPage />} />
+                                <Route path="calendars/latest" element={<LatestCalendarPage />} />
+                                <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
+                                <Route path="settings/appearance" element={<AppearancePage />} />
+                                <Route path="settings/caution" element={<CautionPage />} />
+                                <Route path="settings/key" element={<ApiKeyPage />} />
+                                <Route path="*" element={<NotFoundPage />} />
+                            </Route>
+                        </Routes>
+                    </RecentlyVisitedProvider>
+                </FavoritesProvider>
+            </CautionProvider>
         </BrowserRouter>
     );
 }

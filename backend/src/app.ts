@@ -13,6 +13,8 @@ export function createApp(config: AppConfig): Express {
     app.disable('x-powered-by');
     app.use(helmet({ contentSecurityPolicy: false }));
     app.use(cors({ origin: true, allowedHeaders: ['X-API-Key', 'Content-Type'] }));
+    // Only the caution list has a body, and it is a few hundred tickers at most.
+    app.use(express.json({ limit: '32kb' }));
     if (config.nodeEnv !== 'test') {
         app.use(morgan('tiny'));
     }
@@ -56,6 +58,15 @@ export function createApp(config: AppConfig): Express {
     }
 
     app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
+        // A body express.json could not read, or one over the limit. Those are the
+        // caller's fault, and letting them fall through would report them as a bug
+        // in the server and a 500.
+        const status = (error as { status?: unknown }).status;
+        if (typeof status === 'number' && status >= 400 && status < 500) {
+            res.status(status).json({ error: 'malformed request body' });
+            return;
+        }
+
         // Never leak connection strings or driver internals to the client.
         const failure = classifyDbError(error);
         console.error('[weboptions]', failure ?? 'internal error:', error.message);

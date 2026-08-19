@@ -8,6 +8,7 @@
 
 export * from './theme';
 export * from './storage';
+export * from './caution';
 
 /** A calendar date with no time and no zone, formatted `YYYY-MM-DD`. */
 export type IsoDate = string;

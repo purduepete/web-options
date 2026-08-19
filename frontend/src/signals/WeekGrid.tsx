@@ -14,6 +14,7 @@ import {
     hasExpired,
 } from './format';
 import { premiumDriftPercent, totalCollateral } from './summary';
+import { CautionBadge } from '../caution/CautionBadge';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
 
@@ -385,6 +386,7 @@ function Ticket({
             <div className="ticket-row1">
                 <span className="ticker">
                     {trade.symbol} {formatStrike(trade.strike, trade.optionRight)}
+                    <CautionBadge symbol={trade.symbol} />
                 </span>
                 <span className={showTierBadge ? 'ticket-badges stacked' : 'ticket-badges'}>
                     <MoneynessBadge trade={trade} />

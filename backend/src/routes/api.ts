@@ -1,14 +1,22 @@
 import { Router } from 'express';
 import type {
     CalendarsIndexResponse,
+    CautionSymbolsResponse,
     EarliestWeekResponse,
     HealthResponse,
     MeResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
-import { isIsoDate } from '@weboptions/shared';
+import {
+    CAUTION_SYMBOL_LIMIT,
+    CAUTION_SYMBOL_MAX_LENGTH,
+    isCautionSymbol,
+    isIsoDate,
+    normalizeCautionSymbols,
+} from '@weboptions/shared';
 import type { AppConfig } from '../config';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
+import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
 import { requireApiKey } from '../middleware/apiKey';
 import { earliestWeekMonday, fetchWeek, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
@@ -114,6 +122,45 @@ export function createApiRouter(config: AppConfig): Router {
                 return;
             }
             res.json(calendar);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/caution-symbols', async (_req, res, next) => {
+        try {
+            const body: CautionSymbolsResponse = { symbols: await listCautionSymbols(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    // The only write in the app. Validated strictly rather than stored as sent:
+    // this is the one route where a bad request leaves something behind.
+    router.put('/caution-symbols', async (req, res, next) => {
+        const sent = (req.body as { symbols?: unknown } | undefined)?.symbols;
+        if (!Array.isArray(sent) || sent.some((value) => typeof value !== 'string')) {
+            res.status(400).json({ error: 'symbols must be an array of strings' });
+            return;
+        }
+
+        const symbols = normalizeCautionSymbols(sent as string[]);
+        if (symbols.length > CAUTION_SYMBOL_LIMIT) {
+            res.status(400).json({ error: `no more than ${CAUTION_SYMBOL_LIMIT} symbols` });
+            return;
+        }
+        const rejected = symbols.find((symbol) => !isCautionSymbol(symbol));
+        if (rejected !== undefined) {
+            // Echoed back so the reader can see which entry to fix, clipped so an
+            // over-long one cannot be quoted at its full length.
+            res.status(400).json({ error: `"${rejected.slice(0, CAUTION_SYMBOL_MAX_LENGTH)}" is not a ticker` });
+            return;
+        }
+
+        try {
+            const body: CautionSymbolsResponse = { symbols: await replaceCautionSymbols(config.db, symbols) };
+            res.json(body);
         } catch (error) {
             next(error);
         }
