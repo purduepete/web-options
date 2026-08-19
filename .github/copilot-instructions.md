@@ -1,5 +1,47 @@
 # WebOptions repository instructions
 
+## Upstream data: the webportfolio repo
+
+The signal data this app renders is produced by a separate app, **webportfolio**,
+checked out at `C:\Files\Dev\main\webportfolio`. That repo owns the ingest jobs,
+the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader.
+
+- Workspace search tools cannot reach outside this folder. To search webportfolio,
+  use terminal commands rather than the grep/file search tools.
+- Both apps share one PROD database, `sqlgkhw25ijhyzzy.database.windows.net` /
+  `webportfolio`, schema `opt` (never `dbo`).
+- This repo connects as `weboptions_ro`, which holds `SELECT` on the `opt` schema
+  and a database-scoped `DENY INSERT, UPDATE, DELETE, ALTER`. Never write to the
+  shared tables from here, and do not widen that login. See
+  [003_grant_readonly_user.sql](database/migrations/003_grant_readonly_user.sql).
+- Migrations in `database/migrations` cover only what WebOptions owns: the schema
+  itself, `opt.api_key`, and the `opt.calendar_*` tables. Anything named
+  `telegram_*` belongs to webportfolio; changes to it go in that repo.
+- Ad-hoc read-only queries: the password is in `.secrets\weboptions_ro.password`,
+  and the server/database/user constants are in
+  [scripts/weboptions.ps1](scripts/weboptions.ps1). Clear `DB_*` from the
+  environment afterwards.
+
+## Option numbers: VADER's versus captured
+
+Each signal carries two sets of numbers, and the UI toggles between them.
+
+- `opt.telegram_signal` holds what VADER advertised: `delta`, `premium`,
+  `annualized_yield`, `collateral`. Puts only (`option_right = 'P'`).
+- `opt.telegram_entry_quote` holds the market as actually captured, one row per
+  `(contract_key, report_date)`: `bid`, `ask`, `mark`, `mid`, `last_price`,
+  `underlying_price`, `delta`, `implied_volatility`, `is_illiquid_quote`,
+  `captured_at_utc`. WebOptions reads `mark`, `delta` and `is_illiquid_quote`.
+- **Capture began 2026-08-05** and runs each trading morning. There is no
+  backfill, and none is possible — an expired contract cannot be re-priced. Any
+  date before that has signals but no captured numbers.
+- A missing quote is normal, not a bug: an individual contract can come back
+  unquoted on a given morning. Treat a per-contract gap as data, and fall back to
+  VADER's number with the `.value-quoted` dotted underline rather than blanking
+  the figure.
+- Differences between the two are only shown in `actual` mode, since in VADER's
+  own mode there is nothing to compare against.
+
 ## Responsive UI contract
 
 Every frontend page must work from a narrow phone through a large desktop. This
