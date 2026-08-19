@@ -26,6 +26,12 @@ export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
 
 export type MoneynessFilter = (typeof MONEYNESS_FILTERS)[number];
 
+/** The next choice along, wrapping. What a filter's shortcut key steps through. */
+export function cycle<T extends string>(choices: readonly T[], current: T): T {
+    const here = choices.indexOf(current);
+    return choices[(here + 1) % choices.length] ?? current;
+}
+
 export interface SignalGroup {
     id: GroupId;
     label: string;

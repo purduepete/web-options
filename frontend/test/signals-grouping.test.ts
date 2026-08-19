@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DaySignals, Trade } from '@weboptions/shared';
 import {
+    EXPIRY_FILTERS,
+    MONEYNESS_FILTERS,
     buildGroups,
+    cycle,
     filterDaysByExpiry,
     filterDaysByMoneyness,
     filterDaysBySymbol,
@@ -39,6 +42,21 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
 function day(date: string, name: string, trades: Trade[]): DaySignals {
     return { name, date, hasData: true, trades };
 }
+
+describe('cycle', () => {
+    it('walks each filter all the way round and back to where it started', () => {
+        expect(EXPIRY_FILTERS.reduce((at) => cycle(EXPIRY_FILTERS, at), 'all')).toBe('all');
+        expect(cycle(EXPIRY_FILTERS, 'all')).toBe('active');
+        expect(cycle(EXPIRY_FILTERS, 'expired')).toBe('all');
+        expect(cycle(MONEYNESS_FILTERS, 'itm')).toBe('otm');
+        expect(cycle(MONEYNESS_FILTERS, 'otm')).toBe('all');
+    });
+
+    it('starts from the top when handed something not on the list', () => {
+        // A hand-edited ?expiry= in the URL should still leave the key working.
+        expect(cycle(EXPIRY_FILTERS, 'nonsense' as (typeof EXPIRY_FILTERS)[number])).toBe('all');
+    });
+});
 
 describe('filterDaysBySymbol', () => {
     const days = [

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DEFAULT_NUMBER_SOURCE, NUMBER_SOURCES, STORAGE_KEYS } from '@weboptions/shared';
 import type { NumberSource, WeekSignalsResponse } from '@weboptions/shared';
@@ -12,6 +12,7 @@ import {
     EXPIRY_FILTERS,
     MONEYNESS_FILTERS,
     buildGroups,
+    cycle,
     filterDaysByExpiry,
     filterDaysByMoneyness,
     filterDaysBySymbol,
@@ -20,7 +21,7 @@ import {
 import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping';
 import { formatWeekTitle } from '../signals/format';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
-import { CloseIcon } from '../components/icons';
+import { CloseIcon, RotateCcwIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { WeekNav } from '../components/WeekNav';
 import './LiveSignalsPage.css';
@@ -68,6 +69,7 @@ export function LiveSignalsPage() {
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
     const [numberSource, setNumberSourceState] = useState<NumberSource>(readNumberSource);
+    const symbolInputRef = useRef<HTMLInputElement>(null);
 
     const setNumberSource = useCallback((next: NumberSource) => {
         setNumberSourceState(next);
@@ -164,6 +166,33 @@ export function LiveSignalsPage() {
         [setParams],
     );
 
+    // Both filters live in the URL, so they clear in one write rather than two
+    // history entries that each undo half of it.
+    const resetMenus = useCallback(() => {
+        setNumberSource(DEFAULT_NUMBER_SOURCE);
+        setParams((current) => {
+            const updated = new URLSearchParams(current);
+            updated.delete('expiry');
+            updated.delete('moneyness');
+            return updated;
+        });
+    }, [setNumberSource, setParams]);
+
+    const atMenuDefaults = numberSource === DEFAULT_NUMBER_SOURCE && expiry === 'all' && moneyness === 'all';
+
+    // Selected, not just focused: the next symbol typed replaces the last one.
+    const focusSymbolFilter = useCallback(() => {
+        symbolInputRef.current?.focus();
+        symbolInputRef.current?.select();
+    }, []);
+
+    const cycleExpiry = useCallback(() => setExpiryParam(cycle(EXPIRY_FILTERS, expiry)), [expiry, setExpiryParam]);
+
+    const cycleMoneyness = useCallback(
+        () => setMoneynessParam(cycle(MONEYNESS_FILTERS, moneyness)),
+        [moneyness, setMoneynessParam],
+    );
+
     const goPrevious = useCallback(() => {
         if (!data?.hasPriorWeekData) return;
         setWeekParam(shiftWeek(data.weekStart, -7));
@@ -203,6 +232,10 @@ export function LiveSignalsPage() {
         onNextWeek: goNext,
         onIsolateGroup: isolateGroup,
         onToggleAllGroups: toggleAllGroups,
+        onFocusSymbolFilter: focusSymbolFilter,
+        onCycleExpiry: cycleExpiry,
+        onCycleMoneyness: cycleMoneyness,
+        onResetMenus: resetMenus,
     });
 
     function toggleGroup(id: string) {
@@ -228,6 +261,15 @@ export function LiveSignalsPage() {
 
                 <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
 
+                {/* Absent while it would do nothing, so the bar only carries the
+                    control once there is something to undo. */}
+                {!atMenuDefaults && (
+                    <button type="button" className="menus-reset" onClick={resetMenus}>
+                        <RotateCcwIcon width={14} height={14} />
+                        <span>Reset</span>
+                    </button>
+                )}
+
                 <WeekNav
                     onFirst={goEarliest}
                     onPrevious={goPrevious}
@@ -245,8 +287,13 @@ export function LiveSignalsPage() {
                 <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
                     <input
                         type="text"
+                        ref={symbolInputRef}
                         value={symbol}
                         onChange={(event) => setSymbolParam(event.target.value.toUpperCase())}
+                        onKeyDown={(event) => {
+                            // Leaves the box without touching what was typed.
+                            if (event.key === 'Escape') event.currentTarget.blur();
+                        }}
                         placeholder="Filter by symbol"
                         aria-label="Filter by symbol"
                         autoComplete="off"

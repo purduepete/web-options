@@ -50,6 +50,19 @@
     margin-left: auto;
 }
 
+/* Sized like a menu trigger so the bar keeps one rhythm, but in the highlight
+   the narrowed menus already wear: it only appears when one of them is. */
+.menus-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-color: var(--highlight);
+    color: var(--highlight);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .signals-error {
     margin: 0;
     padding: 0.75rem 0.875rem;

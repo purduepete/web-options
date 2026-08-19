@@ -419,6 +419,128 @@ describe('LiveSignalsPage', () => {
     });
 });
 
+describe('LiveSignalsPage menu reset', () => {
+    it('stays out of the bar while every menu is already at its default', async () => {
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+    });
+
+    it('puts all three menus back in one press', async () => {
+        const user = userEvent.setup();
+        renderPage('/?expiry=active&moneyness=itm');
+        await screen.findByTestId('week-grid');
+        await choose(user, /^Numbers:/, 'VADER');
+
+        await user.click(screen.getByRole('button', { name: 'Reset' }));
+
+        expect(screen.getByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+    });
+
+    it('leaves the reader with the default numbers on the next visit', async () => {
+        const user = userEvent.setup();
+        const first = renderPage();
+        await screen.findByTestId('week-grid');
+        await choose(user, /^Numbers:/, 'VADER');
+
+        await user.click(screen.getByRole('button', { name: 'Reset' }));
+        expect(localStorage.getItem(STORAGE_KEYS.signalNumberSource)).toBe('actual');
+
+        first.unmount();
+        renderPage();
+        expect(await screen.findByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
+    });
+});
+
+describe('LiveSignalsPage filter shortcuts', () => {
+    it('hands the symbol box the caret, and its whole contents, on slash', async () => {
+        const user = userEvent.setup();
+        renderPage('/?symbol=AMD');
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('/');
+
+        const box = screen.getByLabelText('Filter by symbol') as HTMLInputElement;
+        expect(document.activeElement).toBe(box);
+        // Selected rather than merely focused: the next symbol replaces the last.
+        expect(box.selectionStart).toBe(0);
+        expect(box.selectionEnd).toBe(3);
+        expect(box.value).toBe('AMD');
+    });
+
+    it('walks the contracts filter round with e', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('e');
+        expect(screen.getByRole('button', { name: 'Contracts: Active' })).toBeTruthy();
+
+        await user.keyboard('e');
+        expect(screen.getByRole('button', { name: 'Contracts: Expired' })).toBeTruthy();
+
+        await user.keyboard('e');
+        expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
+    });
+
+    it('walks the moneyness filter round with m', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('m');
+        expect(screen.getByRole('button', { name: 'Moneyness: ITM' })).toBeTruthy();
+
+        await user.keyboard('m');
+        expect(screen.getByRole('button', { name: 'Moneyness: OTM' })).toBeTruthy();
+
+        await user.keyboard('m');
+        expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+    });
+
+    it('puts all three menus back with r', async () => {
+        const user = userEvent.setup();
+        renderPage('/?expiry=active&moneyness=itm');
+        await screen.findByTestId('week-grid');
+        await choose(user, /^Numbers:/, 'VADER');
+
+        await user.keyboard('r');
+
+        expect(screen.getByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+    });
+
+    it('types the filter keys into the symbol box rather than acting on them', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.click(screen.getByLabelText('Filter by symbol'));
+        await user.keyboard('emr');
+
+        expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('EMR');
+        expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+    });
+
+    it('leaves the symbol box on escape without discarding what was typed', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        const box = screen.getByLabelText('Filter by symbol') as HTMLInputElement;
+        await user.click(box);
+        await user.keyboard('amd{Escape}');
+
+        expect(document.activeElement).not.toBe(box);
+        expect(box.value).toBe('AMD');
+    });
+});
+
 describe('LiveSignalsPage week score', () => {
     /** The one line above the grid, read as the reader reads it. */
     function scoreLine(): string {
