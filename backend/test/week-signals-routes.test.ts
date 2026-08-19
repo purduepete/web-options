@@ -84,9 +84,7 @@ describe('GET /api/week-signals week flags', () => {
             prefix: 'woak_aaaaaaa',
             expiresAt: null,
         });
-        const response = await request(createApp(config))
-            .get('/api/week-signals')
-            .set('X-API-Key', VALID_KEY);
+        const response = await request(createApp(config)).get('/api/week-signals').set('X-API-Key', VALID_KEY);
 
         expect(response.body.weekStart).toBe(THIS_WEEK);
         expect(response.body.isCurrentWeek).toBe(true);

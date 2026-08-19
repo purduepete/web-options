@@ -1,22 +1,22 @@
 {
-  "capturedAt": "2026-08-16T20:56:19",
-  "source": "server/server.py (Flask)",
-  "volatileFields": [
-    "generatedAt",
-    "actualDelta",
-    "actualPremium",
-    "actualAnnualizedYield",
-    "actualIlliquid",
-    "closeDate",
-    "closeUnderlying",
-    "moneyness",
-    "percentFromStrike",
-    "isCurrentWeek",
-    "hasNextWeekData"
-  ],
-  "weeks": {
-    "week-current": "2026-08-10",
-    "week-prior": "2026-08-03",
-    "week-earliest": "2026-07-13"
-  }
+    "capturedAt": "2026-08-16T20:56:19",
+    "source": "server/server.py (Flask)",
+    "volatileFields": [
+        "generatedAt",
+        "actualDelta",
+        "actualPremium",
+        "actualAnnualizedYield",
+        "actualIlliquid",
+        "closeDate",
+        "closeUnderlying",
+        "moneyness",
+        "percentFromStrike",
+        "isCurrentWeek",
+        "hasNextWeekData"
+    ],
+    "weeks": {
+        "week-current": "2026-08-10",
+        "week-prior": "2026-08-03",
+        "week-earliest": "2026-07-13"
+    }
 }
