@@ -7,6 +7,7 @@ import { CalendarGrid } from '../calendars/CalendarGrid';
 import { weekRangeLabel } from '../calendars/calendarGroups';
 import { formatMDY } from '../signals/format';
 import { Loading } from '../components/Loading';
+import { WeekNav } from '../components/WeekNav';
 import { usePublishedHeight } from '../hooks/usePublishedHeight';
 import { useWeekArrows } from '../hooks/useWeekArrows';
 import './CalendarWeekPage.css';
@@ -89,24 +90,19 @@ export function CalendarWeekPage() {
                         moment later reads as a page that changed underfoot. */}
                     <h1>{week ? (week.title ?? `Week of ${weekRangeLabel(week.weekStart, week.weekEnd)}`) : ''}</h1>
 
-                    <div className="week-nav">
-                        <button
-                            type="button"
-                            onClick={() => open(earliest)}
-                            disabled={!earliest || earliest === current}
-                        >
-                            First
-                        </button>
-                        <button type="button" onClick={() => open(older)} disabled={!older}>
-                            Previous
-                        </button>
-                        <button type="button" onClick={() => open(newer)} disabled={!newer}>
-                            Next
-                        </button>
-                        <button type="button" onClick={() => open(latest)} disabled={!latest || latest === current}>
-                            Latest
-                        </button>
-                    </div>
+                    <WeekNav
+                        onFirst={() => open(earliest)}
+                        onPrevious={() => open(older)}
+                        onNext={() => open(newer)}
+                        onJump={() => open(latest)}
+                        jump={{ label: 'Latest', edge: 'end' }}
+                        disabled={{
+                            first: !earliest || earliest === current,
+                            previous: !older,
+                            next: !newer,
+                            jump: !latest || latest === current,
+                        }}
+                    />
                 </div>
 
                 {week && (

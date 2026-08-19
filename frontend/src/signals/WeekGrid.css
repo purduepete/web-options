@@ -66,6 +66,15 @@
     font-weight: 500;
 }
 
+/* What the day would cost to put on, seamed off the date rather than given its
+   own flex item: three children would strand the date in the middle of the head. */
+.day-collateral {
+    margin-left: 0.4rem;
+    padding-left: 0.4rem;
+    border-left: var(--border-width) solid var(--border);
+    font-variant-numeric: tabular-nums;
+}
+
 .no-trades {
     margin: 0;
     padding: 0.625rem 0.875rem;

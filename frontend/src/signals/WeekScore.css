@@ -1,0 +1,40 @@
+/*
+ * The week's report card: one line above the grid, in the grid's own vocabulary.
+ * Quiet by default, because it summarises the cards rather than competing with them.
+ */
+
+.week-score {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+    padding: 0.5rem 0.875rem;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.week-score b {
+    color: var(--text-heading);
+    font-weight: 700;
+}
+
+/* Green only once every priced contract cleared its strike, matching the score
+   each risk group already carries. */
+.week-score b.clean {
+    color: var(--positive);
+}
+
+/* The direction the market moved against the signal, coloured the way the
+   per-ticket differences are. */
+.score-drift.under b {
+    color: var(--negative);
+}
+
+.score-drift.over b {
+    color: var(--positive);
+}

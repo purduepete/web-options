@@ -79,6 +79,50 @@ export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function ChevronLeftIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+    );
+}
+
+export function ChevronRightIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m9 18 6-6-6-6" />
+        </svg>
+    );
+}
+
+export function ChevronFirstIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m17 18-6-6 6-6" />
+            <path d="M7 6v12" />
+        </svg>
+    );
+}
+
+export function ChevronLastIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m7 18 6-6-6-6" />
+            <path d="M17 6v12" />
+        </svg>
+    );
+}
+
+export function TargetIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+        </svg>
+    );
+}
+
 export function MenuIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>
@@ -169,6 +213,15 @@ export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
             <path d="M21 5h-7" />
             <path d="M8 10v4" />
             <path d="M8 12H3" />
+        </svg>
+    );
+}
+
+export function DollarIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M12 2v20" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
     );
 }

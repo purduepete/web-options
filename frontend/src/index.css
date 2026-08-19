@@ -96,9 +96,12 @@
 
     --put: #dc2626;
     --call: #16a34a;
-    --conservative: #16a34a;
+    /* Blue through amber to fuchsia, deliberately clear of the green and red
+       below: a tier is how the trade was picked, not how it turned out, and the
+       two badges sit side by side on the same ticket. */
+    --conservative: #0284c7;
     --balanced: #d97706;
-    --aggressive: #dc2626;
+    --aggressive: #c026d3;
     --top-pick: #7c3aed;
     --danger: #dc2626;
     --warning: #d97706;
@@ -134,9 +137,9 @@
 
     --put: #f87171;
     --call: #34d399;
-    --conservative: #34d399;
+    --conservative: #38bdf8;
     --balanced: #fbbf24;
-    --aggressive: #f87171;
+    --aggressive: #e879f9;
     --top-pick: #8b5cf6;
     --danger: #f87171;
     --warning: #fbbf24;
@@ -174,9 +177,9 @@
 
     --put: #f87171;
     --call: #34d399;
-    --conservative: #34d399;
+    --conservative: #38bdf8;
     --balanced: #fbbf24;
-    --aggressive: #f87171;
+    --aggressive: #e879f9;
     --top-pick: #8b5cf6;
     --danger: #f87171;
     --warning: #fbbf24;
@@ -400,16 +403,70 @@ summary,
     font-weight: 700;
 }
 
-/* First / Previous / Next / Latest. Shared by the live signals page and the
-   published calendars, so it lives here rather than with either of them. */
+/* Stepping through weeks. Shared by the live signals page and the published
+   calendars, so it lives here rather than with either of them. */
 .week-nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 0.4rem;
 }
 
-.week-nav button {
+/* The arrows are one motion, so they read as one control: hairline seams
+   instead of gaps, and a single border around the set. */
+.week-steps {
+    display: flex;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+}
+
+.week-steps button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 0.55rem;
+    background: none;
+    border: 0;
+    border-left: var(--border-width) solid var(--border);
+    color: var(--text-muted);
+}
+
+.week-steps button:first-child {
+    border-left: 0;
+}
+
+.week-steps button:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-heading);
+}
+
+/* The jump is a separate decision, so it stays worded rather than drawn. */
+.week-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--text-muted);
     font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.week-jump:hover:not(:disabled) {
+    color: var(--text-heading);
+}
+
+/* The seams already give each arrow its own edge, so the set is sized as a whole
+   rather than padding every button out to 44px and tripling its width. */
+@media (pointer: coarse) {
+    .week-steps {
+        min-height: 44px;
+    }
+
+    .week-steps button {
+        min-width: 48px;
+        min-height: auto;
+        padding-block: 0;
+    }
 }
 
 button.primary {

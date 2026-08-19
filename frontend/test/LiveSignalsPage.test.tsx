@@ -86,15 +86,23 @@ function renderPage(initialEntry = '/') {
 
 /** The heading text of every risk group currently drawn, in document order. */
 function groupHeadings(): string[] {
-    return screen
+    // Scoped to the grid: the filter menus in the head are expandable too.
+    const grid = within(screen.getByTestId('week-grid'));
+    return grid
         .queryAllByRole('button', { expanded: true })
-        .concat(screen.queryAllByRole('button', { expanded: false }))
+        .concat(grid.queryAllByRole('button', { expanded: false }))
         .map((button) => button.textContent ?? '');
 }
 
 /** Every number inside `scope` that fell back to VADER, in document order. */
 function quotedValues(scope: HTMLElement): string[] {
     return Array.from(scope.querySelectorAll('.value-quoted')).map((node) => node.textContent ?? '');
+}
+
+/** Opens one of the head's menus and picks one of its choices. */
+async function choose(user: ReturnType<typeof userEvent.setup>, menu: RegExp, option: string) {
+    await user.click(screen.getByRole('button', { name: menu }));
+    await user.click(screen.getByRole('menuitemradio', { name: new RegExp(`^${option}`) }));
 }
 
 beforeEach(() => {
@@ -160,7 +168,7 @@ describe('LiveSignalsPage', () => {
         renderPage();
         await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
-        await user.click(screen.getByRole('button', { name: 'Previous' }));
+        await user.click(screen.getByRole('button', { name: 'Previous week' }));
 
         await waitFor(() => expect(fetchWeekSignals).toHaveBeenLastCalledWith('2025-08-04'));
     });
@@ -177,7 +185,7 @@ describe('LiveSignalsPage', () => {
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
 
-        await user.click(screen.getByRole('button', { name: 'Previous' }));
+        await user.click(screen.getByRole('button', { name: 'Previous week' }));
         await waitFor(() => expect(screen.queryByRole('region', { name: 'Monday Aug 11' })).toBeNull());
 
         arrive(week({ weekStart: '2025-08-04', weekEnd: '2025-08-08' }));
@@ -187,8 +195,8 @@ describe('LiveSignalsPage', () => {
     it('will not step forward when the server says there is nothing there', async () => {
         renderPage();
         await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
-        expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
-        expect(screen.getByRole('button', { name: 'Current' }).hasAttribute('disabled')).toBe(true);
+        expect(screen.getByRole('button', { name: 'Next week' }).hasAttribute('disabled')).toBe(true);
+        expect(screen.getByRole('button', { name: 'This week' }).hasAttribute('disabled')).toBe(true);
     });
 
     it('keeps the two step buttons next to each other', async () => {
@@ -196,9 +204,9 @@ describe('LiveSignalsPage', () => {
         await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
         const nav = document.querySelector('.week-nav');
-        const labels = [...(nav?.querySelectorAll('button') ?? [])].map((button) => button.textContent);
+        const labels = [...(nav?.querySelectorAll('button') ?? [])].map((button) => button.getAttribute('aria-label'));
 
-        expect(labels).toEqual(['First', 'Previous', 'Next', 'Current']);
+        expect(labels).toEqual(['First week', 'Previous week', 'Next week', null]);
     });
 
     it('jumps to the earliest week the server knows about', async () => {
@@ -207,7 +215,7 @@ describe('LiveSignalsPage', () => {
         renderPage();
         await screen.findByRole('heading', { name: 'Week of Aug 11 – Aug 15' });
 
-        await user.click(screen.getByRole('button', { name: 'First' }));
+        await user.click(screen.getByRole('button', { name: 'First week' }));
 
         await waitFor(() => expect(fetchWeekSignals).toHaveBeenLastCalledWith('2025-01-06'));
     });
@@ -243,6 +251,79 @@ describe('LiveSignalsPage', () => {
 
         expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('');
         expect(screen.getByText('AAPL $100P')).toBeTruthy();
+    });
+
+    // Both dates are far enough either side of today that the outcome does not
+    // depend on when the suite runs.
+    const settled = () =>
+        week({
+            days: [
+                day('2025-08-11', 'Monday', [
+                    trade('AAPL', { expiration: '2020-01-17' }),
+                    trade('MSFT', { expiration: '2099-12-18' }),
+                ]),
+                day('2025-08-12', 'Tuesday', [trade('AMD', { expiration: '2020-01-17' })]),
+            ],
+        });
+
+    it('hides expired contracts across the whole week and says why a day emptied', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(settled());
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await choose(user, /^Contracts:/, 'Active');
+
+        expect(screen.queryByText('AAPL $100P')).toBeNull();
+        expect(screen.getByText('MSFT $100P')).toBeTruthy();
+        const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
+        expect(within(tuesday).getByText('Every signal this day has expired.')).toBeTruthy();
+    });
+
+    it('turns the filter around to show only what has expired', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(settled());
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await choose(user, /^Contracts:/, 'Expired');
+
+        expect(screen.getByText('AAPL $100P')).toBeTruthy();
+        expect(screen.queryByText('MSFT $100P')).toBeNull();
+    });
+
+    it('starts with the expiry filter from the URL already applied', async () => {
+        fetchWeekSignals.mockResolvedValue(settled());
+        renderPage('/?expiry=active');
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        // The trigger carries the choice, so a shared link says what it narrowed.
+        expect(screen.getByRole('button', { name: 'Contracts: Active' })).toBeTruthy();
+        expect(screen.queryByText('AAPL $100P')).toBeNull();
+    });
+
+    it('narrows the week to where the contracts closed', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('AAPL', { moneyness: 'itm' }),
+                        trade('MSFT', { moneyness: 'otm' }),
+                    ]),
+                    day('2025-08-12', 'Tuesday', [trade('AMD', { moneyness: 'otm' })]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await choose(user, /^Moneyness:/, 'ITM');
+
+        expect(screen.getByText('AAPL $100P')).toBeTruthy();
+        expect(screen.queryByText('MSFT $100P')).toBeNull();
+        const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
+        expect(within(tuesday).getByText('Nothing this day closed ITM.')).toBeTruthy();
     });
 
     it('collapses a group across every day at once', async () => {
@@ -338,6 +419,87 @@ describe('LiveSignalsPage', () => {
     });
 });
 
+describe('LiveSignalsPage week score', () => {
+    /** The one line above the grid, read as the reader reads it. */
+    function scoreLine(): string {
+        return document.querySelector('.week-score')?.textContent ?? '';
+    }
+
+    it('counts the whole week above the grid', async () => {
+        renderPage();
+        await screen.findByTestId('week-grid');
+        expect(scoreLine()).toContain('3 signals');
+    });
+
+    it('scores only what the filters left on screen', async () => {
+        renderPage('/?symbol=AAPL');
+        await screen.findByTestId('week-grid');
+        expect(scoreLine()).toContain('1 signal');
+    });
+
+    it('counts the OTM closes against the contracts that have one', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('AAPL', { moneyness: 'otm' }),
+                        trade('MSFT', { moneyness: 'itm' }),
+                        trade('AMD'),
+                    ]),
+                    day('2025-08-12', 'Tuesday', [trade('NVDA', { moneyness: 'otm' })]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByTestId('week-grid');
+        expect(scoreLine()).toContain('2 of 3 closed OTM (66.7%)');
+    });
+
+    it('averages how far the captured premium landed from VADER', async () => {
+        const drifted = week({
+            days: [
+                day('2025-08-11', 'Monday', [
+                    trade('AAPL', { premium: 100, actualPremium: 80 }),
+                    trade('MSFT', { premium: 200, actualPremium: 120 }),
+                ]),
+            ],
+        });
+        fetchWeekSignals.mockResolvedValue(drifted);
+        renderPage();
+        await screen.findByTestId('week-grid');
+        expect(scoreLine()).toContain('Premium 30.0% under VADER');
+
+        await choose(userEvent.setup(), /^Numbers:/, 'VADER');
+        expect(scoreLine()).not.toContain('Premium');
+    });
+
+    it('says nothing at all for a week the filters emptied', async () => {
+        renderPage('/?symbol=NOTHING');
+        await screen.findByTestId('week-grid');
+        expect(document.querySelector('.week-score')).toBeNull();
+    });
+
+    it('totals the collateral each day would take to secure', async () => {
+        renderPage();
+        const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(within(monday).getByTitle('$20,000 to secure every contract on this day.').textContent).toContain(
+            '$20K',
+        );
+
+        const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
+        expect(within(tuesday).getByTitle('$10,000 to secure every contract on this day.')).toBeTruthy();
+    });
+
+    it('leaves the total off a day with no collateral to report', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { collateral: null })])] }),
+        );
+        renderPage();
+        const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(monday.querySelector('.day-collateral')).toBeNull();
+    });
+});
+
 describe('LiveSignalsPage number source', () => {
     /** One Tuesday trade whose captured quote disagrees with VADER on every number. */
     function quotedWeek(extra: Partial<Trade> = {}) {
@@ -380,8 +542,9 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         await tuesday();
 
-        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+        await choose(user, /^Numbers:/, 'VADER');
 
+        expect(screen.getByRole('button', { name: 'Numbers: VADER' })).toBeTruthy();
         const card = await tuesday();
         expect(within(card).getByText('-0.20')).toBeTruthy();
         expect(within(card).getByText('20.0%')).toBeTruthy();
@@ -396,7 +559,7 @@ describe('LiveSignalsPage number source', () => {
         const first = renderPage();
         await tuesday();
 
-        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+        await choose(user, /^Numbers:/, 'VADER');
         expect(localStorage.getItem(STORAGE_KEYS.signalNumberSource)).toBe('quoted');
 
         first.unmount();
@@ -457,7 +620,7 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         await tuesday();
 
-        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+        await choose(user, /^Numbers:/, 'VADER');
 
         const card = await tuesday();
         expect(within(card).queryByText('(0.11)')).toBeNull();
@@ -537,7 +700,7 @@ describe('LiveSignalsPage moneyness', () => {
         renderPage();
         await tuesday();
 
-        await user.click(screen.getByRole('radio', { name: 'VADER' }));
+        await choose(user, /^Numbers:/, 'VADER');
 
         expect(badge(await tuesday())?.textContent).toContain('OTM');
     });

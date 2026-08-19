@@ -8,6 +8,7 @@ import type { OptionRight } from '@weboptions/shared';
  */
 
 const MONEY = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const COMPACT_MONEY = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 });
 
 function toLocalDate(iso: string): Date {
     const [year, month, day] = iso.split('-').map(Number);
@@ -44,6 +45,11 @@ export function formatSignedPercent(value: number | null): string {
 
 export function formatMoney(value: number | null): string {
     return value == null ? 'n/a' : `$${MONEY.format(value)}`;
+}
+
+/** `142300` becomes `$142K`. Rounds hard, so the exact figure belongs in a title beside it. */
+export function formatCompactMoney(value: number | null): string {
+    return value == null ? 'n/a' : `$${COMPACT_MONEY.format(value)}`;
 }
 
 export function formatDelta(value: number | null): string {

@@ -90,4 +90,18 @@ describe('trade classification colours', () => {
         expect(weekGridCss).toMatch(/\.risk-group-heading\.top-picks\s*\{\s*color:\s*var\(--top-pick\)/);
         expect(weekGridCss).toMatch(/\.top-pick\s*\{[^}]*color:\s*var\(--top-pick\)/);
     });
+
+    // A tier is how the trade was picked and moneyness is how it turned out, and
+    // the two badges sit side by side on the ticket. Sharing the green and red
+    // reads as agreement between them.
+    it('keeps the tiers off the colours the outcome badges own', () => {
+        const themes = indexCss.match(/\[data-theme='[a-z]+'\]\s*\{[^}]*\}/g) ?? [];
+
+        expect(themes.length).toBe(3);
+        for (const theme of themes) {
+            const value = (token: string) => new RegExp(`--${token}:\\s*([^;]+);`).exec(theme)?.[1]?.trim();
+            expect(value('conservative')).not.toBe(value('positive'));
+            expect(value('aggressive')).not.toBe(value('negative'));
+        }
+    });
 });

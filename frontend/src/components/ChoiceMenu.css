@@ -1,0 +1,90 @@
+/* The trigger and its menu. Squared, like everything else that is not the
+   command palette: nothing here is one control split into halves. */
+
+.choice-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.choice-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.choice-trigger:hover {
+    color: var(--text-heading);
+}
+
+.choice-trigger.narrowed {
+    border-color: var(--highlight);
+    color: var(--highlight);
+}
+
+.choice-trigger .rotated {
+    transform: rotate(180deg);
+}
+
+/* Anchored to the trigger's left edge: these sit near the start of the bar, so
+   a menu that opens rightwards has the most room to do it in. */
+.choice-panel {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    min-width: min(15rem, 78vw);
+    padding: 0.25rem 0;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
+}
+
+.choice-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0.4rem 0.7rem;
+    background: none;
+    border: 0;
+    text-align: left;
+}
+
+.choice-item:hover:not(:disabled) {
+    background: var(--surface-hover);
+}
+
+.choice-item.selected {
+    color: var(--highlight);
+}
+
+/* Held open whether or not this row is the chosen one, so the labels line up. */
+.choice-mark {
+    display: flex;
+    flex: 0 0 14px;
+    justify-content: center;
+    padding-top: 0.1rem;
+}
+
+.choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.choice-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.choice-description {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 400;
+}

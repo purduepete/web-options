@@ -5,13 +5,24 @@ import type { NumberSource, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
-import { NumberSourceToggle } from '../signals/NumberSourceToggle';
-import { buildGroups, filterDaysBySymbol, shiftWeek } from '../signals/grouping';
-import type { GroupId } from '../signals/grouping';
+import { WeekScore } from '../signals/WeekScore';
+import { NumberSourceMenu } from '../signals/NumberSourceMenu';
+import { ExpiryFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
+import {
+    EXPIRY_FILTERS,
+    MONEYNESS_FILTERS,
+    buildGroups,
+    filterDaysByExpiry,
+    filterDaysByMoneyness,
+    filterDaysBySymbol,
+    shiftWeek,
+} from '../signals/grouping';
+import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping';
 import { formatWeekTitle } from '../signals/format';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
 import { CloseIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
+import { WeekNav } from '../components/WeekNav';
 import './LiveSignalsPage.css';
 
 /**
@@ -28,6 +39,14 @@ function isNumberSource(value: string | null): value is NumberSource {
     return NUMBER_SOURCES.includes(value as NumberSource);
 }
 
+function readExpiryFilter(value: string | null): ExpiryFilter {
+    return EXPIRY_FILTERS.includes(value as ExpiryFilter) ? (value as ExpiryFilter) : 'all';
+}
+
+function readMoneynessFilter(value: string | null): MoneynessFilter {
+    return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
+}
+
 function readNumberSource(): NumberSource {
     try {
         const stored = localStorage.getItem(STORAGE_KEYS.signalNumberSource);
@@ -42,7 +61,8 @@ export function LiveSignalsPage() {
     const [params, setParams] = useSearchParams();
     const week = params.get('week') ?? undefined;
     const symbol = params.get('symbol') ?? '';
-
+    const expiry = readExpiryFilter(params.get('expiry'));
+    const moneyness = readMoneynessFilter(params.get('moneyness'));
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -84,7 +104,11 @@ export function LiveSignalsPage() {
         };
     }, [week, forget]);
 
-    const days = useMemo(() => filterDaysBySymbol(data?.days ?? [], symbol), [data, symbol]);
+    const days = useMemo(
+        () =>
+            filterDaysByMoneyness(filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry), moneyness),
+        [data, symbol, expiry, moneyness],
+    );
     const groups = useMemo(() => buildGroups(days), [days]);
 
     const setWeekParam = useCallback(
@@ -112,6 +136,30 @@ export function LiveSignalsPage() {
                 },
                 { replace: true },
             );
+        },
+        [setParams],
+    );
+
+    const setExpiryParam = useCallback(
+        (next: ExpiryFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('expiry');
+                else updated.set('expiry', next);
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
+    const setMoneynessParam = useCallback(
+        (next: MoneynessFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('moneyness');
+                else updated.set('moneyness', next);
+                return updated;
+            });
         },
         [setParams],
     );
@@ -172,22 +220,27 @@ export function LiveSignalsPage() {
                     moment later reads as a page that changed underfoot. */}
                 <h1>{data ? formatWeekTitle(data.weekStart, data.weekEnd) : ''}</h1>
 
-                <NumberSourceToggle value={numberSource} onChange={setNumberSource} />
+                <NumberSourceMenu value={numberSource} onChange={setNumberSource} />
 
-                <div className="week-nav">
-                    <button type="button" onClick={goEarliest} disabled={!data?.hasPriorWeekData}>
-                        First
-                    </button>
-                    <button type="button" onClick={goPrevious} disabled={!data?.hasPriorWeekData}>
-                        Previous
-                    </button>
-                    <button type="button" onClick={goNext} disabled={!data?.hasNextWeekData}>
-                        Next
-                    </button>
-                    <button type="button" onClick={() => setWeekParam(null)} disabled={data?.isCurrentWeek !== false}>
-                        Current
-                    </button>
-                </div>
+                {/* Read across the whole week rather than a single card, so they
+                    sit with the other week-wide control and not inside the grid. */}
+                <ExpiryFilterMenu value={expiry} onChange={setExpiryParam} />
+
+                <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
+
+                <WeekNav
+                    onFirst={goEarliest}
+                    onPrevious={goPrevious}
+                    onNext={goNext}
+                    onJump={() => setWeekParam(null)}
+                    jump={{ label: 'This week', edge: 'end' }}
+                    disabled={{
+                        first: !data?.hasPriorWeekData,
+                        previous: !data?.hasPriorWeekData,
+                        next: !data?.hasNextWeekData,
+                        jump: data?.isCurrentWeek !== false,
+                    }}
+                />
 
                 <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
                     <input
@@ -221,14 +274,19 @@ export function LiveSignalsPage() {
             {loading && <Loading label="Loading this week" />}
 
             {data && !loading && !error && (
-                <WeekGrid
-                    days={days}
-                    groups={groups}
-                    collapsed={collapsed}
-                    onToggleGroup={toggleGroup}
-                    symbolFilter={symbol}
-                    numberSource={numberSource}
-                />
+                <>
+                    <WeekScore days={days} numberSource={numberSource} />
+                    <WeekGrid
+                        days={days}
+                        groups={groups}
+                        collapsed={collapsed}
+                        onToggleGroup={toggleGroup}
+                        symbolFilter={symbol}
+                        expiryFilter={expiry}
+                        moneynessFilter={moneyness}
+                        numberSource={numberSource}
+                    />
+                </>
             )}
         </main>
     );

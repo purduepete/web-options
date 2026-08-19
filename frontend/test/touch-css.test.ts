@@ -14,7 +14,6 @@ function read(relative: string): string {
 
 const indexCss = read('../src/index.css');
 const navbarCss = read('../src/navigation/Navbar.css');
-const signalsCss = read('../src/pages/LiveSignalsPage.css');
 
 /** The body of the rule for a selector, with whitespace squashed. */
 function rule(selector: string): string {
@@ -58,13 +57,13 @@ describe('touch targets', () => {
         expect(/^ {4}min-width/m.test(block)).toBe(true);
     });
 
-    it('gives the number-source pill one target rather than two', () => {
-        const start = signalsCss.indexOf('@media (pointer: coarse)');
+    it('sizes the week arrows as one set rather than three', () => {
+        const start = indexCss.lastIndexOf('@media (pointer: coarse)');
         expect(start).toBeGreaterThan(-1);
-        const block = signalsCss.slice(start);
-        // The pill carries the 44px so the halves do not each claim their own and
-        // stack it into something half again the height of the head beside it.
-        expect(/\.number-source \{[^}]*min-height: 44px/.test(block)).toBe(true);
-        expect(/\.number-source-option \{[^}]*min-height: auto/.test(block)).toBe(true);
+        const block = indexCss.slice(start);
+        // The set carries the 44px so the three arrows do not each claim their own
+        // and grow the group to three times the width it needs.
+        expect(/\.week-steps \{[^}]*min-height: 44px/.test(block)).toBe(true);
+        expect(/\.week-steps button \{[^}]*min-height: auto/.test(block)).toBe(true);
     });
 });

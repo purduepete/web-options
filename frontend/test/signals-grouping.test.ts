@@ -1,6 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DaySignals, Trade } from '@weboptions/shared';
-import { buildGroups, filterDaysBySymbol, groupTrades, shiftWeek, weekdayColumn } from '../src/signals/grouping';
+import {
+    buildGroups,
+    filterDaysByExpiry,
+    filterDaysByMoneyness,
+    filterDaysBySymbol,
+    groupTrades,
+    shiftWeek,
+    weekdayColumn,
+} from '../src/signals/grouping';
 
 function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
     return {
@@ -51,6 +59,67 @@ describe('filterDaysBySymbol', () => {
         const result = filterDaysBySymbol(days, 'aapl');
         expect(result).toHaveLength(2);
         expect(result[1]?.trades).toEqual([]);
+    });
+});
+
+describe('filterDaysByExpiry', () => {
+    const days = [
+        day('2025-08-11', 'Monday', [
+            trade('AAPL', { expiration: '2025-08-15' }),
+            trade('MSFT', { expiration: '2025-08-20' }),
+            trade('AMD', { expiration: '2025-08-29' }),
+        ]),
+    ];
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2025, 7, 20, 9, 30, 0));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('leaves the week alone when showing everything', () => {
+        expect(filterDaysByExpiry(days, 'all')).toEqual(days);
+    });
+
+    it('drops what has expired and keeps expiry day itself', () => {
+        const result = filterDaysByExpiry(days, 'active');
+        expect(result[0]?.trades.map((t) => t.symbol)).toEqual(['MSFT', 'AMD']);
+    });
+
+    it('keeps only what has expired the other way round', () => {
+        const result = filterDaysByExpiry(days, 'expired');
+        expect(result[0]?.trades.map((t) => t.symbol)).toEqual(['AAPL']);
+    });
+
+    it('keeps a day that empties out, so its card still shows', () => {
+        const result = filterDaysByExpiry([day('2025-08-11', 'Monday', [trade('AAPL')])], 'active');
+        expect(result).toHaveLength(1);
+        expect(result[0]?.trades).toEqual([]);
+    });
+});
+
+describe('filterDaysByMoneyness', () => {
+    const days = [
+        day('2025-08-11', 'Monday', [
+            trade('AAPL', { moneyness: 'itm' }),
+            trade('MSFT', { moneyness: 'otm' }),
+            trade('AMD', { moneyness: null }),
+        ]),
+    ];
+
+    it('leaves the week alone when showing everything', () => {
+        expect(filterDaysByMoneyness(days, 'all')).toEqual(days);
+    });
+
+    it('keeps only what closed in the money', () => {
+        expect(filterDaysByMoneyness(days, 'itm')[0]?.trades.map((t) => t.symbol)).toEqual(['AAPL']);
+    });
+
+    it('drops a contract with no close of its own, since it has no moneyness', () => {
+        expect(filterDaysByMoneyness(days, 'otm')[0]?.trades.map((t) => t.symbol)).toEqual(['MSFT']);
     });
 });
 

@@ -1,4 +1,5 @@
 import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
+import { hasExpired } from './format';
 
 /**
  * The grid's layout algebra, kept away from React so it can be reasoned about
@@ -14,6 +15,16 @@ import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
 export const TIER_ORDER = ['conservative', 'balanced', 'aggressive'] as const;
 
 export type GroupId = 'top-picks' | (typeof TIER_ORDER)[number] | 'other';
+
+/** Whether the week shows every contract, only the live ones, or only the settled ones. */
+export const EXPIRY_FILTERS = ['all', 'active', 'expired'] as const;
+
+export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
+
+/** Where the contract closed against its strike. Atm is a rounding edge, not a choice. */
+export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
+
+export type MoneynessFilter = (typeof MONEYNESS_FILTERS)[number];
 
 export interface SignalGroup {
     id: GroupId;
@@ -50,6 +61,31 @@ export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignal
     return days.map((day) => ({
         ...day,
         trades: day.trades.filter((trade) => trade.symbol.toUpperCase().includes(needle)),
+    }));
+}
+
+/**
+ * Drops contracts that have already expired. Days are kept when they empty out,
+ * for the same reason the symbol filter keeps them.
+ */
+export function filterDaysByExpiry(days: DaySignals[], filter: ExpiryFilter): DaySignals[] {
+    if (filter === 'all') return days;
+    const keep = filter === 'expired';
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter((trade) => hasExpired(trade.expiration) === keep),
+    }));
+}
+
+/**
+ * Drops contracts that did not close where the reader asked. A contract with no
+ * close of its own has no moneyness, so it goes too.
+ */
+export function filterDaysByMoneyness(days: DaySignals[], filter: MoneynessFilter): DaySignals[] {
+    if (filter === 'all') return days;
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter((trade) => trade.moneyness === filter),
     }));
 }
 

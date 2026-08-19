@@ -1,7 +1,19 @@
 import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
-import type { SignalGroup } from './grouping';
+import type { ExpiryFilter, MoneynessFilter, SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
-import { formatDayLabel, formatDelta, formatDte, formatMDY, formatMoney, formatPercent, formatSignedPercent, formatStrike, hasExpired } from './format';
+import {
+    formatCompactMoney,
+    formatDayLabel,
+    formatDelta,
+    formatDte,
+    formatMDY,
+    formatMoney,
+    formatPercent,
+    formatSignedPercent,
+    formatStrike,
+    hasExpired,
+} from './format';
+import { premiumDriftPercent, totalCollateral } from './summary';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
 
@@ -21,11 +33,36 @@ interface WeekGridProps {
     onToggleGroup: (id: string) => void;
     /** Shown on an emptied day so the reader knows it was the filter, not the week. */
     symbolFilter: string;
+    /** The other reason a day can empty out. */
+    expiryFilter: ExpiryFilter;
+    /** And the third. */
+    moneynessFilter: MoneynessFilter;
     /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
     numberSource: NumberSource;
 }
 
-export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter, numberSource }: WeekGridProps) {
+/**
+ * Why a day has nothing on it. A filter that empties a card has to own up to it,
+ * or the reader reads a quiet day where there was only a narrow question.
+ */
+function emptyDayReason(symbolFilter: string, expiryFilter: ExpiryFilter, moneynessFilter: MoneynessFilter): string {
+    if (symbolFilter) return `No matches for "${symbolFilter}".`;
+    if (expiryFilter === 'active') return 'Every signal this day has expired.';
+    if (expiryFilter === 'expired') return 'Nothing this day has expired yet.';
+    if (moneynessFilter !== 'all') return `Nothing this day closed ${moneynessFilter.toUpperCase()}.`;
+    return 'No signals parsed for this day.';
+}
+
+export function WeekGrid({
+    days,
+    groups,
+    collapsed,
+    onToggleGroup,
+    symbolFilter,
+    expiryFilter,
+    moneynessFilter,
+    numberSource,
+}: WeekGridProps) {
     if (days.length === 0) {
         return <p className="empty-week">No signals landed for this week yet.</p>;
     }
@@ -48,6 +85,8 @@ export function WeekGrid({ days, groups, collapsed, onToggleGroup, symbolFilter,
                     collapsed={collapsed}
                     onToggleGroup={onToggleGroup}
                     symbolFilter={symbolFilter}
+                    expiryFilter={expiryFilter}
+                    moneynessFilter={moneynessFilter}
                     numberSource={numberSource}
                     totalRows={totalRows}
                 />
@@ -61,7 +100,18 @@ interface DayCardProps extends Omit<WeekGridProps, 'days'> {
     totalRows: number;
 }
 
-function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, numberSource, totalRows }: DayCardProps) {
+function DayCard({
+    day,
+    groups,
+    collapsed,
+    onToggleGroup,
+    symbolFilter,
+    expiryFilter,
+    moneynessFilter,
+    numberSource,
+    totalRows,
+}: DayCardProps) {
+    const collateral = totalCollateral(day.trades);
     return (
         <section
             className="day-card"
@@ -72,12 +122,21 @@ function DayCard({ day, groups, collapsed, onToggleGroup, symbolFilter, numberSo
                 <span className="day-name">{day.name}</span>
                 <span className="day-date">
                     {formatDayLabel(day.date)} ({day.trades.length})
+                    {collateral !== null && (
+                        <span
+                            className="day-collateral"
+                            title={`${formatMoney(collateral)} to secure every contract on this day.`}
+                        >
+                            {formatCompactMoney(collateral)}
+                            <span className="sr-only"> collateral</span>
+                        </span>
+                    )}
                 </span>
             </h2>
 
             {day.trades.length === 0 ? (
                 <p className="no-trades" style={{ gridRow: 2 }}>
-                    {symbolFilter ? `No matches for "${symbolFilter}".` : 'No signals parsed for this day.'}
+                    {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter)}
                 </p>
             ) : (
                 groups.map((group, index) => {
@@ -212,8 +271,7 @@ function absoluteDiff(source: NumberSource, actual: number | null, quoted: numbe
 }
 
 function percentDiff(source: NumberSource, actual: number | null, quoted: number | null): number | null {
-    if (source !== 'actual' || actual === null || quoted === null || quoted === 0) return null;
-    return ((actual - quoted) / quoted) * 100;
+    return source === 'actual' ? premiumDriftPercent(actual, quoted) : null;
 }
 
 function formatMagnitude(value: number, places: number, suffix: string): string {
@@ -299,7 +357,8 @@ function MoneynessBadge({ trade }: { trade: Trade }) {
     return (
         <span className={`moneyness ${trade.moneyness}`} title={title}>
             {trade.moneyness.toUpperCase()}
-            <span className="sr-only"> ({MONEYNESS_LABELS[trade.moneyness]})</span> {formatSignedPercent(trade.percentFromStrike)}
+            <span className="sr-only"> ({MONEYNESS_LABELS[trade.moneyness]})</span>{' '}
+            {formatSignedPercent(trade.percentFromStrike)}
         </span>
     );
 }
