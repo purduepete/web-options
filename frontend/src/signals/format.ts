@@ -32,30 +32,30 @@ export const WEEK_TITLE_SPACER = formatWeekTitle('2026-08-17', '2026-08-21');
 
 /** Expiries are read at a glance, so they keep the US month-first shape. */
 export function formatMDY(iso: string | null): string {
-    if (!iso) return 'n/a';
+    if (!iso) return '–';
     const [year, month, day] = iso.split('-');
     return `${month}/${day}/${year}`;
 }
 
 export function formatPercent(value: number | null): string {
-    return value == null ? 'n/a' : `${value.toFixed(1)}%`;
+    return value == null ? '–' : `${value.toFixed(1)}%`;
 }
 
 /** Always carries its sign, so `+3.2%` reads as clearly above as `-3.2%` reads below. */
 export function formatSignedPercent(value: number | null): string {
-    if (value == null) return 'n/a';
+    if (value == null) return '–';
     // Round before reading the sign, so a rounding remainder cannot print "-0.0%".
     const rounded = Number(value.toFixed(1));
     return `${rounded > 0 ? '+' : ''}${rounded.toFixed(1)}%`;
 }
 
 export function formatMoney(value: number | null): string {
-    return value == null ? 'n/a' : `$${MONEY.format(value)}`;
+    return value == null ? '–' : `$${MONEY.format(value)}`;
 }
 
 /** A profit and a loss have to be told apart at a glance, so the sign leads the figure. */
 export function formatSignedMoney(value: number | null): string {
-    if (value == null) return 'n/a';
+    if (value == null) return '–';
     // Rounded before the sign is read, so a stray cent cannot print "-$0".
     const rounded = Math.round(value);
     return `${rounded < 0 ? '-' : rounded > 0 ? '+' : ''}$${MONEY.format(Math.abs(rounded))}`;
@@ -67,20 +67,20 @@ export function formatSignedMoney(value: number | null): string {
  * than a tidier one, and a price is compared against a strike to the cent.
  */
 export function formatCents(value: number | null): string {
-    return value == null ? 'n/a' : `$${CENTS.format(value)}`;
+    return value == null ? '–' : `$${CENTS.format(value)}`;
 }
 
 /** `142300` becomes `$142K`. Rounds hard, so the exact figure belongs in a title beside it. */
 export function formatCompactMoney(value: number | null): string {
-    return value == null ? 'n/a' : `$${COMPACT_MONEY.format(value)}`;
+    return value == null ? '–' : `$${COMPACT_MONEY.format(value)}`;
 }
 
 export function formatDelta(value: number | null): string {
-    return value == null ? 'n/a' : value.toFixed(2);
+    return value == null ? '–' : value.toFixed(2);
 }
 
 export function formatDte(value: number | null): string {
-    return value == null ? 'n/a' : String(value);
+    return value == null ? '–' : String(value);
 }
 
 export function formatStrike(strike: number | null, right: OptionRight): string {

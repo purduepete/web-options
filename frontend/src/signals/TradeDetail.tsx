@@ -148,6 +148,11 @@ export function TradeDetail({
     // its denominator, so reusing it here would disagree with the grade's own test.
     const cushion =
         price !== null && price > 0 && trade.strike !== null ? ((price - trade.strike) / price) * 100 : null;
+    const priceDate = detail?.priceDate ?? null;
+    const prevClose =
+        (priceDate !== null ? detail?.bars.filter((b) => b.date < priceDate).pop() : detail?.bars.at(-1))?.close ??
+        null;
+    const dayChangePct = distance(price, prevClose);
 
     // The premium is per CONTRACT, so it is 100 shares' worth of a per-share strike.
     const shownPremium = numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium;
@@ -237,7 +242,7 @@ export function TradeDetail({
                     </div>
                     <div>
                         <dt>Implied volatility</dt>
-                        <dd>{trade.actualIv === null ? 'n/a' : formatPercent(trade.actualIv * 100)}</dd>
+                        <dd>{trade.actualIv === null ? '–' : formatPercent(trade.actualIv * 100)}</dd>
                     </div>
                     <div>
                         <dt>Collateral</dt>
@@ -269,13 +274,21 @@ export function TradeDetail({
                             <dl className="stat-run">
                                 <div>
                                     <dt>Price</dt>
-                                    <dd>{formatCents(detail.price)}</dd>
+                                    <dd>
+                                        {formatCents(detail.price)}
+                                        {dayChangePct !== null && (
+                                            <span className={dayChangePct >= 0 ? 'day-change-up' : 'day-change-down'}>
+                                                {' '}
+                                                ({formatSignedPercent(dayChangePct)})
+                                            </span>
+                                        )}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt>Cushion to strike</dt>
                                     <dd>
                                         {cushion === null
-                                            ? 'n/a'
+                                            ? '–'
                                             : cushion < 0
                                               ? `in the money by ${Math.abs(cushion).toFixed(1)}%`
                                               : `${cushion.toFixed(1)}% below`}
@@ -328,10 +341,12 @@ export function TradeDetail({
                                         <dt>Premium kept</dt>
                                         <dd>
                                             {formatSignedPercent(asPercent(detail.outcome.premiumKept))}
-                                            <span className="stat-aside">
-                                                {' '}
-                                                ({formatSignedMoney(detail.outcome.profit)})
-                                            </span>
+                                            {detail.outcome.profit !== null && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    ({formatSignedMoney(detail.outcome.profit)})
+                                                </span>
+                                            )}
                                         </dd>
                                     </div>
                                     <div>
@@ -340,27 +355,33 @@ export function TradeDetail({
                                         </dt>
                                         <dd>
                                             {formatSignedPercent(asPercent(detail.outcome.bestPremiumKept))}
-                                            <span className="stat-aside">
-                                                {' '}
-                                                ({formatSignedMoney(detail.outcome.bestProfit)}
-                                                {detail.outcome.bestOn && `, ${formatDayLabel(detail.outcome.bestOn)}`})
-                                            </span>
+                                            {detail.outcome.bestProfit !== null && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    ({formatSignedMoney(detail.outcome.bestProfit)}
+                                                    {detail.outcome.bestOn &&
+                                                        `, ${formatDayLabel(detail.outcome.bestOn)}`}
+                                                    )
+                                                </span>
+                                            )}
                                         </dd>
                                     </div>
                                     <div>
                                         <dt>Worst it has been</dt>
                                         <dd>
                                             {formatSignedPercent(asPercent(detail.outcome.worstPremiumKept))}
-                                            <span className="stat-aside">
-                                                {' '}
-                                                ({formatSignedMoney(detail.outcome.worstProfit)})
-                                            </span>
+                                            {detail.outcome.worstProfit !== null && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    ({formatSignedMoney(detail.outcome.worstProfit)})
+                                                </span>
+                                            )}
                                         </dd>
                                     </div>
                                     <div>
                                         <dt>Days held</dt>
                                         <dd>
-                                            {detail.outcome.daysHeld ?? 'n/a'}
+                                            {detail.outcome.daysHeld ?? '–'}
                                             {detail.outcome.daysToHalf !== null && (
                                                 <span className="stat-aside">
                                                     {' '}

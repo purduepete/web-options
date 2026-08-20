@@ -223,6 +223,14 @@
     }
 }
 
+/* On touch screens hide neutral trigger labels so all four menus fit on one row.
+   Narrowed triggers keep their value label. min-width gates out the phone fold. */
+@media (min-width: 641px) and (pointer: coarse) {
+    .filter-bar .choice-trigger:not(.narrowed) > span {
+        display: none;
+    }
+}
+
 .signals-error {
     margin: 0;
     padding: 0.75rem 0.875rem;

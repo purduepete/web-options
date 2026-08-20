@@ -84,6 +84,14 @@
     }
 }
 
+.day-change-up {
+    color: var(--positive);
+}
+
+.day-change-down {
+    color: var(--negative);
+}
+
 /* The rule between sections wants the same air above it as below, so the padding is
    on both edges rather than only the top — otherwise every divider sits tight under
    the content it is meant to separate. */
@@ -220,10 +228,6 @@
        another: collateral beside what it earns, and the two averages together. */
     .detail-head + .detail-section .stat-run {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .trades-section .stat-run {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     /* Every row is its own grid, so a track that sizes to content sizes to its OWN
