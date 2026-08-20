@@ -17,6 +17,8 @@ export function isTyping(target: EventTarget | null): boolean {
 interface WeekArrowHandlers {
     onPrevious: () => void;
     onNext: () => void;
+    /** Set while a dialog is open: the arrows belong to whatever is on top. */
+    suspended?: boolean;
 }
 
 export function useWeekArrows(handlers: WeekArrowHandlers): void {
@@ -27,6 +29,7 @@ export function useWeekArrows(handlers: WeekArrowHandlers): void {
 
     useEffect(() => {
         function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (latest.current.suspended) return;
             if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
             if (isTyping(event.target)) return;
 

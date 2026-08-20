@@ -8,6 +8,7 @@ import type { OptionRight } from '@weboptions/shared';
  */
 
 const MONEY = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const CENTS = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const COMPACT_MONEY = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 });
 const PADDED_DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
 
@@ -50,6 +51,15 @@ export function formatSignedPercent(value: number | null): string {
 
 export function formatMoney(value: number | null): string {
     return value == null ? 'n/a' : `$${MONEY.format(value)}`;
+}
+
+/**
+ * The drill-in's figure. A ticket rounds to the dollar to stay scannable across a
+ * whole week, but a breakeven of $168.55 shown as $169 is a worse number rather
+ * than a tidier one, and a price is compared against a strike to the cent.
+ */
+export function formatCents(value: number | null): string {
+    return value == null ? 'n/a' : `$${CENTS.format(value)}`;
 }
 
 /** `142300` becomes `$142K`. Rounds hard, so the exact figure belongs in a title beside it. */

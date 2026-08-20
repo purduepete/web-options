@@ -80,6 +80,7 @@ describe('nav model', () => {
             '/calendars/latest',
             '/settings/appearance',
             '/settings/caution',
+            '/settings/grading',
             '/settings/key',
         ]);
     });

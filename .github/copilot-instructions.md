@@ -15,6 +15,11 @@ the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader
   database-scoped `DENY ALTER`. Never write to the shared tables from here. See
   [003_grant_readonly_user.sql](database/migrations/003_grant_readonly_user.sql)
   and [009_grant_caution_symbol_write.sql](database/migrations/009_grant_caution_symbol_write.sql).
+- One object outside `opt` is readable: `dbo.stock_price`, granted by name in
+  [012_grant_stock_price_read.sql](database/migrations/012_grant_stock_price_read.sql)
+  so the navbar can show the VIX. Webportfolio's price-updater writes one row per
+  symbol per session there; the VIX is under the symbol `VIX`, not in
+  `dbo.historical_indices`, which has no VIX row at all.
 - There is exactly one exception: the `optcfg` schema, which WebOptions owns
   outright and can write to. It holds `optcfg.caution_symbol`, the global caution
   list the app saves from Settings. A DENY at schema scope beats a GRANT at object

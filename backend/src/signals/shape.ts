@@ -27,6 +27,8 @@ export interface SignalRow {
     actual_delta: unknown;
     actual_mark: unknown;
     actual_illiquid: unknown;
+    actual_iv: unknown;
+    actual_underlying: unknown;
     close_date: unknown;
     close_underlying: unknown;
 }
@@ -127,6 +129,8 @@ export function toTrade(row: SignalRow): Trade {
         actualPremium,
         actualAnnualizedYield: toActualYield(actualPremium, collateral, dte),
         actualIlliquid: Boolean(toNumber(row.actual_illiquid)),
+        actualIv: toNumber(row.actual_iv),
+        actualUnderlying: toNumber(row.actual_underlying),
         closeDate: sqlDateToIso(row.close_date),
         closeUnderlying,
         moneyness: toMoneyness(optionRight, strike, closeUnderlying),

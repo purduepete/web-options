@@ -1,0 +1,303 @@
+.detail-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    padding-bottom: 0.75rem;
+    border-bottom: var(--border-width) solid var(--border-soft);
+}
+
+.detail-identity {
+    flex: 1 1 12rem;
+    min-width: 0%;
+}
+
+.detail-name {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.detail-meta {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* The research links wrap onto their own line before they squeeze the name. On a
+   phone they always do, so they take the whole of it: the step run against the
+   left gutter and the links against the right, rather than a short run floating
+   under the name with empty space beside it. */
+.detail-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    flex: 1 1 100%;
+}
+
+.detail-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-right: auto;
+}
+
+.nav-step {
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    cursor: pointer;
+}
+
+.nav-step svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Kept in place rather than removed at the ends of the day, so the run holds its
+   width and the links beside it do not shuffle on every step. */
+.nav-step:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.nav-step:disabled:hover {
+    background: var(--surface-2);
+    border-color: var(--border-chrome);
+    color: var(--text-muted);
+}
+
+.detail-position {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+    .nav-step {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* The rule between sections wants the same air above it as below, so the padding is
+   on both edges rather than only the top — otherwise every divider sits tight under
+   the content it is meant to separate. */
+.detail-section {
+    padding-block: 1.15rem;
+    border-top: var(--border-width) solid var(--border-soft);
+}
+
+/* The head draws its own rule, so the first section must not draw a second one. */
+.detail-head + .detail-section {
+    border-top: none;
+}
+
+.detail-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.detail-stale {
+    padding: 0.05rem 0.3rem;
+    border: var(--border-width) solid var(--warning);
+    color: var(--warning);
+    font-size: 0.62rem;
+    letter-spacing: 0.03em;
+}
+
+/* Fluid tracks rather than a fixed count, so the run reflows at any width with no
+   breakpoint of its own and collapses to one column on a phone by itself. */
+.stat-run {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.6rem 1rem;
+    margin: 0;
+}
+
+.stat-run dt {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.stat-run dd {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-heading);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.stat-aside {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* The market region reserves its height so the dialog does not grow under the
+   reader when the data lands. Tall enough for the price run and the grade; the
+   chart is below the fold either way. */
+.detail-market {
+    min-height: 14rem;
+}
+
+.detail-error,
+.detail-empty {
+    margin: 0;
+    padding-top: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.detail-error {
+    color: var(--danger);
+}
+
+/* Definition-list rows on a phone, a table-like run once there is width for one. */
+.past-signals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.past-signals li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.past-date {
+    color: var(--text-muted);
+}
+
+.past-strike {
+    color: var(--text-heading);
+    /* Pushes whatever chips the row has to the right edge, so they line up down the
+       list however wide the strike beside them runs. */
+    margin-right: auto;
+}
+
+@media (min-width: 640px) {
+    /* Wide enough for the whole head on one line, so the run goes back to sitting
+       beside the name. */
+    .detail-links {
+        flex: 0 1 auto;
+        margin-left: auto;
+    }
+
+    .detail-nav {
+        margin-right: 0.3rem;
+    }
+
+    /* Counted rather than fitted, so the pairs a reader compares land under one
+       another: collateral beside what it earns, and the two averages together. */
+    .detail-head + .detail-section .stat-run {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .trades-section .stat-run {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Every row is its own grid, so a track that sizes to content sizes to its OWN
+       row's content: one "Expired worthless" beside a "Still open" and the flexible
+       track either side of them lands in a different place on every line. Only the
+       strike track flexes; the two chip columns are fixed, and 8rem is the widest
+       outcome label. */
+    .past-signals li {
+        display: grid;
+        grid-template-columns: 6rem minmax(0, 1fr) 3.5rem 8rem;
+        align-items: center;
+    }
+
+    /* The tracks do the aligning here. */
+    .past-strike {
+        margin-right: 0;
+    }
+
+    .past-signals li > * {
+        justify-self: start;
+    }
+
+    /* Ragged left, flush right: a chip is read by its edge, and only the right one
+       is common to a three-letter and a nine-letter label. */
+    .past-signals li > .moneyness-chip,
+    .past-signals li > .outcome-chip {
+        justify-self: end;
+    }
+}
+
+/* An iPad in landscape has width to spare and height it does not, and the drill-in
+   was spending the one it has none of: everything below the grade needed scrolling
+   to. The chart is the tall element, so it takes a column beside the numbers instead
+   of under them, and the dialog is widened to pay for it. */
+@media (min-width: 1024px) {
+    .modal-dialog.trade-detail {
+        width: min(74rem, calc(100vw - 4rem));
+    }
+
+    /* The direct child only. The chart figure carries `enter` too, so a descendant
+       selector here would make the chart itself a two column grid. */
+    .detail-market > .enter {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+            'trades chart'
+            'grade  chart'
+            'past   chart';
+        align-content: start;
+        column-gap: 1.6rem;
+        /* One rule under the contract, drawn once across both columns. Drawn by the
+           two sections at the top of each column instead, it would come out as two
+           rules with the column gap torn out of the middle. */
+        border-top: var(--border-width) solid var(--border-soft);
+    }
+
+    .trades-section {
+        grid-area: trades;
+    }
+
+    .grade-section {
+        grid-area: grade;
+    }
+
+    .past-section {
+        grid-area: past;
+    }
+
+    /* Stretched over all three rows rather than sized to the chart, so the rule
+       between the columns runs the full height of the region. */
+    .chart-section {
+        grid-area: chart;
+        border-left: var(--border-width) solid var(--border-soft);
+        padding-left: 1.6rem;
+    }
+
+    .detail-market > .enter > .trades-section,
+    .detail-market > .enter > .chart-section {
+        border-top: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .detail-market .enter {
+        animation: none;
+    }
+}

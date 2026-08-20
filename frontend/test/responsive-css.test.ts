@@ -89,6 +89,19 @@ function mediaBlocks(css: string): { condition: string; body: string }[] {
     return blocks;
 }
 
+/** The sheet as a phone reads it: the blocks a narrow screen never enters, gone. */
+function phoneReachable(css: string): string {
+    let reachable = css;
+
+    for (const { condition, body } of mediaBlocks(css)) {
+        const min = /min-width:\s*(\d+)px/.exec(condition);
+        if (!min || Number(min[1]) < 640) continue;
+        reachable = reachable.replace(body, '');
+    }
+
+    return reachable;
+}
+
 describe('the page can always be as narrow as the phone', () => {
     it.each(pages)('$name uses the shared responsive page root', ({ source }) => {
         expect(source).toMatch(/<main(?:\s|>)/);
@@ -124,7 +137,10 @@ describe('the page can always be as narrow as the phone', () => {
     });
 
     it.each(sheets)('$name collapses its fixed-count grids on a narrow screen', ({ css }) => {
-        const fixedCount = declarations(css, 'grid-template-columns').some(({ value }) => /repeat\(\s*\d/.test(value));
+        // A counted grid a phone never reaches has already answered for itself.
+        const fixedCount = declarations(phoneReachable(css), 'grid-template-columns').some(({ value }) =>
+            /repeat\(\s*\d/.test(value),
+        );
         if (!fixedCount) return;
 
         // `auto-fit` reflows on its own; a counted `repeat()` has to be told.

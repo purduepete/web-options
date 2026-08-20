@@ -1,0 +1,96 @@
+/* The same outline-only recipe as .top-pick / .tier-badge / .moneyness: a filled
+   badge would be the loudest thing in the dialog, and the numbers are the point. */
+.grade-badge,
+.outcome-chip,
+.moneyness-chip {
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 0.1rem 0.375rem;
+    border: var(--border-width) solid var(--border-soft);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    user-select: none;
+}
+
+/* The existing semantic tokens, used directly. A --grade-green alias would be a
+   second name for --positive and one more thing to keep in step across themes. */
+.grade-badge.green {
+    color: var(--positive);
+    border-color: var(--positive);
+}
+
+.grade-badge.yellow {
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+.grade-badge.red {
+    color: var(--negative);
+    border-color: var(--negative);
+}
+
+.grade-badge.ungraded {
+    color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+
+/* A put expiring worthless is the win, so it takes the gain colour. */
+.outcome-chip.expired-otm {
+    color: var(--positive);
+    border-color: var(--positive);
+}
+
+.outcome-chip.expired-itm {
+    color: var(--negative);
+    border-color: var(--negative);
+}
+
+.outcome-chip.open {
+    color: var(--highlight);
+    border-color: var(--highlight);
+}
+
+.outcome-chip.unknown {
+    color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+
+/* In the money is assignment risk on a put, so it reads as the loss colour —
+   the same way round as the ticket's own .moneyness badge. */
+.moneyness-chip.itm {
+    color: var(--negative);
+    border-color: var(--negative);
+}
+
+.moneyness-chip.otm {
+    color: var(--positive);
+    border-color: var(--positive);
+}
+
+.moneyness-chip.atm {
+    color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+
+.grade {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.6rem;
+}
+
+.grade-note,
+.grade-reasons {
+    margin: 0;
+    flex: 1 1 12rem;
+    min-width: 0%;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.grade-reasons {
+    padding-left: 1.1rem;
+}

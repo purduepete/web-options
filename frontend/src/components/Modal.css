@@ -1,0 +1,129 @@
+/* Above the navbar (20) and below the command palette (60) and the shortcuts
+   overlay (70): both of those are summoned from anywhere, including from here. */
+.modal-root {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--overlay);
+    backdrop-filter: blur(2px);
+}
+
+/* The same glassy surface as the shortcuts overlay, so the app has one dialog
+   material rather than two. Corners are square: --radius is 0 globally. */
+.modal-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: rgb(var(--surface-rgb) / 96%);
+    backdrop-filter: blur(16px);
+    border: var(--border-width) solid var(--border);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
+}
+
+/* PHONE: a full-bleed sheet. There is not enough width for a dialog to float
+   inside, and a card with a visible edge on all four sides just wastes it.
+   The insets keep the head and the foot clear of the notch and home indicator. */
+.modal-dialog {
+    position: absolute;
+    inset: 0;
+    max-height: 100%;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    border: none;
+}
+
+@media (min-width: 640px) {
+    .modal-dialog {
+        position: relative;
+        inset: auto;
+        width: min(46rem, calc(100vw - 2rem));
+        /* Held off the top rather than centred, so a dialog that grows downward does
+           not slide the part already read. The margin is small enough that the height
+           left over is most of the viewport — and on a short iPad, the few percent
+           between this and a taller gap is the whole of the scrolling. */
+        margin: 3vh auto 0;
+        max-height: 94vh;
+        padding-top: 0;
+        padding-bottom: 0;
+        border: var(--border-width) solid var(--border);
+    }
+}
+
+/* A 13 inch iPad is 1366 CSS px in landscape, so width alone cannot tell it from
+   a laptop. The pointer does. */
+@media (min-width: 1101px) and (hover: hover) and (pointer: fine) {
+    .modal-dialog {
+        width: min(56rem, calc(100vw - 4rem));
+    }
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 0.9rem;
+    border-bottom: var(--border-width) solid var(--border);
+    user-select: none;
+}
+
+.modal-head h2 {
+    margin: 0;
+    min-width: 0%;
+    font-size: 0.95rem;
+}
+
+.modal-close {
+    flex-shrink: 0;
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+    padding: 0.2rem;
+    transition: color var(--transition);
+}
+
+.modal-close:hover:not(:disabled) {
+    background: transparent;
+    color: var(--text-heading);
+}
+
+.modal-body {
+    padding: 0.9rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* The same 120ms ease-out opacity-and-lift as the command palette, so every
+   overlay in the app arrives the same way. The phone sheet rises from below
+   rather than dropping from above, matching where it comes from. */
+@media (prefers-reduced-motion: no-preference) {
+    .modal-dialog {
+        animation: modal-sheet-in 120ms ease-out;
+    }
+
+    @media (min-width: 640px) {
+        .modal-dialog {
+            animation: modal-in 120ms ease-out;
+        }
+    }
+}
+
+@keyframes modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes modal-sheet-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}

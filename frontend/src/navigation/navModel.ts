@@ -95,6 +95,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/settings/caution',
             },
             {
+                id: '/settings/grading',
+                label: 'Grading',
+                description: 'Thresholds behind the trade grade',
+                path: '/settings/grading',
+            },
+            {
                 id: '/settings/key',
                 label: 'API Key',
                 description: 'The key this browser is using',

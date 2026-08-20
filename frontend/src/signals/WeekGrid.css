@@ -232,6 +232,7 @@
 }
 
 .ticket {
+    position: relative;
     margin: 0.3rem 0.75rem;
     padding: 0.625rem 0.75rem;
     background: var(--surface);
@@ -245,6 +246,18 @@
 
 .ticket.call {
     border-left-color: var(--call);
+}
+
+/* Only the live signals grid hands the ticket an opener; the calendar and the
+   summary render the same card as plain text. No :focus-visible rule here — the
+   ring is global, and a second one would only disagree with it. */
+.ticket.is-interactive {
+    cursor: pointer;
+    transition: background-color var(--transition);
+}
+
+.ticket.is-interactive:hover {
+    background: var(--surface-hover);
 }
 
 /* Hatched rather than dimmed: an expired contract is settled history, but its
@@ -268,6 +281,32 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
+}
+
+/* The grade, on the days its cushion is still measured against a live price. A
+   corner off the card rather than anything in the rows: it takes no space from
+   the numbers, and the reasons behind the colour are one click away in the
+   drill-in. */
+.grade-corner {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0.85rem;
+    height: 0.85rem;
+    background: var(--text-muted);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.grade-corner.green {
+    background: var(--positive);
+}
+
+.grade-corner.yellow {
+    background: var(--warning);
+}
+
+.grade-corner.red {
+    background: var(--negative);
 }
 
 .ticker {

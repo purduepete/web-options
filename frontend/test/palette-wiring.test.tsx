@@ -19,6 +19,7 @@ vi.mock('../src/api', async () => {
             ],
         })),
         fetchMe: vi.fn(async () => ({ label: 'test', scopes: [] })),
+        fetchVix: vi.fn(async () => ({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 15.84 } })),
     };
 });
 

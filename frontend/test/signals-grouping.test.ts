@@ -31,6 +31,8 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         actualPremium: 130,
         actualAnnualizedYield: 12,
         actualIlliquid: false,
+        actualIv: null,
+        actualUnderlying: null,
         closeDate: null,
         closeUnderlying: null,
         moneyness: null,

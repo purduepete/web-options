@@ -3,15 +3,20 @@ import type {
     CalendarsIndexResponse,
     CautionSymbolsResponse,
     EarliestWeekResponse,
+    GradeSettings,
+    GradeSettingsResponse,
     HealthResponse,
     MeResponse,
     SignalMonthsResponse,
     SignalSummaryResponse,
+    VixResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
 import {
     CAUTION_SYMBOL_LIMIT,
     CAUTION_SYMBOL_MAX_LENGTH,
+    GRADE_SETTING_KEYS,
+    gradeSettingsError,
     isCautionSymbol,
     isIsoDate,
     normalizeCautionSymbols,
@@ -21,7 +26,10 @@ import {
 import type { AppConfig } from '../config';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
+import { getSymbolDetail } from '../market/service';
+import { readVix } from '../market/vix';
 import { requireApiKey } from '../middleware/apiKey';
+import { readGradeSettings, replaceGradeSettings } from '../settings/repository';
 import { earliestWeekMonday, fetchRange, fetchWeek, signalDates, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
 import { monthsFrom, spanOf, summarizeRange } from '../signals/summary';
@@ -190,8 +198,8 @@ export function createApiRouter(config: AppConfig): Router {
         }
     });
 
-    // The only write in the app. Validated strictly rather than stored as sent:
-    // this is the one route where a bad request leaves something behind.
+    // Validated strictly rather than stored as sent: a write route is where a bad
+    // request leaves something behind.
     router.put('/caution-symbols', async (req, res, next) => {
         const sent = (req.body as { symbols?: unknown } | undefined)?.symbols;
         if (!Array.isArray(sent) || sent.some((value) => typeof value !== 'string')) {
@@ -214,6 +222,104 @@ export function createApiRouter(config: AppConfig): Router {
 
         try {
             const body: CautionSymbolsResponse = { symbols: await replaceCautionSymbols(config.db, symbols) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * Everything the drill-in modal needs about one underlying. The only route that
+     * reaches outside the database, so it is also the only one that can be slow;
+     * `getSymbolDetail` soft-fails each piece rather than failing the whole answer.
+     *
+     * `strike` and `expiration` are optional and identify the contract being viewed,
+     * so it is kept out of its own list of past signals.
+     */
+    router.get('/symbols/:symbol', async (req, res, next) => {
+        const { symbol } = req.params;
+        const strikeParam = req.query.strike;
+        const expirationParam = req.query.expiration;
+
+        const strike = typeof strikeParam === 'string' ? Number(strikeParam) : null;
+        if (strike !== null && !Number.isFinite(strike)) {
+            res.status(400).json({ error: 'strike must be a number' });
+            return;
+        }
+        if (expirationParam !== undefined && (typeof expirationParam !== 'string' || !isIsoDate(expirationParam))) {
+            res.status(400).json({ error: 'expiration must be YYYY-MM-DD' });
+            return;
+        }
+
+        try {
+            const detail = await getSymbolDetail(config.db, symbol, {
+                exclude: { strike, expiration: expirationParam ?? null },
+            });
+            // Null means the symbol was never a ticker, not that the fetch failed.
+            if (!detail) {
+                res.status(400).json({ error: 'symbol must be a ticker' });
+                return;
+            }
+            res.json(detail);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/vix', async (_req, res, next) => {
+        try {
+            const body: VixResponse = { vix: await readVix(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    router.get('/grade-settings', async (_req, res, next) => {
+        try {
+            const body: GradeSettingsResponse = { settings: await readGradeSettings(config.db) };
+            res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * The four thresholds, all of them, every time. A partial save would leave the
+     * page showing numbers the server never agreed to.
+     */
+    router.put('/grade-settings', async (req, res, next) => {
+        const sent = (req.body as { settings?: unknown } | undefined)?.settings;
+        if (typeof sent !== 'object' || sent === null || Array.isArray(sent)) {
+            res.status(400).json({ error: 'settings must be an object' });
+            return;
+        }
+
+        const received = sent as Record<string, unknown>;
+        const unknownKey = Object.keys(received).find((key) => !(GRADE_SETTING_KEYS as string[]).includes(key));
+        if (unknownKey !== undefined) {
+            res.status(400).json({ error: `"${unknownKey.slice(0, 64)}" is not a grading setting` });
+            return;
+        }
+
+        const settings = {} as GradeSettings;
+        for (const key of GRADE_SETTING_KEYS) {
+            const value = received[key];
+            if (typeof value !== 'number') {
+                res.status(400).json({ error: `${key} must be a number` });
+                return;
+            }
+            settings[key] = value;
+        }
+
+        const invalid = gradeSettingsError(settings);
+        if (invalid) {
+            res.status(400).json({ error: invalid });
+            return;
+        }
+
+        try {
+            const body: GradeSettingsResponse = { settings: await replaceGradeSettings(config.db, settings) };
             res.json(body);
         } catch (error) {
             next(error);

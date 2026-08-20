@@ -9,6 +9,8 @@
 export * from './theme';
 export * from './storage';
 export * from './caution';
+export * from './grade';
+export * from './market';
 
 /** A calendar date with no time and no zone, formatted `YYYY-MM-DD`. */
 export type IsoDate = string;
@@ -52,6 +54,10 @@ export interface Trade {
     actualPremium: number | null;
     actualAnnualizedYield: number | null;
     actualIlliquid: boolean;
+    /** Implied volatility as captured, a fraction rather than a percent. */
+    actualIv: number | null;
+    /** What the underlying was worth when the quote was captured, not today. */
+    actualUnderlying: number | null;
     closeDate: IsoDate | null;
     closeUnderlying: number | null;
     moneyness: Moneyness | null;
@@ -189,12 +195,35 @@ export function parseExpiryFilter(raw: unknown): ExpiryFilter {
     return (EXPIRY_FILTERS as readonly unknown[]).includes(raw) ? (raw as ExpiryFilter) : 'all';
 }
 
+function toIsoDate(at: Date): IsoDate {
+    const month = String(at.getMonth() + 1).padStart(2, '0');
+    const day = String(at.getDate()).padStart(2, '0');
+    return `${at.getFullYear()}-${month}-${day}`;
+}
+
 /** Today as a calendar date, in the zone the process runs in. Both ends pin that to Pacific. */
 function todayIso(): IsoDate {
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${now.getFullYear()}-${month}-${day}`;
+    return toIsoDate(new Date());
+}
+
+function previousWeekday(iso: IsoDate): IsoDate {
+    const [year, month, day] = iso.split('-').map(Number);
+    const at = new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+    do {
+        at.setDate(at.getDate() - 1);
+    } while (at.getDay() === 0 || at.getDay() === 6);
+    return toIsoDate(at);
+}
+
+/**
+ * Today, or the trading day before it. A signal graded against the underlying's
+ * latest close stops describing itself once the week has moved on, so only these
+ * two days carry a grade. Monday looks back to Friday: a weekend has no signals.
+ */
+export function isRecentSignalDay(date: IsoDate | null): boolean {
+    if (date === null) return false;
+    const today = todayIso();
+    return date === today || date === previousWeekday(today);
 }
 
 /**

@@ -88,6 +88,97 @@ const PROBES: Probe[] = [
         expect: 'deny',
         run: (pool) => pool.request().batch('CREATE TABLE optcfg.probe (id INT)'),
     },
+    // The symbol cache and the app settings, added with the trade drill-in. They
+    // are proof that the GRANT at schema scope reaches a table created after it
+    // was issued: migration 009 was never re-run for any of these three.
+    {
+        label: 'SELECT optcfg.symbol_profile',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM optcfg.symbol_profile'),
+    },
+    {
+        label: 'INSERT optcfg.symbol_profile',
+        expect: 'allow',
+        run: (pool) =>
+            pool
+                .request()
+                .batch(
+                    `BEGIN TRAN; INSERT INTO optcfg.symbol_profile (symbol, long_name) VALUES ('PROBE', 'probe'); ROLLBACK;`,
+                ),
+    },
+    {
+        label: 'DELETE optcfg.symbol_profile',
+        expect: 'allow',
+        run: (pool) =>
+            pool.request().batch(`BEGIN TRAN; DELETE FROM optcfg.symbol_profile WHERE symbol = 'PROBE'; ROLLBACK;`),
+    },
+    {
+        label: 'UPDATE optcfg.symbol_profile (a refresh replaces the row)',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; UPDATE optcfg.symbol_profile SET symbol = symbol; ROLLBACK;'),
+    },
+    {
+        label: 'SELECT optcfg.price_bar',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM optcfg.price_bar'),
+    },
+    {
+        label: 'INSERT optcfg.price_bar',
+        expect: 'allow',
+        run: (pool) =>
+            pool
+                .request()
+                .batch(
+                    `BEGIN TRAN; INSERT INTO optcfg.price_bar (symbol, bar_date, [close]) VALUES ('PROBE', '2000-01-03', 1); ROLLBACK;`,
+                ),
+    },
+    {
+        label: 'DELETE optcfg.price_bar',
+        expect: 'allow',
+        run: (pool) =>
+            pool.request().batch(`BEGIN TRAN; DELETE FROM optcfg.price_bar WHERE symbol = 'PROBE'; ROLLBACK;`),
+    },
+    {
+        label: 'UPDATE optcfg.price_bar (a refresh replaces the row)',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; UPDATE optcfg.price_bar SET symbol = symbol; ROLLBACK;'),
+    },
+    {
+        label: 'SELECT optcfg.app_setting',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 name FROM optcfg.app_setting'),
+    },
+    {
+        label: 'INSERT optcfg.app_setting',
+        expect: 'allow',
+        run: (pool) =>
+            pool
+                .request()
+                .batch(`BEGIN TRAN; INSERT INTO optcfg.app_setting (name, value) VALUES ('probe', '1'); ROLLBACK;`),
+    },
+    {
+        label: 'DELETE optcfg.app_setting',
+        expect: 'allow',
+        run: (pool) =>
+            pool.request().batch(`BEGIN TRAN; DELETE FROM optcfg.app_setting WHERE name = 'probe'; ROLLBACK;`),
+    },
+    {
+        label: 'UPDATE optcfg.app_setting (a save replaces the row)',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; UPDATE optcfg.app_setting SET value = value; ROLLBACK;'),
+    },
+    // The one object outside opt and optcfg this login may touch, granted by name
+    // in migration 012 so the navbar can show the VIX. Read, and only read.
+    {
+        label: 'SELECT dbo.stock_price',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM dbo.stock_price'),
+    },
+    {
+        label: 'UPDATE dbo.stock_price',
+        expect: 'deny',
+        run: (pool) => pool.request().batch('BEGIN TRAN; UPDATE dbo.stock_price SET symbol = symbol; ROLLBACK;'),
+    },
 ];
 
 async function main(): Promise<void> {

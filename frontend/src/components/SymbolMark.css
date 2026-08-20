@@ -1,0 +1,20 @@
+/* Sized in rem so it grows with the reader's text rather than staying a fixed
+   pixel square beside a heading that does not. */
+.symbol-mark {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    user-select: none;
+}
+
+.symbol-mark rect {
+    fill: var(--highlight);
+}
+
+.symbol-mark text {
+    fill: var(--highlight-contrast);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}

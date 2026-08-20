@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
-import type { WeekSignalsResponse } from '@weboptions/shared';
+import type { Trade, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
+import { TradeDetail } from '../signals/TradeDetail';
 import { WeekScore } from '../signals/WeekScore';
 import { NumberSourceMenu } from '../signals/NumberSourceMenu';
 import { ExpiryFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
@@ -17,6 +18,7 @@ import {
     filterDaysByExpiry,
     filterDaysByMoneyness,
     filterDaysBySymbol,
+    groupTrades,
     shiftWeek,
 } from '../signals/grouping';
 import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping';
@@ -58,6 +60,9 @@ export function LiveSignalsPage() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+    // The drill-in. Held here rather than in the grid so the page can suspend its
+    // own single-key shortcuts while it is open.
+    const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
     const [numberSource, setNumberSource] = useNumberSource();
     // Only a phone folds the filters away, and it opens them closed.
     const phone = useMediaQuery('(max-width: 640px)');
@@ -96,6 +101,33 @@ export function LiveSignalsPage() {
         [data, symbol, expiry, moneyness],
     );
     const groups = useMemo(() => buildGroups(days), [days]);
+
+    // The day the open trade came from, in the order the grid lays it out, so the
+    // arrows walk the tickets the reader can see rather than the raw response.
+    const daySiblings = useMemo(() => {
+        if (!selectedTrade) return [];
+        const day = days.find((entry) => entry.trades.includes(selectedTrade));
+        if (!day) return [];
+        return groups.flatMap((group) => groupTrades(group, day.trades, numberSource));
+    }, [selectedTrade, days, groups, numberSource]);
+
+    const siblingIndex = selectedTrade ? daySiblings.indexOf(selectedTrade) : -1;
+
+    const stepTrade = useCallback(
+        (by: number) => {
+            setSelectedTrade((current) => {
+                if (!current) return current;
+                return daySiblings[daySiblings.indexOf(current) + by] ?? current;
+            });
+        },
+        [daySiblings],
+    );
+
+    const previousTrade = useMemo(() => (siblingIndex > 0 ? () => stepTrade(-1) : null), [siblingIndex, stepTrade]);
+    const nextTrade = useMemo(
+        () => (siblingIndex >= 0 && siblingIndex < daySiblings.length - 1 ? () => stepTrade(1) : null),
+        [siblingIndex, daySiblings.length, stepTrade],
+    );
 
     const setWeekParam = useCallback(
         (next: string | null) => {
@@ -224,6 +256,9 @@ export function LiveSignalsPage() {
         onCycleExpiry: cycleExpiry,
         onCycleMoneyness: cycleMoneyness,
         onResetMenus: resetMenus,
+        // Every shortcut here is a bare letter, so `r` in an open dialog would
+        // otherwise reset the filters behind it.
+        suspended: selectedTrade !== null,
     });
 
     function toggleGroup(id: string) {
@@ -367,10 +402,20 @@ export function LiveSignalsPage() {
                         expiryFilter={expiry}
                         moneynessFilter={moneyness}
                         numberSource={numberSource}
+                        onOpenTrade={setSelectedTrade}
                         currentWeek={data.isCurrentWeek}
                     />
                 </>
             )}
+
+            <TradeDetail
+                trade={selectedTrade}
+                numberSource={numberSource}
+                onClose={() => setSelectedTrade(null)}
+                position={siblingIndex >= 0 ? `${siblingIndex + 1} of ${daySiblings.length}` : null}
+                onPrevious={previousTrade}
+                onNext={nextTrade}
+            />
         </main>
     );
 }

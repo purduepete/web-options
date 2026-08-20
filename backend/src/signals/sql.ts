@@ -38,6 +38,8 @@ WITH base AS (
         q.delta AS actual_delta,
         q.mark AS actual_mark,
         q.is_illiquid_quote AS actual_illiquid,
+        q.implied_volatility AS actual_iv,
+        q.underlying_price AS actual_underlying,
         c.price_date AS close_date,
         c.underlying_price AS close_underlying,
         COALESCE(s.contract_key,
@@ -74,7 +76,8 @@ WITH base AS (
 SELECT
     report_date, symbol, sector, option_right, strike, expiration, dte, delta,
     annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick,
-    actual_delta, actual_mark, actual_illiquid, close_date, close_underlying
+    actual_delta, actual_mark, actual_illiquid, actual_iv, actual_underlying,
+    close_date, close_underlying
 FROM base
 WHERE rn = 1
 ORDER BY report_date, tier, option_right, annualized_yield DESC

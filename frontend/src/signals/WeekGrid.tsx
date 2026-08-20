@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { DaySignals, NumberSource, Trade } from '@weboptions/shared';
-import { hasExpired } from '@weboptions/shared';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { DaySignals, GradeBand, NumberSource, Trade } from '@weboptions/shared';
+import { GRADE_BAND_LABELS, gradeTrade, hasExpired, isRecentSignalDay } from '@weboptions/shared';
 import type { ExpiryFilter, MoneynessFilter, SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
 import {
@@ -16,6 +17,9 @@ import {
 } from './format';
 import { premiumDriftPercent, totalCollateral } from './summary';
 import { CautionBadge } from '../caution/CautionBadge';
+import { useCautionSymbols } from '../caution/CautionProvider';
+import { useGradeSettings } from '../grade/GradeSettingsProvider';
+import { useVixValue } from '../grade/VixProvider';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronDownIcon } from '../components/icons';
 import './WeekGrid.css';
@@ -42,6 +46,8 @@ interface WeekGridProps {
     moneynessFilter: MoneynessFilter;
     /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
     numberSource: NumberSource;
+    /** Opens the drill-in. Absent on the calendar and the summary, where tickets are static. */
+    onOpenTrade?: (trade: Trade) => void;
     /** The week in progress reads newest first on a phone; a finished week does not. */
     currentWeek: boolean;
 }
@@ -69,6 +75,7 @@ export function WeekGrid({
     expiryFilter,
     moneynessFilter,
     numberSource,
+    onOpenTrade,
     currentWeek,
 }: WeekGridProps) {
     // Only where the cards are stacked one under another. Across the full week
@@ -125,6 +132,7 @@ export function WeekGrid({
                     expiryFilter={expiryFilter}
                     moneynessFilter={moneynessFilter}
                     numberSource={numberSource}
+                    onOpenTrade={onOpenTrade}
                     totalRows={totalRows}
                     foldable={stacked}
                     folded={foldedDays.has(day.date)}
@@ -152,6 +160,7 @@ function DayCard({
     expiryFilter,
     moneynessFilter,
     numberSource,
+    onOpenTrade,
     totalRows,
     foldable,
     folded,
@@ -221,6 +230,7 @@ function DayCard({
                             ticketsRow={3 + index * 2}
                             dayDate={day.date}
                             numberSource={numberSource}
+                            onOpenTrade={onOpenTrade}
                         />
                     );
                 })
@@ -238,6 +248,7 @@ interface RiskGroupProps {
     ticketsRow: number;
     dayDate: string;
     numberSource: NumberSource;
+    onOpenTrade?: (trade: Trade) => void;
 }
 
 function RiskGroup({
@@ -249,6 +260,7 @@ function RiskGroup({
     ticketsRow,
     dayDate,
     numberSource,
+    onOpenTrade,
 }: RiskGroupProps) {
     const listId = `tickets-${group.id}-${dayDate}`;
     const priced = trades.filter((trade) => trade.moneyness !== null);
@@ -286,8 +298,10 @@ function RiskGroup({
                         <Ticket
                             key={`${trade.symbol}-${trade.strike}-${trade.expiration}-${index}`}
                             trade={trade}
+                            dayDate={dayDate}
                             showTierBadge={group.showTierBadge}
                             numberSource={numberSource}
+                            onOpen={onOpenTrade}
                         />
                     ))}
             </div>
@@ -316,6 +330,42 @@ function displayed(source: NumberSource, actual: number | null, quoted: number |
 }
 
 const FALLBACK_TITLE = 'No 7:30am quote was captured — showing the number VADER advertised.';
+
+/**
+ * The band behind a ticket's dot, or null for no dot at all.
+ *
+ * It grades the numbers ON the card, so the Actual/VADER toggle moves it and it
+ * can never disagree with the figures beside it. The cushion is measured against
+ * the underlying's latest close, which is only still the market on the newest
+ * days — hence the recency gate rather than a dot down the whole week. Ungraded
+ * shows nothing: a missing yield is not a verdict.
+ */
+function useTicketGrade(
+    trade: Trade,
+    dayDate: string,
+    annualizedYield: number | null,
+    delta: number | null,
+): GradeBand | null {
+    const settings = useGradeSettings();
+    const cautionSymbols = useCautionSymbols();
+    const vix = useVixValue();
+    return useMemo(() => {
+        if (!isRecentSignalDay(dayDate)) return null;
+        const { band } = gradeTrade(
+            {
+                symbol: trade.symbol,
+                annualizedYield,
+                delta,
+                strike: trade.strike,
+                price: trade.closeUnderlying ?? trade.actualUnderlying,
+                cautionSymbols: [...cautionSymbols],
+                vix,
+            },
+            settings,
+        );
+        return band === 'ungraded' ? null : band;
+    }, [trade, dayDate, annualizedYield, delta, cautionSymbols, settings, vix]);
+}
 
 function Figure({ shown, format }: { shown: Displayed; format: (value: number | null) => string }) {
     if (!shown.fallback) return <b>{format(shown.value)}</b>;
@@ -430,25 +480,77 @@ function MoneynessBadge({ trade }: { trade: Trade }) {
     );
 }
 
+/**
+ * A ticket opens its drill-in when there is one to open.
+ *
+ * The whole card is the control rather than a stretched-link overlay: an overlay
+ * sits on top of the text and makes the numbers unselectable, and these numbers
+ * get copied. A `role="button"` on the article costs nothing and leaves the text
+ * where it is — with one catch, handled in `activate` below.
+ */
 function Ticket({
     trade,
+    dayDate,
     showTierBadge,
     numberSource,
+    onOpen,
 }: {
     trade: Trade;
+    dayDate: string;
     showTierBadge: boolean;
     numberSource: NumberSource;
+    onOpen?: (trade: Trade) => void;
 }) {
     const delta = displayed(numberSource, trade.actualDelta, trade.delta);
     const premium = displayed(numberSource, trade.actualPremium, trade.premium);
     const annualized = displayed(numberSource, trade.actualAnnualizedYield, trade.annualizedYield);
+    const band = useTicketGrade(trade, dayDate, annualized.value, delta.value);
     const illiquid = trade.actualIlliquid && !premium.fallback && numberSource === 'actual';
     const deltaDiff = absoluteDiff(numberSource, trade.actualDelta, trade.delta);
     const premiumDiff = percentDiff(numberSource, trade.actualPremium, trade.premium);
     const expired = hasExpired(trade.expiration);
 
+    function activate() {
+        // Finishing a drag that selected some of the ticket's own text is not a
+        // click on the ticket, however much the browser insists it is.
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed) return;
+        onOpen?.(trade);
+    }
+
+    // Space scrolls the page on keydown, and Enter and Space fire at different
+    // moments on a native button, so both are matched here rather than lumped in.
+    const interactive = onOpen
+        ? ({
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': `${trade.symbol} ${formatStrike(trade.strike, trade.optionRight)}, open details`,
+              onClick: activate,
+              onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
+                  if (event.repeat) return;
+                  if (event.key === 'Enter') {
+                      event.preventDefault();
+                      activate();
+                  } else if (event.key === ' ') {
+                      event.preventDefault();
+                  }
+              },
+              onKeyUp: (event: ReactKeyboardEvent<HTMLElement>) => {
+                  if (event.key === ' ') {
+                      event.preventDefault();
+                      activate();
+                  }
+              },
+          } as const)
+        : {};
+
     return (
-        <article className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}${expired ? ' is-expired' : ''}`}>
+        <article
+            className={`ticket ${trade.optionRight === 'P' ? 'put' : 'call'}${expired ? ' is-expired' : ''}${
+                onOpen ? ' is-interactive' : ''
+            }`}
+            {...interactive}
+        >
             <div className="ticket-row1">
                 <span className="ticker">
                     {trade.symbol} {formatStrike(trade.strike, trade.optionRight)}
@@ -501,6 +603,14 @@ function Ticket({
                     <b>{formatMoney(trade.collateral)}</b> collateral
                 </span>
             </p>
+            {band && (
+                <span
+                    className={`grade-corner ${band}`}
+                    title={`${GRADE_BAND_LABELS[band]} against your grading thresholds. Open the ticket for why.`}
+                >
+                    <span className="sr-only">{GRADE_BAND_LABELS[band]} grade</span>
+                </span>
+            )}
         </article>
     );
 }

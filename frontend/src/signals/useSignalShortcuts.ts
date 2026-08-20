@@ -29,10 +29,19 @@ interface Handlers {
     onCycleExpiry: () => void;
     onCycleMoneyness: () => void;
     onResetMenus: () => void;
+    /**
+     * Set while the drill-in is open. Every shortcut here is a single letter, so
+     * without this, closing the modal with `r` would also reset the page's filters.
+     */
+    suspended?: boolean;
 }
 
 export function useSignalShortcuts(handlers: Handlers): void {
-    useWeekArrows({ onPrevious: handlers.onPreviousWeek, onNext: handlers.onNextWeek });
+    useWeekArrows({
+        onPrevious: handlers.onPreviousWeek,
+        onNext: handlers.onNextWeek,
+        suspended: handlers.suspended,
+    });
 
     // Read through a ref so the listener binds once, however many handlers the
     // page passes and however often they are rebuilt.
@@ -41,6 +50,7 @@ export function useSignalShortcuts(handlers: Handlers): void {
 
     useEffect(() => {
         function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (latest.current.suspended) return;
             if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
             if (isTyping(event.target)) return;
 

@@ -53,7 +53,8 @@ export function CautionPage() {
                 <AlertIcon />
                 <span>
                     Underlyings listed here are flagged with a caution icon wherever they appear, on the live signals
-                    grid and on the weekly calendars. Enter one symbol per line, or separate them with spaces or commas.
+                    grid and on the weekly calendars, and every signal on one grades red however good its numbers look.
+                    Enter one symbol per line, or separate them with spaces or commas.
                 </span>
             </p>
 

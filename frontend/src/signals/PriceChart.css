@@ -1,0 +1,150 @@
+/* A phone has no room for six months of daily closes at a legible size, and the
+   numbers above it answer the same question in less space. Gone entirely rather
+   than shrunk: a 2cm chart is decoration. */
+.price-chart {
+    display: none;
+    margin: 0;
+}
+
+/* The dot is placed against the drawing alone, so it gets a box of its own rather
+   than the figure's — which also holds the axis and the legend below it. */
+.chart-plot {
+    position: relative;
+}
+
+@media (min-width: 640px) {
+    .price-chart {
+        display: block;
+        position: relative;
+    }
+
+    .price-chart svg {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 7;
+    }
+}
+
+/* Beside the numbers rather than under them from here up, which buys the trend the
+   height it was short of. */
+@media (min-width: 1024px) {
+    .price-chart svg {
+        aspect-ratio: 2 / 1;
+    }
+}
+
+/* Stretched geometry, so every stroke is scaled with it. vector-effect keeps the
+   lines an even weight instead of fat horizontally and thin vertically. */
+.price-chart polyline,
+.price-chart line {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+}
+
+.chart-close {
+    stroke: var(--text-heading);
+    stroke-width: 1.5;
+}
+
+.chart-sma50 {
+    stroke: var(--conservative);
+    stroke-width: 1;
+}
+
+.chart-sma200 {
+    stroke: var(--aggressive);
+    stroke-width: 1;
+}
+
+.chart-strike {
+    stroke: var(--put);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+}
+
+.chart-axis {
+    position: relative;
+    height: 1rem;
+    user-select: none;
+}
+/* clip-path rather than border-radius: --radius is 0 across the app, and this is a
+   data point rather than a piece of chrome, so it rounds itself without one. */
+.chart-low {
+    position: absolute;
+    width: 0.5rem;
+    height: 0.5rem;
+    transform: translate(-50%, -50%);
+    background: var(--negative);
+    clip-path: circle(50%);
+    pointer-events: none;
+}
+
+.chart-axis span {
+    position: absolute;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Flush with the ends of the plot rather than centred on them, so neither label
+   hangs off the side of the figure. */
+.chart-axis span.start {
+    left: 0;
+}
+
+.chart-axis span.end {
+    right: 0;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.1rem;
+    margin-top: 0.35rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A dash of the line's own colour, so the key reads without a second lookup. */
+.chart-key::before {
+    content: '';
+    display: inline-block;
+    width: 0.75rem;
+    height: 0;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+    border-top: 2px solid currentcolor;
+}
+
+.chart-key.low {
+    color: var(--negative);
+}
+.chart-key.sma50 {
+    color: var(--conservative);
+}
+.chart-key.sma200 {
+    color: var(--aggressive);
+}
+.chart-key.strike {
+    color: var(--put);
+}
+
+/* The low is a point, not a line, so its key is the dot it draws. */
+.chart-key.low::before {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-top: none;
+    background: currentcolor;
+    clip-path: circle(50%);
+}
+
+.chart-key.strike::before {
+    border-top-style: dashed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .price-chart {
+        animation: none;
+    }
+}

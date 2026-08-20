@@ -18,6 +18,7 @@ import {
 import { useFavorites } from './FavoritesProvider';
 import { useRecentlyVisited } from './RecentlyVisitedProvider';
 import { ThemeToggle } from './ThemeToggle';
+import { VixChip } from './VixChip';
 import { MAX_FAVORITES } from './navLists';
 import { NAV_SECTIONS, type NavItem, type NavSection } from './navModel';
 import './Navbar.css';
@@ -114,6 +115,8 @@ export function Navbar({
                 )}
 
                 <div className="bar-right">
+                    <VixChip />
+
                     <div className="bar-tools">
                         {onOpenSearch && (
                             <button

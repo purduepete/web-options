@@ -45,6 +45,8 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         actualPremium: null,
         actualAnnualizedYield: null,
         actualIlliquid: false,
+        actualIv: null,
+        actualUnderlying: null,
         closeDate: null,
         closeUnderlying: null,
         moneyness: null,
@@ -168,6 +170,33 @@ describe('LiveSignalsPage', () => {
     it('asks the server for the week named in the URL', async () => {
         renderPage('/?week=2025-07-07');
         await waitFor(() => expect(fetchWeekSignals).toHaveBeenCalledWith('2025-07-07'));
+    });
+
+    it('grades the newest day and leaves the rest of the week ungraded', async () => {
+        const now = new Date();
+        const today = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0'),
+        ].join('-');
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [trade('OLD', { annualizedYield: 5 })]),
+                    day(today, 'Today', [
+                        trade('POOR', { annualizedYield: 5 }),
+                        trade('GOOD', { annualizedYield: 50, delta: -0.1, closeUnderlying: 120 }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+
+        const poor = await screen.findByRole('button', { name: /^POOR/ });
+        expect(poor.querySelector('.grade-corner.red')).toBeTruthy();
+        expect(screen.getByRole('button', { name: /^GOOD/ }).querySelector('.grade-corner.green')).toBeTruthy();
+        // A week-old signal is graded against a price the market left behind.
+        expect(screen.getByRole('button', { name: /^OLD/ }).querySelector('.grade-corner')).toBeNull();
     });
 
     it('steps back a week and records it in the URL', async () => {
