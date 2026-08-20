@@ -1,6 +1,7 @@
 import {
     SUMMARY_COLUMNS,
     groupIdForTrade,
+    hasHalfFigure,
     hasKeptHalf,
     matchesExpiry,
     matchesSymbolFilter,
@@ -124,6 +125,7 @@ function summarizeCell(trades: Trade[]): SummaryCell {
         priced: trades.filter((trade) => trade.moneyness !== null).length,
         otm: trades.filter((trade) => trade.moneyness === 'otm').length,
         captured: trades.filter((trade) => trade.actualPremium !== null).length,
+        halfRollup: trades.filter(hasHalfFigure).length,
         halfKept: trades.filter(hasKeptHalf).length,
         premium: total(nonNull(trades.map((trade) => trade.actualPremium ?? trade.premium))),
         collateral: total(nonNull(trades.map((trade) => trade.collateral))),

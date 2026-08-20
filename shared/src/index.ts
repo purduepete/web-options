@@ -81,6 +81,11 @@ export function hasKeptHalf(trade: Trade): boolean {
     return trade.bestPremiumKept !== null && trade.bestPremiumKept > HALF_THE_PREMIUM;
 }
 
+/** The denominator for the above: a trade the nightly rollup has reached at all. */
+export function hasHalfFigure(trade: Trade): boolean {
+    return trade.bestPremiumKept !== null;
+}
+
 /** Risk tiers, least to most. Anything else falls through to `other`. */
 export const TIER_ORDER = ['conservative', 'balanced', 'aggressive'] as const;
 
@@ -153,9 +158,10 @@ export const SUMMARY_COLUMN_LABELS: Record<SummaryColumn, string> = {
  * moneyness and belongs to neither side. `captured` counts contracts that had a
  * real captured quote, so a cell leaning on VADER's fallback can say so.
  *
- * `halfKept` counts the trades that have been up more than half their premium at
- * some close. It has no denominator on purpose: the weeks that predate the
- * nightly rollup have no figure at all, and a rate would report them as failures.
+ * `halfRollup` is the denominator for `halfKept`, the trades that have been up
+ * more than half their premium at some close. The weeks that predate the nightly
+ * rollup have no figure at all, and rating those against every signal would
+ * report them as failures rather than as unmeasured.
  *
  * The figures are the captured numbers, falling back per contract to the ones
  * VADER advertised. The summary offers no choice between the two: a month-wide
@@ -171,6 +177,7 @@ export interface SummaryCell {
     priced: number;
     otm: number;
     captured: number;
+    halfRollup: number;
     halfKept: number;
     premium: number | null;
     collateral: number | null;

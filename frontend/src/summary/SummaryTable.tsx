@@ -25,6 +25,11 @@ function otmRate(cell: SummaryCell): number | null {
     return cell.priced === 0 ? null : (cell.otm / cell.priced) * 100;
 }
 
+/** Out of the trades the nightly rollup has reached, not out of every signal. */
+function halfRate(cell: SummaryCell): number | null {
+    return cell.halfRollup === 0 ? null : (cell.halfKept / cell.halfRollup) * 100;
+}
+
 /* The aggregates are set off by the air around them rather than by a heavier
    line: in a table already ruled throughout, no line at all separates hardest. */
 function Gap() {
@@ -70,11 +75,14 @@ function Cell({ cell }: { cell: SummaryCell }) {
                 </b>
                 <span className="summary-unit">yield</span>
             </span>
-            {/* Left out when it is none rather than printed as a zero: the weeks
-                before the nightly rollup have no figure, not a figure of none. */}
-            {cell.halfKept > 0 && (
-                <span className="summary-metric" title="Have been up over half their premium at a close">
-                    <b className="summary-figure summary-half">{cell.halfKept}</b>
+            {/* Left out where the rollup has reached nothing at all rather than
+                printed as a zero: the weeks before it have no figure, not a
+                figure of none. */}
+            {cell.halfRollup > 0 && (
+                <span className="summary-metric" title={`${cell.halfKept} of ${cell.halfRollup} the rollup has reached`}>
+                    <b className="summary-figure">
+                        {cell.halfKept} ({formatPercent(halfRate(cell))})
+                    </b>
                     <span className="summary-unit">over half</span>
                 </span>
             )}

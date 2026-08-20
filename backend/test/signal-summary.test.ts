@@ -164,7 +164,9 @@ describe('summarizeRange', () => {
         const all = weeks[0]!.cells.all;
 
         expect(all.signals).toBe(3);
-        // Exactly half is not over it, and a signal the rollup has not reached is not either.
+        // Exactly half is not over it, and a signal the rollup has not reached is
+        // not counted against the two it has.
+        expect(all.halfRollup).toBe(2);
         expect(all.halfKept).toBe(1);
     });
 
