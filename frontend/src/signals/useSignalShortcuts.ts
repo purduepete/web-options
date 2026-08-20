@@ -17,7 +17,6 @@ const ISOLATE_KEYS: Record<string, GroupId> = {
     c: 'conservative',
     b: 'balanced',
     a: 'aggressive',
-    o: 'other',
 };
 
 interface Handlers {
@@ -28,6 +27,7 @@ interface Handlers {
     onFocusSymbolFilter: () => void;
     onCycleExpiry: () => void;
     onCycleMoneyness: () => void;
+    onCycleHalf: () => void;
     onResetMenus: () => void;
     /**
      * Set while the drill-in is open. Every shortcut here is a single letter, so
@@ -68,6 +68,9 @@ export function useSignalShortcuts(handlers: Handlers): void {
             } else if (key === 'm') {
                 event.preventDefault();
                 latest.current.onCycleMoneyness();
+            } else if (key === 'o') {
+                event.preventDefault();
+                latest.current.onCycleHalf();
             } else if (key === 'r') {
                 event.preventDefault();
                 latest.current.onResetMenus();

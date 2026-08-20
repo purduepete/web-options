@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { DaySignals, GradeBand, NumberSource, Trade } from '@weboptions/shared';
 import { GRADE_BAND_LABELS, gradeTrade, hasExpired, hasKeptHalf, isRecentSignalDay } from '@weboptions/shared';
-import type { ExpiryFilter, MoneynessFilter, SignalGroup } from './grouping';
+import type { ExpiryFilter, HalfFilter, MoneynessFilter, SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
 import {
     formatCompactMoney,
@@ -44,6 +44,8 @@ interface WeekGridProps {
     expiryFilter: ExpiryFilter;
     /** And the third. */
     moneynessFilter: MoneynessFilter;
+    /** And the fourth. */
+    halfFilter: HalfFilter;
     /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
     numberSource: NumberSource;
     /** Opens the drill-in. Absent on the calendar and the summary, where tickets are static. */
@@ -56,13 +58,26 @@ interface WeekGridProps {
  * Why a day has nothing on it. A filter that empties a card has to own up to it,
  * or the reader reads a quiet day where there was only a narrow question.
  */
-function emptyDayReason(symbolFilter: string, expiryFilter: ExpiryFilter, moneynessFilter: MoneynessFilter): string {
+function emptyDayReason(
+    symbolFilter: string,
+    expiryFilter: ExpiryFilter,
+    moneynessFilter: MoneynessFilter,
+    halfFilter: HalfFilter,
+): string {
     const typed = symbolFilter.trim();
-    if (typed.startsWith('!')) return `Nothing here but "${typed.slice(1).trim()}".`;
+    const terms = typed
+        .split(',')
+        .map((term) => term.trim())
+        .filter((term) => term !== '');
+    if (terms.length > 0 && terms.every((term) => term.startsWith('!'))) {
+        return `Nothing here but "${terms.map((term) => term.slice(1).trim()).join(', ')}".`;
+    }
     if (typed) return `No matches for "${typed}".`;
     if (expiryFilter === 'active') return 'Every signal this day has expired.';
     if (expiryFilter === 'expired') return 'Nothing this day has expired yet.';
     if (moneynessFilter !== 'all') return `Nothing this day closed ${moneynessFilter.toUpperCase()}.`;
+    if (halfFilter === 'yes') return 'Nothing this day has passed half its premium.';
+    if (halfFilter === 'no') return 'Nothing this day is short of half its premium.';
     return 'No signals parsed for this day.';
 }
 
@@ -74,6 +89,7 @@ export function WeekGrid({
     symbolFilter,
     expiryFilter,
     moneynessFilter,
+    halfFilter,
     numberSource,
     onOpenTrade,
     currentWeek,
@@ -131,6 +147,7 @@ export function WeekGrid({
                     symbolFilter={symbolFilter}
                     expiryFilter={expiryFilter}
                     moneynessFilter={moneynessFilter}
+                    halfFilter={halfFilter}
                     numberSource={numberSource}
                     onOpenTrade={onOpenTrade}
                     totalRows={totalRows}
@@ -159,6 +176,7 @@ function DayCard({
     symbolFilter,
     expiryFilter,
     moneynessFilter,
+    halfFilter,
     numberSource,
     onOpenTrade,
     totalRows,
@@ -212,7 +230,7 @@ function DayCard({
                 that leaves them in the layout leaves their rows behind too. */}
             {folded ? null : day.trades.length === 0 ? (
                 <p className="no-trades" style={{ gridRow: 2 }}>
-                    {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter)}
+                    {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter, halfFilter)}
                 </p>
             ) : (
                 groups.map((group, index) => {

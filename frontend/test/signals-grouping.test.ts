@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DaySignals, Trade } from '@weboptions/shared';
 import {
     EXPIRY_FILTERS,
+    HALF_FILTERS,
     MONEYNESS_FILTERS,
     buildGroups,
     cycle,
     filterDaysByExpiry,
+    filterDaysByHalf,
     filterDaysByMoneyness,
     filterDaysBySymbol,
     groupTrades,
@@ -53,6 +55,8 @@ describe('cycle', () => {
         expect(cycle(EXPIRY_FILTERS, 'active')).toBe('all');
         expect(cycle(MONEYNESS_FILTERS, 'itm')).toBe('otm');
         expect(cycle(MONEYNESS_FILTERS, 'otm')).toBe('all');
+        expect(cycle(HALF_FILTERS, 'yes')).toBe('no');
+        expect(cycle(HALF_FILTERS, 'no')).toBe('all');
     });
 
     it('starts from the top when handed something not on the list', () => {
@@ -80,6 +84,26 @@ describe('filterDaysBySymbol', () => {
         const result = filterDaysBySymbol(days, 'aapl');
         expect(result).toHaveLength(2);
         expect(result[1]?.trades).toEqual([]);
+    });
+
+    it('takes a comma-separated list, spaced however it was typed', () => {
+        const result = filterDaysBySymbol(days, 'aapl , amd');
+        expect(result.map((d) => d.trades.map((t) => t.symbol))).toEqual([['AAPL'], ['AMD']]);
+    });
+
+    it('ignores the comma left behind mid-typing', () => {
+        expect(filterDaysBySymbol(days, 'aapl,')[0]?.trades.map((t) => t.symbol)).toEqual(['AAPL']);
+        expect(filterDaysBySymbol(days, ',')).toEqual(days);
+    });
+
+    it('negates a term on its own, so a whole list can be excluded', () => {
+        const result = filterDaysBySymbol(days, '!aapl,!amd');
+        expect(result.map((d) => d.trades.map((t) => t.symbol))).toEqual([['MSFT'], []]);
+    });
+
+    it('keeps what one term wants and drops what another does not, in the same list', () => {
+        const wide = [day('2025-08-11', 'Monday', [trade('AAPL'), trade('AMD'), trade('MSFT')])];
+        expect(filterDaysBySymbol(wide, 'a,!amd')[0]?.trades.map((t) => t.symbol)).toEqual(['AAPL']);
     });
 });
 
@@ -141,6 +165,34 @@ describe('filterDaysByMoneyness', () => {
 
     it('drops a contract with no close of its own, since it has no moneyness', () => {
         expect(filterDaysByMoneyness(days, 'otm')[0]?.trades.map((t) => t.symbol)).toEqual(['MSFT']);
+    });
+});
+
+describe('filterDaysByHalf', () => {
+    const days = [
+        day('2025-08-11', 'Monday', [
+            trade('AAPL', { bestPremiumKept: 0.71 }),
+            trade('MSFT', { bestPremiumKept: 0.5 }),
+            trade('AMD', { bestPremiumKept: null }),
+        ]),
+    ];
+
+    it('leaves the week alone when showing everything', () => {
+        expect(filterDaysByHalf(days, 'all')).toEqual(days);
+    });
+
+    it('keeps only what has been up over half its premium', () => {
+        expect(filterDaysByHalf(days, 'yes')[0]?.trades.map((t) => t.symbol)).toEqual(['AAPL']);
+    });
+
+    it('answers no for a rolled-up trade short of half, and for exactly half', () => {
+        expect(filterDaysByHalf(days, 'no')[0]?.trades.map((t) => t.symbol)).toEqual(['MSFT']);
+    });
+
+    it('leaves a trade the rollup has not reached out of both answers', () => {
+        const untouched = [day('2025-08-11', 'Monday', [trade('AMD')])];
+        expect(filterDaysByHalf(untouched, 'yes')[0]?.trades).toEqual([]);
+        expect(filterDaysByHalf(untouched, 'no')[0]?.trades).toEqual([]);
     });
 });
 

@@ -9,19 +9,21 @@ import { WeekGrid } from '../signals/WeekGrid';
 import { TradeDetail } from '../signals/TradeDetail';
 import { WeekScore } from '../signals/WeekScore';
 import { NumberSourceMenu } from '../signals/NumberSourceMenu';
-import { ExpiryFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
+import { ExpiryFilterMenu, HalfFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
 import {
     EXPIRY_FILTERS,
+    HALF_FILTERS,
     MONEYNESS_FILTERS,
     buildGroups,
     cycle,
     filterDaysByExpiry,
+    filterDaysByHalf,
     filterDaysByMoneyness,
     filterDaysBySymbol,
     groupTrades,
     shiftWeek,
 } from '../signals/grouping';
-import type { ExpiryFilter, GroupId, MoneynessFilter } from '../signals/grouping';
+import type { ExpiryFilter, GroupId, HalfFilter, MoneynessFilter } from '../signals/grouping';
 import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
@@ -49,6 +51,10 @@ function readMoneynessFilter(value: string | null): MoneynessFilter {
     return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
 }
 
+function readHalfFilter(value: string | null): HalfFilter {
+    return HALF_FILTERS.includes(value as HalfFilter) ? (value as HalfFilter) : 'all';
+}
+
 export function LiveSignalsPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
@@ -56,6 +62,7 @@ export function LiveSignalsPage() {
     const symbol = params.get('symbol') ?? '';
     const expiry = readExpiryFilter(params.get('expiry'));
     const moneyness = readMoneynessFilter(params.get('moneyness'));
+    const half = readHalfFilter(params.get('half'));
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -97,8 +104,14 @@ export function LiveSignalsPage() {
 
     const days = useMemo(
         () =>
-            filterDaysByMoneyness(filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry), moneyness),
-        [data, symbol, expiry, moneyness],
+            filterDaysByHalf(
+                filterDaysByMoneyness(
+                    filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
+                    moneyness,
+                ),
+                half,
+            ),
+        [data, symbol, expiry, moneyness, half],
     );
     const groups = useMemo(() => buildGroups(days), [days]);
 
@@ -187,6 +200,18 @@ export function LiveSignalsPage() {
         [setParams],
     );
 
+    const setHalfParam = useCallback(
+        (next: HalfFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('half');
+                else updated.set('half', next);
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
     // Both filters live in the URL, so they clear in one write rather than two
     // history entries that each undo half of it.
     const resetMenus = useCallback(() => {
@@ -195,11 +220,13 @@ export function LiveSignalsPage() {
             const updated = new URLSearchParams(current);
             updated.delete('expiry');
             updated.delete('moneyness');
+            updated.delete('half');
             return updated;
         });
     }, [setNumberSource, setParams]);
 
-    const atMenuDefaults = numberSource === DEFAULT_NUMBER_SOURCE && expiry === 'all' && moneyness === 'all';
+    const atMenuDefaults =
+        numberSource === DEFAULT_NUMBER_SOURCE && expiry === 'all' && moneyness === 'all' && half === 'all';
     const filtersNarrowed = !atMenuDefaults || symbol !== '';
 
     // Selected, not just focused: the next symbol typed replaces the last one.
@@ -217,6 +244,8 @@ export function LiveSignalsPage() {
         () => setMoneynessParam(cycle(MONEYNESS_FILTERS, moneyness)),
         [moneyness, setMoneynessParam],
     );
+
+    const cycleHalf = useCallback(() => setHalfParam(cycle(HALF_FILTERS, half)), [half, setHalfParam]);
 
     const goPrevious = useCallback(() => {
         if (!data?.hasPriorWeekData) return;
@@ -260,6 +289,7 @@ export function LiveSignalsPage() {
         onFocusSymbolFilter: focusSymbolFilter,
         onCycleExpiry: cycleExpiry,
         onCycleMoneyness: cycleMoneyness,
+        onCycleHalf: cycleHalf,
         onResetMenus: resetMenus,
         // Every shortcut here is a bare letter, so `r` in an open dialog would
         // otherwise reset the filters behind it.
@@ -341,6 +371,8 @@ export function LiveSignalsPage() {
 
                     <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
 
+                    <HalfFilterMenu value={half} onChange={setHalfParam} />
+
                     {/* Held out of sight rather than out of the bar while it would
                         do nothing: arriving between the menus and the week would
                         take its width out of the row and push the symbol filter onto
@@ -406,6 +438,7 @@ export function LiveSignalsPage() {
                         symbolFilter={symbol}
                         expiryFilter={expiry}
                         moneynessFilter={moneyness}
+                        halfFilter={half}
                         numberSource={numberSource}
                         onOpenTrade={setSelectedTrade}
                         currentWeek={data.isCurrentWeek}

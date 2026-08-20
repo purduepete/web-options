@@ -1,5 +1,14 @@
 import type { DaySignals, ExpiryFilter, GroupId, NumberSource, Trade } from '@weboptions/shared';
-import { EXPIRY_FILTERS, GROUP_IDS, GROUP_LABELS, groupIdForTrade, hasExpired, TIER_ORDER } from '@weboptions/shared';
+import {
+    EXPIRY_FILTERS,
+    GROUP_IDS,
+    GROUP_LABELS,
+    groupIdForTrade,
+    hasExpired,
+    hasHalfFigure,
+    hasKeptHalf,
+    TIER_ORDER,
+} from '@weboptions/shared';
 
 /**
  * The grid's layout algebra, kept away from React so it can be reasoned about
@@ -23,6 +32,11 @@ export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
 
 export type MoneynessFilter = (typeof MONEYNESS_FILTERS)[number];
 
+/** Whether the trade has been up over half its premium at some close. */
+export const HALF_FILTERS = ['all', 'yes', 'no'] as const;
+
+export type HalfFilter = (typeof HALF_FILTERS)[number];
+
 /** The next choice along, wrapping. What a filter's shortcut key steps through. */
 export function cycle<T extends string>(choices: readonly T[], current: T): T {
     const here = choices.indexOf(current);
@@ -38,18 +52,30 @@ export interface SignalGroup {
 }
 
 /**
- * Narrows every day's trades to those whose symbol contains `query`, or, when the
- * query opens with a bang, to those whose symbol does not. Days are kept even when
- * they empty out, so the card still appears and can say that nothing matched.
+ * Narrows every day's trades by a comma-separated list of symbol fragments. Each term
+ * carries its own bang, so a trade has to match one of the plain terms, where there are
+ * any, and none of the banged ones. Days are kept even when they empty out, so the card
+ * still appears and can say that nothing matched.
  */
 export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignals[] {
-    const typed = query.trim().toUpperCase();
-    const drop = typed.startsWith('!');
-    const needle = drop ? typed.slice(1).trim() : typed;
-    if (!needle) return days;
+    const terms = query
+        .toUpperCase()
+        .split(',')
+        .map((term) => term.trim())
+        .filter((term) => term !== '');
+    const wanted = terms.filter((term) => !term.startsWith('!'));
+    const unwanted = terms
+        .filter((term) => term.startsWith('!'))
+        .map((term) => term.slice(1).trim())
+        .filter((term) => term !== '');
+    if (wanted.length === 0 && unwanted.length === 0) return days;
     return days.map((day) => ({
         ...day,
-        trades: day.trades.filter((trade) => trade.symbol.toUpperCase().includes(needle) !== drop),
+        trades: day.trades.filter((trade) => {
+            const symbol = trade.symbol.toUpperCase();
+            if (unwanted.some((term) => symbol.includes(term))) return false;
+            return wanted.length === 0 || wanted.some((term) => symbol.includes(term));
+        }),
     }));
 }
 
@@ -75,6 +101,20 @@ export function filterDaysByMoneyness(days: DaySignals[], filter: MoneynessFilte
     return days.map((day) => ({
         ...day,
         trades: day.trades.filter((trade) => trade.moneyness === filter),
+    }));
+}
+
+/**
+ * Drops the trades on the wrong side of half their premium. A trade the nightly
+ * rollup has not reached is left out of `no` as well as `yes`: it has not failed
+ * to get there so much as never been asked.
+ */
+export function filterDaysByHalf(days: DaySignals[], filter: HalfFilter): DaySignals[] {
+    if (filter === 'all') return days;
+    const keep = filter === 'yes' ? hasKeptHalf : (trade: Trade) => hasHalfFigure(trade) && !hasKeptHalf(trade);
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter(keep),
     }));
 }
 

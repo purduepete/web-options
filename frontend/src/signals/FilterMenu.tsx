@@ -1,6 +1,13 @@
 import { ChoiceMenu, type ChoiceOption } from '../components/ChoiceMenu';
-import { ClockIcon, TargetIcon } from '../components/icons';
-import { EXPIRY_FILTERS, MONEYNESS_FILTERS, type ExpiryFilter, type MoneynessFilter } from './grouping';
+import { ClockIcon, TargetIcon, TrendingUpIcon } from '../components/icons';
+import {
+    EXPIRY_FILTERS,
+    HALF_FILTERS,
+    MONEYNESS_FILTERS,
+    type ExpiryFilter,
+    type HalfFilter,
+    type MoneynessFilter,
+} from './grouping';
 
 /**
  * The menus that narrow what the week shows.
@@ -48,6 +55,27 @@ export function MoneynessFilterMenu({
             name="Moneyness"
             icon={<TargetIcon width={15} height={15} />}
             options={MONEYNESS_FILTERS.map((filter) => ({ value: filter, ...MONEYNESS_OPTIONS[filter] }))}
+            value={value}
+            neutral="all"
+            onChange={onChange}
+        />
+    );
+}
+
+// A trade the nightly rollup has not reached has no answer either way, so it
+// answers neither question rather than being counted as one of the failures.
+const HALF_OPTIONS: Record<HalfFilter, Omit<ChoiceOption<HalfFilter>, 'value'>> = {
+    all: { label: 'All', description: 'However far it has got' },
+    yes: { label: 'Yes', description: 'Has been up over half its premium at a close' },
+    no: { label: 'No', description: 'Rolled up, and has not reached half' },
+};
+
+export function HalfFilterMenu({ value, onChange }: { value: HalfFilter; onChange: (next: HalfFilter) => void }) {
+    return (
+        <ChoiceMenu
+            name="Over half"
+            icon={<TrendingUpIcon width={15} height={15} />}
+            options={HALF_FILTERS.map((filter) => ({ value: filter, ...HALF_OPTIONS[filter] }))}
             value={value}
             neutral="all"
             onChange={onChange}

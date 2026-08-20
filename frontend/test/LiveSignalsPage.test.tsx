@@ -393,6 +393,33 @@ describe('LiveSignalsPage', () => {
         expect(within(tuesday).getByText('Nothing this day closed ITM.')).toBeTruthy();
     });
 
+    it('narrows the week to what has already made half its premium', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('AAPL', { bestPremiumKept: 0.71 }),
+                        trade('MSFT', { bestPremiumKept: 0.2 }),
+                        // Never rolled up, so it is neither a yes nor a no.
+                        trade('NVDA'),
+                    ]),
+                    day('2025-08-12', 'Tuesday', [trade('AMD', { bestPremiumKept: 0.2 })]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await choose(user, /^Over half:/, 'Yes');
+
+        expect(screen.getByText('AAPL $100P')).toBeTruthy();
+        expect(screen.queryByText('MSFT $100P')).toBeNull();
+        expect(screen.queryByText('NVDA $100P')).toBeNull();
+        const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
+        expect(within(tuesday).getByText('Nothing this day has passed half its premium.')).toBeTruthy();
+    });
+
     it('collapses a group across every day at once', async () => {
         const user = userEvent.setup();
         fetchWeekSignals.mockResolvedValue(
@@ -499,9 +526,9 @@ describe('LiveSignalsPage menu reset', () => {
         expect(idle?.getAttribute('disabled')).not.toBeNull();
     });
 
-    it('puts all three menus back in one press', async () => {
+    it('puts every menu back in one press', async () => {
         const user = userEvent.setup();
-        renderPage('/?expiry=active&moneyness=itm');
+        renderPage('/?expiry=active&moneyness=itm&half=yes');
         await screen.findByTestId('week-grid');
         await choose(user, /^Numbers:/, 'VADER');
 
@@ -510,6 +537,7 @@ describe('LiveSignalsPage menu reset', () => {
         expect(screen.getByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
     });
 
@@ -575,6 +603,7 @@ describe('LiveSignalsPage on a phone', () => {
 
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
         expect(screen.getByRole('textbox', { name: 'Filter by symbol' })).toBeTruthy();
     });
 
@@ -677,9 +706,24 @@ describe('LiveSignalsPage filter shortcuts', () => {
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
     });
 
-    it('puts all three menus back with r', async () => {
+    it('walks the over-half filter round with o', async () => {
         const user = userEvent.setup();
-        renderPage('/?expiry=active&moneyness=itm');
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('o');
+        expect(screen.getByRole('button', { name: 'Over half: Yes' })).toBeTruthy();
+
+        await user.keyboard('o');
+        expect(screen.getByRole('button', { name: 'Over half: No' })).toBeTruthy();
+
+        await user.keyboard('o');
+        expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
+    });
+
+    it('puts every menu back with r', async () => {
+        const user = userEvent.setup();
+        renderPage('/?expiry=active&moneyness=itm&half=yes');
         await screen.findByTestId('week-grid');
         await choose(user, /^Numbers:/, 'VADER');
 
@@ -688,6 +732,7 @@ describe('LiveSignalsPage filter shortcuts', () => {
         expect(screen.getByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
     });
 
     it('types the filter keys into the symbol box rather than acting on them', async () => {
