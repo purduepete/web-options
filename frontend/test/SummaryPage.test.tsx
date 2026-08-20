@@ -235,7 +235,7 @@ describe('SummaryPage', () => {
         // One of the four `all` cells rolled up, in the week row and in the total.
         expect(screen.getAllByText('1 (25.0%)').length).toBe(2);
         // Balanced has signals but no rollup behind them, so it says nothing at all.
-        expect(screen.getAllByText('over half').length).toBe(2);
+        expect(screen.getAllByText('over half:').length).toBe(2);
     });
 
     it('fetches a month when it is opened, and not again when it is reopened', async () => {

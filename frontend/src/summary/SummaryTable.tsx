@@ -48,42 +48,45 @@ function Cell({ cell }: { cell: SummaryCell }) {
     return (
         <span className="summary-cell">
             <span className="summary-metric">
+                <span className="summary-unit">signals:</span>
                 <b className="summary-figure">{cell.signals}</b>
-                <span className="summary-unit">signals</span>
             </span>
             <span className="summary-metric" title={`${cell.otm} of ${cell.priced} with a close`}>
+                <span className="summary-unit">OTM:</span>
                 <b className="summary-figure">{formatPercent(otmRate(cell))}</b>
-                <span className="summary-unit">OTM</span>
             </span>
             <span className="summary-metric">
+                <span className="summary-unit">premium:</span>
                 <b className={figureClass} title={figureTitle}>
                     {formatMoney(cell.premium)}
                 </b>
-                <span className="summary-unit">premium</span>
             </span>
             <span className="summary-metric">
+                <span className="summary-unit">collateral:</span>
                 {/* A month's committed capital runs to millions, which no column
                     this narrow can print in full. */}
                 <b className="summary-figure" title={formatMoney(cell.collateral)}>
                     {formatCompactMoney(cell.collateral)}
                 </b>
-                <span className="summary-unit">collateral</span>
             </span>
             <span className="summary-metric" title="Weighted by collateral">
+                <span className="summary-unit">yield:</span>
                 <b className={figureClass} title={figureTitle}>
                     {formatPercent(cell.annualizedYield)}
                 </b>
-                <span className="summary-unit">yield</span>
             </span>
             {/* Left out where the rollup has reached nothing at all rather than
                 printed as a zero: the weeks before it have no figure, not a
                 figure of none. */}
             {cell.halfRollup > 0 && (
-                <span className="summary-metric" title={`${cell.halfKept} of ${cell.halfRollup} the rollup has reached`}>
+                <span
+                    className="summary-metric"
+                    title={`${cell.halfKept} of ${cell.halfRollup} the rollup has reached`}
+                >
+                    <span className="summary-unit">over half:</span>
                     <b className="summary-figure">
                         {cell.halfKept} ({formatPercent(halfRate(cell))})
                     </b>
-                    <span className="summary-unit">over half</span>
                 </span>
             )}
         </span>
