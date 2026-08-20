@@ -128,16 +128,21 @@
     font-weight: 700;
 }
 
+/* The labels share one track so every figure starts at the same column, and it is
+   `max-content` so the track is the longest label rather than a guess at it. The
+   metrics stay real boxes on subgrid rather than `display: contents`, since each
+   carries the tooltip explaining its figure. */
 .summary-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+    display: grid;
+    grid-template-columns: max-content auto;
+    gap: 0.15rem 0.3rem;
 }
 
 .summary-metric {
-    display: flex;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
     align-items: baseline;
-    gap: 0.3rem;
 }
 
 .summary-figure {
