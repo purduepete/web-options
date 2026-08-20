@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { IsoDate, Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
 import { gradeTrade } from '@weboptions/shared';
 import { Modal } from '../components/Modal';
-import { ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, CircleArrowRightIcon } from '../components/icons';
 import { SymbolMark } from '../components/SymbolMark';
 import { Loading } from '../components/Loading';
 import { GradeBadge, MoneynessChip, OutcomeChip } from '../grade/GradeBadge';
@@ -60,7 +60,11 @@ const WEB_PORTFOLIO_TRADE_URL = 'https://jimbrownhome.tail8ad282.ts.net/trading/
 function webPortfolioTradeUrl(trade: Trade, numberSource: NumberSource): string {
     const premium = numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium;
     const delta = numberSource === 'actual' ? (trade.actualDelta ?? trade.delta) : trade.delta;
-    const params = new URLSearchParams({ action: 'sell_to_open', symbol: trade.symbol });
+    const params = new URLSearchParams({
+        action: 'sell_to_open',
+        symbol: trade.symbol,
+        strategy: 'Substack - The Multiplier',
+    });
 
     if (trade.strike !== null) params.set('strike', String(trade.strike));
     if (trade.expiration !== null) params.set('expiry', trade.expiration);
@@ -225,8 +229,10 @@ export function TradeDetail({
                         href={webPortfolioTradeUrl(trade, numberSource)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        aria-label="Trade in Web Portfolio"
+                        title="Execute Option Trade"
                     >
-                        Trade in Web Portfolio
+                        <CircleArrowRightIcon width={16} height={16} />
                     </a>
                 </div>
             </header>

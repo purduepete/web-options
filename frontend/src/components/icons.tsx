@@ -212,6 +212,16 @@ export function SearchIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function CircleArrowRightIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <circle cx="12" cy="12" r="10" />
+            <path d="m12 16 4-4-4-4" />
+            <path d="M8 12h8" />
+        </svg>
+    );
+}
+
 export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>

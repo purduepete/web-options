@@ -293,6 +293,7 @@ describe('TradeDetail', () => {
             expect(url.pathname).toBe('/trading/option-trade');
             expect(url.searchParams.get('action')).toBe('sell_to_open');
             expect(url.searchParams.get('symbol')).toBe('VST');
+            expect(url.searchParams.get('strategy')).toBe('Substack - The Multiplier');
             expect(url.searchParams.get('strike')).toBe('170');
             expect(url.searchParams.get('expiry')).toBe('2026-08-21');
             expect(url.searchParams.get('optionPrice')).toBe('1.45');
