@@ -357,6 +357,14 @@ describe('LiveSignalsPage', () => {
         expect(screen.queryByText('GREEN $100P')).toBeNull();
     });
 
+    it('labels both rows of filter controls consistently', async () => {
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getAllByRole('heading', { name: 'Contract' })).toHaveLength(2);
+        expect(screen.getAllByRole('heading', { name: 'Performance' })).toHaveLength(2);
+    });
+
     it('shows the ownership icon before the ticker', async () => {
         fetchWeekSignals.mockResolvedValue(
             week({ days: [day('2025-08-11', 'Monday', [trade('PAPER', { ownedPaperContracts: 1 })])] }),

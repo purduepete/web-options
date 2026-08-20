@@ -445,9 +445,11 @@ export function LiveSignalsPage() {
                 />
             </div>
             <div className="filter-section filter-section-moneyness">
+                <h2>Contract</h2>
                 <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
             </div>
             <div className="filter-section filter-section-grade">
+                <h2>Performance</h2>
                 <GradeFilterMenu value={grades} onChange={setGradeParam} />
             </div>
             <div className="filter-section filter-section-symbol">
