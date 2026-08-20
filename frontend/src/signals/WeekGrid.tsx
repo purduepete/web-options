@@ -481,6 +481,36 @@ function MoneynessBadge({ trade }: { trade: Trade }) {
 }
 
 /**
+ * Half the premium is where a put is usually worth buying back, so a trade that
+ * has reached it at any close has already made its case. That outranks the grade
+ * corner: the grade is a guess at how a trade should go, and this is how one went.
+ */
+const HALF_THE_PREMIUM = 0.5;
+
+function TicketCorner({ trade, band }: { trade: Trade; band: GradeBand | null }) {
+    const best = trade.bestPremiumKept;
+    if (best !== null && best > HALF_THE_PREMIUM) {
+        return (
+            <span
+                className="grade-corner green"
+                title={`Has been up ${formatPercent(best * 100)} of the premium at a close. Open the ticket for when.`}
+            >
+                <span className="sr-only">up over half the premium at a close</span>
+            </span>
+        );
+    }
+    if (!band) return null;
+    return (
+        <span
+            className={`grade-corner ${band}`}
+            title={`${GRADE_BAND_LABELS[band]} against your grading thresholds. Open the ticket for why.`}
+        >
+            <span className="sr-only">{GRADE_BAND_LABELS[band]} grade</span>
+        </span>
+    );
+}
+
+/**
  * A ticket opens its drill-in when there is one to open.
  *
  * The whole card is the control rather than a stretched-link overlay: an overlay
@@ -603,14 +633,7 @@ function Ticket({
                     <b>{formatMoney(trade.collateral)}</b> collateral
                 </span>
             </p>
-            {band && (
-                <span
-                    className={`grade-corner ${band}`}
-                    title={`${GRADE_BAND_LABELS[band]} against your grading thresholds. Open the ticket for why.`}
-                >
-                    <span className="sr-only">{GRADE_BAND_LABELS[band]} grade</span>
-                </span>
-            )}
+            <TicketCorner trade={trade} band={band} />
         </article>
     );
 }

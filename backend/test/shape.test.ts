@@ -25,6 +25,7 @@ function row(overrides: Partial<SignalRow> = {}): SignalRow {
         actual_underlying: '180.40',
         close_date: new Date(Date.UTC(2026, 7, 18)),
         close_underlying: '180.25',
+        best_premium_kept: '0.612000',
         ...overrides,
     };
 }
@@ -73,6 +74,7 @@ describe('toTrade', () => {
             closeUnderlying: 180.25,
             moneyness: 'otm',
             percentFromStrike: 3,
+            bestPremiumKept: 0.612,
         });
     });
 

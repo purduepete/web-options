@@ -51,6 +51,7 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         closeUnderlying: null,
         moneyness: null,
         percentFromStrike: null,
+        bestPremiumKept: null,
         ...extra,
     };
 }
@@ -197,6 +198,36 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByRole('button', { name: /^GOOD/ }).querySelector('.grade-corner.green')).toBeTruthy();
         // A week-old signal is graded against a price the market left behind.
         expect(screen.getByRole('button', { name: /^OLD/ }).querySelector('.grade-corner')).toBeNull();
+    });
+
+    it('corners a trade that has been up over half its premium, whatever it was graded', async () => {
+        const now = new Date();
+        const today = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0'),
+        ].join('-');
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [trade('OLD', { annualizedYield: 5, bestPremiumKept: 0.71 })]),
+                    day(today, 'Today', [
+                        trade('POOR', { annualizedYield: 5, bestPremiumKept: 0.62 }),
+                        trade('HELD', { annualizedYield: 5, bestPremiumKept: 0.5 }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+
+        // A poor grade, but the trade has already made better than half the premium.
+        const poor = await screen.findByRole('button', { name: /^POOR/ });
+        expect(poor.querySelector('.grade-corner.green')).toBeTruthy();
+        expect(poor.querySelector('.grade-corner')?.getAttribute('title')).toContain('62.0% of the premium');
+        // It is history, so it needs no live price and outlasts the grading window.
+        expect(screen.getByRole('button', { name: /^OLD/ }).querySelector('.grade-corner.green')).toBeTruthy();
+        // Exactly half is not over it, so this one falls back to its own grade.
+        expect(screen.getByRole('button', { name: /^HELD/ }).querySelector('.grade-corner.red')).toBeTruthy();
     });
 
     it('steps back a week and records it in the URL', async () => {

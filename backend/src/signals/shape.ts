@@ -31,6 +31,7 @@ export interface SignalRow {
     actual_underlying: unknown;
     close_date: unknown;
     close_underlying: unknown;
+    best_premium_kept: unknown;
 }
 
 /**
@@ -135,6 +136,7 @@ export function toTrade(row: SignalRow): Trade {
         closeUnderlying,
         moneyness: toMoneyness(optionRight, strike, closeUnderlying),
         percentFromStrike: toPercentFromStrike(strike, closeUnderlying),
+        bestPremiumKept: toNumber(row.best_premium_kept),
     };
 }
 

@@ -62,6 +62,12 @@ export interface Trade {
     closeUnderlying: number | null;
     moneyness: Moneyness | null;
     percentFromStrike: number | null;
+    /**
+     * The most the position has ever been up at a close, as a fraction of the
+     * premium taken in. From the nightly rollup, so it is null until a signal has
+     * been through one, and null for good on the weeks that predate it.
+     */
+    bestPremiumKept: number | null;
 }
 
 /** Risk tiers, least to most. Anything else falls through to `other`. */

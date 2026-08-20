@@ -13,6 +13,7 @@
         "closeUnderlying",
         "moneyness",
         "percentFromStrike",
+        "bestPremiumKept",
         "isCurrentWeek",
         "hasNextWeekData"
     ],

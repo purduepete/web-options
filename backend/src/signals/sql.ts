@@ -17,6 +17,10 @@
  * The end-of-day APPLY is additive for the same reason: TOP 1 cannot multiply a row.
  * It must stay inside this CTE and correlate on the RAW s.contract_key — correlating
  * on the COALESCE dedup key would change row identity and break the parity gate.
+ *
+ * The outcome APPLY is additive on the same terms. It correlates on the four columns
+ * the nightly rollup denormalizes rather than on a key, because those are the grain
+ * of that table for a put — the same identification the drill-in's own lookup uses.
  */
 
 export const SIGNAL_QUERY = `
@@ -42,6 +46,7 @@ WITH base AS (
         q.underlying_price AS actual_underlying,
         c.price_date AS close_date,
         c.underlying_price AS close_underlying,
+        o.max_profit_capture_pct AS best_premium_kept,
         COALESCE(s.contract_key,
             CONCAT(s.symbol, '|', s.strike, '|', s.expiration)) AS contract_key,
         MAX(CAST(s.is_top_pick AS INT)) OVER (
@@ -70,6 +75,16 @@ WITH base AS (
           AND (s.expiration IS NULL OR p.price_date <= s.expiration)
         ORDER BY p.price_date DESC, p.captured_at_utc DESC
     ) c
+    OUTER APPLY (
+        SELECT TOP 1 so.max_profit_capture_pct
+        FROM opt.telegram_signal_outcome so
+        WHERE so.symbol = s.symbol
+          AND so.option_right = s.option_right
+          AND so.strike = s.strike
+          AND so.expiration = s.expiration
+          AND so.report_date = s.report_date
+        ORDER BY so.computed_date DESC
+    ) o
     WHERE s.is_current = 1 AND s.parse_status = 'parsed' AND s.option_right = 'P'
       AND s.report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 )
@@ -77,7 +92,7 @@ SELECT
     report_date, symbol, sector, option_right, strike, expiration, dte, delta,
     annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick,
     actual_delta, actual_mark, actual_illiquid, actual_iv, actual_underlying,
-    close_date, close_underlying
+    close_date, close_underlying, best_premium_kept
 FROM base
 WHERE rn = 1
 ORDER BY report_date, tier, option_right, annualized_yield DESC
