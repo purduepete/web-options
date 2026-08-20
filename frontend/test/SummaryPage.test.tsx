@@ -224,7 +224,7 @@ describe('SummaryPage', () => {
 
         await screen.findByRole('table');
 
-        expect(screen.getAllByText('75.0%').length).toBe(4);
+        expect(screen.getAllByText('3 (75.0%)').length).toBe(4);
     });
 
     it('rates the trades over half their premium against the ones the rollup reached', async () => {

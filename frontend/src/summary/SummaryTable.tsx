@@ -53,7 +53,9 @@ function Cell({ cell }: { cell: SummaryCell }) {
             </span>
             <span className="summary-metric" title={`${cell.otm} of ${cell.priced} with a close`}>
                 <span className="summary-unit">OTM:</span>
-                <b className="summary-figure">{formatPercent(otmRate(cell))}</b>
+                <b className="summary-figure">
+                    {cell.otm} ({formatPercent(otmRate(cell))})
+                </b>
             </span>
             <span className="summary-metric">
                 <span className="summary-unit">premium:</span>
