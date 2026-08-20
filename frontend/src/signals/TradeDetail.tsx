@@ -55,6 +55,21 @@ function fidelityUrl(symbol: string): string {
     return `https://digital.fidelity.com/prgw/digital/research/quote/dashboard/summary?symbol=${encodeURIComponent(symbol)}`;
 }
 
+const WEB_PORTFOLIO_TRADE_URL = 'https://jimbrownhome.tail8ad282.ts.net/trading/option-trade';
+
+function webPortfolioTradeUrl(trade: Trade, numberSource: NumberSource): string {
+    const premium = numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium;
+    const delta = numberSource === 'actual' ? (trade.actualDelta ?? trade.delta) : trade.delta;
+    const params = new URLSearchParams({ action: 'sell_to_open', symbol: trade.symbol });
+
+    if (trade.strike !== null) params.set('strike', String(trade.strike));
+    if (trade.expiration !== null) params.set('expiry', trade.expiration);
+    if (premium !== null) params.set('optionPrice', (premium / 100).toFixed(2));
+    if (delta !== null) params.set('delta', (-Math.abs(delta)).toFixed(4));
+
+    return `${WEB_PORTFOLIO_TRADE_URL}?${params.toString()}`;
+}
+
 function distance(price: number | null, average: number | null): number | null {
     if (price === null || average === null || average === 0) return null;
     return ((price - average) / average) * 100;
@@ -204,6 +219,14 @@ export function TradeDetail({
                     </a>
                     <a className="pill" href={fidelityUrl(trade.symbol)} target="_blank" rel="noopener noreferrer">
                         Fidelity
+                    </a>
+                    <a
+                        className="pill"
+                        href={webPortfolioTradeUrl(trade, numberSource)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Trade in Web Portfolio
                     </a>
                 </div>
             </header>

@@ -283,10 +283,36 @@ describe('TradeDetail', () => {
             expect(fidelity.href).toContain('symbol=VST');
         });
 
+        it('opens Web Portfolio with the quoted contract values', () => {
+            renderDetail();
+
+            const link = screen.getByRole<HTMLAnchorElement>('link', { name: 'Trade in Web Portfolio' });
+            const url = new URL(link.href);
+
+            expect(url.origin).toBe('https://jimbrownhome.tail8ad282.ts.net');
+            expect(url.pathname).toBe('/trading/option-trade');
+            expect(url.searchParams.get('action')).toBe('sell_to_open');
+            expect(url.searchParams.get('symbol')).toBe('VST');
+            expect(url.searchParams.get('strike')).toBe('170');
+            expect(url.searchParams.get('expiry')).toBe('2026-08-21');
+            expect(url.searchParams.get('optionPrice')).toBe('1.45');
+            expect(url.searchParams.get('delta')).toBe('-0.1800');
+        });
+
+        it('uses the actual values when the modal is in actual mode', () => {
+            renderDetail({ numberSource: 'actual' });
+
+            const link = screen.getByRole<HTMLAnchorElement>('link', { name: 'Trade in Web Portfolio' });
+            const url = new URL(link.href);
+
+            expect(url.searchParams.get('optionPrice')).toBe('1.60');
+            expect(url.searchParams.get('delta')).toBe('-0.3100');
+        });
+
         it('names neither the reader nor their page to the site it opens', () => {
             renderDetail();
 
-            for (const name of ['Seeking Alpha', 'Fidelity']) {
+            for (const name of ['Seeking Alpha', 'Fidelity', 'Trade in Web Portfolio']) {
                 const link = screen.getByRole('link', { name });
                 expect(link.getAttribute('rel')).toBe('noopener noreferrer');
                 expect(link.getAttribute('target')).toBe('_blank');
