@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { DaySignals, GradeBand, NumberSource, Trade } from '@weboptions/shared';
-import { GRADE_BAND_LABELS, gradeTrade, hasExpired, isRecentSignalDay } from '@weboptions/shared';
+import { GRADE_BAND_LABELS, gradeTrade, hasExpired, hasKeptHalf, isRecentSignalDay } from '@weboptions/shared';
 import type { ExpiryFilter, MoneynessFilter, SignalGroup } from './grouping';
 import { groupTrades, weekdayColumn } from './grouping';
 import {
@@ -481,19 +481,16 @@ function MoneynessBadge({ trade }: { trade: Trade }) {
 }
 
 /**
- * Half the premium is where a put is usually worth buying back, so a trade that
- * has reached it at any close has already made its case. That outranks the grade
+ * Half the premium is where a put is usually bought back, so a trade that has
+ * reached it at any close has already made its case. That outranks the grade
  * corner: the grade is a guess at how a trade should go, and this is how one went.
  */
-const HALF_THE_PREMIUM = 0.5;
-
 function TicketCorner({ trade, band }: { trade: Trade; band: GradeBand | null }) {
-    const best = trade.bestPremiumKept;
-    if (best !== null && best > HALF_THE_PREMIUM) {
+    if (hasKeptHalf(trade)) {
         return (
             <span
                 className="grade-corner green"
-                title={`Has been up ${formatPercent(best * 100)} of the premium at a close. Open the ticket for when.`}
+                title={`Has been up ${formatPercent((trade.bestPremiumKept ?? 0) * 100)} of the premium at a close. Open the ticket for when.`}
             >
                 <span className="sr-only">up over half the premium at a close</span>
             </span>

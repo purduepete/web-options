@@ -70,6 +70,14 @@ function Cell({ cell }: { cell: SummaryCell }) {
                 </b>
                 <span className="summary-unit">yield</span>
             </span>
+            {/* Left out when it is none rather than printed as a zero: the weeks
+                before the nightly rollup have no figure, not a figure of none. */}
+            {cell.halfKept > 0 && (
+                <span className="summary-metric" title="Have been up over half their premium at a close">
+                    <b className="summary-figure summary-half">{cell.halfKept}</b>
+                    <span className="summary-unit">over half</span>
+                </span>
+            )}
         </span>
     );
 }

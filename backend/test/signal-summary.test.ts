@@ -151,6 +151,23 @@ describe('summarizeRange', () => {
         expect(all.otm).toBe(1);
     });
 
+    it('counts the trades that beat half their premium, and only those over it', () => {
+        const { weeks } = summarizeRange(
+            [
+                row({ best_premium_kept: 0.62 }),
+                row({ symbol: 'NVDA', best_premium_kept: 0.5 }),
+                row({ symbol: 'INTC', best_premium_kept: null }),
+            ],
+            ['2026-08-10'],
+            [],
+        );
+        const all = weeks[0]!.cells.all;
+
+        expect(all.signals).toBe(3);
+        // Exactly half is not over it, and a signal the rollup has not reached is not either.
+        expect(all.halfKept).toBe(1);
+    });
+
     it('falls back to VADER numbers where no quote was captured', () => {
         const { weeks } = summarizeRange([row({ actual_mark: 2 }), row({ symbol: 'NVDA' })], ['2026-08-10'], []);
         const all = weeks[0]!.cells.all;

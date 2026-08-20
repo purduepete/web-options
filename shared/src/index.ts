@@ -70,6 +70,17 @@ export interface Trade {
     bestPremiumKept: number | null;
 }
 
+/**
+ * Half the premium is where a put is usually bought back, so a trade that has
+ * reached it at some close has already settled the question a grade only guesses
+ * at. A signal the rollup has not reached yet has not reached half either.
+ */
+export const HALF_THE_PREMIUM = 0.5;
+
+export function hasKeptHalf(trade: Trade): boolean {
+    return trade.bestPremiumKept !== null && trade.bestPremiumKept > HALF_THE_PREMIUM;
+}
+
 /** Risk tiers, least to most. Anything else falls through to `other`. */
 export const TIER_ORDER = ['conservative', 'balanced', 'aggressive'] as const;
 
@@ -142,6 +153,10 @@ export const SUMMARY_COLUMN_LABELS: Record<SummaryColumn, string> = {
  * moneyness and belongs to neither side. `captured` counts contracts that had a
  * real captured quote, so a cell leaning on VADER's fallback can say so.
  *
+ * `halfKept` counts the trades that have been up more than half their premium at
+ * some close. It has no denominator on purpose: the weeks that predate the
+ * nightly rollup have no figure at all, and a rate would report them as failures.
+ *
  * The figures are the captured numbers, falling back per contract to the ones
  * VADER advertised. The summary offers no choice between the two: a month-wide
  * total mixing captured and advertised numbers is the only honest one there is.
@@ -156,6 +171,7 @@ export interface SummaryCell {
     priced: number;
     otm: number;
     captured: number;
+    halfKept: number;
     premium: number | null;
     collateral: number | null;
     annualizedYield: number | null;

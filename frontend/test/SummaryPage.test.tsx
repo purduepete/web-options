@@ -35,6 +35,7 @@ function cell(extra: Partial<SummaryCell> = {}): SummaryCell {
         priced: 0,
         otm: 0,
         captured: 0,
+        halfKept: 0,
         premium: null,
         collateral: null,
         annualizedYield: null,
@@ -74,6 +75,7 @@ const AUGUST = {
                 priced: 4,
                 otm: 3,
                 captured: 2,
+                halfKept: 2,
                 premium: 520,
                 annualizedYield: 36,
             }),
@@ -82,7 +84,7 @@ const AUGUST = {
         row('2026-08-03', '2026-08-07'),
     ],
     total: cells({
-        all: cell({ signals: 4, priced: 4, otm: 3, captured: 2, premium: 520, annualizedYield: 36 }),
+        all: cell({ signals: 4, priced: 4, otm: 3, captured: 2, halfKept: 2, premium: 520, annualizedYield: 36 }),
         balanced: cell({ signals: 4, priced: 4, otm: 3, captured: 4, premium: 520, annualizedYield: 36 }),
     }),
 };
@@ -212,6 +214,16 @@ describe('SummaryPage', () => {
         await screen.findByRole('table');
 
         expect(screen.getAllByText('75.0%').length).toBe(4);
+    });
+
+    it('counts the trades that have been up over half their premium, and stays quiet at none', async () => {
+        renderPage();
+
+        await screen.findByRole('table');
+
+        // Only the two `all` cells carry a count; Balanced's zero says nothing
+        // worth a line, and neither does an empty week's.
+        expect(screen.getAllByText('over half').length).toBe(2);
     });
 
     it('fetches a month when it is opened, and not again when it is reopened', async () => {
