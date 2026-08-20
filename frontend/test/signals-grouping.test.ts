@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DaySignals, Trade } from '@weboptions/shared';
 import {
     EXPIRY_FILTERS,
+    GRADE_FILTERS,
     HALF_FILTERS,
     MONEYNESS_FILTERS,
     buildGroups,
     cycle,
     filterDaysByExpiry,
+    filterDaysByGrade,
     filterDaysByHalf,
     filterDaysByMoneyness,
     filterDaysBySymbol,
@@ -193,6 +195,57 @@ describe('filterDaysByHalf', () => {
         const untouched = [day('2025-08-11', 'Monday', [trade('AMD')])];
         expect(filterDaysByHalf(untouched, 'yes')[0]?.trades).toEqual([]);
         expect(filterDaysByHalf(untouched, 'no')[0]?.trades).toEqual([]);
+    });
+});
+
+describe('filterDaysByGrade', () => {
+    const settings = {
+        deltaThreshold: -0.25,
+        deltaRedThreshold: -0.4,
+        otmPercentThreshold: 10,
+        annualizedRedBelow: 25,
+        annualizedYellowBelow: 35,
+    };
+    const days = [
+        day('2025-08-20', 'Wednesday', [
+            trade('RED', { annualizedYield: 10, actualAnnualizedYield: 10 }),
+            trade('YELLOW', { annualizedYield: 30, actualAnnualizedYield: 30 }),
+            trade('GREEN', { annualizedYield: 50, actualAnnualizedYield: 50 }),
+        ]),
+    ];
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2025, 7, 20, 9, 30, 0));
+    });
+
+    afterEach(() => vi.useRealTimers());
+
+    it('keeps all bands when no grade is selected', () => {
+        expect(filterDaysByGrade(days, [], 'actual', settings, [], null)).toEqual(days);
+        expect(filterDaysByGrade(days, GRADE_FILTERS, 'actual', settings, [], null)).toEqual(days);
+    });
+
+    it('supports one or more selected bands', () => {
+        expect(filterDaysByGrade(days, ['red'], 'actual', settings, [], null)[0]?.trades.map((t) => t.symbol)).toEqual([
+            'RED',
+        ]);
+        expect(
+            filterDaysByGrade(days, ['red', 'yellow'], 'actual', settings, [], null)[0]?.trades.map((t) => t.symbol),
+        ).toEqual(['RED', 'YELLOW']);
+    });
+
+    it('excludes an ungraded trade when a color is selected', () => {
+        const ungraded = [day('2025-08-20', 'Wednesday', [trade('UNKNOWN', { annualizedYield: null })])];
+        expect(filterDaysByGrade(ungraded, ['green'], 'actual', settings, [], null)[0]?.trades).toEqual([]);
+    });
+
+    it('uses the active number source', () => {
+        const sourceDay = [
+            day('2025-08-20', 'Wednesday', [trade('SOURCE', { annualizedYield: 50, actualAnnualizedYield: 10 })]),
+        ];
+        expect(filterDaysByGrade(sourceDay, ['green'], 'quoted', settings, [], null)[0]?.trades).toHaveLength(1);
+        expect(filterDaysByGrade(sourceDay, ['red'], 'actual', settings, [], null)[0]?.trades).toHaveLength(1);
     });
 });
 

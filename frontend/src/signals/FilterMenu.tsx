@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { ChoiceMenu, type ChoiceOption } from '../components/ChoiceMenu';
-import { ClockIcon, TargetIcon, TrendingUpIcon } from '../components/icons';
+import { AlertIcon, CheckIcon, ClockIcon, TargetIcon, TrendingUpIcon, ChevronDownIcon } from '../components/icons';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
@@ -7,6 +9,8 @@ import {
     type ExpiryFilter,
     type HalfFilter,
     type MoneynessFilter,
+    GRADE_FILTERS,
+    type GradeFilter,
 } from './grouping';
 
 /**
@@ -80,5 +84,117 @@ export function HalfFilterMenu({ value, onChange }: { value: HalfFilter; onChang
             neutral="all"
             onChange={onChange}
         />
+    );
+}
+
+const GRADE_LABELS: Record<GradeFilter, string> = { red: 'Red', yellow: 'Yellow', green: 'Green' };
+
+export function GradeFilterMenu({
+    value,
+    onChange,
+}: {
+    value: readonly GradeFilter[];
+    onChange: (next: GradeFilter[]) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const selected = new Set(value);
+
+    useEffect(() => {
+        if (!open) return;
+        menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+        function onPointerDown(event: Event) {
+            if (!wrapRef.current?.contains(event.target as Node | null)) setOpen(false);
+        }
+        function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (event.key !== 'Escape') return;
+            setOpen(false);
+            triggerRef.current?.focus();
+        }
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [open]);
+
+    function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        event.preventDefault();
+        const items = [...(menuRef.current?.querySelectorAll('button') ?? [])];
+        const index = items.indexOf(document.activeElement as HTMLButtonElement);
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        items[(index + step + items.length) % items.length]?.focus();
+    }
+
+    function toggle(filter: GradeFilter) {
+        const next = selected.has(filter) ? value.filter((item) => item !== filter) : [...value, filter];
+        onChange(next.length === GRADE_FILTERS.length ? [] : next);
+    }
+
+    const label = value.length === 0 ? 'Grade' : value.map((filter) => GRADE_LABELS[filter]).join(', ');
+
+    return (
+        <div className="choice-menu" ref={wrapRef}>
+            <button
+                type="button"
+                ref={triggerRef}
+                className={value.length > 0 ? 'choice-trigger narrowed' : 'choice-trigger'}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                aria-label={`Signal grade: ${label}`}
+                onClick={() => setOpen((wasOpen) => !wasOpen)}
+            >
+                <AlertIcon width={15} height={15} />
+                <span>{label}</span>
+                <ChevronDownIcon width={14} height={14} className={open ? 'rotated' : undefined} />
+            </button>
+            {open && (
+                <div
+                    className="choice-panel"
+                    role="menu"
+                    aria-label="Signal grade"
+                    ref={menuRef}
+                    onKeyDown={onMenuKeyDown}
+                >
+                    <button
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={value.length === 0}
+                        className={value.length === 0 ? 'choice-item selected' : 'choice-item'}
+                        onClick={() => onChange([])}
+                    >
+                        <span className="choice-mark">
+                            {value.length === 0 && <CheckIcon width={14} height={14} />}
+                        </span>
+                        <span className="choice-text">
+                            <span className="choice-label">All</span>
+                            <span className="choice-description">Every grade, including ungraded trades</span>
+                        </span>
+                    </button>
+                    {GRADE_FILTERS.map((filter) => {
+                        const checked = selected.has(filter);
+                        return (
+                            <button
+                                key={filter}
+                                type="button"
+                                role="menuitemcheckbox"
+                                aria-checked={checked}
+                                className={checked ? 'choice-item selected' : 'choice-item'}
+                                onClick={() => toggle(filter)}
+                            >
+                                <span className="choice-mark">{checked && <CheckIcon width={14} height={14} />}</span>
+                                <span className="choice-text">
+                                    <span className="choice-label">{GRADE_LABELS[filter]}</span>
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 }

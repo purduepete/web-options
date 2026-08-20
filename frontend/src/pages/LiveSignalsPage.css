@@ -6,6 +6,10 @@
     gap: 0.75rem;
 }
 
+.signals-page .page-head {
+    position: relative;
+}
+
 .symbol-filter {
     position: relative;
     display: flex;
@@ -106,6 +110,10 @@
     font-weight: 600;
 }
 
+.page-head > .menus-reset {
+    align-self: center;
+}
+
 /* Nothing to undo yet. It holds its place rather than leaving the bar, so that
    narrowing a menu later does not reflow the row and push the symbol filter
    onto a line of its own. Hidden this way it is neither pressable nor read out. */
@@ -116,35 +124,93 @@
 /* Except on a phone, where the bar is already several rows and a reserved gap in
    one of them reads as a mistake rather than as restraint. */
 @media (max-width: 640px) {
+    .page-head > .menus-reset {
+        min-height: 44px;
+    }
+
     .menus-reset.is-idle {
         display: none;
     }
 }
 
-/* Above a phone the filter bar is not a bar at all: `display: contents` hands
-   its controls straight back to the head, which lays them out in the one
-   wrapping row it always did. The wrapper is only a handle for folding them
-   away, so it must cost nothing where nothing is folded. Gathering them under
-   it did move the symbol filter ahead of the week navigation, which `order`
-   puts back rather than another wrapper. */
 .filter-bar {
-    display: contents;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 3;
+    width: min(42rem, calc(100vw - 2rem));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.85rem;
+    padding: 0.85rem;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
 }
 
-/* The wrapper gathered the controls in document order, which put the symbol
-   filter ahead of the week navigation and the navigation ahead of the menus.
-   Both go back by hand rather than by another wrapper. */
-.signals-page .page-head > .week-nav {
-    order: 1;
+.filter-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.45rem;
+    min-width: 0%;
 }
 
-.filter-bar > .symbol-filter {
-    order: 2;
+.filter-section-view {
+    grid-column: 1;
+    grid-row: 1;
 }
 
-/* `[hidden]` loses to a class in the cascade, so the wrapper has to hide itself. */
-.filter-bar[hidden] {
-    display: none;
+.filter-section-expiry {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.filter-section-half {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.filter-section-moneyness {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.filter-section-grade {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.filter-section > .choice-menu {
+    width: 100%;
+}
+
+.filter-section > .choice-menu .choice-trigger {
+    justify-content: space-between;
+    width: 100%;
+}
+
+.filter-section h2 {
+    flex: 0 0 100%;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.filter-section-symbol {
+    grid-column: 1 / -1;
+}
+
+.filter-section-symbol .symbol-filter {
+    flex: 1 1 auto;
+    max-width: none;
+}
+
+.filter-bar > .menus-reset {
+    align-self: end;
 }
 
 /* Named rather than iconic: it is the only thing standing between the reader and
@@ -155,8 +221,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.35rem;
-    width: 100%;
-    padding: 0.4rem 0.6rem;
+    padding: 0.3rem 0.6rem;
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 600;
@@ -171,34 +236,56 @@
     transform: rotate(180deg);
 }
 
+@media (pointer: coarse) {
+    .filters-toggle {
+        min-height: 44px;
+    }
+}
+
 /* A phone reads the head as a stack, so each control takes a whole line: a row
    of half-width menus on a 390px screen is four truncated words and nothing to
    aim at. The week navigation stays above the fold-out, since a reader moving
    through the weeks should not have to open the filters to do it. */
 @media (max-width: 640px) {
-    .signals-page .page-head > .week-nav {
-        order: 1;
+    .signal-filters-modal .modal-body {
+        padding: 0;
     }
 
-    .signals-page .page-head > .filters-toggle {
-        order: 2;
-    }
-
-    .signals-page .page-head > .filter-bar {
-        order: 3;
-    }
-
-    .filter-bar {
+    .signal-filters-modal .filter-bar {
         display: flex;
         flex-direction: column;
         align-items: stretch;
         gap: 0.5rem;
+        max-height: calc(80dvh - 1rem);
+        overflow-y: auto;
+        padding: 0.85rem;
+        padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+        border: 0;
+        box-shadow: none;
+    }
+
+    .filter-bar {
+        position: static;
         width: 100%;
     }
 
-    /* The row's basis was a width. Down a column it would be a height, and the
-       filter would open seven rems tall. */
-    .filter-bar > .symbol-filter {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-section-view,
+    .filter-section-expiry,
+    .filter-section-half,
+    .filter-section-moneyness,
+    .filter-section-grade {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .filter-section > .choice-menu,
+    .filter-section > .symbol-filter,
+    .filter-bar > .menus-reset {
         flex: 0 0 auto;
         width: 100%;
         max-width: none;
@@ -209,7 +296,6 @@
         width: 100%;
     }
 
-    .filters-toggle,
     .filter-bar > .menus-reset {
         min-height: 44px;
     }
@@ -220,14 +306,6 @@
     .filter-bar .symbol-filter input {
         padding-block: 0;
         line-height: calc(44px - 2 * var(--border-width));
-    }
-}
-
-/* On touch screens hide neutral trigger labels so all four menus fit on one row.
-   Narrowed triggers keep their value label. min-width gates out the phone fold. */
-@media (min-width: 641px) and (pointer: coarse) {
-    .filter-bar .choice-trigger:not(.narrowed) > span {
-        display: none;
     }
 }
 

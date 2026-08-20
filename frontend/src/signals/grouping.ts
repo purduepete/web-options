@@ -1,4 +1,12 @@
-import type { DaySignals, ExpiryFilter, GroupId, NumberSource, Trade } from '@weboptions/shared';
+import type {
+    DaySignals,
+    ExpiryFilter,
+    GradeBand,
+    GradeSettings,
+    GroupId,
+    NumberSource,
+    Trade,
+} from '@weboptions/shared';
 import {
     EXPIRY_FILTERS,
     GROUP_IDS,
@@ -7,6 +15,8 @@ import {
     hasExpired,
     hasHalfFigure,
     hasKeptHalf,
+    gradeTrade,
+    isRecentSignalDay,
     TIER_ORDER,
 } from '@weboptions/shared';
 
@@ -26,6 +36,9 @@ import {
 // the numbers are rolled up, where the browser never sees the trades at all.
 export { EXPIRY_FILTERS, TIER_ORDER };
 export type { ExpiryFilter, GroupId };
+
+export type GradeFilter = Exclude<GradeBand, 'ungraded'>;
+export const GRADE_FILTERS: readonly GradeFilter[] = ['red', 'yellow', 'green'];
 
 /** Where the contract closed against its strike. Atm is a rounding edge, not a choice. */
 export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
@@ -115,6 +128,54 @@ export function filterDaysByHalf(days: DaySignals[], filter: HalfFilter): DaySig
     return days.map((day) => ({
         ...day,
         trades: day.trades.filter(keep),
+    }));
+}
+
+/** The same band shown by a ticket, including its recency and number-source rules. */
+export function ticketGradeBand(
+    trade: Trade,
+    dayDate: string,
+    numberSource: NumberSource,
+    settings: GradeSettings,
+    cautionSymbols: readonly string[],
+    vix: number | null,
+): GradeBand | null {
+    if (!isRecentSignalDay(dayDate)) return null;
+
+    const annualizedYield =
+        numberSource === 'actual' ? (trade.actualAnnualizedYield ?? trade.annualizedYield) : trade.annualizedYield;
+    const delta = numberSource === 'actual' ? (trade.actualDelta ?? trade.delta) : trade.delta;
+    const result = gradeTrade(
+        {
+            symbol: trade.symbol,
+            annualizedYield,
+            delta,
+            strike: trade.strike,
+            price: trade.closeUnderlying ?? trade.actualUnderlying,
+            cautionSymbols,
+            vix,
+        },
+        settings,
+    );
+    return result.band === 'ungraded' ? null : result.band;
+}
+
+/** Keeps only explicitly selected grade bands; null bands belong to All. */
+export function filterDaysByGrade(
+    days: DaySignals[],
+    selected: readonly GradeFilter[],
+    numberSource: NumberSource,
+    settings: GradeSettings,
+    cautionSymbols: readonly string[],
+    vix: number | null,
+): DaySignals[] {
+    if (selected.length === 0 || selected.length === GRADE_FILTERS.length) return days;
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter((trade) => {
+            const band = ticketGradeBand(trade, day.date, numberSource, settings, cautionSymbols, vix);
+            return band !== null && selected.includes(band as GradeFilter);
+        }),
     }));
 }
 

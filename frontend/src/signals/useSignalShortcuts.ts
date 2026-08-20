@@ -25,6 +25,7 @@ interface Handlers {
     onIsolateGroup: (id: GroupId) => void;
     onToggleAllGroups: () => void;
     onFocusSymbolFilter: () => void;
+    onToggleFilters: () => void;
     onCycleExpiry: () => void;
     onCycleMoneyness: () => void;
     onCycleHalf: () => void;
@@ -62,6 +63,9 @@ export function useSignalShortcuts(handlers: Handlers): void {
                 // Without this the slash lands in the box we just focused.
                 event.preventDefault();
                 latest.current.onFocusSymbolFilter();
+            } else if (key === 'f') {
+                event.preventDefault();
+                latest.current.onToggleFilters();
             } else if (key === 'e') {
                 event.preventDefault();
                 latest.current.onCycleExpiry();

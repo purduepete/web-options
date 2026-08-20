@@ -30,6 +30,7 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
             { keys: ['b'], description: 'Balanced only' },
             { keys: ['a'], description: 'Aggressive only' },
             { keys: ['j'], description: 'Collapse or expand every group' },
+            { keys: ['f'], description: 'Toggle the filter panel' },
             { keys: ['/'], description: 'Filter by symbol, or !symbol to exclude' },
             { keys: ['e'], description: 'Next contracts filter' },
             { keys: ['m'], description: 'Next moneyness filter' },

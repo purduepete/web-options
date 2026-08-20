@@ -9,10 +9,16 @@ import './WeekScore.css';
  * It scores the days the grid is drawing, filters and all, so narrowing to a
  * single symbol asks the same question of that symbol alone.
  */
-export function WeekScore({ days, numberSource }: { days: DaySignals[]; numberSource: NumberSource }) {
+export function WeekScore({
+    days,
+    numberSource,
+    appliedFilters = [],
+}: {
+    days: DaySignals[];
+    numberSource: NumberSource;
+    appliedFilters?: readonly string[];
+}) {
     const { signals, priced, otm, premiumDrift, driftSamples } = summarizeWeek(days, numberSource);
-    if (signals === 0) return null;
-
     const unpriced = signals - priced;
 
     return (
@@ -34,6 +40,16 @@ export function WeekScore({ days, numberSource }: { days: DaySignals[]; numberSo
             )}
 
             {premiumDrift !== null && <Drift value={premiumDrift} samples={driftSamples} />}
+
+            {appliedFilters.length > 0 && (
+                <span className="score-filters" aria-label="Applied filters">
+                    {appliedFilters.map((filter) => (
+                        <span key={filter} className="score-filter">
+                            {filter}
+                        </span>
+                    ))}
+                </span>
+            )}
         </p>
     );
 }

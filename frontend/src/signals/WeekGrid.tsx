@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { DaySignals, GradeBand, NumberSource, Trade } from '@weboptions/shared';
-import { GRADE_BAND_LABELS, gradeTrade, hasExpired, hasKeptHalf, isRecentSignalDay } from '@weboptions/shared';
-import type { ExpiryFilter, HalfFilter, MoneynessFilter, SignalGroup } from './grouping';
-import { groupTrades, weekdayColumn } from './grouping';
+import { GRADE_BAND_LABELS, hasExpired, hasKeptHalf } from '@weboptions/shared';
+import type { ExpiryFilter, GradeFilter, HalfFilter, MoneynessFilter, SignalGroup } from './grouping';
+import { groupTrades, ticketGradeBand, weekdayColumn } from './grouping';
 import {
     formatCompactMoney,
     formatDayLabel,
@@ -46,6 +46,7 @@ interface WeekGridProps {
     moneynessFilter: MoneynessFilter;
     /** And the fourth. */
     halfFilter: HalfFilter;
+    gradeFilter: readonly GradeFilter[];
     /** Whether the tickets show the captured 7:30am quote or what VADER advertised. */
     numberSource: NumberSource;
     /** Opens the drill-in. Absent on the calendar and the summary, where tickets are static. */
@@ -63,6 +64,7 @@ function emptyDayReason(
     expiryFilter: ExpiryFilter,
     moneynessFilter: MoneynessFilter,
     halfFilter: HalfFilter,
+    gradeFilter: readonly GradeFilter[],
 ): string {
     const typed = symbolFilter.trim();
     const terms = typed
@@ -72,12 +74,21 @@ function emptyDayReason(
     if (terms.length > 0 && terms.every((term) => term.startsWith('!'))) {
         return `Nothing here but "${terms.map((term) => term.slice(1).trim()).join(', ')}".`;
     }
+    const activeFilters = [
+        typed !== '',
+        expiryFilter !== 'all',
+        moneynessFilter !== 'all',
+        halfFilter !== 'all',
+        gradeFilter.length > 0,
+    ].filter(Boolean).length;
+    if (activeFilters > 1) return 'No signals match the active filters.';
     if (typed) return `No matches for "${typed}".`;
     if (expiryFilter === 'active') return 'Every signal this day has expired.';
     if (expiryFilter === 'expired') return 'Nothing this day has expired yet.';
     if (moneynessFilter !== 'all') return `Nothing this day closed ${moneynessFilter.toUpperCase()}.`;
     if (halfFilter === 'yes') return 'Nothing this day has passed half its premium.';
     if (halfFilter === 'no') return 'Nothing this day is short of half its premium.';
+    if (gradeFilter.length > 0) return 'No signals have the selected grades.';
     return 'No signals parsed for this day.';
 }
 
@@ -90,6 +101,7 @@ export function WeekGrid({
     expiryFilter,
     moneynessFilter,
     halfFilter,
+    gradeFilter,
     numberSource,
     onOpenTrade,
     currentWeek,
@@ -148,6 +160,7 @@ export function WeekGrid({
                     expiryFilter={expiryFilter}
                     moneynessFilter={moneynessFilter}
                     halfFilter={halfFilter}
+                    gradeFilter={gradeFilter}
                     numberSource={numberSource}
                     onOpenTrade={onOpenTrade}
                     totalRows={totalRows}
@@ -177,6 +190,7 @@ function DayCard({
     expiryFilter,
     moneynessFilter,
     halfFilter,
+    gradeFilter,
     numberSource,
     onOpenTrade,
     totalRows,
@@ -230,7 +244,7 @@ function DayCard({
                 that leaves them in the layout leaves their rows behind too. */}
             {folded ? null : day.trades.length === 0 ? (
                 <p className="no-trades" style={{ gridRow: 2 }}>
-                    {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter, halfFilter)}
+                    {emptyDayReason(symbolFilter, expiryFilter, moneynessFilter, halfFilter, gradeFilter)}
                 </p>
             ) : (
                 groups.map((group, index) => {
@@ -358,31 +372,13 @@ const FALLBACK_TITLE = 'No 7:30am quote was captured — showing the number VADE
  * days — hence the recency gate rather than a dot down the whole week. Ungraded
  * shows nothing: a missing yield is not a verdict.
  */
-function useTicketGrade(
-    trade: Trade,
-    dayDate: string,
-    annualizedYield: number | null,
-    delta: number | null,
-): GradeBand | null {
+function useTicketGrade(trade: Trade, dayDate: string, numberSource: NumberSource): GradeBand | null {
     const settings = useGradeSettings();
     const cautionSymbols = useCautionSymbols();
     const vix = useVixValue();
     return useMemo(() => {
-        if (!isRecentSignalDay(dayDate)) return null;
-        const { band } = gradeTrade(
-            {
-                symbol: trade.symbol,
-                annualizedYield,
-                delta,
-                strike: trade.strike,
-                price: trade.closeUnderlying ?? trade.actualUnderlying,
-                cautionSymbols: [...cautionSymbols],
-                vix,
-            },
-            settings,
-        );
-        return band === 'ungraded' ? null : band;
-    }, [trade, dayDate, annualizedYield, delta, cautionSymbols, settings, vix]);
+        return ticketGradeBand(trade, dayDate, numberSource, settings, [...cautionSymbols], vix);
+    }, [trade, dayDate, numberSource, cautionSymbols, settings, vix]);
 }
 
 function Figure({ shown, format }: { shown: Displayed; format: (value: number | null) => string }) {
@@ -549,7 +545,7 @@ function Ticket({
     const delta = displayed(numberSource, trade.actualDelta, trade.delta);
     const premium = displayed(numberSource, trade.actualPremium, trade.premium);
     const annualized = displayed(numberSource, trade.actualAnnualizedYield, trade.annualizedYield);
-    const band = useTicketGrade(trade, dayDate, annualized.value, delta.value);
+    const band = useTicketGrade(trade, dayDate, numberSource);
     const illiquid = trade.actualIlliquid && !premium.fallback && numberSource === 'actual';
     const deltaDiff = absoluteDiff(numberSource, trade.actualDelta, trade.delta);
     const premiumDiff = percentDiff(numberSource, trade.actualPremium, trade.premium);

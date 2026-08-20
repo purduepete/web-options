@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { STORAGE_KEYS } from '@weboptions/shared';
@@ -80,11 +80,15 @@ function week(extra: Partial<WeekSignalsResponse> = {}): WeekSignalsResponse {
 }
 
 function renderPage(initialEntry = '/') {
-    return render(
+    const result = render(
         <MemoryRouter initialEntries={[initialEntry]}>
             <LiveSignalsPage />
         </MemoryRouter>,
     );
+    if (!window.matchMedia('(max-width: 640px)').matches) {
+        fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+    }
+    return result;
 }
 
 /** The heading text of every risk group currently drawn, in document order. */
@@ -320,6 +324,61 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByText('AAPL $100P')).toBeTruthy();
     });
 
+    it('shows Reset when only the symbol filter is active', async () => {
+        renderPage('/?symbol=MSFT');
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Reset' })).toBeTruthy();
+    });
+
+    it('starts with multiple grade filters from the URL', async () => {
+        const today = new Date();
+        const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day(iso, 'Today', [
+                        trade('RED', { annualizedYield: 10, actualAnnualizedYield: 10 }),
+                        trade('YELLOW', { annualizedYield: 30, actualAnnualizedYield: 30 }),
+                        trade('GREEN', { annualizedYield: 50, actualAnnualizedYield: 50 }),
+                    ]),
+                ],
+            }),
+        );
+
+        renderPage('/?grade=yellow,red,invalid,red');
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Signal grade: Red, Yellow' })).toBeTruthy();
+        expect(screen.getByText('RED $100P')).toBeTruthy();
+        expect(screen.getByText('YELLOW $100P')).toBeTruthy();
+        expect(screen.queryByText('GREEN $100P')).toBeNull();
+    });
+
+    it('keeps the grade menu open while selecting multiple colors', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.click(screen.getByRole('button', { name: 'Signal grade: Grade' }));
+        await user.click(screen.getByRole('menuitemcheckbox', { name: 'Red' }));
+
+        expect(screen.getByRole('menu', { name: 'Signal grade' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Signal grade: Red' })).toBeTruthy();
+        expect(screen.getByRole('menuitemcheckbox', { name: 'Red' }).getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('moves through grade choices with arrow keys', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.click(screen.getByRole('button', { name: 'Signal grade: Grade' }));
+        await user.keyboard('{ArrowDown}');
+
+        expect(document.activeElement?.textContent).toContain('Red');
+    });
+
     // Both dates are far enough either side of today that the outcome does not
     // depend on when the suite runs.
     const settled = () =>
@@ -537,16 +596,19 @@ describe('LiveSignalsPage menu reset', () => {
 
     it('puts every menu back in one press', async () => {
         const user = userEvent.setup();
-        renderPage('/?expiry=active&moneyness=itm&half=yes');
+        renderPage('/?symbol=MSFT&expiry=active&moneyness=itm&half=yes&grade=red,yellow');
         await screen.findByTestId('week-grid');
         await choose(user, /^Numbers:/, 'VADER');
 
         await user.click(screen.getByRole('button', { name: 'Reset' }));
+        await user.click(screen.getByRole('button', { name: /^Filters/ }));
 
+        expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('');
         expect(screen.getByRole('button', { name: 'Numbers: Actual' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Signal grade: Grade' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
     });
 
@@ -627,7 +689,7 @@ describe('LiveSignalsPage on a phone', () => {
         renderPage('/?expiry=active');
         await screen.findByTestId('week-grid');
 
-        expect(screen.getByRole('button', { name: 'Filters' }).className).toContain('narrowed');
+        expect(screen.getByRole('button', { name: /^Filters/ }).className).toContain('narrowed');
     });
 
     it('opens the fold rather than aiming the caret at a box nobody can see', async () => {
@@ -670,6 +732,18 @@ describe('LiveSignalsPage on a phone', () => {
 });
 
 describe('LiveSignalsPage filter shortcuts', () => {
+    it('toggles the filter surface with f', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: /^Filters/ }).getAttribute('aria-expanded')).toBe('true');
+        await user.keyboard('f');
+        expect(screen.getByRole('button', { name: /^Filters/ }).getAttribute('aria-expanded')).toBe('false');
+        await user.keyboard('f');
+        expect(screen.getByRole('button', { name: /^Filters/ }).getAttribute('aria-expanded')).toBe('true');
+    });
+
     it('hands the symbol box the caret, and its whole contents, on slash', async () => {
         const user = userEvent.setup();
         renderPage('/?symbol=AMD');
@@ -828,7 +902,17 @@ describe('LiveSignalsPage week score', () => {
     it('says nothing at all for a week the filters emptied', async () => {
         renderPage('/?symbol=NOTHING');
         await screen.findByTestId('week-grid');
-        expect(document.querySelector('.week-score')).toBeNull();
+        expect(document.querySelector('.week-score')).toBeTruthy();
+        expect(document.querySelector('.week-score')?.textContent).toContain('0 signals');
+    });
+
+    it('shows applied filters on the right side of the week score', async () => {
+        renderPage('/?symbol=MSFT&grade=red,yellow');
+        await screen.findByTestId('week-grid');
+
+        const score = document.querySelector('.week-score');
+        expect(score?.querySelector('.score-filters')?.textContent).toContain('Symbol: MSFT');
+        expect(score?.querySelector('.score-filters')?.textContent).toContain('Grade: Red + Yellow');
     });
 
     it('totals the collateral each day would take to secure', async () => {
