@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import type { Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
+import type { IsoDate, Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
 import { gradeTrade } from '@weboptions/shared';
 import { Modal } from '../components/Modal';
 import { ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
@@ -13,10 +13,12 @@ import { PriceChart } from './PriceChart';
 import { useSymbolDetail } from './useSymbolDetail';
 import {
     formatCents,
+    formatDayLabel,
     formatDelta,
     formatMDY,
     formatMoney,
     formatPercent,
+    formatSignedMoney,
     formatSignedPercent,
     formatStrike,
 } from './format';
@@ -35,6 +37,8 @@ export interface TradeDetailProps {
     trade: Trade | null;
     numberSource: NumberSource;
     onClose: () => void;
+    /** The morning the trade was signalled, which is what identifies its outcome row. */
+    reportDate?: IsoDate | null;
     /** Where this trade sits among its day's signals, e.g. "3 of 21". */
     position?: string | null;
     /** Null at the ends of the day, which is what disables the arrow. */
@@ -68,8 +72,31 @@ function moneynessAgainst(strike: number | null, reference: number | null): Mone
     return 'atm';
 }
 
-export function TradeDetail({ trade, numberSource, onClose, position, onPrevious, onNext }: TradeDetailProps) {
-    const { detail, loading, error } = useSymbolDetail(trade);
+/** The rollup keeps its shares of the premium as fractions; the run reads in percent. */
+function asPercent(fraction: number | null): number | null {
+    return fraction === null ? null : fraction * 100;
+}
+
+/**
+ * The rollup quotes the option per SHARE, the way a chain does. The recap above it
+ * quotes the premium per contract, and so does the profit, so leaving these two in
+ * the chain's units would invite a reader to compare $3.53 with $352.50 and conclude
+ * something had gone wrong.
+ */
+function perContract(perShare: number | null): number | null {
+    return perShare === null ? null : perShare * 100;
+}
+
+export function TradeDetail({
+    trade,
+    numberSource,
+    onClose,
+    reportDate = null,
+    position,
+    onPrevious,
+    onNext,
+}: TradeDetailProps) {
+    const { detail, loading, error } = useSymbolDetail(trade, reportDate);
     const settings = useGradeSettings();
     const cautionSymbols = useCautionSymbols();
     const vix = useVixValue();
@@ -264,6 +291,93 @@ export function TradeDetail({ trade, numberSource, onClose, position, onPrevious
                                 </div>
                             </dl>
                         </section>
+
+                        {detail.outcome && (
+                            <section className="detail-section outcome-section">
+                                <h3>
+                                    Since the signal
+                                    <span
+                                        className="detail-tag"
+                                        title={
+                                            detail.outcome.settled
+                                                ? 'The contract has expired, so none of these move again.'
+                                                : 'Closing marks only. Nothing here has moved since last night.'
+                                        }
+                                    >
+                                        {detail.outcome.settled ? 'settled' : 'end of day'}
+                                    </span>
+                                </h3>
+                                <dl className="stat-run">
+                                    <div>
+                                        <dt>Sold for</dt>
+                                        <dd>{formatCents(perContract(detail.outcome.entryPremium))}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Last close</dt>
+                                        <dd>
+                                            {formatCents(perContract(detail.outcome.mark))}
+                                            {detail.outcome.asOf && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    ({formatDayLabel(detail.outcome.asOf)})
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Premium kept</dt>
+                                        <dd>
+                                            {formatSignedPercent(asPercent(detail.outcome.premiumKept))}
+                                            <span className="stat-aside">
+                                                {' '}
+                                                ({formatSignedMoney(detail.outcome.profit)})
+                                            </span>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt title="Webportfolio calls this Max Cap: the largest share of the premium that could have been bought back at any close.">
+                                            Best it has been
+                                        </dt>
+                                        <dd>
+                                            {formatSignedPercent(asPercent(detail.outcome.bestPremiumKept))}
+                                            {detail.outcome.bestOn && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    ({formatDayLabel(detail.outcome.bestOn)})
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Worst it has been</dt>
+                                        <dd>{formatSignedMoney(detail.outcome.worstProfit)}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Days held</dt>
+                                        <dd>
+                                            {detail.outcome.daysHeld ?? 'n/a'}
+                                            {detail.outcome.daysToHalf !== null && (
+                                                <span className="stat-aside">
+                                                    {' '}
+                                                    (half the premium by {detail.outcome.daysToHalf})
+                                                </span>
+                                            )}
+                                        </dd>
+                                    </div>
+                                    {detail.outcome.settled && (
+                                        <div>
+                                            <dt>Finished</dt>
+                                            <dd>
+                                                <MoneynessChip
+                                                    moneyness={detail.outcome.moneynessAtExpiration}
+                                                    title="Where the underlying closed against the strike at expiration."
+                                                />
+                                            </dd>
+                                        </div>
+                                    )}
+                                </dl>
+                            </section>
+                        )}
 
                         {grade && (
                             <section className="detail-section grade-section">

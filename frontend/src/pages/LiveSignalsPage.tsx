@@ -103,13 +103,18 @@ export function LiveSignalsPage() {
     const groups = useMemo(() => buildGroups(days), [days]);
 
     // The day the open trade came from, in the order the grid lays it out, so the
-    // arrows walk the tickets the reader can see rather than the raw response.
+    // arrows walk the tickets the reader can see rather than the raw response. Its
+    // date is also what names the trade's row in the end-of-day rollup, since the
+    // same put signalled on two mornings is two trades.
+    const selectedDay = useMemo(
+        () => (selectedTrade ? (days.find((entry) => entry.trades.includes(selectedTrade)) ?? null) : null),
+        [selectedTrade, days],
+    );
+
     const daySiblings = useMemo(() => {
-        if (!selectedTrade) return [];
-        const day = days.find((entry) => entry.trades.includes(selectedTrade));
-        if (!day) return [];
-        return groups.flatMap((group) => groupTrades(group, day.trades, numberSource));
-    }, [selectedTrade, days, groups, numberSource]);
+        if (!selectedDay) return [];
+        return groups.flatMap((group) => groupTrades(group, selectedDay.trades, numberSource));
+    }, [selectedDay, groups, numberSource]);
 
     const siblingIndex = selectedTrade ? daySiblings.indexOf(selectedTrade) : -1;
 
@@ -412,6 +417,7 @@ export function LiveSignalsPage() {
                 trade={selectedTrade}
                 numberSource={numberSource}
                 onClose={() => setSelectedTrade(null)}
+                reportDate={selectedDay?.date ?? null}
                 position={siblingIndex >= 0 ? `${siblingIndex + 1} of ${daySiblings.length}` : null}
                 onPrevious={previousTrade}
                 onNext={nextTrade}

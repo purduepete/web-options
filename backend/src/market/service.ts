@@ -1,7 +1,7 @@
 import type { IsoDate, SymbolDetail } from '@weboptions/shared';
 import type { DbConfig } from '../config';
 import { resolvePastSignals, sixMonthSlice, sma } from './metrics';
-import { type PastSignalExclusion, pastSignalsFor, readCached, writeCached } from './repository';
+import { outcomeFor, type PastSignalExclusion, pastSignalsFor, readCached, writeCached } from './repository';
 import { fetchDailyBars, fetchQuote, normalizeSymbol, type SymbolQuote } from './yahoo';
 
 /**
@@ -36,6 +36,12 @@ const inFlight = new Map<string, Promise<SymbolDetail | null>>();
 export interface SymbolDetailOptions {
     /** The contract the modal is showing, kept out of its own "past signals" list. */
     exclude?: PastSignalExclusion;
+    /**
+     * The morning this contract was signalled. Together with the contract it names
+     * one row of the end-of-day rollup; without it there is no outcome to look up,
+     * since the same put on two mornings is two trades.
+     */
+    reportDate?: IsoDate | null;
     /** Injectable so tests do not depend on the day they run. */
     today?: IsoDate;
 }
@@ -48,7 +54,7 @@ export async function getSymbolDetail(
     const symbol = normalizeSymbol(rawSymbol);
     if (!symbol) return null;
 
-    const key = `${symbol}|${options.exclude?.strike ?? ''}|${options.exclude?.expiration ?? ''}`;
+    const key = `${symbol}|${options.exclude?.strike ?? ''}|${options.exclude?.expiration ?? ''}|${options.reportDate ?? ''}`;
     const existing = inFlight.get(key);
     if (existing) return existing;
 
@@ -90,6 +96,16 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         PAST_SIGNAL_LIMIT,
     ).catch(() => []);
 
+    // Soft-failed like everything else here: an unrolled-up signal and an unreachable
+    // rollup both leave the rest of the modal worth showing.
+    const strike = options.exclude?.strike ?? null;
+    const expiration = options.exclude?.expiration ?? null;
+    const reportDate = options.reportDate ?? null;
+    const outcome =
+        strike !== null && expiration !== null && reportDate !== null
+            ? await outcomeFor(db, symbol, { strike, expiration, reportDate }).catch(() => null)
+            : null;
+
     return {
         symbol,
         longName: live?.longName ?? profile?.longName ?? null,
@@ -103,6 +119,7 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         sma200: sma(bars, 200),
         bars: sixMonthSlice(bars),
         pastSignals: resolvePastSignals(seeds, bars, today),
+        outcome,
     };
 }
 

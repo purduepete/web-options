@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SymbolDetail, Trade } from '@weboptions/shared';
+import type { SignalOutcome, SymbolDetail, Trade } from '@weboptions/shared';
 import { GRADE_DEFAULTS } from '@weboptions/shared';
 
 const fetchSymbolDetail = vi.fn();
@@ -65,6 +65,26 @@ function detail(extra: Partial<SymbolDetail> = {}): SymbolDetail {
             { date: '2026-08-18', close: 182.35 },
         ],
         pastSignals: [],
+        outcome: null,
+        ...extra,
+    };
+}
+
+function outcome(extra: Partial<SignalOutcome> = {}): SignalOutcome {
+    return {
+        reportDate: '2026-08-18',
+        entryPremium: 1.55,
+        mark: 1.2,
+        asOf: '2026-08-19',
+        daysHeld: 1,
+        profit: 35,
+        premiumKept: 0.225806,
+        bestPremiumKept: 0.419354,
+        bestOn: '2026-08-19',
+        worstProfit: 12,
+        daysToHalf: null,
+        settled: false,
+        moneynessAtExpiration: null,
         ...extra,
     };
 }
@@ -119,8 +139,75 @@ describe('TradeDetail', () => {
         renderDetail();
 
         await waitFor(() =>
-            expect(fetchSymbolDetail).toHaveBeenCalledWith('VST', { strike: 170, expiration: '2026-08-21' }),
+            expect(fetchSymbolDetail).toHaveBeenCalledWith('VST', {
+                strike: 170,
+                expiration: '2026-08-21',
+                reportDate: null,
+            }),
         );
+    });
+
+    it('names the signal by its report date, since one put can be signalled twice', async () => {
+        renderDetail({ reportDate: '2026-08-18' });
+
+        await waitFor(() =>
+            expect(fetchSymbolDetail).toHaveBeenCalledWith('VST', {
+                strike: 170,
+                expiration: '2026-08-21',
+                reportDate: '2026-08-18',
+            }),
+        );
+    });
+
+    it('says nothing at all about the outcome when the rollup has not reached this signal', async () => {
+        renderDetail({ reportDate: '2026-08-18' });
+
+        await screen.findByText('Where it trades');
+        expect(screen.queryByText('Since the signal')).toBeNull();
+    });
+
+    it('shows how it has gone, in closing marks, with the best it has been', async () => {
+        fetchSymbolDetail.mockResolvedValue(detail({ outcome: outcome() }));
+        renderDetail({ reportDate: '2026-08-18' });
+
+        await screen.findByText('Since the signal');
+        // Not settled, so the tag warns that none of this is intraday.
+        expect(screen.getByText('end of day')).toBeTruthy();
+        expect(screen.getByText('Best it has been')).toBeTruthy();
+        // Quoted per share by the rollup, shown per contract like every other dollar here.
+        expect(screen.getByText('$155.00')).toBeTruthy();
+        expect(screen.getByText(/\$120\.00/)).toBeTruthy();
+        // Fractions on the wire, percent on the page, and the sign leads both figures.
+        expect(screen.getByText('+22.6%')).toBeTruthy();
+        expect(screen.getByText(/\+\$35/)).toBeTruthy();
+        expect(screen.getByText('+41.9%')).toBeTruthy();
+        // Never settled, so no expiration verdict is offered.
+        expect(screen.queryByText('Finished')).toBeNull();
+    });
+
+    it('marks a loss with its sign rather than printing a dollar minus', async () => {
+        fetchSymbolDetail.mockResolvedValue(
+            detail({ outcome: outcome({ profit: -55, premiumKept: -0.250569, worstProfit: -70 }) }),
+        );
+        renderDetail({ reportDate: '2026-08-18' });
+
+        await screen.findByText('Since the signal');
+        expect(screen.getByText('-25.1%')).toBeTruthy();
+        expect(screen.getByText(/-\$55/)).toBeTruthy();
+        expect(screen.getByText('-$70')).toBeTruthy();
+    });
+
+    it('freezes once the contract has expired and says where it finished', async () => {
+        fetchSymbolDetail.mockResolvedValue(
+            detail({ outcome: outcome({ settled: true, moneynessAtExpiration: 'otm' }) }),
+        );
+        renderDetail({ reportDate: '2026-08-18' });
+
+        await screen.findByText('Since the signal');
+        expect(screen.getByText('settled')).toBeTruthy();
+        expect(screen.getByText('Finished')).toBeTruthy();
+        expect(screen.getByText('OTM')).toBeTruthy();
+        expect(screen.getByText(/out of the money/)).toBeTruthy();
     });
 
     it('fades the market data in once it arrives', async () => {

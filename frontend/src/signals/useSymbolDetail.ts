@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { SymbolDetail, Trade } from '@weboptions/shared';
+import type { IsoDate, SymbolDetail, Trade } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchSymbolDetail } from '../api';
 
 /**
@@ -16,7 +16,7 @@ export interface SymbolDetailState {
     error: string | null;
 }
 
-export function useSymbolDetail(trade: Trade | null): SymbolDetailState {
+export function useSymbolDetail(trade: Trade | null, reportDate: IsoDate | null = null): SymbolDetailState {
     const [state, setState] = useState<SymbolDetailState>({ detail: null, loading: false, error: null });
 
     const symbol = trade?.symbol ?? null;
@@ -32,7 +32,7 @@ export function useSymbolDetail(trade: Trade | null): SymbolDetailState {
         let cancelled = false;
         setState({ detail: null, loading: true, error: null });
 
-        fetchSymbolDetail(symbol, { strike, expiration })
+        fetchSymbolDetail(symbol, { strike, expiration, reportDate })
             .then((detail) => {
                 if (!cancelled) setState({ detail, loading: false, error: null });
             })
@@ -46,7 +46,7 @@ export function useSymbolDetail(trade: Trade | null): SymbolDetailState {
         return () => {
             cancelled = true;
         };
-    }, [symbol, strike, expiration]);
+    }, [symbol, strike, expiration, reportDate]);
 
     return state;
 }

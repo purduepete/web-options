@@ -35,9 +35,20 @@ function hoursAgo(hours: number): Date {
     return new Date(Date.now() - hours * 60 * 60 * 1000);
 }
 
+/** A warm cache and a live quote, for the tests that are about neither. */
+function cachedMarket(): void {
+    vi.spyOn(repository, 'readCached').mockResolvedValue({
+        quote: QUOTE,
+        bars: series(300),
+        refreshedAt: hoursAgo(1),
+    });
+    vi.spyOn(yahoo, 'fetchQuote').mockResolvedValue(QUOTE);
+}
+
 beforeEach(() => {
     resetInFlight();
     vi.spyOn(repository, 'pastSignalsFor').mockResolvedValue([]);
+    vi.spyOn(repository, 'outcomeFor').mockResolvedValue(null);
     vi.spyOn(repository, 'writeCached').mockResolvedValue(undefined);
 });
 
@@ -220,5 +231,61 @@ describe('getSymbolDetail', () => {
         vi.mocked(repository.pastSignalsFor).mockRejectedValue(new Error('timeout'));
 
         expect((await getSymbolDetail(db, 'VST', { today: TODAY }))?.pastSignals).toEqual([]);
+    });
+
+    it('looks the outcome up by the contract AND the morning it was signalled', async () => {
+        cachedMarket();
+
+        await getSymbolDetail(db, 'VST', {
+            today: TODAY,
+            exclude: { strike: 170, expiration: '2026-08-21' },
+            reportDate: '2026-08-18',
+        });
+
+        expect(vi.mocked(repository.outcomeFor).mock.calls[0]?.[2]).toEqual({
+            strike: 170,
+            expiration: '2026-08-21',
+            reportDate: '2026-08-18',
+        });
+    });
+
+    it('does not go looking for an outcome it could not identify', async () => {
+        cachedMarket();
+
+        // A symbol opened without a contract, or without the morning: either way the
+        // rollup's grain is not satisfied, and a partial match is the wrong trade.
+        expect((await getSymbolDetail(db, 'VST', { today: TODAY }))?.outcome).toBeNull();
+        expect(repository.outcomeFor).not.toHaveBeenCalled();
+    });
+
+    it('still answers when the outcome query throws', async () => {
+        cachedMarket();
+        vi.mocked(repository.outcomeFor).mockRejectedValue(new Error('timeout'));
+
+        const detail = await getSymbolDetail(db, 'VST', {
+            today: TODAY,
+            exclude: { strike: 170, expiration: '2026-08-21' },
+            reportDate: '2026-08-18',
+        });
+
+        expect(detail?.outcome).toBeNull();
+        expect(detail?.price).toBe(182.35);
+    });
+
+    it('does not serve one morning outcome to another, though the contract is the same', async () => {
+        cachedMarket();
+
+        await getSymbolDetail(db, 'VST', {
+            today: TODAY,
+            exclude: { strike: 170, expiration: '2026-08-21' },
+            reportDate: '2026-08-18',
+        });
+        await getSymbolDetail(db, 'VST', {
+            today: TODAY,
+            exclude: { strike: 170, expiration: '2026-08-21' },
+            reportDate: '2026-08-19',
+        });
+
+        expect(repository.outcomeFor).toHaveBeenCalledTimes(2);
     });
 });

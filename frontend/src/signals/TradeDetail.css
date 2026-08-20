@@ -118,6 +118,16 @@
     letter-spacing: 0.03em;
 }
 
+/* The same tag in a neutral colour: it qualifies the figures below rather than
+   warning about them, so it must not read as a problem the way `detail-stale` does. */
+.detail-tag {
+    padding: 0.05rem 0.3rem;
+    border: var(--border-width) solid var(--border-soft);
+    color: var(--text-muted);
+    font-size: 0.62rem;
+    letter-spacing: 0.03em;
+}
+
 /* Fluid tracks rather than a fixed count, so the run reflows at any width with no
    breakpoint of its own and collapses to one column on a phone by itself. */
 .stat-run {
@@ -259,9 +269,10 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas:
-            'trades chart'
-            'grade  chart'
-            'past   chart';
+            'trades  chart'
+            'outcome chart'
+            'grade   chart'
+            'past    chart';
         align-content: start;
         column-gap: 1.6rem;
         /* One rule under the contract, drawn once across both columns. Drawn by the
@@ -272,6 +283,13 @@
 
     .trades-section {
         grid-area: trades;
+    }
+
+    /* Named like the rest. A section left out of the template is auto-placed into a
+       row the grid invents BELOW every named one, which put it under the earlier
+       signals however early it came in the markup. */
+    .outcome-section {
+        grid-area: outcome;
     }
 
     .grade-section {

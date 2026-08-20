@@ -160,17 +160,22 @@ export function saveCautionSymbols(symbols: readonly string[]): Promise<CautionS
 }
 
 /**
- * The contract is passed along so it can be kept out of its own past-signals list.
- * This is the one call that waits on an outside service, so it is the one the modal
- * shows a spinner for.
+ * The contract is passed along so it can be kept out of its own past-signals list,
+ * and with the report date it also names the signal whose end-of-day rollup comes
+ * back. This is the one call that waits on an outside service, so it is the one the
+ * modal shows a spinner for.
  */
 export function fetchSymbolDetail(
     symbol: string,
-    contract: { strike: number | null; expiration: string | null } = { strike: null, expiration: null },
+    contract: { strike: number | null; expiration: string | null; reportDate?: string | null } = {
+        strike: null,
+        expiration: null,
+    },
 ): Promise<SymbolDetail> {
     const query = new URLSearchParams();
     if (contract.strike !== null) query.set('strike', String(contract.strike));
     if (contract.expiration !== null) query.set('expiration', contract.expiration);
+    if (contract.reportDate) query.set('reportDate', contract.reportDate);
     const suffix = query.size > 0 ? `?${query}` : '';
     return getJson<SymbolDetail>(`/api/symbols/${encodeURIComponent(symbol)}${suffix}`);
 }

@@ -234,12 +234,14 @@ export function createApiRouter(config: AppConfig): Router {
      * `getSymbolDetail` soft-fails each piece rather than failing the whole answer.
      *
      * `strike` and `expiration` are optional and identify the contract being viewed,
-     * so it is kept out of its own list of past signals.
+     * so it is kept out of its own list of past signals. Add `reportDate` and the
+     * three together name one signal, which is the grain of the end-of-day rollup.
      */
     router.get('/symbols/:symbol', async (req, res, next) => {
         const { symbol } = req.params;
         const strikeParam = req.query.strike;
         const expirationParam = req.query.expiration;
+        const reportDateParam = req.query.reportDate;
 
         const strike = typeof strikeParam === 'string' ? Number(strikeParam) : null;
         if (strike !== null && !Number.isFinite(strike)) {
@@ -250,10 +252,15 @@ export function createApiRouter(config: AppConfig): Router {
             res.status(400).json({ error: 'expiration must be YYYY-MM-DD' });
             return;
         }
+        if (reportDateParam !== undefined && (typeof reportDateParam !== 'string' || !isIsoDate(reportDateParam))) {
+            res.status(400).json({ error: 'reportDate must be YYYY-MM-DD' });
+            return;
+        }
 
         try {
             const detail = await getSymbolDetail(config.db, symbol, {
                 exclude: { strike, expiration: expirationParam ?? null },
+                reportDate: reportDateParam ?? null,
             });
             // Null means the symbol was never a ticker, not that the fetch failed.
             if (!detail) {

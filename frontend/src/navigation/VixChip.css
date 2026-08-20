@@ -55,3 +55,12 @@
 .vix-chip.red b {
     color: var(--negative);
 }
+
+/* A 320px bar has room for the level or the day change, not both: with both, the
+   menu button was pushed off the right edge of the phone. The level is what stays,
+   since it is the figure that caps the grade. */
+@media (max-width: 430px) {
+    .vix-chip .change {
+        display: none;
+    }
+}

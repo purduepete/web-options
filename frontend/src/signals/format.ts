@@ -53,6 +53,14 @@ export function formatMoney(value: number | null): string {
     return value == null ? 'n/a' : `$${MONEY.format(value)}`;
 }
 
+/** A profit and a loss have to be told apart at a glance, so the sign leads the figure. */
+export function formatSignedMoney(value: number | null): string {
+    if (value == null) return 'n/a';
+    // Rounded before the sign is read, so a stray cent cannot print "-$0".
+    const rounded = Math.round(value);
+    return `${rounded < 0 ? '-' : rounded > 0 ? '+' : ''}$${MONEY.format(Math.abs(rounded))}`;
+}
+
 /**
  * The drill-in's figure. A ticket rounds to the dollar to stay scannable across a
  * whole week, but a breakeven of $168.55 shown as $169 is a worse number rather

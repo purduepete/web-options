@@ -38,6 +38,7 @@ const DETAIL: SymbolDetail = {
     sma200: 150,
     bars: [{ date: '2026-08-18', close: 182.35 }],
     pastSignals: [],
+    outcome: null,
 };
 
 afterEach(() => {
@@ -68,20 +69,40 @@ describe('GET /api/symbols/:symbol', () => {
             .query({ strike: '170.5', expiration: '2026-08-21' })
             .set('x-api-key', VALID_KEY);
 
-        expect(detail.mock.calls[0]?.[2]).toEqual({ exclude: { strike: 170.5, expiration: '2026-08-21' } });
+        expect(detail.mock.calls[0]?.[2]).toEqual({
+            exclude: { strike: 170.5, expiration: '2026-08-21' },
+            reportDate: null,
+        });
+    });
+
+    it('passes the report date through, which is what names the outcome row', async () => {
+        const detail = vi.spyOn(marketService, 'getSymbolDetail').mockResolvedValue(DETAIL);
+        await agent()
+            .get('/api/symbols/VST')
+            .query({ strike: '170.5', expiration: '2026-08-21', reportDate: '2026-08-18' })
+            .set('x-api-key', VALID_KEY);
+
+        expect(detail.mock.calls[0]?.[2]).toEqual({
+            exclude: { strike: 170.5, expiration: '2026-08-21' },
+            reportDate: '2026-08-18',
+        });
     });
 
     it('asks for no exclusion when no contract was named', async () => {
         const detail = vi.spyOn(marketService, 'getSymbolDetail').mockResolvedValue(DETAIL);
         await agent().get('/api/symbols/VST').set('x-api-key', VALID_KEY);
 
-        expect(detail.mock.calls[0]?.[2]).toEqual({ exclude: { strike: null, expiration: null } });
+        expect(detail.mock.calls[0]?.[2]).toEqual({
+            exclude: { strike: null, expiration: null },
+            reportDate: null,
+        });
     });
 
     it.each([
         ['a strike that is not a number', { strike: 'cheap' }],
         ['an expiration that is not a date', { expiration: '21/08/2026' }],
         ['an expiration with no dashes', { expiration: '20260821' }],
+        ['a report date that is not a date', { reportDate: 'monday' }],
     ])('refuses %s', async (_label, query) => {
         const detail = vi.spyOn(marketService, 'getSymbolDetail').mockResolvedValue(DETAIL);
         const response = await agent().get('/api/symbols/VST').query(query).set('x-api-key', VALID_KEY);
