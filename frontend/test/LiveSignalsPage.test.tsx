@@ -441,20 +441,29 @@ describe('LiveSignalsPage', () => {
         expect(screen.queryByText('AMD $100P')).toBeNull();
     });
 
-    it('isolates one group from the keyboard and reopens everything with j', async () => {
+    it('toggles a single group from the keyboard, leaving others alone', async () => {
         const user = userEvent.setup();
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
 
+        // t collapses Top Picks; Aggressive stays open
         await user.keyboard('t');
+        expect(screen.getByRole('button', { name: /Top Picks/ }).getAttribute('aria-expanded')).toBe('false');
+        expect(screen.getByRole('button', { name: /Aggressive/ }).getAttribute('aria-expanded')).toBe('true');
 
+        // t again reopens Top Picks
+        await user.keyboard('t');
         expect(screen.getByRole('button', { name: /Top Picks/ }).getAttribute('aria-expanded')).toBe('true');
-        expect(screen.getByRole('button', { name: /Aggressive/ }).getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('j toggles all groups regardless of individual state', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
 
         await user.keyboard('j');
-
         for (const heading of screen.getAllByRole('button', { name: /Top Picks|Aggressive|Conservative/ })) {
-            expect(heading.getAttribute('aria-expanded')).toBe('true');
+            expect(heading.getAttribute('aria-expanded')).toBe('false');
         }
     });
 

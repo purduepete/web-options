@@ -265,17 +265,6 @@ export function LiveSignalsPage() {
             .catch((cause: Error) => setError(describeFailure(cause)));
     }, [setWeekParam]);
 
-    const isolateGroup = useCallback(
-        (id: GroupId) => {
-            // Only ever acts on groups actually on screen, so a key never
-            // collapses everything in favour of a group this week does not have.
-            const visible = groups.map((group) => group.id);
-            if (!visible.includes(id)) return;
-            setCollapsed(new Set(visible.filter((other) => other !== id)));
-        },
-        [groups],
-    );
-
     const toggleAllGroups = useCallback(() => {
         const visible = groups.map((group) => group.id);
         setCollapsed((current) => (visible.some((id) => current.has(id)) ? new Set() : new Set(visible)));
@@ -284,7 +273,7 @@ export function LiveSignalsPage() {
     useSignalShortcuts({
         onPreviousWeek: goPrevious,
         onNextWeek: goNext,
-        onIsolateGroup: isolateGroup,
+        onIsolateGroup: toggleGroup,
         onToggleAllGroups: toggleAllGroups,
         onFocusSymbolFilter: focusSymbolFilter,
         onCycleExpiry: cycleExpiry,
