@@ -340,17 +340,22 @@ export function TradeDetail({
                                         </dt>
                                         <dd>
                                             {formatSignedPercent(asPercent(detail.outcome.bestPremiumKept))}
-                                            {detail.outcome.bestOn && (
-                                                <span className="stat-aside">
-                                                    {' '}
-                                                    ({formatDayLabel(detail.outcome.bestOn)})
-                                                </span>
-                                            )}
+                                            <span className="stat-aside">
+                                                {' '}
+                                                ({formatSignedMoney(detail.outcome.bestProfit)}
+                                                {detail.outcome.bestOn && `, ${formatDayLabel(detail.outcome.bestOn)}`})
+                                            </span>
                                         </dd>
                                     </div>
                                     <div>
                                         <dt>Worst it has been</dt>
-                                        <dd>{formatSignedMoney(detail.outcome.worstProfit)}</dd>
+                                        <dd>
+                                            {formatSignedPercent(asPercent(detail.outcome.worstPremiumKept))}
+                                            <span className="stat-aside">
+                                                {' '}
+                                                ({formatSignedMoney(detail.outcome.worstProfit)})
+                                            </span>
+                                        </dd>
                                     </div>
                                     <div>
                                         <dt>Days held</dt>

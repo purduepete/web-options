@@ -58,8 +58,15 @@ export interface SignalOutcome {
     /** Profit in dollars on one contract, and the same thing as a fraction of the premium. */
     profit: number | null;
     premiumKept: number | null;
+    /**
+     * The high and low water marks of the same two figures. The rollup stores the
+     * best as a fraction and both extremes in dollars, so the worst one's fraction
+     * is worked out here rather than left as the odd figure out.
+     */
     bestPremiumKept: number | null;
+    bestProfit: number | null;
     bestOn: IsoDate | null;
+    worstPremiumKept: number | null;
     /**
      * The lowest the profit has ever been at a close, in dollars. Not necessarily a
      * loss: a put that ran clean shows its worst day still in the money.

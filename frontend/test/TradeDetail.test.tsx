@@ -80,7 +80,9 @@ function outcome(extra: Partial<SignalOutcome> = {}): SignalOutcome {
         profit: 35,
         premiumKept: 0.225806,
         bestPremiumKept: 0.419354,
+        bestProfit: 65,
         bestOn: '2026-08-19',
+        worstPremiumKept: 0.077419,
         worstProfit: 12,
         daysToHalf: null,
         settled: false,
@@ -180,21 +182,33 @@ describe('TradeDetail', () => {
         // Fractions on the wire, percent on the page, and the sign leads both figures.
         expect(screen.getByText('+22.6%')).toBeTruthy();
         expect(screen.getByText(/\+\$35/)).toBeTruthy();
+        // The best and the worst are a pair, and read the same way as the running figure.
         expect(screen.getByText('+41.9%')).toBeTruthy();
+        expect(screen.getByText(/\+\$65, Aug 19/)).toBeTruthy();
+        expect(screen.getByText('+7.7%')).toBeTruthy();
+        expect(screen.getByText(/\+\$12/)).toBeTruthy();
         // Never settled, so no expiration verdict is offered.
         expect(screen.queryByText('Finished')).toBeNull();
     });
 
     it('marks a loss with its sign rather than printing a dollar minus', async () => {
         fetchSymbolDetail.mockResolvedValue(
-            detail({ outcome: outcome({ profit: -55, premiumKept: -0.250569, worstProfit: -70 }) }),
+            detail({
+                outcome: outcome({
+                    profit: -55,
+                    premiumKept: -0.250569,
+                    worstPremiumKept: -0.451612,
+                    worstProfit: -70,
+                }),
+            }),
         );
         renderDetail({ reportDate: '2026-08-18' });
 
         await screen.findByText('Since the signal');
         expect(screen.getByText('-25.1%')).toBeTruthy();
         expect(screen.getByText(/-\$55/)).toBeTruthy();
-        expect(screen.getByText('-$70')).toBeTruthy();
+        expect(screen.getByText('-45.2%')).toBeTruthy();
+        expect(screen.getByText(/-\$70/)).toBeTruthy();
     });
 
     it('freezes once the contract has expired and says where it finished', async () => {

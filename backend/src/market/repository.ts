@@ -201,7 +201,7 @@ const OUTCOME_QUERY = `
 SELECT TOP 1
     report_date, executed_premium, current_mark, as_of_date, days_held,
     pnl_dollar, pnl_pct_of_premium, max_profit_capture_pct, max_profit_date,
-    eod_mae, days_to_50pct, is_final, moneyness_at_expiration
+    eod_mfe, eod_mae, days_to_50pct, is_final, moneyness_at_expiration
 FROM opt.telegram_signal_outcome
 WHERE symbol = @symbol
   AND option_right = 'P'
@@ -232,17 +232,24 @@ export async function outcomeFor(db: DbConfig, symbol: string, lookup: OutcomeLo
     const row = result.recordset[0];
     if (!row) return null;
 
+    const entryPremium = toNumber(row.executed_premium);
+    const worstProfit = toNumber(row.eod_mae);
+
     return {
         reportDate: sqlDateToIso(row.report_date) as IsoDate,
-        entryPremium: toNumber(row.executed_premium),
+        entryPremium,
         mark: toNumber(row.current_mark),
         asOf: sqlDateToIso(row.as_of_date),
         daysHeld: toNumber(row.days_held),
         profit: toNumber(row.pnl_dollar),
         premiumKept: toNumber(row.pnl_pct_of_premium),
         bestPremiumKept: toNumber(row.max_profit_capture_pct),
+        bestProfit: toNumber(row.eod_mfe),
         bestOn: sqlDateToIso(row.max_profit_date),
-        worstProfit: toNumber(row.eod_mae),
+        // The rollup's own recipe for the fractions it does store: dollars over the
+        // premium in the same dollars, which is 100 shares' worth of a per-share mark.
+        worstPremiumKept: worstProfit === null || !entryPremium ? null : worstProfit / (entryPremium * 100),
+        worstProfit,
         daysToHalf: toNumber(row.days_to_50pct),
         settled: row.is_final === true || row.is_final === 1,
         moneynessAtExpiration: MONEYNESS[String(row.moneyness_at_expiration ?? '')] ?? null,
