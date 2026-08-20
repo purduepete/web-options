@@ -132,18 +132,34 @@ export async function writeCached(
  * rows of the same strike would be a list of nothing.
  */
 const PAST_SIGNALS_QUERY = `
-SELECT TOP (@limit) report_date, strike, expiration, annualized_yield
+SELECT TOP (@limit)
+    report_date, strike, expiration, annualized_yield,
+    owned_live_contracts, owned_paper_contracts
 FROM (
     SELECT
         s.report_date,
         s.strike,
         s.expiration,
         s.annualized_yield,
+        own.owned_live_contracts,
+        own.owned_paper_contracts,
         ROW_NUMBER() OVER (
             PARTITION BY s.strike, s.expiration
             ORDER BY s.report_date DESC
         ) AS rn
     FROM opt.telegram_signal s
+    OUTER APPLY (
+        SELECT
+            COALESCE(SUM(CASE WHEN ot.is_paper = 0 THEN ot.contracts ELSE 0 END), 0) AS owned_live_contracts,
+            COALESCE(SUM(CASE WHEN ot.is_paper = 1 THEN ot.contracts ELSE 0 END), 0) AS owned_paper_contracts
+        FROM dbo.option_transactions ot
+        WHERE ot.symbol = s.symbol
+          AND ot.strike_price = s.strike
+          AND ot.expiration_date = s.expiration
+          AND CAST(ot.transaction_date AS DATE) = s.report_date
+          AND ot.status = 'open'
+          AND ot.action = 'sell_to_open'
+    ) own
     WHERE s.is_current = 1
       AND s.parse_status = 'parsed'
       AND s.option_right = 'P'
@@ -156,7 +172,8 @@ FROM (
       )
 ) d
 WHERE rn = 1
-ORDER BY report_date DESC
+ORDER BY CASE WHEN owned_live_contracts > 0 OR owned_paper_contracts > 0 THEN 0 ELSE 1 END,
+         report_date DESC
 `;
 
 export type PastSignalSeed = Omit<PastSignal, 'outcome' | 'closeAtExpiration'>;
@@ -186,7 +203,38 @@ export async function pastSignalsFor(
         strike: toNumber(row.strike),
         expiration: sqlDateToIso(row.expiration),
         annualizedYield: toNumber(row.annualized_yield),
+        ownedLiveContracts: Math.trunc(toNumber(row.owned_live_contracts) ?? 0),
+        ownedPaperContracts: Math.trunc(toNumber(row.owned_paper_contracts) ?? 0),
     }));
+}
+
+const OWNED_CONTRACTS_QUERY = `
+SELECT COALESCE(SUM(contracts), 0) AS owned_contracts
+FROM dbo.option_transactions
+WHERE symbol = @symbol
+  AND strike_price = @strike
+  AND expiration_date = CAST(@expiration AS DATE)
+  AND status = 'open'
+    AND action = 'sell_to_open'
+    AND (@reportDate IS NULL OR CAST(transaction_date AS DATE) = CAST(@reportDate AS DATE))
+`;
+
+/** Returns the open quantity for one contract, or zero when it is not owned. */
+export async function ownedContractsFor(
+    db: DbConfig,
+    symbol: string,
+    lookup: { strike: number; expiration: IsoDate; reportDate?: IsoDate | null },
+): Promise<number> {
+    const pool = await getPool(db);
+    const result = await pool
+        .request()
+        .input('symbol', sql.VarChar(20), symbol)
+        .input('strike', sql.Decimal(18, 4), lookup.strike)
+        .input('expiration', sql.VarChar(10), lookup.expiration)
+        .input('reportDate', sql.VarChar(10), lookup.reportDate ?? null)
+        .query<Record<string, unknown>>(OWNED_CONTRACTS_QUERY);
+
+    return toNumber(result.recordset[0]?.owned_contracts) ?? 0;
 }
 
 /**

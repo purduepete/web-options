@@ -27,6 +27,8 @@ function trade(extra: Partial<Trade> = {}): Trade {
         moneyness: null,
         percentFromStrike: null,
         bestPremiumKept: null,
+        ownedLiveContracts: 0,
+        ownedPaperContracts: 0,
         ...extra,
     };
 }

@@ -44,6 +44,7 @@ const pages = readdirSync(pagesDir)
 const indexHtml = readFileSync(resolve('../index.html'), 'utf8');
 const indexCss = sheets.find((sheet) => sheet.name === 'index.css')?.css ?? '';
 const liveSignalsCss = sheets.find((sheet) => sheet.name === 'pages/LiveSignalsPage.css')?.css ?? '';
+const choiceMenuCss = sheets.find((sheet) => sheet.name === 'components/ChoiceMenu.css')?.css ?? '';
 const navbarCss = sheets.find((sheet) => sheet.name === 'navigation/Navbar.css')?.css ?? '';
 
 /** Anything this size is an icon, a spinner or a swatch, not a layout. */
@@ -172,6 +173,17 @@ describe('the page can always be as narrow as the phone', () => {
         const rule = /\.symbol-filter input\s*\{([^}]*)\}/.exec(liveSignalsCss)?.[1] ?? '';
 
         expect(rule).toContain('width: 100%');
+    });
+
+    it('keeps the owned filter in the phone filter reflow', () => {
+        expect(liveSignalsCss).toContain('.filter-section-owned');
+        const phoneBlocks = mediaBlocks(liveSignalsCss).filter(({ condition }) => /max-width:\s*640px/.test(condition));
+        expect(phoneBlocks.some(({ body }) => body.includes('.filter-section-owned'))).toBe(true);
+    });
+
+    it('keeps choice-menu rows touch-sized on phones', () => {
+        const phone = mediaBlocks(choiceMenuCss).find(({ condition }) => /max-width:\s*640px/.test(condition));
+        expect(phone?.body ?? '').toMatch(/\.choice-item\s*\{[^}]*min-height:\s*44px/);
     });
 });
 

@@ -50,6 +50,11 @@ export const HALF_FILTERS = ['all', 'yes', 'no'] as const;
 
 export type HalfFilter = (typeof HALF_FILTERS)[number];
 
+/** Whether the reader wants every signal or only contracts already owned. */
+export const OWNED_FILTERS = ['all', 'owned'] as const;
+
+export type OwnedFilter = (typeof OWNED_FILTERS)[number];
+
 /** The next choice along, wrapping. What a filter's shortcut key steps through. */
 export function cycle<T extends string>(choices: readonly T[], current: T): T {
     const here = choices.indexOf(current);
@@ -128,6 +133,14 @@ export function filterDaysByHalf(days: DaySignals[], filter: HalfFilter): DaySig
     return days.map((day) => ({
         ...day,
         trades: day.trades.filter(keep),
+    }));
+}
+
+export function filterDaysByOwned(days: DaySignals[], filter: OwnedFilter): DaySignals[] {
+    if (filter === 'all') return days;
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter((trade) => trade.ownedLiveContracts > 0 || trade.ownedPaperContracts > 0),
     }));
 }
 

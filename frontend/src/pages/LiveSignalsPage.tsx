@@ -9,22 +9,30 @@ import { WeekGrid } from '../signals/WeekGrid';
 import { TradeDetail } from '../signals/TradeDetail';
 import { WeekScore } from '../signals/WeekScore';
 import { NumberSourceMenu } from '../signals/NumberSourceMenu';
-import { ExpiryFilterMenu, GradeFilterMenu, HalfFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
+import {
+    ExpiryFilterMenu,
+    GradeFilterMenu,
+    HalfFilterMenu,
+    MoneynessFilterMenu,
+    OwnedFilterMenu,
+} from '../signals/FilterMenu';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
     MONEYNESS_FILTERS,
+    OWNED_FILTERS,
     buildGroups,
     cycle,
     filterDaysByExpiry,
     filterDaysByHalf,
     filterDaysByGrade,
     filterDaysByMoneyness,
+    filterDaysByOwned,
     filterDaysBySymbol,
     groupTrades,
     shiftWeek,
 } from '../signals/grouping';
-import type { ExpiryFilter, GradeFilter, GroupId, HalfFilter, MoneynessFilter } from '../signals/grouping';
+import type { ExpiryFilter, GradeFilter, GroupId, HalfFilter, MoneynessFilter, OwnedFilter } from '../signals/grouping';
 import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
@@ -60,6 +68,10 @@ function readHalfFilter(value: string | null): HalfFilter {
     return HALF_FILTERS.includes(value as HalfFilter) ? (value as HalfFilter) : 'all';
 }
 
+function readOwnedFilter(value: string | null): OwnedFilter {
+    return OWNED_FILTERS.includes(value as OwnedFilter) ? (value as OwnedFilter) : 'all';
+}
+
 function readGradeFilter(value: string | null): GradeFilter[] {
     const allowed: GradeFilter[] = ['red', 'yellow', 'green'];
     const selected =
@@ -75,6 +87,7 @@ export function LiveSignalsPage() {
     const expiry = readExpiryFilter(params.get('expiry'));
     const moneyness = readMoneynessFilter(params.get('moneyness'));
     const half = readHalfFilter(params.get('half'));
+    const owned = readOwnedFilter(params.get('owned'));
     const grades = readGradeFilter(params.get('grade'));
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -122,21 +135,24 @@ export function LiveSignalsPage() {
 
     const days = useMemo(
         () =>
-            filterDaysByGrade(
-                filterDaysByHalf(
-                    filterDaysByMoneyness(
-                        filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
-                        moneyness,
+            filterDaysByOwned(
+                filterDaysByGrade(
+                    filterDaysByHalf(
+                        filterDaysByMoneyness(
+                            filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
+                            moneyness,
+                        ),
+                        half,
                     ),
-                    half,
+                    grades,
+                    numberSource,
+                    gradeSettings,
+                    [...cautionSymbols],
+                    vix,
                 ),
-                grades,
-                numberSource,
-                gradeSettings,
-                [...cautionSymbols],
-                vix,
+                owned,
             ),
-        [data, symbol, expiry, moneyness, half, grades, numberSource, gradeSettings, cautionSymbols, vix],
+        [data, symbol, expiry, moneyness, half, owned, grades, numberSource, gradeSettings, cautionSymbols, vix],
     );
     const groups = useMemo(() => buildGroups(days), [days]);
 
@@ -213,6 +229,18 @@ export function LiveSignalsPage() {
         [setParams],
     );
 
+    const setOwnedParam = useCallback(
+        (next: OwnedFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('owned');
+                else updated.set('owned', next);
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
     const setMoneynessParam = useCallback(
         (next: MoneynessFilter) => {
             setParams((current) => {
@@ -260,6 +288,7 @@ export function LiveSignalsPage() {
             updated.delete('expiry');
             updated.delete('moneyness');
             updated.delete('half');
+            updated.delete('owned');
             updated.delete('grade');
             return updated;
         });
@@ -271,12 +300,14 @@ export function LiveSignalsPage() {
         expiry === 'all' &&
         moneyness === 'all' &&
         half === 'all' &&
+        owned === 'all' &&
         grades.length === 0;
     const activeFilterCount =
         (symbol.trim() !== '' ? 1 : 0) +
         (expiry !== 'all' ? 1 : 0) +
         (moneyness !== 'all' ? 1 : 0) +
         (half !== 'all' ? 1 : 0) +
+        (owned !== 'all' ? 1 : 0) +
         (grades.length > 0 ? 1 : 0);
     const filtersNarrowed = activeFilterCount > 0;
     const appliedFilters = [
@@ -284,6 +315,7 @@ export function LiveSignalsPage() {
         expiry !== 'all' ? `Expiry: ${expiry}` : null,
         moneyness !== 'all' ? `Moneyness: ${moneyness.toUpperCase()}` : null,
         half !== 'all' ? `Half: ${half === 'yes' ? 'Yes' : 'No'}` : null,
+        owned !== 'all' ? 'Owned' : null,
         grades.length > 0
             ? `Grade: ${grades.map((grade) => grade[0]!.toUpperCase() + grade.slice(1)).join(' + ')}`
             : null,
@@ -334,6 +366,8 @@ export function LiveSignalsPage() {
 
     const cycleHalf = useCallback(() => setHalfParam(cycle(HALF_FILTERS, half)), [half, setHalfParam]);
 
+    const cycleOwned = useCallback(() => setOwnedParam(cycle(OWNED_FILTERS, owned)), [owned, setOwnedParam]);
+
     const goPrevious = useCallback(() => {
         if (!data?.hasPriorWeekData) return;
         setWeekParam(shiftWeek(data.weekStart, -7));
@@ -367,6 +401,7 @@ export function LiveSignalsPage() {
         onCycleExpiry: cycleExpiry,
         onCycleMoneyness: cycleMoneyness,
         onCycleHalf: cycleHalf,
+        onCycleOwned: cycleOwned,
         onResetMenus: resetMenus,
         // Every shortcut here is a bare letter, so `r` in an open dialog would
         // otherwise reset the filters behind it.
@@ -394,6 +429,20 @@ export function LiveSignalsPage() {
             <div className="filter-section filter-section-half">
                 <h2>Performance</h2>
                 <HalfFilterMenu value={half} onChange={setHalfParam} />
+            </div>
+            <div className="filter-section filter-section-owned">
+                <h2>Ownership</h2>
+                <OwnedFilterMenu
+                    value={owned}
+                    onChange={(next) =>
+                        setParams((current) => {
+                            const updated = new URLSearchParams(current);
+                            if (next === 'all') updated.delete('owned');
+                            else updated.set('owned', next);
+                            return updated;
+                        })
+                    }
+                />
             </div>
             <div className="filter-section filter-section-moneyness">
                 <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />

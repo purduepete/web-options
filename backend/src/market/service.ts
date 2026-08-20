@@ -1,7 +1,14 @@
 import type { IsoDate, SymbolDetail } from '@weboptions/shared';
 import type { DbConfig } from '../config';
 import { resolvePastSignals, sixMonthSlice, sma } from './metrics';
-import { outcomeFor, type PastSignalExclusion, pastSignalsFor, readCached, writeCached } from './repository';
+import {
+    ownedContractsFor,
+    outcomeFor,
+    type PastSignalExclusion,
+    pastSignalsFor,
+    readCached,
+    writeCached,
+} from './repository';
 import { fetchDailyBars, fetchQuote, normalizeSymbol, type SymbolQuote } from './yahoo';
 
 /**
@@ -105,6 +112,10 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         strike !== null && expiration !== null && reportDate !== null
             ? await outcomeFor(db, symbol, { strike, expiration, reportDate }).catch(() => null)
             : null;
+    const ownedContracts =
+        strike !== null && expiration !== null
+            ? await ownedContractsFor(db, symbol, { strike, expiration, reportDate }).catch(() => null)
+            : null;
 
     return {
         symbol,
@@ -119,6 +130,7 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         sma200: sma(bars, 200),
         bars: sixMonthSlice(bars),
         pastSignals: resolvePastSignals(seeds, bars, today),
+        ownedContracts,
         outcome,
     };
 }

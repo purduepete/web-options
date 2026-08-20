@@ -171,6 +171,11 @@
     grid-row: 1;
 }
 
+.filter-section-owned {
+    grid-column: 1;
+    grid-row: 2;
+}
+
 .filter-section-moneyness {
     grid-column: 2;
     grid-row: 2;
@@ -277,6 +282,7 @@
     .filter-section-view,
     .filter-section-expiry,
     .filter-section-half,
+    .filter-section-owned,
     .filter-section-moneyness,
     .filter-section-grade {
         grid-column: auto;

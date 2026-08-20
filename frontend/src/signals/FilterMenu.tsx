@@ -1,14 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { ChoiceMenu, type ChoiceOption } from '../components/ChoiceMenu';
-import { AlertIcon, CheckIcon, ClockIcon, TargetIcon, TrendingUpIcon, ChevronDownIcon } from '../components/icons';
+import {
+    AlertIcon,
+    CheckIcon,
+    ClockIcon,
+    TargetIcon,
+    TrendingUpIcon,
+    ChevronDownIcon,
+    ZapIcon,
+} from '../components/icons';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
     MONEYNESS_FILTERS,
+    OWNED_FILTERS,
     type ExpiryFilter,
     type HalfFilter,
     type MoneynessFilter,
+    type OwnedFilter,
     GRADE_FILTERS,
     type GradeFilter,
 } from './grouping';
@@ -80,6 +90,24 @@ export function HalfFilterMenu({ value, onChange }: { value: HalfFilter; onChang
             name="Over half"
             icon={<TrendingUpIcon width={15} height={15} />}
             options={HALF_FILTERS.map((filter) => ({ value: filter, ...HALF_OPTIONS[filter] }))}
+            value={value}
+            neutral="all"
+            onChange={onChange}
+        />
+    );
+}
+
+const OWNED_OPTIONS: Record<OwnedFilter, Omit<ChoiceOption<OwnedFilter>, 'value'>> = {
+    all: { label: 'All', description: 'Every contract' },
+    owned: { label: 'Owned', description: 'Live or paper contracts already held' },
+};
+
+export function OwnedFilterMenu({ value, onChange }: { value: OwnedFilter; onChange: (next: OwnedFilter) => void }) {
+    return (
+        <ChoiceMenu
+            name="Owned"
+            icon={<ZapIcon width={15} height={15} />}
+            options={OWNED_FILTERS.map((filter) => ({ value: filter, ...OWNED_OPTIONS[filter] }))}
             value={value}
             neutral="all"
             onChange={onChange}

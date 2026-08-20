@@ -29,6 +29,7 @@ interface Handlers {
     onCycleExpiry: () => void;
     onCycleMoneyness: () => void;
     onCycleHalf: () => void;
+    onCycleOwned: () => void;
     onResetMenus: () => void;
     /**
      * Set while the drill-in is open. Every shortcut here is a single letter, so
@@ -75,6 +76,9 @@ export function useSignalShortcuts(handlers: Handlers): void {
             } else if (key === 'o') {
                 event.preventDefault();
                 latest.current.onCycleHalf();
+            } else if (key === 'u') {
+                event.preventDefault();
+                latest.current.onCycleOwned();
             } else if (key === 'r') {
                 event.preventDefault();
                 latest.current.onResetMenus();

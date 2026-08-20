@@ -46,6 +46,8 @@ function trade(extra: Partial<Trade> = {}): Trade {
         moneyness: null,
         percentFromStrike: null,
         bestPremiumKept: null,
+        ownedLiveContracts: 0,
+        ownedPaperContracts: 0,
         ...extra,
     };
 }
@@ -66,6 +68,7 @@ function detail(extra: Partial<SymbolDetail> = {}): SymbolDetail {
             { date: '2026-08-18', close: 182.35 },
         ],
         pastSignals: [],
+        ownedContracts: null,
         outcome: null,
         ...extra,
     };
@@ -136,6 +139,22 @@ describe('TradeDetail', () => {
         expect(screen.getByText('The contract')).toBeTruthy();
         expect(screen.getByText('$170.00')).toBeTruthy();
         expect(screen.getByText('3 DTE', { exact: false })).toBeTruthy();
+    });
+
+    it('marks the contract when it is already owned', async () => {
+        fetchSymbolDetail.mockResolvedValue(detail({ ownedContracts: 2 }));
+        renderDetail();
+
+        expect(await screen.findByText('Owned')).toBeTruthy();
+        expect(screen.getByTitle('2 open contracts')).toBeTruthy();
+    });
+
+    it('does not show the marker when the contract is not owned', async () => {
+        fetchSymbolDetail.mockResolvedValue(detail({ ownedContracts: 0 }));
+        renderDetail();
+
+        await screen.findByText('Where it trades');
+        expect(screen.queryByText('Owned')).toBeNull();
     });
 
     it('asks for the market data by contract, so it is kept out of its own history', async () => {
@@ -337,6 +356,8 @@ describe('TradeDetail', () => {
                             annualizedYield: 41,
                             outcome: 'expired_otm',
                             closeAtExpiration: 161.2,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
                         },
                         {
                             reportDate: '2026-06-02',
@@ -345,6 +366,8 @@ describe('TradeDetail', () => {
                             annualizedYield: 55,
                             outcome: 'expired_itm',
                             closeAtExpiration: 168.4,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
                         },
                     ],
                 }),
@@ -355,6 +378,41 @@ describe('TradeDetail', () => {
             expect(screen.getByText('Assigned')).toBeTruthy();
             // The close is on the chip's title, not spelled out in the row.
             expect(screen.queryByText('closed $161.20')).toBeNull();
+        });
+
+        it('puts owned earlier signals first and shows their ownership icons', async () => {
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    pastSignals: [
+                        {
+                            reportDate: '2026-08-13',
+                            strike: 160,
+                            expiration: '2026-09-11',
+                            annualizedYield: 33,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                        {
+                            reportDate: '2026-08-18',
+                            strike: 160,
+                            expiration: '2026-09-18',
+                            annualizedYield: 27,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 1,
+                        },
+                    ],
+                }),
+            );
+            renderDetail();
+
+            await screen.findByText('Earlier signals on VST');
+            const rows = [...screen.getByRole('dialog').querySelectorAll('.past-signals li')];
+            expect(rows[0]?.querySelector('.past-date')?.textContent).toBe('08/18/2026');
+            expect(screen.getByTitle('1 paper-owned contract')).toBeTruthy();
         });
 
         it('marks a settled signal against its expiration close', async () => {
@@ -368,6 +426,8 @@ describe('TradeDetail', () => {
                             annualizedYield: 41,
                             outcome: 'expired_otm',
                             closeAtExpiration: 161.2,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
                         },
                         {
                             reportDate: '2026-06-02',
@@ -376,6 +436,8 @@ describe('TradeDetail', () => {
                             annualizedYield: 55,
                             outcome: 'expired_itm',
                             closeAtExpiration: 168.4,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
                         },
                     ],
                 }),
@@ -400,6 +462,8 @@ describe('TradeDetail', () => {
                             annualizedYield: 48,
                             outcome: 'open',
                             closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
                         },
                     ],
                 }),

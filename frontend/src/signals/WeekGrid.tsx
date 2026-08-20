@@ -21,7 +21,7 @@ import { useCautionSymbols } from '../caution/CautionProvider';
 import { useGradeSettings } from '../grade/GradeSettingsProvider';
 import { useVixValue } from '../grade/VixProvider';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronDownIcon } from '../components/icons';
+import { ChevronDownIcon, FlaskConicalIcon, ZapIcon } from '../components/icons';
 import './WeekGrid.css';
 
 /**
@@ -550,6 +550,32 @@ function Ticket({
     const deltaDiff = absoluteDiff(numberSource, trade.actualDelta, trade.delta);
     const premiumDiff = percentDiff(numberSource, trade.actualPremium, trade.premium);
     const expired = hasExpired(trade.expiration);
+    const ownership = (
+        <span className="ownership-badges">
+            {trade.ownedLiveContracts > 0 && (
+                <span
+                    className="ownership-icon live"
+                    title={`${trade.ownedLiveContracts} live-owned contract${trade.ownedLiveContracts === 1 ? '' : 's'}`}
+                >
+                    <ZapIcon width={14} height={14} />
+                    <span className="sr-only">
+                        Live owned: {trade.ownedLiveContracts} contract{trade.ownedLiveContracts === 1 ? '' : 's'}
+                    </span>
+                </span>
+            )}
+            {trade.ownedPaperContracts > 0 && (
+                <span
+                    className="ownership-icon paper"
+                    title={`${trade.ownedPaperContracts} paper-owned contract${trade.ownedPaperContracts === 1 ? '' : 's'}`}
+                >
+                    <FlaskConicalIcon width={14} height={14} />
+                    <span className="sr-only">
+                        Paper owned: {trade.ownedPaperContracts} contract{trade.ownedPaperContracts === 1 ? '' : 's'}
+                    </span>
+                </span>
+            )}
+        </span>
+    );
 
     function activate() {
         // Finishing a drag that selected some of the ticket's own text is not a
@@ -594,6 +620,7 @@ function Ticket({
         >
             <div className="ticket-row1">
                 <span className="ticker">
+                    {ownership}
                     {trade.symbol} {formatStrike(trade.strike, trade.optionRight)}
                     <CautionBadge symbol={trade.symbol} />
                 </span>

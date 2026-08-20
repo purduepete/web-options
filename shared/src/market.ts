@@ -31,6 +31,8 @@ export interface PastSignal {
     annualizedYield: number | null;
     closeAtExpiration: number | null;
     outcome: SymbolOutcome;
+    ownedLiveContracts: number;
+    ownedPaperContracts: number;
 }
 
 /**
@@ -97,6 +99,8 @@ export interface SymbolDetail {
     sma200: number | null;
     bars: SymbolBar[];
     pastSignals: PastSignal[];
+    /** Open contracts matching the viewed symbol, strike, and expiration. Null when unavailable. */
+    ownedContracts: number | null;
     /**
      * Null unless the caller named a report date, and null too for a signal the
      * nightly job has not rolled up: it started on 2026-07-17, so an older week has

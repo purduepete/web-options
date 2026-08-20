@@ -11,7 +11,11 @@
 -- webportfolio's data including its own dbo.user_api_keys hashes. weboptions needs
 -- exactly two things, so it is granted exactly two things.
 --
--- NO LONGER THE WHOLE STORY. This file used to end with a database-scoped
+-- NO LONGER THE WHOLE STORY. Migration 013 grants database-wide SELECT through
+-- db_datareader after the ownership indicator was added. This file still defines
+-- the base schema grant before that broader read decision.
+--
+-- This file used to end with a database-scoped
 -- `DENY INSERT, UPDATE, DELETE, ALTER`. The caution list (007-009) needs one
 -- writable table, and a database-scoped DENY outranks any GRANT below it, so the
 -- deny is now issued per schema in 009 instead. Read 009 alongside this one; the

@@ -47,6 +47,8 @@ WITH base AS (
         c.price_date AS close_date,
         c.underlying_price AS close_underlying,
         o.max_profit_capture_pct AS best_premium_kept,
+        own.owned_live_contracts,
+        own.owned_paper_contracts,
         COALESCE(s.contract_key,
             CONCAT(s.symbol, '|', s.strike, '|', s.expiration)) AS contract_key,
         MAX(CAST(s.is_top_pick AS INT)) OVER (
@@ -85,6 +87,19 @@ WITH base AS (
           AND so.report_date = s.report_date
         ORDER BY so.computed_date DESC
     ) o
+    -- Only link a transaction entered on the signal's recommendation date.
+    OUTER APPLY (
+        SELECT
+            COALESCE(SUM(CASE WHEN ot.is_paper = 0 THEN ot.contracts ELSE 0 END), 0) AS owned_live_contracts,
+            COALESCE(SUM(CASE WHEN ot.is_paper = 1 THEN ot.contracts ELSE 0 END), 0) AS owned_paper_contracts
+        FROM dbo.option_transactions ot
+        WHERE ot.symbol = s.symbol
+          AND ot.strike_price = s.strike
+          AND ot.expiration_date = s.expiration
+          AND CAST(ot.transaction_date AS DATE) = s.report_date
+          AND ot.status = 'open'
+          AND ot.action = 'sell_to_open'
+    ) own
     WHERE s.is_current = 1 AND s.parse_status = 'parsed' AND s.option_right = 'P'
       AND s.report_date BETWEEN CAST(@weekStart AS DATE) AND CAST(@weekEnd AS DATE)
 )
@@ -92,7 +107,8 @@ SELECT
     report_date, symbol, sector, option_right, strike, expiration, dte, delta,
     annualized_yield, premium, collateral, collateral_bucket, tier, is_top_pick,
     actual_delta, actual_mark, actual_illiquid, actual_iv, actual_underlying,
-    close_date, close_underlying, best_premium_kept
+    close_date, close_underlying, best_premium_kept,
+    owned_live_contracts, owned_paper_contracts
 FROM base
 WHERE rn = 1
 ORDER BY report_date, tier, option_right, annualized_yield DESC

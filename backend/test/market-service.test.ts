@@ -49,6 +49,7 @@ beforeEach(() => {
     resetInFlight();
     vi.spyOn(repository, 'pastSignalsFor').mockResolvedValue([]);
     vi.spyOn(repository, 'outcomeFor').mockResolvedValue(null);
+    vi.spyOn(repository, 'ownedContractsFor').mockResolvedValue(0);
     vi.spyOn(repository, 'writeCached').mockResolvedValue(undefined);
 });
 

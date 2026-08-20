@@ -310,6 +310,9 @@
 }
 
 .ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     flex: 1 1 auto;
     min-width: 0%;
     overflow-wrap: anywhere;
@@ -332,9 +335,30 @@
     margin-left: auto;
 }
 
+.ownership-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    flex: none;
+}
+
 /* Both badges are conditional, and an empty flex item still eats the row's gap. */
 .ticket-badges:empty {
     display: none;
+}
+
+.ownership-icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.ownership-icon.live {
+    color: var(--accent);
+}
+
+.ownership-icon.paper {
+    color: var(--highlight);
 }
 
 /* Only Top Picks shows two badges at once, and side by side they crowd the ticker

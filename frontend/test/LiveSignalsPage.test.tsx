@@ -52,6 +52,8 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         moneyness: null,
         percentFromStrike: null,
         bestPremiumKept: null,
+        ownedLiveContracts: 0,
+        ownedPaperContracts: 0,
         ...extra,
     };
 }
@@ -353,6 +355,19 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByText('RED $100P')).toBeTruthy();
         expect(screen.getByText('YELLOW $100P')).toBeTruthy();
         expect(screen.queryByText('GREEN $100P')).toBeNull();
+    });
+
+    it('shows the ownership icon before the ticker', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({ days: [day('2025-08-11', 'Monday', [trade('PAPER', { ownedPaperContracts: 1 })])] }),
+        );
+
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        const ticker = screen.getByText('PAPER $100P').closest('.ticker');
+        expect(ticker?.firstElementChild?.classList.contains('ownership-badges')).toBe(true);
+        expect(screen.getByTitle('1 paper-owned contract')).toBeTruthy();
     });
 
     it('keeps the grade menu open while selecting multiple colors', async () => {
@@ -804,9 +819,28 @@ describe('LiveSignalsPage filter shortcuts', () => {
         expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
     });
 
+    it('toggles the owned filter with u', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.keyboard('u');
+        expect(screen.getByRole('button', { name: 'Owned: Owned' })).toBeTruthy();
+
+        await user.keyboard('u');
+        expect(screen.getByRole('button', { name: 'Owned: All' })).toBeTruthy();
+    });
+
+    it('ignores an invalid owned filter in the URL', async () => {
+        renderPage('/?owned=invalid');
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Owned: All' })).toBeTruthy();
+    });
+
     it('puts every menu back with r', async () => {
         const user = userEvent.setup();
-        renderPage('/?expiry=active&moneyness=itm&half=yes');
+        renderPage('/?expiry=active&moneyness=itm&half=yes&owned=owned');
         await screen.findByTestId('week-grid');
         await choose(user, /^Numbers:/, 'VADER');
 
@@ -816,6 +850,7 @@ describe('LiveSignalsPage filter shortcuts', () => {
         expect(screen.getByRole('button', { name: 'Contracts: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Owned: All' })).toBeTruthy();
     });
 
     it('types the filter keys into the symbol box rather than acting on them', async () => {

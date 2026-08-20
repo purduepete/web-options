@@ -26,6 +26,8 @@ function row(overrides: Partial<SignalRow> = {}): SignalRow {
         close_date: new Date(Date.UTC(2026, 7, 18)),
         close_underlying: '180.25',
         best_premium_kept: '0.612000',
+        owned_live_contracts: 0,
+        owned_paper_contracts: 0,
         ...overrides,
     };
 }
@@ -75,6 +77,8 @@ describe('toTrade', () => {
             moneyness: 'otm',
             percentFromStrike: 3,
             bestPremiumKept: 0.612,
+            ownedLiveContracts: 0,
+            ownedPaperContracts: 0,
         });
     });
 

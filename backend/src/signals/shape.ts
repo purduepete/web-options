@@ -32,6 +32,8 @@ export interface SignalRow {
     close_date: unknown;
     close_underlying: unknown;
     best_premium_kept: unknown;
+    owned_live_contracts: unknown;
+    owned_paper_contracts: unknown;
 }
 
 /**
@@ -137,6 +139,8 @@ export function toTrade(row: SignalRow): Trade {
         moneyness: toMoneyness(optionRight, strike, closeUnderlying),
         percentFromStrike: toPercentFromStrike(strike, closeUnderlying),
         bestPremiumKept: toNumber(row.best_premium_kept),
+        ownedLiveContracts: toInteger(row.owned_live_contracts) ?? 0,
+        ownedPaperContracts: toInteger(row.owned_paper_contracts) ?? 0,
     };
 }
 

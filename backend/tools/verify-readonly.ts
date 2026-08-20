@@ -45,8 +45,13 @@ const PROBES: Probe[] = [
         run: (pool) => pool.request().batch('CREATE TABLE opt.probe (id INT)'),
     },
     {
-        label: 'SELECT dbo.user_api_keys (must NOT be readable)',
-        expect: 'deny',
+        label: 'SELECT dbo.option_transactions',
+        expect: 'allow',
+        run: (pool) => pool.request().query('SELECT TOP 1 symbol FROM dbo.option_transactions'),
+    },
+    {
+        label: 'SELECT dbo.user_api_keys (database-wide read access)',
+        expect: 'allow',
         run: (pool) => pool.request().query('SELECT TOP 1 * FROM dbo.user_api_keys'),
     },
     {

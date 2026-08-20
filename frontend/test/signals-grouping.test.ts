@@ -5,6 +5,7 @@ import {
     GRADE_FILTERS,
     HALF_FILTERS,
     MONEYNESS_FILTERS,
+    filterDaysByOwned,
     buildGroups,
     cycle,
     filterDaysByExpiry,
@@ -42,6 +43,8 @@ function trade(symbol: string, extra: Partial<Trade> = {}): Trade {
         moneyness: null,
         percentFromStrike: null,
         bestPremiumKept: null,
+        ownedLiveContracts: 0,
+        ownedPaperContracts: 0,
         ...extra,
     };
 }
@@ -195,6 +198,21 @@ describe('filterDaysByHalf', () => {
         const untouched = [day('2025-08-11', 'Monday', [trade('AMD')])];
         expect(filterDaysByHalf(untouched, 'yes')[0]?.trades).toEqual([]);
         expect(filterDaysByHalf(untouched, 'no')[0]?.trades).toEqual([]);
+    });
+});
+
+describe('filterDaysByOwned', () => {
+    it('keeps live and paper owned contracts and drops unowned ones', () => {
+        const owned = [
+            day('2025-08-11', 'Monday', [
+                trade('LIVE', { ownedLiveContracts: 1 }),
+                trade('PAPER', { ownedPaperContracts: 2 }),
+                trade('NONE'),
+            ]),
+        ];
+
+        expect(filterDaysByOwned(owned, 'owned')[0]?.trades.map((item) => item.symbol)).toEqual(['LIVE', 'PAPER']);
+        expect(filterDaysByOwned(owned, 'all')).toEqual(owned);
     });
 });
 

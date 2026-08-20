@@ -68,6 +68,10 @@ export interface Trade {
      * been through one, and null for good on the weeks that predate it.
      */
     bestPremiumKept: number | null;
+    /** Open live contracts matching this signal's contract. */
+    ownedLiveContracts: number;
+    /** Open paper contracts matching this signal's contract. */
+    ownedPaperContracts: number;
 }
 
 /**

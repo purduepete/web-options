@@ -2,7 +2,13 @@ import { useEffect, useMemo } from 'react';
 import type { IsoDate, Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
 import { gradeTrade } from '@weboptions/shared';
 import { Modal } from '../components/Modal';
-import { ChevronLeftIcon, ChevronRightIcon, CircleArrowRightIcon } from '../components/icons';
+import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    CircleArrowRightIcon,
+    FlaskConicalIcon,
+    ZapIcon,
+} from '../components/icons';
 import { SymbolMark } from '../components/SymbolMark';
 import { Loading } from '../components/Loading';
 import { GradeBadge, MoneynessChip, OutcomeChip } from '../grade/GradeBadge';
@@ -240,7 +246,19 @@ export function TradeDetail({
             {/* THE RECAP. Everything here came in with the ticket, so it is on screen
                 before the network is asked for anything. */}
             <section className="detail-section">
-                <h3>The contract</h3>
+                <h3>
+                    The contract
+                    {detail?.ownedContracts !== null &&
+                        detail?.ownedContracts !== undefined &&
+                        detail.ownedContracts > 0 && (
+                            <span
+                                className="detail-tag"
+                                title={`${detail.ownedContracts} open contract${detail.ownedContracts === 1 ? '' : 's'}`}
+                            >
+                                Owned
+                            </span>
+                        )}
+                </h3>
                 <dl className="stat-run">
                     <div>
                         <dt>Strike</dt>
@@ -460,28 +478,57 @@ export function TradeDetail({
                                 <p className="detail-empty">No other signals on this underlying.</p>
                             ) : (
                                 <ul className="past-signals">
-                                    {detail.pastSignals.map((signal) => {
-                                        const settled = signal.closeAtExpiration !== null;
-                                        const reference = signal.closeAtExpiration ?? detail.price;
-                                        return (
-                                            <li key={`${signal.reportDate}-${signal.strike}-${signal.expiration}`}>
-                                                <span className="past-date">{formatMDY(signal.reportDate)}</span>
-                                                <span className="past-strike">
-                                                    {formatCents(signal.strike)}P ·{' '}
-                                                    {formatPercent(signal.annualizedYield)}
-                                                </span>
-                                                <MoneynessChip
-                                                    moneyness={moneynessAgainst(signal.strike, reference)}
-                                                    title={
-                                                        settled
-                                                            ? `Closed ${formatCents(signal.closeAtExpiration)} at expiration, against a ${formatCents(signal.strike)} strike.`
-                                                            : `Still open: ${trade.symbol} is at ${formatCents(detail.price)} today, against a ${formatCents(signal.strike)} strike.`
-                                                    }
-                                                />
-                                                <OutcomeChip outcome={signal.outcome} />
-                                            </li>
-                                        );
-                                    })}
+                                    {[...detail.pastSignals]
+                                        .sort(
+                                            (a, b) =>
+                                                Number(b.ownedLiveContracts > 0 || b.ownedPaperContracts > 0) -
+                                                Number(a.ownedLiveContracts > 0 || a.ownedPaperContracts > 0),
+                                        )
+                                        .map((signal) => {
+                                            const settled = signal.closeAtExpiration !== null;
+                                            const reference = signal.closeAtExpiration ?? detail.price;
+                                            const owned =
+                                                signal.ownedLiveContracts > 0 || signal.ownedPaperContracts > 0;
+                                            return (
+                                                <li key={`${signal.reportDate}-${signal.strike}-${signal.expiration}`}>
+                                                    <span className="past-date">{formatMDY(signal.reportDate)}</span>
+                                                    <span className="past-ownership">
+                                                        {signal.ownedLiveContracts > 0 && (
+                                                            <span
+                                                                className="ownership-icon live"
+                                                                title={`${signal.ownedLiveContracts} live-owned contract${signal.ownedLiveContracts === 1 ? '' : 's'}`}
+                                                            >
+                                                                <ZapIcon width={14} height={14} />
+                                                                <span className="sr-only">Live owned</span>
+                                                            </span>
+                                                        )}
+                                                        {signal.ownedPaperContracts > 0 && (
+                                                            <span
+                                                                className="ownership-icon paper"
+                                                                title={`${signal.ownedPaperContracts} paper-owned contract${signal.ownedPaperContracts === 1 ? '' : 's'}`}
+                                                            >
+                                                                <FlaskConicalIcon width={14} height={14} />
+                                                                <span className="sr-only">Paper owned</span>
+                                                            </span>
+                                                        )}
+                                                        {!owned && <span aria-hidden="true" />}
+                                                    </span>
+                                                    <span className="past-strike">
+                                                        {formatCents(signal.strike)}P ·{' '}
+                                                        {formatPercent(signal.annualizedYield)}
+                                                    </span>
+                                                    <MoneynessChip
+                                                        moneyness={moneynessAgainst(signal.strike, reference)}
+                                                        title={
+                                                            settled
+                                                                ? `Closed ${formatCents(signal.closeAtExpiration)} at expiration, against a ${formatCents(signal.strike)} strike.`
+                                                                : `Still open: ${trade.symbol} is at ${formatCents(detail.price)} today, against a ${formatCents(signal.strike)} strike.`
+                                                        }
+                                                    />
+                                                    <OutcomeChip outcome={signal.outcome} />
+                                                </li>
+                                            );
+                                        })}
                                 </ul>
                             )}
                         </section>

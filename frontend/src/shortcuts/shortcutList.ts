@@ -35,6 +35,7 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
             { keys: ['e'], description: 'Next contracts filter' },
             { keys: ['m'], description: 'Next moneyness filter' },
             { keys: ['o'], description: 'Next over-half filter' },
+            { keys: ['u'], description: 'Next owned filter' },
             { keys: ['r'], description: 'Reset the menus' },
         ],
     },

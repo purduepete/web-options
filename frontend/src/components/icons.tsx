@@ -222,6 +222,24 @@ export function CircleArrowRightIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function ZapIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 1.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z" />
+        </svg>
+    );
+}
+
+export function FlaskConicalIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" />
+            <path d="M6.453 15h11.094" />
+            <path d="M8.5 2h7" />
+        </svg>
+    );
+}
+
 export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>
