@@ -26,15 +26,41 @@ function percent(value: number | null): string {
     return `${value.toFixed(1)}%`;
 }
 
+function parseLocalDate(value: string | null): Date | null {
+    if (!value) return null;
+    const [datePart, timePart] = value.split('T');
+    const [year, month, day] = (datePart ?? '').split('-').map(Number);
+    if (!year || !month || !day) return null;
+    if (!timePart) return new Date(year, month - 1, day);
+
+    const [hour = 0, minute = 0, second = 0] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hour, minute, second);
+}
+
+function twoDigits(value: number): string {
+    return String(value).padStart(2, '0');
+}
+
+function numericDate(date: Date): string {
+    return `${twoDigits(date.getMonth() + 1)}/${twoDigits(date.getDate())}/${date.getFullYear()}`;
+}
+
 function dateText(value: string | null): string {
-    return value ?? 'n/a';
+    const date = parseLocalDate(value);
+    if (!date) return value ?? 'n/a';
+    return numericDate(date);
+}
+
+function timestampText(value: string | null): string {
+    const date = parseLocalDate(value);
+    if (!date) return value ?? 'n/a';
+    return `${numericDate(date)} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
 }
 
 function shortDate(value: string | null): string {
-    if (!value) return 'n/a';
-    const [year, month, day] = value.split('-').map(Number);
-    if (!year || !month || !day) return value;
-    return new Date(year, month - 1, day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const date = parseLocalDate(value);
+    if (!date) return value ?? 'n/a';
+    return numericDate(date);
 }
 
 function contractLabel(position: OwnedOptionPosition): string {
@@ -51,10 +77,10 @@ function sourceLabel(position: OwnedOptionPosition): string {
 }
 
 function quoteLabel(position: OwnedOptionPosition): string {
-    if (position.quote.quoteStatus === 'ok') return position.quote.asOf ? `Live ${position.quote.asOf}` : 'Live';
+    if (position.quote.quoteStatus === 'ok') return position.quote.asOf ? `Live ${timestampText(position.quote.asOf)}` : 'Live';
     if (position.quote.quoteStatus === 'cached')
-        return position.quote.asOf ? `Cached ${position.quote.asOf}` : 'Cached';
-    if (position.cachedPrice.priceDate) return `Daily close ${position.cachedPrice.priceDate}`;
+        return position.quote.asOf ? `Cached ${timestampText(position.quote.asOf)}` : 'Cached';
+    if (position.cachedPrice.priceDate) return `Daily close ${shortDate(position.cachedPrice.priceDate)}`;
     return 'No quote';
 }
 
@@ -123,14 +149,15 @@ export function OwnedContractsPage() {
                 <div>
                     <h1>Owned Contracts</h1>
                     <p className="owned-contracts-subtitle">
-                        {generatedAt ? `Updated ${generatedAt}` : 'Current open positions'}
+                        {generatedAt ? `Updated ${timestampText(generatedAt)}` : 'Current open positions'}
                     </p>
                 </div>
                 <button
                     type="button"
-                    className="icon-button text-button"
+                    className="owned-refresh-button"
                     onClick={() => load('refresh')}
                     disabled={refreshing}
+                    title="Refresh owned contracts"
                 >
                     <RotateCcwIcon aria-hidden="true" />
                     {refreshing ? 'Refreshing' : 'Refresh'}
@@ -175,7 +202,11 @@ export function OwnedContractsPage() {
                             <div className="owned-contract-subline">
                                 <span>{shortDate(position.expirationDate)}</span>
                                 <span>{position.dte === null ? 'n/a' : `${position.dte} DTE`}</span>
-                                <span className={position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'}>
+                                <span
+                                    className={
+                                        position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'
+                                    }
+                                >
                                     {sourceLabel(position)}
                                 </span>
                             </div>
@@ -197,7 +228,10 @@ export function OwnedContractsPage() {
                             <strong>{currency(position.unrealizedCreditCaptured)}</strong>
                         </div>
                         <div className="owned-contract-price-stack is-meta">
-                            <MetricLine label="Delta" value={position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)} />
+                            <MetricLine
+                                label="Delta"
+                                value={position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}
+                            />
                             <MetricLine label="Quote" value={quoteLabel(position)} />
                         </div>
                         <div className="owned-contract-meta">
