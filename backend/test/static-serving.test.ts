@@ -17,6 +17,7 @@ afterAll(() => {
 
 const base: AppConfig = {
     db: { server: 'unused', database: 'unused', user: 'weboptions_ro', password: 'unused' },
+    webportfolio: { apiUrl: null, serviceKey: null },
     port: 5057,
     host: '0.0.0.0',
     nodeEnv: 'test',
@@ -96,5 +97,41 @@ describe('resolving the web root', () => {
     // so the reported path looks invented unless the message says what it used.
     it('names the working directory when the path was relative', () => {
         expect(() => loadConfig({ ...env, WEBOPTIONS_WEB_ROOT: 'no-such-web-root' })).toThrow(/resolved against/);
+    });
+});
+
+describe('resolving WebPortfolio integration settings', () => {
+    it('reads the URL and service key from .secrets files', () => {
+        const secrets = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-secrets-'));
+        try {
+            fs.writeFileSync(path.join(secrets, 'webportfolio_api_url'), 'https://portfolio.example.test\n');
+            fs.writeFileSync(path.join(secrets, 'webportfolio_service.key'), 'service-key\n');
+
+            expect(loadConfig({ ...env, WEBOPTIONS_SECRETS_DIR: secrets }).webportfolio).toEqual({
+                apiUrl: 'https://portfolio.example.test',
+                serviceKey: 'service-key',
+            });
+        } finally {
+            fs.rmSync(secrets, { recursive: true, force: true });
+        }
+    });
+
+    it('lets env vars override .secrets files for one-off runs', () => {
+        const secrets = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-secrets-'));
+        try {
+            fs.writeFileSync(path.join(secrets, 'webportfolio_api_url'), 'https://from-file.example.test\n');
+            fs.writeFileSync(path.join(secrets, 'webportfolio_service.key'), 'file-key\n');
+
+            expect(
+                loadConfig({
+                    ...env,
+                    WEBOPTIONS_SECRETS_DIR: secrets,
+                    WEBPORTFOLIO_API_URL: 'https://from-env.example.test',
+                    WEBPORTFOLIO_SERVICE_KEY: 'env-key',
+                }).webportfolio,
+            ).toEqual({ apiUrl: 'https://from-env.example.test', serviceKey: 'env-key' });
+        } finally {
+            fs.rmSync(secrets, { recursive: true, force: true });
+        }
     });
 });

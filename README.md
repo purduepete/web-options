@@ -59,6 +59,24 @@ from `.secrets\weboptions_ro.password`. Pass `-Operator` to connect with the
 webportfolio `config.ini` credentials instead, which the migration and key tools
 need. Pass `-ApiOnly` to skip Vite.
 
+The owned-contracts page calls the WebPortfolio API through the WebOptions
+backend. Configure that once with ignored files under `.secrets`:
+
+```powershell
+Set-Content .secrets\webportfolio_api_url 'https://cagkhw25ijhyzzy-api.greenmushroom-35ba4d3d.eastus2.azurecontainerapps.io' -Encoding ascii
+$key = Read-Host 'WebPortfolio API key' -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($key)
+try {
+  [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) | Set-Content .secrets\webportfolio_service.key -Encoding ascii
+}
+finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+```
+
+Environment variables `WEBPORTFOLIO_API_URL` and `WEBPORTFOLIO_SERVICE_KEY` still
+override those files for one-off runs.
+
 Running as the service login exports `DB_*` into the calling session, and the
 operator tools refuse to run while those are set. The script clears them after
 launch, but if a tool complains:

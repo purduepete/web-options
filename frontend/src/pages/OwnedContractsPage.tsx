@@ -77,7 +77,8 @@ function sourceLabel(position: OwnedOptionPosition): string {
 }
 
 function quoteLabel(position: OwnedOptionPosition): string {
-    if (position.quote.quoteStatus === 'ok') return position.quote.asOf ? `Live ${timestampText(position.quote.asOf)}` : 'Live';
+    if (position.quote.quoteStatus === 'ok')
+        return position.quote.asOf ? `Live ${timestampText(position.quote.asOf)}` : 'Live';
     if (position.quote.quoteStatus === 'cached')
         return position.quote.asOf ? `Cached ${timestampText(position.quote.asOf)}` : 'Cached';
     if (position.cachedPrice.priceDate) return `Daily close ${shortDate(position.cachedPrice.priceDate)}`;

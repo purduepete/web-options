@@ -21,6 +21,20 @@ export interface AppConfig {
     webRoot: string | null;
 }
 
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const DEFAULT_SECRETS_DIR = path.join(REPO_ROOT, '.secrets');
+
+function clean(value: string | undefined): string | null {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : null;
+}
+
+function readSecretFile(fileName: string, secretsDir = DEFAULT_SECRETS_DIR): string | null {
+    const filePath = path.join(secretsDir, fileName);
+    if (!fs.existsSync(filePath)) return null;
+    return clean(fs.readFileSync(filePath, 'utf-8'));
+}
+
 function readIniFallback(configPath: string): Partial<DbConfig> {
     if (!fs.existsSync(configPath)) return {};
     const parsed = ini.parse(fs.readFileSync(configPath, 'utf-8')) as Record<
@@ -62,6 +76,7 @@ function resolveWebRoot(value: string | undefined): string | null {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     const iniPath = env.WEBPORTFOLIO_CONFIG_PATH;
     const fallback = iniPath ? readIniFallback(path.resolve(iniPath)) : {};
+    const secretsDir = env.WEBOPTIONS_SECRETS_DIR ? path.resolve(env.WEBOPTIONS_SECRETS_DIR) : DEFAULT_SECRETS_DIR;
 
     const db: Partial<DbConfig> = {
         server: env.DB_SERVER ?? fallback.server,
@@ -82,8 +97,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     return {
         db: db as DbConfig,
         webportfolio: {
-            apiUrl: env.WEBPORTFOLIO_API_URL?.trim() || null,
-            serviceKey: env.WEBPORTFOLIO_SERVICE_KEY?.trim() || null,
+            apiUrl: clean(env.WEBPORTFOLIO_API_URL) ?? readSecretFile('webportfolio_api_url', secretsDir),
+            serviceKey: clean(env.WEBPORTFOLIO_SERVICE_KEY) ?? readSecretFile('webportfolio_service.key', secretsDir),
         },
         port: Number(env.PORT ?? 5057),
         host: env.HOST ?? '0.0.0.0',
