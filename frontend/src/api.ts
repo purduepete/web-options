@@ -7,6 +7,7 @@ import type {
     GradeSettings,
     GradeSettingsResponse,
     MeResponse,
+    OwnedOptionsResponse,
     SignalMonthsResponse,
     SignalSummaryResponse,
     SymbolDetail,
@@ -137,6 +138,10 @@ export function fetchSignalSummary(
     if (symbols.length > 0) query.set('symbols', symbols.join(','));
     if (expiry !== 'all') query.set('expiry', expiry);
     return getJson<SignalSummaryResponse>(`/api/signal-summary?${query}`);
+}
+
+export function fetchOwnedContracts(): Promise<OwnedOptionsResponse> {
+    return getJson<OwnedOptionsResponse>('/api/owned-contracts');
 }
 
 export function fetchCalendars(): Promise<CalendarsIndexResponse> {

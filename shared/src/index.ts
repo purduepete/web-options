@@ -216,6 +216,67 @@ export interface SignalSummaryResponse {
     total: Record<SummaryColumn, SummaryCell>;
 }
 
+export interface OwnedOptionQuote {
+    transactionId: number | null;
+    occSymbol: string;
+    quoteStatus: string;
+    asOf: string | null;
+    delta: number | null;
+    midPrice: number | null;
+    bid: number | null;
+    ask: number | null;
+    lastPrice: number | null;
+    volume: number | null;
+    openInterest: number | null;
+}
+
+export interface OwnedOptionCachedPrice {
+    mark: number | null;
+    bid: number | null;
+    ask: number | null;
+    mid: number | null;
+    lastPrice: number | null;
+    closePrice: number | null;
+    prevClose: number | null;
+    delta: number | null;
+    priceDate: IsoDate | null;
+}
+
+export interface OwnedOptionPosition {
+    id: number;
+    authenticatedUserId: number;
+    accountId: number;
+    accountName: string | null;
+    strategyId: number | null;
+    strategyName: string | null;
+    symbol: string;
+    action: string;
+    putCall: OptionRight;
+    expirationDate: IsoDate;
+    strikePrice: number;
+    delta: number | null;
+    contracts: number;
+    optionPrice: number;
+    commission: number;
+    transactionDate: IsoDate;
+    status: string;
+    isPaper: boolean;
+    collateralAtStrike: number;
+    entryCredit: number;
+    estimatedBuybackCost: number | null;
+    unrealizedCreditCaptured: number | null;
+    unrealizedCreditCapturedPct: number | null;
+    dte: number | null;
+    expirationBucket: 'expired' | 'this_week' | 'next_30' | 'later' | null;
+    cachedPrice: OwnedOptionCachedPrice;
+    quote: OwnedOptionQuote;
+}
+
+export interface OwnedOptionsResponse {
+    positions: OwnedOptionPosition[];
+    generatedAt: string;
+}
+
 export const MAX_FILTER_SYMBOLS = 25;
 
 /** Whether a page shows every contract, only the settled ones, or only the live ones. */

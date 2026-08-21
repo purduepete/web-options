@@ -11,6 +11,10 @@ export interface DbConfig {
 
 export interface AppConfig {
     db: DbConfig;
+    webportfolio: {
+        apiUrl: string | null;
+        serviceKey: string | null;
+    };
     port: number;
     host: string;
     nodeEnv: string;
@@ -77,6 +81,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
     return {
         db: db as DbConfig,
+        webportfolio: {
+            apiUrl: env.WEBPORTFOLIO_API_URL?.trim() || null,
+            serviceKey: env.WEBPORTFOLIO_SERVICE_KEY?.trim() || null,
+        },
         port: Number(env.PORT ?? 5057),
         host: env.HOST ?? '0.0.0.0',
         nodeEnv: env.NODE_ENV ?? 'development',

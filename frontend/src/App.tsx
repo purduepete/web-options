@@ -16,6 +16,7 @@ import { GradingPage } from './pages/GradingPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { OwnedContractsPage } from './pages/OwnedContractsPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ThemeProvider } from './theme/ThemeProvider';
 
@@ -50,6 +51,7 @@ function Gate() {
                                     <Route element={<Layout />}>
                                         <Route index element={<LiveSignalsPage />} />
                                         <Route path="summary" element={<SummaryPage />} />
+                                        <Route path="owned-contracts" element={<OwnedContractsPage />} />
                                         <Route path="calendars/latest" element={<LatestCalendarPage />} />
                                         <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
                                         <Route path="settings/appearance" element={<AppearancePage />} />

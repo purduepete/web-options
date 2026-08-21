@@ -38,12 +38,43 @@ $RunDir = Join-Path $Root '.run'
 $OperatorConfig = 'C:\Files\Dev\main\webportfolio\config\config.ini'
 
 $Services = [ordered]@{
-    api = @{ Name = 'api'; Port = 5057; Script = 'dev:backend'; Probe = 'http://127.0.0.1:5057/healthz' }
-    web = @{ Name = 'web'; Port = 5173; Script = 'dev:frontend'; Probe = 'http://127.0.0.1:5173/' }
+    api = @{
+        Name = 'api'; Port = 5057; Script = 'dev:backend'; Probe = 'http://127.0.0.1:5057/healthz'
+        Env = @{ PORT = '5057'; HOST = '0.0.0.0'; NODE_ENV = 'development'; WEBOPTIONS_WEB_ROOT = $null }
+    }
+    web = @{
+        Name = 'web'; Port = 5173; Script = 'dev:frontend'; Probe = 'http://127.0.0.1:5173/'
+        Env = @{ PORT = $null; HOST = $null; NODE_ENV = 'development'; WEBOPTIONS_WEB_ROOT = $null }
+    }
 }
 
 function Get-PidFile([string] $Name) { Join-Path $RunDir "$Name.pid" }
 function Get-LogFile([string] $Name) { Join-Path $RunDir "$Name.log" }
+
+function Set-ScopedEnvironment([hashtable] $Values) {
+    $previous = @{}
+    foreach ($name in $Values.Keys) {
+        $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+        $value = $Values[$name]
+        if ($null -eq $value) {
+            Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+            continue
+        }
+        Set-Item -LiteralPath "Env:$name" -Value ([string] $value)
+    }
+    return $previous
+}
+
+function Restore-Environment([hashtable] $Previous) {
+    foreach ($name in $Previous.Keys) {
+        $value = $Previous[$name]
+        if ($null -eq $value) {
+            Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue
+            continue
+        }
+        Set-Item -LiteralPath "Env:$name" -Value $value
+    }
+}
 
 function Get-ListenerPid([int] $Port) {
     $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
@@ -137,13 +168,19 @@ function Start-Service([hashtable] $Service) {
     }
 
     $log = Get-LogFile $Service.Name
-    $proc = Start-Process -FilePath 'npm.cmd' `
-        -ArgumentList 'run', $Service.Script `
-        -WorkingDirectory $Root `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $log `
-        -RedirectStandardError "$log.err" `
-        -PassThru
+    $previousEnv = Set-ScopedEnvironment $Service.Env
+    try {
+        $proc = Start-Process -FilePath 'npm.cmd' `
+            -ArgumentList 'run', $Service.Script `
+            -WorkingDirectory $Root `
+            -WindowStyle Hidden `
+            -RedirectStandardOutput $log `
+            -RedirectStandardError "$log.err" `
+            -PassThru
+    }
+    finally {
+        Restore-Environment $previousEnv
+    }
     Set-Content -Path (Get-PidFile $Service.Name) -Value $proc.Id -Encoding ascii
     Write-Host "  $($Service.Name) starting (pid $($proc.Id)), log $log"
     return $true

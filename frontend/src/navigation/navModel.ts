@@ -39,6 +39,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/summary',
             },
             {
+                id: '/owned-contracts',
+                label: 'Owned Contracts',
+                description: 'Current live and paper option positions',
+                path: '/owned-contracts',
+            },
+            {
                 id: 'week-explorer',
                 label: 'Week Explorer',
                 description: 'Compare several weeks side by side',

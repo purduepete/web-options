@@ -7,6 +7,8 @@ import type {
     GradeSettingsResponse,
     HealthResponse,
     MeResponse,
+    OwnedOptionPosition,
+    OwnedOptionsResponse,
     SignalMonthsResponse,
     SignalSummaryResponse,
     VixResponse,
@@ -160,6 +162,51 @@ export function createApiRouter(config: AppConfig): Router {
         } catch (error) {
             next(error);
         }
+    });
+
+    router.get('/owned-contracts', async (_req, res) => {
+        const { apiUrl, serviceKey } = config.webportfolio;
+        if (!apiUrl || !serviceKey) {
+            res.status(503).json({ error: 'webportfolio API is not configured', code: 'webportfolio_not_configured' });
+            return;
+        }
+
+        const url = new URL('/api/option-transactions/open-positions/realtime', apiUrl);
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-API-Key': serviceKey,
+                },
+                signal: AbortSignal.timeout(90_000),
+            });
+        } catch {
+            res.status(503).json({ error: 'webportfolio API did not answer', code: 'webportfolio_unreachable' });
+            return;
+        }
+
+        const body = (await response.json().catch(() => ({}))) as {
+            success?: boolean;
+            data?: OwnedOptionPosition[];
+            error?: string;
+        };
+        if (!response.ok || !body.success || !Array.isArray(body.data)) {
+            res.status(response.status >= 400 && response.status < 500 ? response.status : 503).json({
+                error: body.error ?? 'webportfolio API returned an unexpected response',
+                code:
+                    response.status === 401 || response.status === 403
+                        ? 'webportfolio_unauthorized'
+                        : 'webportfolio_unavailable',
+            });
+            return;
+        }
+
+        const payload: OwnedOptionsResponse = {
+            positions: body.data,
+            generatedAt: localTimestamp(),
+        };
+        res.json(payload);
     });
 
     router.get('/calendars', async (_req, res, next) => {
