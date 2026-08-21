@@ -5,7 +5,7 @@
 }
 
 .owned-contracts-head {
-    align-items: flex-start;
+    align-items: center;
 }
 
 .owned-contracts-head > div {
@@ -23,6 +23,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
+    flex: none;
+    margin-left: auto;
     min-height: 2.25rem;
     padding: 0 0.75rem;
     background: rgba(var(--highlight-rgb), 0.14);
