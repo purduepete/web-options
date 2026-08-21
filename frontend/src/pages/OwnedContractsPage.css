@@ -1,7 +1,7 @@
 .owned-contracts-page {
     display: flex;
     flex-direction: column;
-    gap: 0.875rem;
+    gap: 0.75rem;
 }
 
 .owned-contracts-head {
@@ -20,16 +20,16 @@
 
 .owned-contracts-metrics {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-    gap: 0.625rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 0.5rem;
 }
 
 .owned-contract-metric {
     display: flex;
     min-width: 0%;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.75rem;
+    gap: 0.2rem;
+    padding: 0.65rem 0.75rem;
     background: var(--surface);
     border: var(--border-width) solid var(--border);
 }
@@ -41,7 +41,7 @@
 
 .owned-contract-metric strong {
     color: var(--text-heading);
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
 }
@@ -57,7 +57,7 @@
 .owned-contract-list {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: 0.35rem;
 }
 
 .owned-contract-list.is-stale {
@@ -66,44 +66,82 @@
 }
 
 .owned-contract-row {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns:
+        minmax(min(100%, 13rem), 1.2fr)
+        minmax(3.25rem, 0.35fr)
+        minmax(7rem, 0.65fr)
+        minmax(6.25rem, 0.55fr)
+        minmax(6.75rem, 0.6fr)
+        minmax(7rem, 0.65fr)
+        minmax(min(100%, 12rem), 1fr);
+    align-items: center;
     gap: 0.75rem;
     min-width: 0%;
-    padding: 0.875rem;
+    padding: 0.625rem 0.75rem;
     background: var(--surface);
     border: var(--border-width) solid var(--border);
+    border-left: 3px solid var(--border-soft);
 }
 
-.owned-contract-main {
+.owned-contract-row.is-good {
+    border-left-color: var(--positive);
+}
+
+.owned-contract-row.is-bad {
+    border-left-color: var(--danger);
+}
+
+.owned-contract-row.is-flat {
+    border-left-color: var(--border-soft);
+}
+
+.owned-contract-identity,
+.owned-contract-price-stack,
+.owned-contract-number,
+.owned-contract-meta {
+    min-width: 0%;
+}
+
+.owned-contract-title {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 0%;
+    gap: 0.4rem;
 }
 
 .owned-contract-symbol {
     color: var(--text-heading);
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
 }
 
 .owned-contract-contract {
     color: var(--text);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     overflow-wrap: anywhere;
+}
+
+.owned-contract-subline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+    color: var(--text-muted);
+    font-size: 0.76rem;
 }
 
 .owned-contract-source {
     display: inline-flex;
     align-items: center;
-    min-height: 1.65rem;
-    padding: 0 0.5rem;
+    min-height: 1.35rem;
+    padding: 0 0.4rem;
     background: rgba(var(--highlight-rgb), 0.14);
     border: var(--border-width) solid rgba(var(--highlight-rgb), 0.42);
     color: var(--highlight);
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     font-weight: 700;
 }
 
@@ -113,35 +151,94 @@
     color: var(--text-muted);
 }
 
-.owned-contract-fields {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
-    gap: 0.625rem 0.75rem;
-    margin: 0;
+.owned-contract-price-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
-.owned-contract-fields div {
-    min-width: 0%;
+.owned-contract-price-stack div,
+.owned-contract-number,
+.owned-contract-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.16rem;
 }
 
-.owned-contract-fields dt {
+.owned-contract-price-stack span,
+.owned-contract-number span,
+.owned-contract-meta span + span {
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 600;
     text-transform: uppercase;
 }
 
-.owned-contract-fields dd {
-    margin: 0.15rem 0 0;
+.owned-contract-price-stack strong,
+.owned-contract-number strong,
+.owned-contract-meta span:first-child {
     color: var(--text-heading);
-    font-size: 0.88rem;
+    font-size: 0.86rem;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
+}
+
+.owned-contract-number.is-good strong {
+    color: var(--positive);
+}
+
+.owned-contract-number.is-bad strong {
+    color: var(--danger);
+}
+
+.owned-contract-number.is-quiet strong,
+.owned-contract-price-stack.is-meta strong {
+    color: var(--text);
+}
+
+.owned-contract-meta span:first-child {
+    font-size: 0.8rem;
+}
+
+.owned-contract-meta span + span {
+    text-transform: none;
+}
+
+@media (max-width: 1200px) {
+    .owned-contract-row {
+        grid-template-columns: repeat(4, minmax(0%, 1fr));
+    }
+
+    .owned-contract-identity,
+    .owned-contract-meta {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 780px) {
+    .owned-contract-row {
+        grid-template-columns: repeat(2, minmax(0%, 1fr));
+    }
+
+    .owned-contract-identity,
+    .owned-contract-meta {
+        grid-column: span 2;
+    }
 }
 
 @media (max-width: 640px) {
     .owned-contracts-head .text-button {
         width: 100%;
+    }
+
+    .owned-contract-row {
+        grid-template-columns: 1fr;
+    }
+
+    .owned-contract-identity,
+    .owned-contract-meta {
+        grid-column: auto;
     }
 }
 

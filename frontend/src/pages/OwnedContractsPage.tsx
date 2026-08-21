@@ -30,6 +30,22 @@ function dateText(value: string | null): string {
     return value ?? 'n/a';
 }
 
+function shortDate(value: string | null): string {
+    if (!value) return 'n/a';
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) return value;
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function contractLabel(position: OwnedOptionPosition): string {
+    return `$${position.strikePrice.toFixed(2)}${position.putCall}`;
+}
+
+function toneFor(value: number | null): 'good' | 'bad' | 'flat' {
+    if (value === null || value === 0) return 'flat';
+    return value > 0 ? 'good' : 'bad';
+}
+
 function sourceLabel(position: OwnedOptionPosition): string {
     return position.isPaper ? 'Paper' : 'Live';
 }
@@ -148,38 +164,46 @@ export function OwnedContractsPage() {
             >
                 {(positions ?? []).map((position) => (
                     <article
-                        className="owned-contract-row"
+                        className={`owned-contract-row is-${toneFor(position.unrealizedCreditCaptured)}`}
                         key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
                     >
-                        <div className="owned-contract-main">
-                            <span className="owned-contract-symbol">{position.symbol}</span>
-                            <span className="owned-contract-contract">
-                                {position.expirationDate} {position.putCall}
-                                {position.strikePrice.toFixed(2)}
-                            </span>
-                            <span
-                                className={
-                                    position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'
-                                }
-                            >
-                                {sourceLabel(position)}
-                            </span>
+                        <div className="owned-contract-identity">
+                            <div className="owned-contract-title">
+                                <span className="owned-contract-symbol">{position.symbol}</span>
+                                <span className="owned-contract-contract">{contractLabel(position)}</span>
+                            </div>
+                            <div className="owned-contract-subline">
+                                <span>{shortDate(position.expirationDate)}</span>
+                                <span>{position.dte === null ? 'n/a' : `${position.dte} DTE`}</span>
+                                <span className={position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'}>
+                                    {sourceLabel(position)}
+                                </span>
+                            </div>
                         </div>
-                        <dl className="owned-contract-fields">
-                            <Field label="Qty" value={String(position.contracts)} />
-                            <Field label="DTE" value={position.dte === null ? 'n/a' : String(position.dte)} />
-                            <Field label="Entry" value={money(position.optionPrice)} />
-                            <Field label="Quote" value={money(quotePrice(position))} />
-                            <Field label="Captured" value={percent(position.unrealizedCreditCapturedPct)} />
-                            <Field label="Open P/L" value={currency(position.unrealizedCreditCaptured)} />
-                            <Field
-                                label="Delta"
-                                value={position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}
-                            />
-                            <Field label="As of" value={quoteLabel(position)} />
-                            <Field label="Account" value={position.accountName ?? 'n/a'} />
-                            <Field label="Opened" value={dateText(position.transactionDate)} />
-                        </dl>
+                        <div className="owned-contract-number is-quiet">
+                            <span>Qty</span>
+                            <strong>{position.contracts}</strong>
+                        </div>
+                        <div className="owned-contract-price-stack">
+                            <MetricLine label="Entry" value={money(position.optionPrice)} />
+                            <MetricLine label="Quote" value={money(quotePrice(position))} />
+                        </div>
+                        <div className={`owned-contract-number is-${toneFor(position.unrealizedCreditCapturedPct)}`}>
+                            <span>Captured</span>
+                            <strong>{percent(position.unrealizedCreditCapturedPct)}</strong>
+                        </div>
+                        <div className={`owned-contract-number is-${toneFor(position.unrealizedCreditCaptured)}`}>
+                            <span>Open P/L</span>
+                            <strong>{currency(position.unrealizedCreditCaptured)}</strong>
+                        </div>
+                        <div className="owned-contract-price-stack is-meta">
+                            <MetricLine label="Delta" value={position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)} />
+                            <MetricLine label="Quote" value={quoteLabel(position)} />
+                        </div>
+                        <div className="owned-contract-meta">
+                            <span>{position.accountName ?? 'n/a'}</span>
+                            <span>Opened {dateText(position.transactionDate)}</span>
+                        </div>
                     </article>
                 ))}
             </section>
@@ -196,11 +220,11 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: '
     );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function MetricLine({ label, value }: { label: string; value: string }) {
     return (
         <div>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
+            <span>{label}</span>
+            <strong>{value}</strong>
         </div>
     );
 }
