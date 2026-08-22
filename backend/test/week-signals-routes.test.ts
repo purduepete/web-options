@@ -1,9 +1,8 @@
 /**
  * The two response flags that depend on today's date rather than on the data.
  *
- * They cannot be pinned in a golden fixture — the recorded values are only right
- * during the week of the capture — so parity treats them as volatile and this
- * suite covers them instead, with the clock held still.
+ * A recorded fixture cannot pin them, since the recorded value is only right during
+ * the week of the capture, so this suite covers them with the clock held still.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';

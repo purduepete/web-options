@@ -175,16 +175,10 @@ npm test -- --run
 npm run typecheck
 ```
 
-One suite does not run by default. The parity gate compares the live API against
-JSON recorded from the Flask server this replaced, so it needs a running backend and
-a real key:
-
-```powershell
-$env:WEBOPTIONS_PARITY = '1'; npm test -- --run parity
-```
-
-Those fixtures, in `backend/test/fixtures/golden`, are now the only surviving record
-of the old behaviour. Keep them.
+Every suite runs by default. The parity gate that held the Node API against JSON
+recorded from the Flask server was retired once that server had been gone long
+enough for the recordings to be history rather than a target; it and its fixtures
+are in the git log if the old behaviour is ever worth looking up.
 
 ## Security notes
 

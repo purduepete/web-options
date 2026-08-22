@@ -2,8 +2,7 @@
  * Ported verbatim from the retired Flask server, with pyodbc positional `?`
  * rebound to named parameters. Semantics must not drift: partition by
  * (report_date, contract_key), prefer the tier-bucketed row over a
- * Top-Picks-only row, OR is_top_pick across duplicates, puts only. The parity
- * gate in test/parity.test.ts is what proves it has not drifted.
+ * Top-Picks-only row, OR is_top_pick across duplicates, puts only.
  *
  * The week bounds bind as VARCHAR(10) and are CAST to DATE inside T-SQL on purpose.
  * Binding a JS Date lets the driver's UTC conversion decide which calendar day the
@@ -16,7 +15,7 @@
  *
  * The end-of-day APPLY is additive for the same reason: TOP 1 cannot multiply a row.
  * It must stay inside this CTE and correlate on the RAW s.contract_key — correlating
- * on the COALESCE dedup key would change row identity and break the parity gate.
+ * on the COALESCE dedup key would change row identity.
  *
  * The outcome APPLY is additive on the same terms. It correlates on the four columns
  * the nightly rollup denormalizes rather than on a key, because those are the grain
