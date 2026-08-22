@@ -110,9 +110,13 @@ describe('owned contracts cache', () => {
         const boom = () => {
             throw new Error('denied');
         };
-        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(boom);
-        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(boom);
-        vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(boom);
+        // jsdom does not route its storage objects through Storage.prototype, so the
+        // spy has to go on the instances the app actually reaches.
+        for (const store of [window.sessionStorage, window.localStorage]) {
+            vi.spyOn(store, 'getItem').mockImplementation(boom);
+            vi.spyOn(store, 'setItem').mockImplementation(boom);
+            vi.spyOn(store, 'removeItem').mockImplementation(boom);
+        }
 
         expect(readOwnedCache()).toBeNull();
         expect(() => writeOwnedCache(response(), new Map())).not.toThrow();

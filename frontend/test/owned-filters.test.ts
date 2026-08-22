@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Moneyness, OwnedOptionPosition, Trade } from '@weboptions/shared';
-import { deltaBand, filterOwnedPositions, ownedMoneyness } from '../src/owned/filters';
+import { deltaBand, filterOwnedPositions, ownedMoneyness, readCapturedFilter } from '../src/owned/filters';
 import { signalKey, type SignalMatch } from '../src/owned/types';
 
 function position(overrides: Partial<OwnedOptionPosition> = {}): OwnedOptionPosition {
@@ -79,9 +79,9 @@ describe('ownedMoneyness', () => {
     it('prefers the position and falls back to the signal it was opened from', () => {
         const own = position({ moneyness: 'otm' });
         expect(ownedMoneyness(own, { trade: { moneyness: 'itm' } as Trade, reportDate: '2026-08-11' })).toBe('otm');
-        expect(
-            ownedMoneyness(position(), { trade: { moneyness: 'itm' } as Trade, reportDate: '2026-08-11' }),
-        ).toBe('itm');
+        expect(ownedMoneyness(position(), { trade: { moneyness: 'itm' } as Trade, reportDate: '2026-08-11' })).toBe(
+            'itm',
+        );
         expect(ownedMoneyness(position(), undefined)).toBeNull();
     });
 });
@@ -108,10 +108,9 @@ describe('filterOwnedPositions', () => {
         expect(
             filterOwnedPositions(rows, empty, { symbol: 'PLTR, UAL', moneyness: 'all' }).map((row) => row.symbol),
         ).toEqual(['PLTR', 'UAL']);
-        expect(filterOwnedPositions(rows, empty, { symbol: '!PL', moneyness: 'all' }).map((row) => row.symbol)).toEqual([
-            'UAL',
-            'CNC',
-        ]);
+        expect(filterOwnedPositions(rows, empty, { symbol: '!PL', moneyness: 'all' }).map((row) => row.symbol)).toEqual(
+            ['UAL', 'CNC'],
+        );
     });
 
     it('drops atm and unknown moneyness once a moneyness is asked for', () => {
@@ -133,5 +132,39 @@ describe('filterOwnedPositions', () => {
         expect(filterOwnedPositions(rows, empty, { symbol: 'PL', moneyness: 'otm' }).map((row) => row.symbol)).toEqual([
             'PLTR',
         ]);
+    });
+});
+
+describe('captured filter', () => {
+    const empty = new Map<string, SignalMatch>();
+    const rows = [
+        position({ id: 1, symbol: 'DOWN', unrealizedCreditCapturedPct: -12 }),
+        position({ id: 2, symbol: 'FLAT', unrealizedCreditCapturedPct: 0 }),
+        position({ id: 3, symbol: 'QTR', unrealizedCreditCapturedPct: 25 }),
+        position({ id: 4, symbol: 'HALF', unrealizedCreditCapturedPct: 50 }),
+        position({ id: 5, symbol: 'MOST', unrealizedCreditCapturedPct: 80 }),
+        position({ id: 6, symbol: 'NONE', unrealizedCreditCapturedPct: null }),
+    ];
+
+    function kept(captured: Parameters<typeof readCapturedFilter>[0]) {
+        return filterOwnedPositions(rows, empty, {
+            symbol: '',
+            moneyness: 'all',
+            captured: readCapturedFilter(captured),
+        }).map((row) => row.symbol);
+    }
+
+    it('falls back to all for anything it does not recognise', () => {
+        expect(readCapturedFilter(null)).toBe('all');
+        expect(readCapturedFilter('threequarters')).toBe('all');
+        expect(readCapturedFilter('quarter')).toBe('quarter');
+    });
+
+    it('keeps each floor and the rows above it', () => {
+        expect(kept('all')).toEqual(['DOWN', 'FLAT', 'QTR', 'HALF', 'MOST', 'NONE']);
+        expect(kept('positive')).toEqual(['FLAT', 'QTR', 'HALF', 'MOST']);
+        expect(kept('quarter')).toEqual(['QTR', 'HALF', 'MOST']);
+        expect(kept('half')).toEqual(['HALF', 'MOST']);
+        expect(kept('most')).toEqual(['MOST']);
     });
 });

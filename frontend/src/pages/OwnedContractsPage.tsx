@@ -6,20 +6,20 @@ import { UnauthorizedError, describeFailure, fetchOwnedContracts, fetchWeekSigna
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { Loading } from '../components/Loading';
 import { Modal } from '../components/Modal';
-import {
-    ChevronDownIcon,
-    CloseIcon,
-    FlaskConicalIcon,
-    RotateCcwIcon,
-    SlidersIcon,
-    ZapIcon,
-} from '../components/icons';
+import { ChevronDownIcon, CloseIcon, FlaskConicalIcon, RotateCcwIcon, SlidersIcon, ZapIcon } from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { isTyping } from '../hooks/useWeekArrows';
 import { clearOwnedCache, readOwnedCache, writeOwnedCache } from '../owned/cache';
-import { deltaBand, filterOwnedPositions } from '../owned/filters';
+import {
+    CAPTURED_FILTERS,
+    CAPTURED_LABELS,
+    deltaBand,
+    filterOwnedPositions,
+    readCapturedFilter,
+    type CapturedFilter,
+} from '../owned/filters';
 import { signalFor, signalKey, type SignalMap, type SignalMatch } from '../owned/types';
-import { MoneynessFilterMenu } from '../signals/FilterMenu';
+import { CapturedFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
 import { MONEYNESS_FILTERS, cycle, readMoneynessFilter, type MoneynessFilter } from '../signals/grouping';
 import './OwnedContractsPage.css';
 
@@ -199,6 +199,11 @@ function expirationRiskText(position: OwnedOptionPosition): string | null {
     return null;
 }
 
+/** A payload read back from the store is cached whatever each row remembers. */
+function quoteSourceFor(position: OwnedOptionPosition, fromCache: boolean): 'Live' | 'Cached' {
+    return fromCache || position.quote.quoteStatus !== 'ok' ? 'Cached' : 'Live';
+}
+
 function capturedPercent(position: OwnedOptionPosition): number | null {
     if (position.unrealizedCreditCapturedPct !== null) return position.unrealizedCreditCapturedPct;
     if (position.estimatedBuybackCost === null || position.entryCredit <= 0) return null;
@@ -220,6 +225,7 @@ export function OwnedContractsPage() {
     const [params, setParams] = useSearchParams();
     const symbol = params.get('symbol') ?? '';
     const moneynessFilter = readMoneynessFilter(params.get('moneyness'));
+    const capturedFilter = readCapturedFilter(params.get('captured'));
     const [cached] = useState(readOwnedCache);
     const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(cached?.response.positions ?? null);
     const [underlyings, setUnderlyings] = useState<Record<string, UnderlyingQuote>>(cached?.response.underlyings ?? {});
@@ -327,6 +333,18 @@ export function OwnedContractsPage() {
         [setParams],
     );
 
+    const setCapturedParam = useCallback(
+        (next: CapturedFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('captured');
+                else updated.set('captured', next);
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
     // Both filters live in the URL, so they clear in one write rather than two
     // history entries that each undo half of it.
     const resetMenus = useCallback(() => {
@@ -334,12 +352,38 @@ export function OwnedContractsPage() {
             const updated = new URLSearchParams(current);
             updated.delete('symbol');
             updated.delete('moneyness');
+            updated.delete('captured');
             return updated;
         });
     }, [setParams]);
 
-    const atMenuDefaults = symbol.trim() === '' && moneynessFilter === 'all';
-    const activeFilterCount = (symbol.trim() !== '' ? 1 : 0) + (moneynessFilter !== 'all' ? 1 : 0);
+    const atMenuDefaults = symbol.trim() === '' && moneynessFilter === 'all' && capturedFilter === 'all';
+    const activeFilterCount =
+        (symbol.trim() !== '' ? 1 : 0) + (moneynessFilter !== 'all' ? 1 : 0) + (capturedFilter !== 'all' ? 1 : 0);
+
+    // The trigger only counts them, and the panel is shut most of the time, so
+    // what is narrowing the list is said outside both.
+    const appliedFilters = useMemo(() => {
+        const applied: { key: string; label: string; clear: () => void }[] = [];
+        if (symbol.trim() !== '') {
+            applied.push({ key: 'symbol', label: symbol.trim(), clear: () => setSymbolParam('') });
+        }
+        if (moneynessFilter !== 'all') {
+            applied.push({
+                key: 'moneyness',
+                label: moneynessFilter.toUpperCase(),
+                clear: () => setMoneynessParam('all'),
+            });
+        }
+        if (capturedFilter !== 'all') {
+            applied.push({
+                key: 'captured',
+                label: `Captured ${CAPTURED_LABELS[capturedFilter]}`,
+                clear: () => setCapturedParam('all'),
+            });
+        }
+        return applied;
+    }, [capturedFilter, moneynessFilter, setCapturedParam, setMoneynessParam, setSymbolParam, symbol]);
 
     useEffect(() => {
         if (!filtersOpen || phone) return;
@@ -379,15 +423,21 @@ export function OwnedContractsPage() {
             }
             if (event.key === 'f') setFiltersOpen((open) => !open);
             else if (event.key === 'm') setMoneynessParam(cycle(MONEYNESS_FILTERS, moneynessFilter));
+            else if (event.key === 'c') setCapturedParam(cycle(CAPTURED_FILTERS, capturedFilter));
             else if (event.key === 'r') resetMenus();
         }
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
-    }, [moneynessFilter, resetMenus, setMoneynessParam]);
+    }, [capturedFilter, moneynessFilter, resetMenus, setCapturedParam, setMoneynessParam]);
 
     const visible = useMemo(
-        () => filterOwnedPositions(positions ?? [], signals, { symbol, moneyness: moneynessFilter }),
-        [moneynessFilter, positions, signals, symbol],
+        () =>
+            filterOwnedPositions(positions ?? [], signals, {
+                symbol,
+                moneyness: moneynessFilter,
+                captured: capturedFilter,
+            }),
+        [capturedFilter, moneynessFilter, positions, signals, symbol],
     );
 
     const summary = useMemo(() => {
@@ -397,8 +447,10 @@ export function OwnedContractsPage() {
         const collateral = rows.reduce((sum, row) => sum + row.collateralAtStrike, 0);
         const credit = rows.reduce((sum, row) => sum + row.entryCredit, 0);
         const captured = rows.reduce((sum, row) => sum + (row.unrealizedCreditCaptured ?? 0), 0);
+        // What the page as a whole is showing, so a row only says anything when
+        // it is the odd one out.
         const quoteSource: 'Live' | 'Cached' =
-            rows.length > 0 && rows.every((row) => row.quote.quoteStatus === 'ok') ? 'Live' : 'Cached';
+            rows.length > 0 && rows.every((row) => quoteSourceFor(row, fromCache) === 'Cached') ? 'Cached' : 'Live';
         return {
             total: rows.length,
             live: live.length,
@@ -408,13 +460,17 @@ export function OwnedContractsPage() {
             captured,
             quoteSource,
         };
-    }, [visible]);
+    }, [fromCache, visible]);
 
     const filterControls = (
         <>
             <div className="filter-section owned-filter-moneyness">
                 <h2>Contract</h2>
                 <MoneynessFilterMenu value={moneynessFilter} onChange={setMoneynessParam} />
+            </div>
+            <div className="filter-section owned-filter-captured">
+                <h2>Captured</h2>
+                <CapturedFilterMenu value={capturedFilter} onChange={setCapturedParam} />
             </div>
             <div className="filter-section owned-filter-symbol">
                 <h2>Symbol</h2>
@@ -497,7 +553,7 @@ export function OwnedContractsPage() {
                     disabled={loading || refreshing}
                     title="Refresh owned contracts"
                 >
-                    <RotateCcwIcon aria-hidden="true" />
+                    <RotateCcwIcon width={14} height={14} aria-hidden="true" />
                     {refreshing ? 'Refreshing' : 'Refresh'}
                 </button>
 
@@ -537,6 +593,24 @@ export function OwnedContractsPage() {
 
             {loading ? null : (
                 <>
+                    {appliedFilters.length > 0 ? (
+                        <div className="owned-applied-filters" aria-label="Applied filters">
+                            {appliedFilters.map((filter) => (
+                                <button
+                                    key={filter.key}
+                                    type="button"
+                                    className="owned-applied-filter"
+                                    onClick={filter.clear}
+                                    aria-label={`Clear ${filter.label} filter`}
+                                    title={`Clear ${filter.label} filter`}
+                                >
+                                    <span>{filter.label}</span>
+                                    <CloseIcon width={12} height={12} />
+                                </button>
+                            ))}
+                        </div>
+                    ) : null}
+
                     <section className="owned-contracts-metrics" aria-label="Owned contract totals">
                         <Metric label="Contracts" value={String(summary.total)} />
                         <Metric label="Live" value={String(summary.live)} />
@@ -566,7 +640,8 @@ export function OwnedContractsPage() {
                             <OwnedContractRow
                                 key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
                                 position={position}
-                                quoteSource={summary.quoteSource}
+                                quoteSource={quoteSourceFor(position, fromCache)}
+                                pageQuoteSource={summary.quoteSource}
                                 underlying={underlyings[position.symbol]}
                                 signal={signalFor(signals, position)}
                             />
@@ -581,11 +656,13 @@ export function OwnedContractsPage() {
 function OwnedContractRow({
     position,
     quoteSource,
+    pageQuoteSource,
     underlying: quote,
     signal,
 }: {
     position: OwnedOptionPosition;
     quoteSource: 'Live' | 'Cached';
+    pageQuoteSource: 'Live' | 'Cached';
     underlying: UnderlyingQuote | undefined;
     signal: SignalMatch | undefined;
 }) {
@@ -662,7 +739,7 @@ function OwnedContractRow({
                             {position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}
                         </strong>
                     </div>
-                    <span className="owned-quote-status">{quoteSource}</span>
+                    {quoteSource === pageQuoteSource ? null : <span className="owned-quote-status">{quoteSource}</span>}
                 </div>
             </div>
             <div className="owned-contract-meta">

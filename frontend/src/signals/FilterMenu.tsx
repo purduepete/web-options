@@ -10,6 +10,7 @@ import {
     ChevronDownIcon,
     ZapIcon,
 } from '../components/icons';
+import { CAPTURED_FILTERS, CAPTURED_LABELS, type CapturedFilter } from '../owned/filters';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
@@ -69,6 +70,35 @@ export function MoneynessFilterMenu({
             name="Moneyness"
             icon={<TargetIcon width={15} height={15} />}
             options={MONEYNESS_FILTERS.map((filter) => ({ value: filter, ...MONEYNESS_OPTIONS[filter] }))}
+            value={value}
+            neutral="all"
+            onChange={onChange}
+        />
+    );
+}
+
+// The floors overlap on purpose: each one asks how far a contract has already
+// run, so a row past three quarters is also past a quarter.
+const CAPTURED_OPTIONS: Record<CapturedFilter, Omit<ChoiceOption<CapturedFilter>, 'value'>> = {
+    all: { label: CAPTURED_LABELS.all, description: 'However far it has got' },
+    positive: { label: CAPTURED_LABELS.positive, description: 'Not currently down on the credit' },
+    quarter: { label: CAPTURED_LABELS.quarter, description: 'A quarter of the credit taken back' },
+    half: { label: CAPTURED_LABELS.half, description: 'Half the credit taken back' },
+    most: { label: CAPTURED_LABELS.most, description: 'Three quarters of the credit taken back' },
+};
+
+export function CapturedFilterMenu({
+    value,
+    onChange,
+}: {
+    value: CapturedFilter;
+    onChange: (next: CapturedFilter) => void;
+}) {
+    return (
+        <ChoiceMenu
+            name="Captured"
+            icon={<TrendingUpIcon width={15} height={15} />}
+            options={CAPTURED_FILTERS.map((filter) => ({ value: filter, ...CAPTURED_OPTIONS[filter] }))}
             value={value}
             neutral="all"
             onChange={onChange}

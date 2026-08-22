@@ -126,6 +126,27 @@ contract applies to existing pages and every page added under `frontend/src/page
 Run `npm test -- --run frontend/test/responsive-css.test.ts frontend/test/grid-css.test.ts frontend/test/safe-area-css.test.ts`
 after changing page markup or CSS, then run `npm run build:frontend`.
 
+## Control sizing contract
+
+Two buttons sitting next to each other must never be two different heights, and
+the way that happens is always the same: each one is given its own recipe.
+
+- A button's height is the shared one in [index.css](frontend/src/index.css) —
+  `padding: 0.4rem 0.6rem` on the inherited font — or, in a page head, the head's
+  smaller one, `padding: 0.3rem 0.6rem` at `font-size: 0.8rem`. `.week-jump`,
+  `.filters-toggle`, `.menus-reset` and `.owned-refresh-button` all use the head
+  recipe and all measure 30.8px because of it.
+- Vary colour, weight, horizontal padding and icons. Do not vary the vertical
+  padding or the font-size on their own, because both feed the height.
+- A `min-height` is not a way to size a button. The owned-contracts refresh
+  button carried `min-height: 2.25rem` with `padding: 0`, which put it 5px taller
+  than the filters trigger beside it. The only `min-height` a button should carry
+  is the 44px coarse-pointer target, which `index.css` already applies globally.
+- Icons inside a head button are 14-15px. An 18px icon in a 19.2px line box is
+  the next thing that starts pushing a height around.
+- Measure rather than eyeball: `getBoundingClientRect().height` across every
+  `button` on the page should come back with one value per role, not per button.
+
 ## Page loading contract
 
 A page should arrive once and hold still. Every rule below exists because a
