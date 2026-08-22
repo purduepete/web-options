@@ -6,7 +6,16 @@ import { UnauthorizedError, describeFailure, fetchOwnedContracts, fetchWeekSigna
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { Loading } from '../components/Loading';
 import { Modal } from '../components/Modal';
-import { ChevronDownIcon, CloseIcon, FlaskConicalIcon, RotateCcwIcon, SlidersIcon, ZapIcon } from '../components/icons';
+import {
+    ArrowDownNarrowWideIcon,
+    ArrowUpNarrowWideIcon,
+    ChevronDownIcon,
+    CloseIcon,
+    FlaskConicalIcon,
+    RotateCcwIcon,
+    SlidersIcon,
+    ZapIcon,
+} from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { isTyping } from '../hooks/useWeekArrows';
 import { clearOwnedCache, readOwnedCache, writeOwnedCache } from '../owned/cache';
@@ -16,8 +25,17 @@ import {
     deltaBand,
     filterOwnedPositions,
     readCapturedFilter,
+    strikeCushion,
     type CapturedFilter,
 } from '../owned/filters';
+import { OwnedSortMenu } from '../owned/SortMenu';
+import {
+    OWNED_SORT_LABELS,
+    readOwnedSort,
+    sortOwnedPositions,
+    writeOwnedSort,
+    type OwnedSortState,
+} from '../owned/sort';
 import { signalFor, signalKey, type SignalMap, type SignalMatch } from '../owned/types';
 import { CapturedFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
 import { EMPTY } from '../signals/format';
@@ -154,10 +172,6 @@ function moneynessText(position: OwnedOptionPosition, signal: SignalMatch | unde
     return moneyness.toUpperCase();
 }
 
-function strikeCushion(position: OwnedOptionPosition, signal: SignalMatch | undefined): number | null {
-    return position.percentFromStrike ?? signal?.trade.percentFromStrike ?? null;
-}
-
 function strikeCushionText(position: OwnedOptionPosition, signal: SignalMatch | undefined): string {
     const cushion = strikeCushion(position, signal);
     return cushion === null ? EMPTY : signedPercent(cushion);
@@ -227,6 +241,9 @@ export function OwnedContractsPage() {
     const symbol = params.get('symbol') ?? '';
     const moneynessFilter = readMoneynessFilter(params.get('moneyness'));
     const capturedFilter = readCapturedFilter(params.get('captured'));
+    // The sort is a reading preference rather than a view worth sharing, so it
+    // lives in local storage instead of the URL the filters use.
+    const [sort, setSortState] = useState<OwnedSortState>(readOwnedSort);
     const [cached] = useState(readOwnedCache);
     const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(cached?.response.positions ?? null);
     const [underlyings, setUnderlyings] = useState<Record<string, UnderlyingQuote>>(cached?.response.underlyings ?? {});
@@ -304,6 +321,11 @@ export function OwnedContractsPage() {
         if (cached !== null) return;
         load('initial');
     }, [cached, load]);
+
+    const setSort = useCallback((next: OwnedSortState) => {
+        setSortState(next);
+        writeOwnedSort(next);
+    }, []);
 
     const setSymbolParam = useCallback(
         (next: string) => {
@@ -433,12 +455,16 @@ export function OwnedContractsPage() {
 
     const visible = useMemo(
         () =>
-            filterOwnedPositions(positions ?? [], signals, {
-                symbol,
-                moneyness: moneynessFilter,
-                captured: capturedFilter,
-            }),
-        [capturedFilter, moneynessFilter, positions, signals, symbol],
+            sortOwnedPositions(
+                filterOwnedPositions(positions ?? [], signals, {
+                    symbol,
+                    moneyness: moneynessFilter,
+                    captured: capturedFilter,
+                }),
+                signals,
+                sort,
+            ),
+        [capturedFilter, moneynessFilter, positions, signals, sort, symbol],
     );
 
     const summary = useMemo(() => {
@@ -465,6 +491,10 @@ export function OwnedContractsPage() {
 
     const filterControls = (
         <>
+            <div className="filter-section owned-filter-sort">
+                <h2>Sort</h2>
+                <OwnedSortMenu value={sort} onChange={setSort} />
+            </div>
             <div className="filter-section owned-filter-moneyness">
                 <h2>Contract</h2>
                 <MoneynessFilterMenu value={moneynessFilter} onChange={setMoneynessParam} />
@@ -594,23 +624,35 @@ export function OwnedContractsPage() {
 
             {loading ? null : (
                 <>
-                    {appliedFilters.length > 0 ? (
-                        <div className="owned-applied-filters" aria-label="Applied filters">
-                            {appliedFilters.map((filter) => (
-                                <button
-                                    key={filter.key}
-                                    type="button"
-                                    className="owned-applied-filter"
-                                    onClick={filter.clear}
-                                    aria-label={`Clear ${filter.label} filter`}
-                                    title={`Clear ${filter.label} filter`}
-                                >
-                                    <span>{filter.label}</span>
-                                    <CloseIcon width={12} height={12} />
-                                </button>
-                            ))}
-                        </div>
-                    ) : null}
+                    {/* Always present: the order is a fact about the list even when
+                        nothing is narrowing it, and a row that comes and goes would
+                        move the totals under it. */}
+                    <div className="owned-applied-filters" aria-label="Sort and applied filters">
+                        <span
+                            className="owned-sort-chip"
+                            aria-label={`Sorted by ${OWNED_SORT_LABELS[sort.key]}, ${sort.direction === 'asc' ? 'ascending' : 'descending'}`}
+                        >
+                            {sort.direction === 'asc' ? (
+                                <ArrowDownNarrowWideIcon width={13} height={13} aria-hidden="true" />
+                            ) : (
+                                <ArrowUpNarrowWideIcon width={13} height={13} aria-hidden="true" />
+                            )}
+                            <span>{OWNED_SORT_LABELS[sort.key]}</span>
+                        </span>
+                        {appliedFilters.map((filter) => (
+                            <button
+                                key={filter.key}
+                                type="button"
+                                className="owned-applied-filter"
+                                onClick={filter.clear}
+                                aria-label={`Clear ${filter.label} filter`}
+                                title={`Clear ${filter.label} filter`}
+                            >
+                                <span>{filter.label}</span>
+                                <CloseIcon width={12} height={12} />
+                            </button>
+                        ))}
+                    </div>
 
                     <section className="owned-contracts-metrics" aria-label="Owned contract totals">
                         <Metric label="Contracts" value={String(summary.total)} />

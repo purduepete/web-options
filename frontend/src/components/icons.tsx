@@ -317,3 +317,39 @@ export function TrendingDownIcon(props: SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function ArrowUpDownIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m21 16-4 4-4-4" />
+            <path d="M17 20V4" />
+            <path d="m3 8 4-4 4 4" />
+            <path d="M7 4v16" />
+        </svg>
+    );
+}
+
+/** The bars widen downwards, which is how a list reads when it is sorted ascending. */
+export function ArrowDownNarrowWideIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m3 16 4 4 4-4" />
+            <path d="M7 20V4" />
+            <path d="M11 4h4" />
+            <path d="M11 8h7" />
+            <path d="M11 12h10" />
+        </svg>
+    );
+}
+
+export function ArrowUpNarrowWideIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="m3 8 4-4 4 4" />
+            <path d="M7 4v16" />
+            <path d="M11 12h4" />
+            <path d="M11 16h7" />
+            <path d="M11 20h10" />
+        </svg>
+    );
+}

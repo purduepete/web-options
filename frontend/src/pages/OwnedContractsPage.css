@@ -76,6 +76,18 @@
     background: rgba(var(--highlight-rgb), 0.24);
 }
 
+/* The pill recipe, muted: it reports the order rather than offering to undo it. */
+.owned-sort-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border: var(--border-width) solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 /* Padding and font are the head's, not this button's: a head with two button
    heights in it is the thing this avoids. Only the colour is its own. */
 .owned-refresh-button {

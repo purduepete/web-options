@@ -1,0 +1,10 @@
+/* The attribute and its direction, side by side and free to wrap onto their own
+   line when the panel narrows. The toggle takes no sizing of its own: it wears
+   `.choice-trigger`, so the pair are one height. */
+
+.owned-sort {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}

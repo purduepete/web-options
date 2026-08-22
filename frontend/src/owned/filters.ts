@@ -23,6 +23,11 @@ export function ownedMoneyness(position: OwnedOptionPosition, signal: SignalMatc
     return position.moneyness ?? signal?.trade.moneyness ?? null;
 }
 
+/** How far the underlying still sits from the strike, on the same fallback. */
+export function strikeCushion(position: OwnedOptionPosition, signal: SignalMatch | undefined): number | null {
+    return position.percentFromStrike ?? signal?.trade.percentFromStrike ?? null;
+}
+
 export const CAPTURED_FILTERS = ['all', 'positive', 'quarter', 'half', 'most'] as const;
 
 export type CapturedFilter = (typeof CAPTURED_FILTERS)[number];
