@@ -252,11 +252,13 @@
    aim at. The week navigation stays above the fold-out, since a reader moving
    through the weeks should not have to open the filters to do it. */
 @media (max-width: 640px) {
-    .signal-filters-modal .modal-body {
+    .signal-filters-modal .modal-body,
+    .owned-filters-modal .modal-body {
         padding: 0;
     }
 
-    .signal-filters-modal .filter-bar {
+    .signal-filters-modal .filter-bar,
+    .owned-filters-modal .filter-bar {
         display: flex;
         flex-direction: column;
         align-items: stretch;

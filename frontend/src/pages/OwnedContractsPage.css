@@ -6,10 +6,28 @@
 
 .owned-contracts-head {
     align-items: center;
+    /* The filter panel is absolutely positioned and anchors to the nearest
+       positioned ancestor, which without this is the viewport. */
+    position: relative;
 }
 
 .owned-contracts-head > div {
     min-width: 0%;
+}
+
+/* The one auto margin in the head, on the block that is always present. */
+.owned-contracts-title {
+    margin-right: auto;
+}
+
+.owned-contracts-page .filter-bar {
+    width: min(28rem, calc(100vw - 2rem));
+    grid-template-columns: 1fr;
+}
+
+.owned-filter-symbol .symbol-filter {
+    flex: 1 1 auto;
+    max-width: none;
 }
 
 .owned-contracts-subtitle {
@@ -18,13 +36,29 @@
     font-size: 0.86rem;
 }
 
+/* Always rendered so the head keeps its width whether or not the data is cached. */
+.owned-cache-badge {
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.35rem;
+    background: rgba(var(--highlight-rgb), 0.14);
+    border: var(--border-width) solid rgba(var(--highlight-rgb), 0.36);
+    color: var(--highlight);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.owned-cache-badge.is-idle {
+    visibility: hidden;
+}
+
 .owned-refresh-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
     flex: none;
-    margin-left: auto;
     min-height: 2.25rem;
     padding: 0 0.75rem;
     background: rgba(var(--highlight-rgb), 0.14);
@@ -316,6 +350,19 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Assignment risk, banded on magnitude: comfortable, watch it, act on it. */
+.owned-contract-delta-metric strong.is-good {
+    color: var(--positive);
+}
+
+.owned-contract-delta-metric strong.is-warn {
+    color: var(--warning);
+}
+
+.owned-contract-delta-metric strong.is-bad {
+    color: var(--danger);
+}
+
 .owned-contract-price-stack span,
 .owned-contract-number span,
 .owned-contract-meta span + span {
@@ -385,6 +432,10 @@
 .owned-contract-moneyness {
     flex-shrink: 0;
     border-color: var(--border-soft);
+}
+
+.owned-contract-moneyness.is-idle {
+    visibility: hidden;
 }
 
 .owned-contract-moneyness.moneyness.itm {

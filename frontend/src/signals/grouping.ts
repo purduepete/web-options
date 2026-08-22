@@ -45,6 +45,11 @@ export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
 
 export type MoneynessFilter = (typeof MONEYNESS_FILTERS)[number];
 
+/** Reads the moneyness param. Anything unrecognised narrows nothing. */
+export function readMoneynessFilter(value: string | null): MoneynessFilter {
+    return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
+}
+
 /** Whether the trade has been up over half its premium at some close. */
 export const HALF_FILTERS = ['all', 'yes', 'no'] as const;
 
@@ -70,12 +75,11 @@ export interface SignalGroup {
 }
 
 /**
- * Narrows every day's trades by a comma-separated list of symbol fragments. Each term
- * carries its own bang, so a trade has to match one of the plain terms, where there are
- * any, and none of the banged ones. Days are kept even when they empty out, so the card
- * still appears and can say that nothing matched.
+ * Turns a comma-separated list of symbol fragments into a predicate. Each term carries
+ * its own bang, so a symbol has to match one of the plain terms, where there are any,
+ * and none of the banged ones.
  */
-export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignals[] {
+export function symbolMatcher(query: string): (symbol: string) => boolean {
     const terms = query
         .toUpperCase()
         .split(',')
@@ -86,14 +90,25 @@ export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignal
         .filter((term) => term.startsWith('!'))
         .map((term) => term.slice(1).trim())
         .filter((term) => term !== '');
-    if (wanted.length === 0 && unwanted.length === 0) return days;
+    if (wanted.length === 0 && unwanted.length === 0) return () => true;
+    return (candidate: string) => {
+        const symbol = candidate.toUpperCase();
+        if (unwanted.some((term) => symbol.includes(term))) return false;
+        return wanted.length === 0 || wanted.some((term) => symbol.includes(term));
+    };
+}
+
+/**
+ * Narrows every day's trades by a comma-separated list of symbol fragments. Days are
+ * kept even when they empty out, so the card still appears and can say that nothing
+ * matched.
+ */
+export function filterDaysBySymbol(days: DaySignals[], query: string): DaySignals[] {
+    if (query.trim() === '') return days;
+    const matches = symbolMatcher(query);
     return days.map((day) => ({
         ...day,
-        trades: day.trades.filter((trade) => {
-            const symbol = trade.symbol.toUpperCase();
-            if (unwanted.some((term) => symbol.includes(term))) return false;
-            return wanted.length === 0 || wanted.some((term) => symbol.includes(term));
-        }),
+        trades: day.trades.filter((trade) => matches(trade.symbol)),
     }));
 }
 

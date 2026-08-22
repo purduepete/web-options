@@ -49,6 +49,15 @@ export const SHORTCUT_SECTIONS: ShortcutSection[] = [
         ],
     },
     {
+        title: 'Owned contracts',
+        shortcuts: [
+            { keys: ['f'], description: 'Toggle the filter panel' },
+            { keys: ['/'], description: 'Filter by symbol, or !symbol to exclude' },
+            { keys: ['m'], description: 'Next moneyness filter' },
+            { keys: ['r'], description: 'Reset the menus' },
+        ],
+    },
+    {
         title: 'Weekly calendars',
         shortcuts: [
             { keys: ['←'], description: 'Previous week' },

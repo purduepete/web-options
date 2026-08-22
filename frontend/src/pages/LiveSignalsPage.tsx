@@ -30,6 +30,7 @@ import {
     filterDaysByOwned,
     filterDaysBySymbol,
     groupTrades,
+    readMoneynessFilter,
     shiftWeek,
 } from '../signals/grouping';
 import type { ExpiryFilter, GradeFilter, GroupId, HalfFilter, MoneynessFilter, OwnedFilter } from '../signals/grouping';
@@ -58,10 +59,6 @@ import './LiveSignalsPage.css';
 
 function readExpiryFilter(value: string | null): ExpiryFilter {
     return EXPIRY_FILTERS.includes(value as ExpiryFilter) ? (value as ExpiryFilter) : 'all';
-}
-
-function readMoneynessFilter(value: string | null): MoneynessFilter {
-    return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
 }
 
 function readHalfFilter(value: string | null): HalfFilter {

@@ -1,9 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { OwnedOptionPosition, Trade, UnderlyingQuote } from '@weboptions/shared';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
+import type { OwnedOptionPosition, UnderlyingQuote } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchOwnedContracts, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { Loading } from '../components/Loading';
-import { FlaskConicalIcon, RotateCcwIcon, ZapIcon } from '../components/icons';
+import { Modal } from '../components/Modal';
+import {
+    ChevronDownIcon,
+    CloseIcon,
+    FlaskConicalIcon,
+    RotateCcwIcon,
+    SlidersIcon,
+    ZapIcon,
+} from '../components/icons';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { isTyping } from '../hooks/useWeekArrows';
+import { clearOwnedCache, readOwnedCache, writeOwnedCache } from '../owned/cache';
+import { deltaBand, filterOwnedPositions } from '../owned/filters';
+import { signalFor, signalKey, type SignalMap, type SignalMatch } from '../owned/types';
+import { MoneynessFilterMenu } from '../signals/FilterMenu';
+import { MONEYNESS_FILTERS, cycle, readMoneynessFilter, type MoneynessFilter } from '../signals/grouping';
 import './OwnedContractsPage.css';
 
 function currency(value: number | null): string {
@@ -96,15 +113,6 @@ function weekStart(value: string): string {
 function signalUrl(position: OwnedOptionPosition): string {
     const params = new URLSearchParams({ week: weekStart(position.transactionDate), symbol: position.symbol });
     return `/?${params.toString()}`;
-}
-
-interface SignalMatch {
-    trade: Trade;
-    reportDate: string;
-}
-
-function signalKey(reportDate: string, symbol: string, strike: number, expiration: string): string {
-    return `${reportDate}|${symbol}|${strike}|${expiration}`;
 }
 
 function underlyingPrice(position: OwnedOptionPosition, signal: SignalMatch | undefined): number | null {
@@ -209,26 +217,46 @@ function exitTargetText(position: OwnedOptionPosition): string {
 
 export function OwnedContractsPage() {
     const { forget } = useApiKey();
-    const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(null);
-    const [underlyings, setUnderlyings] = useState<Record<string, UnderlyingQuote>>({});
-    const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-    const [signals, setSignals] = useState<ReadonlyMap<string, SignalMatch>>(new Map());
+    const [params, setParams] = useSearchParams();
+    const symbol = params.get('symbol') ?? '';
+    const moneynessFilter = readMoneynessFilter(params.get('moneyness'));
+    const [cached] = useState(readOwnedCache);
+    const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(cached?.response.positions ?? null);
+    const [underlyings, setUnderlyings] = useState<Record<string, UnderlyingQuote>>(cached?.response.underlyings ?? {});
+    const [generatedAt, setGeneratedAt] = useState<string | null>(cached?.response.generatedAt ?? null);
+    const [signals, setSignals] = useState<SignalMap>(() => cached?.signals ?? new Map());
+    const [fromCache, setFromCache] = useState(cached !== null);
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(cached === null);
     const [refreshing, setRefreshing] = useState(false);
+    // Refreshing is manual, so a second load can start while the first is still
+    // settling. Only the newest may publish, or the signals and the cache drift.
+    const latestLoad = useRef(0);
+    // Only a phone folds the filters away, and it opens them closed.
+    const phone = useMediaQuery('(max-width: 640px)');
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const symbolInputRef = useRef<HTMLInputElement>(null);
+    const filtersTriggerRef = useRef<HTMLButtonElement>(null);
+    const filtersPanelRef = useRef<HTMLDivElement>(null);
 
     const load = useCallback(
         (mode: 'initial' | 'refresh') => {
+            const id = ++latestLoad.current;
             if (mode === 'initial') setLoading(true);
             else setRefreshing(true);
             setError(null);
             fetchOwnedContracts()
                 .then(async (result) => {
+                    if (id !== latestLoad.current) return;
                     setPositions(result.positions);
                     setUnderlyings(result.underlyings);
                     setGeneratedAt(result.generatedAt);
+                    setFromCache(false);
+                    // The rows are worth reading before the signals that annotate them.
+                    setLoading(false);
                     const weeks = [...new Set(result.positions.map((position) => weekStart(position.transactionDate)))];
                     const responses = await Promise.allSettled(weeks.map((week) => fetchWeekSignals(week)));
+                    if (id !== latestLoad.current) return;
                     const matches = new Map<string, SignalMatch>();
                     responses.forEach((response) => {
                         if (response.status !== 'fulfilled') return;
@@ -243,15 +271,19 @@ export function OwnedContractsPage() {
                         });
                     });
                     setSignals(matches);
+                    writeOwnedCache(result, matches);
                 })
                 .catch((cause: Error) => {
+                    if (id !== latestLoad.current) return;
                     if (cause instanceof UnauthorizedError) {
+                        clearOwnedCache();
                         forget();
                         return;
                     }
                     setError(describeFailure(cause));
                 })
                 .finally(() => {
+                    if (id !== latestLoad.current) return;
                     if (mode === 'initial') setLoading(false);
                     else setRefreshing(false);
                 });
@@ -260,11 +292,106 @@ export function OwnedContractsPage() {
     );
 
     useEffect(() => {
+        // Held for the life of the component: StrictMode runs this twice, and a
+        // flag consumed on the first pass would let the second one fetch anyway.
+        if (cached !== null) return;
         load('initial');
-    }, [load]);
+    }, [cached, load]);
+
+    const setSymbolParam = useCallback(
+        (next: string) => {
+            // The filter changes on every keystroke, so it replaces rather than
+            // stacking one history entry per letter typed.
+            setParams(
+                (current) => {
+                    const updated = new URLSearchParams(current);
+                    if (next) updated.set('symbol', next);
+                    else updated.delete('symbol');
+                    return updated;
+                },
+                { replace: true },
+            );
+        },
+        [setParams],
+    );
+
+    const setMoneynessParam = useCallback(
+        (next: MoneynessFilter) => {
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (next === 'all') updated.delete('moneyness');
+                else updated.set('moneyness', next);
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
+    // Both filters live in the URL, so they clear in one write rather than two
+    // history entries that each undo half of it.
+    const resetMenus = useCallback(() => {
+        setParams((current) => {
+            const updated = new URLSearchParams(current);
+            updated.delete('symbol');
+            updated.delete('moneyness');
+            return updated;
+        });
+    }, [setParams]);
+
+    const atMenuDefaults = symbol.trim() === '' && moneynessFilter === 'all';
+    const activeFilterCount = (symbol.trim() !== '' ? 1 : 0) + (moneynessFilter !== 'all' ? 1 : 0);
+
+    useEffect(() => {
+        if (!filtersOpen || phone) return;
+        function onPointerDown(event: Event) {
+            const target = event.target as Node | null;
+            if (!filtersPanelRef.current?.contains(target) && !filtersTriggerRef.current?.contains(target)) {
+                setFiltersOpen(false);
+                filtersTriggerRef.current?.focus();
+            }
+        }
+        function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setFiltersOpen(false);
+            filtersTriggerRef.current?.focus();
+        }
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [filtersOpen, phone]);
+
+    useEffect(() => {
+        function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+            if (isTyping(event.target)) return;
+            if (event.key === '/') {
+                event.preventDefault();
+                // Nothing hidden can take the caret, so the fold is opened in the
+                // DOM before the focus is aimed at it.
+                flushSync(() => setFiltersOpen(true));
+                symbolInputRef.current?.focus();
+                symbolInputRef.current?.select();
+                return;
+            }
+            if (event.key === 'f') setFiltersOpen((open) => !open);
+            else if (event.key === 'm') setMoneynessParam(cycle(MONEYNESS_FILTERS, moneynessFilter));
+            else if (event.key === 'r') resetMenus();
+        }
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [moneynessFilter, resetMenus, setMoneynessParam]);
+
+    const visible = useMemo(
+        () => filterOwnedPositions(positions ?? [], signals, { symbol, moneyness: moneynessFilter }),
+        [moneynessFilter, positions, signals, symbol],
+    );
 
     const summary = useMemo(() => {
-        const rows = positions ?? [];
+        const rows = visible;
         const live = rows.filter((row) => !row.isPaper);
         const paper = rows.filter((row) => row.isPaper);
         const collateral = rows.reduce((sum, row) => sum + row.collateralAtStrike, 0);
@@ -281,29 +408,123 @@ export function OwnedContractsPage() {
             captured,
             quoteSource,
         };
-    }, [positions]);
+    }, [visible]);
 
-    if (loading) return <Loading label="Loading owned contracts" />;
+    const filterControls = (
+        <>
+            <div className="filter-section owned-filter-moneyness">
+                <h2>Contract</h2>
+                <MoneynessFilterMenu value={moneynessFilter} onChange={setMoneynessParam} />
+            </div>
+            <div className="filter-section owned-filter-symbol">
+                <h2>Symbol</h2>
+                <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
+                    <input
+                        type="text"
+                        ref={symbolInputRef}
+                        value={symbol}
+                        onChange={(event) => setSymbolParam(event.target.value.toUpperCase())}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') event.currentTarget.blur();
+                        }}
+                        placeholder="Filter by symbol"
+                        aria-label="Filter by symbol"
+                        autoComplete="off"
+                        spellCheck={false}
+                    />
+                    {symbol && (
+                        <button
+                            type="button"
+                            className="symbol-filter-clear"
+                            onClick={() => setSymbolParam('')}
+                            aria-label="Clear symbol filter"
+                        >
+                            <CloseIcon />
+                        </button>
+                    )}
+                </div>
+            </div>
+        </>
+    );
 
     return (
         <main className="owned-contracts-page enter">
             <header className="page-head owned-contracts-head">
-                <div>
+                <div className="owned-contracts-title">
                     <h1>Owned Contracts</h1>
                     <p className="owned-contracts-subtitle">
                         {generatedAt ? `Updated ${timestampText(generatedAt)}` : 'Current open positions'}
+                        <span
+                            className={fromCache ? 'owned-cache-badge' : 'owned-cache-badge is-idle'}
+                            aria-hidden={!fromCache}
+                        >
+                            Cached
+                        </span>
                     </p>
                 </div>
+
+                <button
+                    type="button"
+                    className={`menus-reset${atMenuDefaults ? ' is-idle' : ''}`}
+                    onClick={resetMenus}
+                    disabled={atMenuDefaults}
+                    aria-hidden={atMenuDefaults || undefined}
+                    tabIndex={atMenuDefaults ? -1 : undefined}
+                    title="Reset filters"
+                >
+                    <RotateCcwIcon width={14} height={14} />
+                    <span>Reset</span>
+                </button>
+
+                <button
+                    type="button"
+                    ref={filtersTriggerRef}
+                    className={`filters-toggle${activeFilterCount > 0 ? ' narrowed' : ''}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={filtersOpen}
+                    aria-controls="owned-filters"
+                    onClick={() => setFiltersOpen((open) => !open)}
+                >
+                    <SlidersIcon width={15} height={15} />
+                    <span>{activeFilterCount ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
+                    <ChevronDownIcon width={14} height={14} className={filtersOpen ? 'rotated' : ''} />
+                </button>
+
                 <button
                     type="button"
                     className="owned-refresh-button"
                     onClick={() => load('refresh')}
-                    disabled={refreshing}
+                    disabled={loading || refreshing}
                     title="Refresh owned contracts"
                 >
                     <RotateCcwIcon aria-hidden="true" />
                     {refreshing ? 'Refreshing' : 'Refresh'}
                 </button>
+
+                {!phone && filtersOpen && (
+                    <div
+                        className="filter-bar"
+                        id="owned-filters"
+                        ref={filtersPanelRef}
+                        role="dialog"
+                        aria-label="Filters"
+                    >
+                        {filterControls}
+                    </div>
+                )}
+
+                {phone && (
+                    <Modal
+                        open={filtersOpen}
+                        title="Filters"
+                        onClose={() => setFiltersOpen(false)}
+                        className="owned-filters-modal"
+                    >
+                        <div className="filter-bar" id="owned-filters">
+                            {filterControls}
+                        </div>
+                    </Modal>
+                )}
             </header>
 
             {error ? (
@@ -312,42 +533,47 @@ export function OwnedContractsPage() {
                 </p>
             ) : null}
 
-            <section className="owned-contracts-metrics" aria-label="Owned contract totals">
-                <Metric label="Contracts" value={String(summary.total)} />
-                <Metric label="Live" value={String(summary.live)} />
-                <Metric label="Paper" value={String(summary.paper)} />
-                <Metric label="Collateral" value={currency(summary.collateral)} />
-                <Metric label="Entry credit" value={currency(summary.credit)} />
-                <Metric
-                    label="Open P/L"
-                    value={currency(summary.captured)}
-                    tone={summary.captured < 0 ? 'bad' : 'good'}
-                />
-            </section>
+            {loading ? <Loading label="Loading owned contracts" /> : null}
 
-            {positions && positions.length === 0 ? <p className="summary-none">No open owned contracts.</p> : null}
+            {loading ? null : (
+                <>
+                    <section className="owned-contracts-metrics" aria-label="Owned contract totals">
+                        <Metric label="Contracts" value={String(summary.total)} />
+                        <Metric label="Live" value={String(summary.live)} />
+                        <Metric label="Paper" value={String(summary.paper)} />
+                        <Metric label="Collateral" value={currency(summary.collateral)} />
+                        <Metric label="Entry credit" value={currency(summary.credit)} />
+                        <Metric
+                            label="Open P/L"
+                            value={currency(summary.captured)}
+                            tone={summary.captured < 0 ? 'bad' : 'good'}
+                        />
+                    </section>
 
-            <section
-                className={refreshing ? 'owned-contract-list is-stale' : 'owned-contract-list'}
-                aria-busy={refreshing}
-            >
-                {(positions ?? []).map((position) => (
-                    <OwnedContractRow
-                        key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
-                        position={position}
-                        quoteSource={summary.quoteSource}
-                        underlying={underlyings[position.symbol]}
-                        signal={signals.get(
-                            signalKey(
-                                position.transactionDate,
-                                position.symbol,
-                                position.strikePrice,
-                                position.expirationDate,
-                            ),
-                        )}
-                    />
-                ))}
-            </section>
+                    {positions && positions.length === 0 ? (
+                        <p className="summary-none">No open owned contracts.</p>
+                    ) : null}
+
+                    {positions && positions.length > 0 && visible.length === 0 ? (
+                        <p className="summary-none">No contracts match these filters.</p>
+                    ) : null}
+
+                    <section
+                        className={refreshing ? 'owned-contract-list is-stale' : 'owned-contract-list'}
+                        aria-busy={refreshing}
+                    >
+                        {visible.map((position) => (
+                            <OwnedContractRow
+                                key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
+                                position={position}
+                                quoteSource={summary.quoteSource}
+                                underlying={underlyings[position.symbol]}
+                                signal={signalFor(signals, position)}
+                            />
+                        ))}
+                    </section>
+                </>
+            )}
         </main>
     );
 }
@@ -365,6 +591,8 @@ function OwnedContractRow({
 }) {
     const underlying = underlyingSnapshot(position, signal, quote);
     const expirationRisk = expirationRiskText(position);
+    const moneyness = moneynessText(position, signal);
+    const delta = deltaBand(position.quote.delta);
     return (
         <article className={`owned-contract-row is-${toneFor(position.unrealizedCreditCaptured)}`}>
             <div className="owned-contract-identity">
@@ -430,7 +658,9 @@ function OwnedContractRow({
                 <div className="owned-contract-delta-row">
                     <div className="owned-contract-delta-metric">
                         <span>Delta</span>
-                        <strong>{position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}</strong>
+                        <strong className={delta ? `is-${delta}` : undefined}>
+                            {position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}
+                        </strong>
                     </div>
                     <span className="owned-quote-status">{quoteSource}</span>
                 </div>
@@ -440,13 +670,17 @@ function OwnedContractRow({
                     <span>{position.accountName ?? 'n/a'}</span>
                     <span>Opened {dateText(position.transactionDate)}</span>
                 </div>
-                {moneynessText(position, signal) ? (
-                    <span
-                        className={`moneyness ${position.moneyness ?? signal?.trade.moneyness ?? ''} owned-contract-moneyness`}
-                    >
-                        {moneynessText(position, signal)}
-                    </span>
-                ) : null}
+                <span
+                    className={
+                        moneyness
+                            ? `moneyness ${position.moneyness ?? signal?.trade.moneyness ?? ''} owned-contract-moneyness enter`
+                            : 'moneyness owned-contract-moneyness is-idle'
+                    }
+                    aria-hidden={moneyness === null}
+                >
+                    {/* The signal can land after the row, so the slot holds its width meanwhile. */}
+                    {moneyness ?? 'OTM'}
+                </span>
             </div>
         </article>
     );
