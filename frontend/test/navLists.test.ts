@@ -77,6 +77,7 @@ describe('nav model', () => {
         expect(ids).toEqual([
             '/',
             '/summary',
+            '/owned-contracts',
             '/calendars/latest',
             '/settings/appearance',
             '/settings/caution',

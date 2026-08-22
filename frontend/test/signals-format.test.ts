@@ -30,12 +30,12 @@ describe('signal formatters', () => {
         expect(formatMDY('2025-08-15')).toBe('08/15/2025');
     });
 
-    it('says n/a rather than printing a null', () => {
-        expect(formatMDY(null)).toBe('n/a');
-        expect(formatPercent(null)).toBe('n/a');
-        expect(formatMoney(null)).toBe('n/a');
-        expect(formatDelta(null)).toBe('n/a');
-        expect(formatDte(null)).toBe('n/a');
+    it('prints a dash rather than a null', () => {
+        expect(formatMDY(null)).toBe('–');
+        expect(formatPercent(null)).toBe('–');
+        expect(formatMoney(null)).toBe('–');
+        expect(formatDelta(null)).toBe('–');
+        expect(formatDte(null)).toBe('–');
     });
 
     it('gives yields one decimal and a percent sign', () => {
