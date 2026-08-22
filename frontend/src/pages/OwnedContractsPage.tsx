@@ -20,16 +20,17 @@ import {
 } from '../owned/filters';
 import { signalFor, signalKey, type SignalMap, type SignalMatch } from '../owned/types';
 import { CapturedFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
+import { EMPTY } from '../signals/format';
 import { MONEYNESS_FILTERS, cycle, readMoneynessFilter, type MoneynessFilter } from '../signals/grouping';
 import './OwnedContractsPage.css';
 
 function currency(value: number | null): string {
-    if (value === null || !Number.isFinite(value)) return 'n/a';
+    if (value === null || !Number.isFinite(value)) return EMPTY;
     return value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 }
 
 function money(value: number | null): string {
-    if (value === null || !Number.isFinite(value)) return 'n/a';
+    if (value === null || !Number.isFinite(value)) return EMPTY;
     return value.toLocaleString(undefined, {
         style: 'currency',
         currency: 'USD',
@@ -39,12 +40,12 @@ function money(value: number | null): string {
 }
 
 function percent(value: number | null): string {
-    if (value === null || !Number.isFinite(value)) return 'n/a';
+    if (value === null || !Number.isFinite(value)) return EMPTY;
     return `${value.toFixed(1)}%`;
 }
 
 function signedPercent(value: number | null): string {
-    if (value === null || !Number.isFinite(value)) return 'n/a';
+    if (value === null || !Number.isFinite(value)) return EMPTY;
     const sign = value > 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
 }
@@ -70,19 +71,19 @@ function numericDate(date: Date): string {
 
 function dateText(value: string | null): string {
     const date = parseLocalDate(value);
-    if (!date) return value ?? 'n/a';
+    if (!date) return value ?? EMPTY;
     return numericDate(date);
 }
 
 function timestampText(value: string | null): string {
     const date = parseLocalDate(value);
-    if (!date) return value ?? 'n/a';
+    if (!date) return value ?? EMPTY;
     return `${numericDate(date)} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
 }
 
 function shortDate(value: string | null): string {
     const date = parseLocalDate(value);
-    if (!date) return value ?? 'n/a';
+    if (!date) return value ?? EMPTY;
     return numericDate(date);
 }
 
@@ -159,7 +160,7 @@ function strikeCushion(position: OwnedOptionPosition, signal: SignalMatch | unde
 
 function strikeCushionText(position: OwnedOptionPosition, signal: SignalMatch | undefined): string {
     const cushion = strikeCushion(position, signal);
-    return cushion === null ? 'n/a' : signedPercent(cushion);
+    return cushion === null ? EMPTY : signedPercent(cushion);
 }
 
 function strikeCushionTone(position: OwnedOptionPosition, signal: SignalMatch | undefined): string {
@@ -183,13 +184,13 @@ function entryMarkText(position: OwnedOptionPosition): string {
 }
 
 function annualizedReturnText(position: OwnedOptionPosition): string {
-    if (position.collateralAtStrike <= 0) return 'n/a';
+    if (position.collateralAtStrike <= 0) return EMPTY;
     const opened = parseLocalDate(position.transactionDate);
     const expires = parseLocalDate(position.expirationDate);
-    if (opened === null || expires === null) return 'n/a';
+    if (opened === null || expires === null) return EMPTY;
     // The return is earned over the whole holding period, not the days still left on it.
     const heldDays = Math.round((expires.getTime() - opened.getTime()) / 86_400_000);
-    if (heldDays <= 0) return 'n/a';
+    if (heldDays <= 0) return EMPTY;
     return percent((position.entryCredit / position.collateralAtStrike) * (365 / heldDays) * 100);
 }
 
@@ -212,11 +213,11 @@ function capturedPercent(position: OwnedOptionPosition): number | null {
 
 function exitTargetText(position: OwnedOptionPosition): string {
     const captured = capturedPercent(position);
-    if (captured === null) return 'n/a';
+    if (captured === null) return EMPTY;
     const nextTarget = [25, 50, 75].find((target) => captured < target);
     if (nextTarget === undefined) return 'Past 75%';
     const shares = position.contracts * 100;
-    if (shares <= 0 || position.entryCredit <= 0) return 'n/a';
+    if (shares <= 0 || position.entryCredit <= 0) return EMPTY;
     return `${nextTarget}% @ ${money((position.entryCredit * (1 - nextTarget / 100)) / shares)}`;
 }
 
@@ -702,7 +703,7 @@ function OwnedContractRow({
                 </div>
                 <div className="owned-contract-subline">
                     <span>Exp {shortDate(position.expirationDate)}</span>
-                    <span>{position.dte === null ? 'n/a' : `${position.dte} DTE`}</span>
+                    <span>{position.dte === null ? EMPTY : `${position.dte} DTE`}</span>
                     {expirationRisk ? <span className="owned-contract-expiration-risk">{expirationRisk}</span> : null}
                 </div>
                 <MetricLine
@@ -736,7 +737,7 @@ function OwnedContractRow({
                     <div className="owned-contract-delta-metric">
                         <span>Delta</span>
                         <strong className={delta ? `is-${delta}` : undefined}>
-                            {position.quote.delta === null ? 'n/a' : position.quote.delta.toFixed(2)}
+                            {position.quote.delta === null ? EMPTY : position.quote.delta.toFixed(2)}
                         </strong>
                     </div>
                     {quoteSource === pageQuoteSource ? null : <span className="owned-quote-status">{quoteSource}</span>}
@@ -744,7 +745,7 @@ function OwnedContractRow({
             </div>
             <div className="owned-contract-meta">
                 <div className="owned-contract-account-details">
-                    <span>{position.accountName ?? 'n/a'}</span>
+                    <span>{position.accountName ?? EMPTY}</span>
                     <span>Opened {dateText(position.transactionDate)}</span>
                 </div>
                 <span
