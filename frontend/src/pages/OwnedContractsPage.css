@@ -76,7 +76,7 @@
     background: rgba(var(--highlight-rgb), 0.24);
 }
 
-/* The pill recipe, muted: it reports the order rather than offering to undo it. */
+/* The pill recipe, muted: this reports the state rather than offering to undo it. */
 .owned-sort-chip {
     display: inline-flex;
     align-items: center;
@@ -109,7 +109,18 @@
     border-color: rgba(var(--highlight-rgb), 0.58);
 }
 
-.owned-refresh-button:disabled svg {
+/* Still laid out, so the controls beside it do not slide when the mode changes. */
+.owned-refresh-button.is-idle {
+    visibility: hidden;
+}
+
+/* The head's buttons are pinned to its right edge, so giving the idle reset its
+   space back only closes the gap between refresh and filters. Nothing else moves. */
+.owned-contracts-head .menus-reset.is-idle {
+    display: none;
+}
+
+.owned-refresh-button:disabled:not(.is-idle) svg {
     animation: owned-refresh-spin 0.8s linear infinite;
 }
 
@@ -319,6 +330,9 @@
     align-self: center;
     justify-self: start;
     gap: 0.25rem;
+    /* The title's own gutter is tight for the pairs further along the line, so the
+       badge buys its own room rather than widening every gap in the row. */
+    margin-right: 0.35rem;
     width: 1.35rem;
     height: 1.35rem;
     line-height: 1;
@@ -595,6 +609,11 @@
         width: 100%;
     }
 
+    /* A row of its own here, so hiding it would leave a band of nothing. */
+    .owned-refresh-button.is-idle {
+        display: none;
+    }
+
     .owned-contracts-metrics {
         grid-template-columns: repeat(2, minmax(0%, 1fr));
     }
@@ -606,7 +625,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .owned-contract-list.is-stale,
-    .owned-refresh-button:disabled svg {
+    .owned-refresh-button:disabled:not(.is-idle) svg {
         transition: none;
         animation: none;
     }

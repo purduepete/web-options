@@ -30,6 +30,9 @@ import {
     strikeCushion,
     type CapturedFilter,
 } from '../owned/filters';
+import { applyPriceSource, readPriceSource, writePriceSource, type PriceSource } from '../owned/priceSource';
+import { OwnedPriceSourceMenu } from '../owned/PriceSourceMenu';
+import { mergeRoster } from '../owned/roster';
 import { OwnedSortMenu } from '../owned/SortMenu';
 import {
     OWNED_SORT_LABELS,
@@ -174,14 +177,9 @@ function strikeCushionTone(position: OwnedOptionPosition, signal: SignalMatch | 
     return cushion < 0 ? 'bad' : 'good';
 }
 
+/** The chosen source has already been written into the quote by this point. */
 function quotePrice(position: OwnedOptionPosition): number | null {
-    return (
-        position.quote.midPrice ??
-        position.quote.bid ??
-        position.quote.ask ??
-        position.cachedPrice.mark ??
-        position.cachedPrice.mid
-    );
+    return position.quote.midPrice ?? position.quote.bid ?? position.quote.ask;
 }
 
 function entryMarkText(position: OwnedOptionPosition): string {
@@ -225,9 +223,10 @@ export function OwnedContractsPage() {
     const symbol = params.get('symbol') ?? '';
     const moneynessFilter = readMoneynessFilter(params.get('moneyness'));
     const capturedFilter = readCapturedFilter(params.get('captured'));
-    // The sort is a reading preference rather than a view worth sharing, so it
-    // lives in local storage instead of the URL the filters use.
+    // The sort and the price source are reading preferences rather than views
+    // worth sharing, so they live in local storage instead of the URL.
     const [sort, setSortState] = useState<OwnedSortState>(readOwnedSort);
+    const [priceSource, setPriceSourceState] = useState<PriceSource>(readPriceSource);
     const [cached] = useState(readOwnedCache);
     const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(cached?.response.positions ?? null);
     const [underlyings, setUnderlyings] = useState<Record<string, UnderlyingQuote>>(cached?.response.underlyings ?? {});
@@ -248,21 +247,28 @@ export function OwnedContractsPage() {
     const filtersPanelRef = useRef<HTMLDivElement>(null);
 
     const load = useCallback(
-        (mode: 'initial' | 'refresh') => {
+        (mode: 'initial' | 'refresh' | 'roster') => {
             const id = ++latestLoad.current;
             if (mode === 'initial') setLoading(true);
-            else setRefreshing(true);
+            else if (mode === 'refresh') setRefreshing(true);
             setError(null);
             fetchOwnedContracts()
                 .then(async (result) => {
                     if (id !== latestLoad.current) return;
-                    setPositions(result.positions);
-                    setUnderlyings(result.underlyings);
-                    setGeneratedAt(result.generatedAt);
-                    setFromCache(false);
+                    // A roster load settles which contracts are open and nothing else,
+                    // so what the reader is reading only moves when they ask it to.
+                    const prior = mode === 'roster' ? cached : null;
+                    const next =
+                        prior === null ? result.positions : mergeRoster(prior.response.positions, result.positions);
+                    setPositions(next);
+                    if (prior === null) {
+                        setUnderlyings(result.underlyings);
+                        setGeneratedAt(result.generatedAt);
+                        setFromCache(false);
+                    }
                     // The rows are worth reading before the signals that annotate them.
                     setLoading(false);
-                    const weeks = [...new Set(result.positions.map((position) => weekStart(position.transactionDate)))];
+                    const weeks = [...new Set(next.map((position) => weekStart(position.transactionDate)))];
                     const responses = await Promise.allSettled(weeks.map((week) => fetchWeekSignals(week)));
                     if (id !== latestLoad.current) return;
                     const matches = new Map<string, SignalMatch>();
@@ -279,7 +285,7 @@ export function OwnedContractsPage() {
                         });
                     });
                     setSignals(matches);
-                    writeOwnedCache(result, matches);
+                    writeOwnedCache(prior === null ? result : { ...prior.response, positions: next }, matches);
                 })
                 .catch((cause: Error) => {
                     if (id !== latestLoad.current) return;
@@ -293,22 +299,26 @@ export function OwnedContractsPage() {
                 .finally(() => {
                     if (id !== latestLoad.current) return;
                     if (mode === 'initial') setLoading(false);
-                    else setRefreshing(false);
+                    else if (mode === 'refresh') setRefreshing(false);
                 });
         },
-        [forget],
+        [cached, forget],
     );
 
     useEffect(() => {
-        // Held for the life of the component: StrictMode runs this twice, and a
-        // flag consumed on the first pass would let the second one fetch anyway.
-        if (cached !== null) return;
-        load('initial');
+        // The cache is held for the life of the component, so this always reads the
+        // roster against what was painted rather than against its own last answer.
+        load(cached === null ? 'initial' : 'roster');
     }, [cached, load]);
 
     const setSort = useCallback((next: OwnedSortState) => {
         setSortState(next);
         writeOwnedSort(next);
+    }, []);
+
+    const setPriceSource = useCallback((next: PriceSource) => {
+        setPriceSourceState(next);
+        writePriceSource(next);
     }, []);
 
     const setSymbolParam = useCallback(
@@ -437,10 +447,18 @@ export function OwnedContractsPage() {
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [capturedFilter, moneynessFilter, resetMenus, setCapturedParam, setMoneynessParam]);
 
+    // Everything downstream — the filters, the order, the totals and the rows —
+    // reads one projection, so none of them has to know which source is on.
+    const sourced = useMemo(() => applyPriceSource(positions ?? [], priceSource), [positions, priceSource]);
+
+    // Stored prices are cached by definition, whether they were read back from the
+    // browser or pulled with the payload.
+    const showCacheBadge = fromCache || priceSource === 'eod';
+
     const visible = useMemo(
         () =>
             sortOwnedPositions(
-                filterOwnedPositions(positions ?? [], signals, {
+                filterOwnedPositions(sourced, signals, {
                     symbol,
                     moneyness: moneynessFilter,
                     captured: capturedFilter,
@@ -448,7 +466,7 @@ export function OwnedContractsPage() {
                 signals,
                 sort,
             ),
-        [capturedFilter, moneynessFilter, positions, signals, sort, symbol],
+        [capturedFilter, moneynessFilter, signals, sort, sourced, symbol],
     );
 
     const summary = useMemo(() => {
@@ -526,13 +544,29 @@ export function OwnedContractsPage() {
                     <p className="owned-contracts-subtitle">
                         {generatedAt ? `Updated ${timestampText(generatedAt)}` : 'Current open positions'}
                         <span
-                            className={fromCache ? 'owned-cache-badge' : 'owned-cache-badge is-idle'}
-                            aria-hidden={!fromCache}
+                            className={showCacheBadge ? 'owned-cache-badge' : 'owned-cache-badge is-idle'}
+                            aria-hidden={!showCacheBadge}
                         >
                             Cached
                         </span>
                     </p>
                 </div>
+
+                {/* Refreshing repulls the live quote, so it is offered to the mode
+                    that reads one. Hidden rather than removed: the head keeps the
+                    width it had, and the controls beside it stay where they were. */}
+                <button
+                    type="button"
+                    className={`owned-refresh-button${priceSource === 'live' ? '' : ' is-idle'}`}
+                    onClick={() => load('refresh')}
+                    disabled={priceSource !== 'live' || loading || refreshing}
+                    aria-hidden={priceSource === 'live' ? undefined : true}
+                    tabIndex={priceSource === 'live' ? undefined : -1}
+                    title="Refresh owned contracts"
+                >
+                    <RotateCcwIcon width={14} height={14} aria-hidden="true" />
+                    {refreshing ? 'Refreshing' : 'Refresh'}
+                </button>
 
                 <button
                     type="button"
@@ -559,17 +593,6 @@ export function OwnedContractsPage() {
                     <SlidersIcon width={15} height={15} />
                     <span>{activeFilterCount ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
                     <ChevronDownIcon width={14} height={14} className={filtersOpen ? 'rotated' : ''} />
-                </button>
-
-                <button
-                    type="button"
-                    className="owned-refresh-button"
-                    onClick={() => load('refresh')}
-                    disabled={loading || refreshing}
-                    title="Refresh owned contracts"
-                >
-                    <RotateCcwIcon width={14} height={14} aria-hidden="true" />
-                    {refreshing ? 'Refreshing' : 'Refresh'}
                 </button>
 
                 {!phone && filtersOpen && (
@@ -612,6 +635,9 @@ export function OwnedContractsPage() {
                         nothing is narrowing it, and a row that comes and goes would
                         move the totals under it. */}
                     <div className="owned-applied-filters" aria-label="Sort and applied filters">
+                        {/* Which prices are on reads as a property of the list, so it is
+                            chosen here rather than from behind the filter trigger. */}
+                        <OwnedPriceSourceMenu value={priceSource} onChange={setPriceSource} />
                         <span
                             className="owned-sort-chip"
                             aria-label={`Sorted by ${OWNED_SORT_LABELS[sort.key]}, ${sort.direction === 'asc' ? 'ascending' : 'descending'}`}
