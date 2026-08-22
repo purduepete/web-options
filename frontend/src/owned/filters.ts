@@ -28,6 +28,30 @@ export function strikeCushion(position: OwnedOptionPosition, signal: SignalMatch
     return position.percentFromStrike ?? signal?.trade.percentFromStrike ?? null;
 }
 
+/** A date-only or date-and-time string read in the reader's own zone, not UTC. */
+export function parseLocalDate(value: string | null): Date | null {
+    if (!value) return null;
+    const [datePart, timePart] = value.split('T');
+    const [year, month, day] = (datePart ?? '').split('-').map(Number);
+    if (!year || !month || !day) return null;
+    if (!timePart) return new Date(year, month - 1, day);
+
+    const [hour = 0, minute = 0, second = 0] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hour, minute, second);
+}
+
+/** The entry credit against the collateral, annualized over the whole holding period. */
+export function annualizedReturn(position: OwnedOptionPosition): number | null {
+    if (position.collateralAtStrike <= 0) return null;
+    const opened = parseLocalDate(position.transactionDate);
+    const expires = parseLocalDate(position.expirationDate);
+    if (opened === null || expires === null) return null;
+    // The return is earned over the whole holding period, not the days still left on it.
+    const heldDays = Math.round((expires.getTime() - opened.getTime()) / 86_400_000);
+    if (heldDays <= 0) return null;
+    return (position.entryCredit / position.collateralAtStrike) * (365 / heldDays) * 100;
+}
+
 export const CAPTURED_FILTERS = ['all', 'positive', 'quarter', 'half', 'most'] as const;
 
 export type CapturedFilter = (typeof CAPTURED_FILTERS)[number];

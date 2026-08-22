@@ -151,14 +151,16 @@
     color: var(--danger);
 }
 
-/* The list owns the columns so every row's symbol/contract/icon share one track set. */
+/* The list owns the columns so every row's icon/symbol/contract share one track set. */
 .owned-contract-list {
     display: grid;
-    /* Track 4 is an empty spacer inside the identity: grid has no per-gutter control. */
+    /* Track 1 is a shade wider than the 1.35rem badge that leads each row, so the
+       0.2rem subgrid gap is not the only thing between it and the symbol. Track 4
+       is an empty spacer inside the identity: grid has no per-gutter control. */
     grid-template-columns:
+        1.6rem
         max-content
         max-content
-        1.35rem
         100px
         repeat(7, minmax(6.5rem, 1fr));
     row-gap: 0.35rem;
@@ -315,10 +317,8 @@
     align-items: center;
     justify-content: center;
     align-self: center;
+    justify-self: start;
     gap: 0.25rem;
-    /* The subgrid gap also separates the symbol from the contract, so the room
-       this badge needs is its own rather than the column's. */
-    margin-left: 0.45rem;
     width: 1.35rem;
     height: 1.35rem;
     line-height: 1;

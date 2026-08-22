@@ -22,8 +22,10 @@ import { clearOwnedCache, readOwnedCache, writeOwnedCache } from '../owned/cache
 import {
     CAPTURED_FILTERS,
     CAPTURED_LABELS,
+    annualizedReturn,
     deltaBand,
     filterOwnedPositions,
+    parseLocalDate,
     readCapturedFilter,
     strikeCushion,
     type CapturedFilter,
@@ -66,17 +68,6 @@ function signedPercent(value: number | null): string {
     if (value === null || !Number.isFinite(value)) return EMPTY;
     const sign = value > 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
-}
-
-function parseLocalDate(value: string | null): Date | null {
-    if (!value) return null;
-    const [datePart, timePart] = value.split('T');
-    const [year, month, day] = (datePart ?? '').split('-').map(Number);
-    if (!year || !month || !day) return null;
-    if (!timePart) return new Date(year, month - 1, day);
-
-    const [hour = 0, minute = 0, second = 0] = timePart.split(':').map(Number);
-    return new Date(year, month - 1, day, hour, minute, second);
 }
 
 function twoDigits(value: number): string {
@@ -198,14 +189,7 @@ function entryMarkText(position: OwnedOptionPosition): string {
 }
 
 function annualizedReturnText(position: OwnedOptionPosition): string {
-    if (position.collateralAtStrike <= 0) return EMPTY;
-    const opened = parseLocalDate(position.transactionDate);
-    const expires = parseLocalDate(position.expirationDate);
-    if (opened === null || expires === null) return EMPTY;
-    // The return is earned over the whole holding period, not the days still left on it.
-    const heldDays = Math.round((expires.getTime() - opened.getTime()) / 86_400_000);
-    if (heldDays <= 0) return EMPTY;
-    return percent((position.entryCredit / position.collateralAtStrike) * (365 / heldDays) * 100);
+    return percent(annualizedReturn(position));
 }
 
 function expirationRiskText(position: OwnedOptionPosition): string | null {
@@ -717,6 +701,13 @@ function OwnedContractRow({
         <article className={`owned-contract-row is-${toneFor(position.unrealizedCreditCaptured)}`}>
             <div className="owned-contract-identity">
                 <div className="owned-contract-title">
+                    <span
+                        className={position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'}
+                        title={ownershipLabel(position)}
+                    >
+                        <SourceIcon position={position} />
+                        <span className="sr-only">{ownershipLabel(position)}</span>
+                    </span>
                     <span className="owned-contract-symbol">{position.symbol}</span>
                     <a className="owned-contract-contract" href={signalUrl(position)} title="Open original signal">
                         <span className="owned-contract-contract-label">{contractLabel(position)}</span>
@@ -735,13 +726,6 @@ function OwnedContractRow({
                             </span>
                         ) : null}
                     </a>
-                    <span
-                        className={position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'}
-                        title={ownershipLabel(position)}
-                    >
-                        <SourceIcon position={position} />
-                        <span className="sr-only">{ownershipLabel(position)}</span>
-                    </span>
                 </div>
                 <div className="owned-contract-subline">
                     <span>Exp {shortDate(position.expirationDate)}</span>

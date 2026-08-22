@@ -1,5 +1,5 @@
 import type { OwnedOptionPosition } from '@weboptions/shared';
-import { strikeCushion } from './filters';
+import { annualizedReturn, strikeCushion } from './filters';
 import { signalFor, type SignalMap, type SignalMatch } from './types';
 
 /**
@@ -16,7 +16,7 @@ export const OWNED_SORTS = [
     'pl',
     'cushion',
     'delta',
-    'collateral',
+    'annualized',
     'credit',
 ] as const;
 
@@ -42,7 +42,7 @@ export const OWNED_SORT_LABELS: Record<OwnedSort, string> = {
     pl: 'Open P/L',
     cushion: 'Cushion',
     delta: 'Delta',
-    collateral: 'Collateral',
+    annualized: 'Annualized',
     credit: 'Entry credit',
 };
 
@@ -54,7 +54,7 @@ export const OWNED_SORT_DESCRIPTIONS: Record<OwnedSort, string> = {
     pl: 'The open gain or loss, in dollars',
     cushion: 'How far the underlying sits from the strike',
     delta: 'Assignment risk, on magnitude',
-    collateral: 'What the strike ties up',
+    annualized: 'The entry credit as a yearly rate',
     credit: 'What the contract was sold for',
 };
 
@@ -72,7 +72,7 @@ const VALUES: Record<OwnedSort, (position: OwnedOptionPosition, signal: SignalMa
         const delta = position.quote.delta ?? position.delta;
         return delta === null || !Number.isFinite(delta) ? null : Math.abs(delta);
     },
-    collateral: (position) => position.collateralAtStrike,
+    annualized: (position) => annualizedReturn(position),
     credit: (position) => position.entryCredit,
 };
 

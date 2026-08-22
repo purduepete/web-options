@@ -122,6 +122,28 @@ describe('sortOwnedPositions', () => {
         ]);
     });
 
+    it('rates the annualized return over the whole holding period, not the credit alone', () => {
+        const rows = [
+            position({ symbol: 'SLOW', entryCredit: 300, collateralAtStrike: 15_000, expirationDate: '2026-11-20' }),
+            position({ symbol: 'QUICK', entryCredit: 200, collateralAtStrike: 15_000, expirationDate: '2026-08-21' }),
+        ];
+        expect(symbols(sortOwnedPositions(rows, NO_SIGNALS, { key: 'annualized', direction: 'desc' }))).toEqual([
+            'QUICK',
+            'SLOW',
+        ]);
+    });
+
+    it('has no annualized return to rank when nothing is tied up', () => {
+        const rows = [
+            position({ symbol: 'NOCOLLATERAL', collateralAtStrike: 0 }),
+            position({ symbol: 'REAL', entryCredit: 100 }),
+        ];
+        expect(symbols(sortOwnedPositions(rows, NO_SIGNALS, { key: 'annualized', direction: 'desc' }))).toEqual([
+            'REAL',
+            'NOCOLLATERAL',
+        ]);
+    });
+
     it('takes the cushion from the signal when the position has none', () => {
         const withSignal = position({ symbol: 'FROMSIGNAL', percentFromStrike: null });
         const signals: SignalMap = new Map<string, SignalMatch>([
