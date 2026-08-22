@@ -17,6 +17,7 @@ function chartBody(overrides: Record<string, unknown> = {}) {
                         fullExchangeName: 'NYSE',
                         currency: 'USD',
                         regularMarketPrice: 182.35,
+                        previousClose: 180.1,
                         // 2026-08-18T20:00:00Z
                         regularMarketTime: 1_787_083_200,
                     },
@@ -62,8 +63,22 @@ describe('fetchQuote', () => {
             exchange: 'NYSE',
             currency: 'USD',
             price: 182.35,
+            previousClose: 180.1,
             priceDate: '2026-08-18',
         });
+    });
+
+    it('takes the range close when the meta has no prior close', async () => {
+        stubFetch({
+            json: () =>
+                Promise.resolve(
+                    chartBody({
+                        meta: { regularMarketPrice: 182.35, chartPreviousClose: 179.5 },
+                    }),
+                ),
+        });
+
+        expect((await fetchQuote('VST'))?.previousClose).toBe(179.5);
     });
 
     it('asks for a single day', async () => {

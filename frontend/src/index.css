@@ -244,6 +244,7 @@ main {
 @media (min-width: 641px) {
     main.signals-page,
     main.summary-page,
+    main.owned-contracts-page,
     main.calendar-week-page {
         padding-left: max(5%, env(safe-area-inset-left));
         padding-right: max(5%, env(safe-area-inset-right));
@@ -255,6 +256,7 @@ main {
 @media (min-width: 1440px) and (hover: hover) and (pointer: fine) {
     main.signals-page,
     main.summary-page,
+    main.owned-contracts-page,
     main.calendar-week-page {
         padding-left: max(15%, env(safe-area-inset-left));
         padding-right: max(15%, env(safe-area-inset-right));

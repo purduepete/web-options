@@ -268,12 +268,23 @@ export interface OwnedOptionPosition {
     unrealizedCreditCapturedPct: number | null;
     dte: number | null;
     expirationBucket: 'expired' | 'this_week' | 'next_30' | 'later' | null;
+    underlyingPrice: number | null;
+    underlyingChange: number | null;
+    percentFromStrike: number | null;
+    moneyness: Moneyness | null;
     cachedPrice: OwnedOptionCachedPrice;
     quote: OwnedOptionQuote;
 }
 
+/** Today's live move for an underlying, which the signal feed does not carry. */
+export interface UnderlyingQuote {
+    price: number;
+    changePct: number | null;
+}
+
 export interface OwnedOptionsResponse {
     positions: OwnedOptionPosition[];
+    underlyings: Record<string, UnderlyingQuote>;
     generatedAt: string;
 }
 

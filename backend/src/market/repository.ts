@@ -60,6 +60,9 @@ export async function readCached(db: DbConfig, symbol: string): Promise<CachedSy
             exchange: (row.exchange as string | null) ?? null,
             currency: (row.currency as string | null) ?? null,
             price: toNumber(row.price),
+            // The profile cache keeps a price but no prior close: it is refreshed on a
+            // 12h TTL, so a day-over-day move read from it could be a day stale.
+            previousClose: null,
             priceDate: sqlDateToIso(row.price_date),
         },
         bars: bars.recordset

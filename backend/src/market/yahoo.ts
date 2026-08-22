@@ -24,6 +24,7 @@ export interface SymbolQuote {
     exchange: string | null;
     currency: string | null;
     price: number | null;
+    previousClose: number | null;
     priceDate: string | null;
 }
 
@@ -34,6 +35,8 @@ interface ChartMeta {
     exchangeName?: unknown;
     currency?: unknown;
     regularMarketPrice?: unknown;
+    chartPreviousClose?: unknown;
+    previousClose?: unknown;
     regularMarketTime?: unknown;
 }
 
@@ -101,6 +104,9 @@ function readQuote(result: ChartResult): SymbolQuote {
         exchange: toText(meta.fullExchangeName) ?? toText(meta.exchangeName),
         currency: toText(meta.currency),
         price: toNumber(meta.regularMarketPrice),
+        // `previousClose` is the prior session; `chartPreviousClose` is the close before
+        // the requested range, which for a 1d range is the same day.
+        previousClose: toNumber(meta.previousClose) ?? toNumber(meta.chartPreviousClose),
         priceDate: time === null ? null : toIsoDate(time),
     };
 }

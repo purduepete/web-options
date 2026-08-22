@@ -11,6 +11,7 @@ import type {
     OwnedOptionsResponse,
     SignalMonthsResponse,
     SignalSummaryResponse,
+    UnderlyingQuote,
     VixResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
@@ -30,6 +31,7 @@ import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
 import { getSymbolDetail } from '../market/service';
 import { readVix } from '../market/vix';
+import { fetchQuote } from '../market/yahoo';
 import { requireApiKey } from '../middleware/apiKey';
 import { readGradeSettings, replaceGradeSettings } from '../settings/repository';
 import { earliestWeekMonday, fetchRange, fetchWeek, signalDates, weekHasData } from '../signals/repository';
@@ -41,6 +43,28 @@ import { addDays, currentWeekMonday, fromIsoDate, parseWeekParam, toIsoDate } fr
 function localTimestamp(now: Date = new Date()): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${toIsoDate(now)}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+/**
+ * The signal feed carries the underlying only as of the day the signal was issued,
+ * so today's move has to come from the quote source. A symbol whose quote fails is
+ * left out and the page falls back to the signal-day price without a percentage,
+ * which is better than showing a stale move as if it were today's.
+ */
+async function liveUnderlyings(positions: OwnedOptionPosition[]): Promise<Record<string, UnderlyingQuote>> {
+    const symbols = [...new Set(positions.map((position) => position.symbol))];
+    const quotes = await Promise.all(symbols.map(async (symbol) => [symbol, await fetchQuote(symbol)] as const));
+
+    const underlyings: Record<string, UnderlyingQuote> = {};
+    for (const [symbol, quote] of quotes) {
+        if (!quote || quote.price === null) continue;
+        const previous = quote.previousClose;
+        underlyings[symbol] = {
+            price: quote.price,
+            changePct: previous !== null && previous > 0 ? ((quote.price - previous) / previous) * 100 : null,
+        };
+    }
+    return underlyings;
 }
 
 export function createApiRouter(config: AppConfig): Router {
@@ -204,6 +228,7 @@ export function createApiRouter(config: AppConfig): Router {
 
         const payload: OwnedOptionsResponse = {
             positions: body.data,
+            underlyings: await liveUnderlyings(body.data),
             generatedAt: localTimestamp(),
         };
         res.json(payload);
