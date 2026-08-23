@@ -20,28 +20,13 @@ function renderChip() {
 }
 
 describe('VixChip', () => {
-    it('grades a calm market yellow', async () => {
+    it('keeps the chip and change free of grade classes', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 15.84 } });
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('14.89')).toBeTruthy());
-        expect(container.querySelector('.vix-chip')?.className).toContain('yellow');
-    });
-
-    it('grades a paying market green', async () => {
-        mockFetchVix.mockResolvedValue({ vix: { value: 21.4, asOf: '2026-08-19', previousValue: 20.1 } });
-        const { container } = renderChip();
-
-        await waitFor(() => expect(screen.getByText('21.40')).toBeTruthy());
-        expect(container.querySelector('.vix-chip')?.className).toContain('green');
-    });
-
-    it('grades a dead market red', async () => {
-        mockFetchVix.mockResolvedValue({ vix: { value: 11.8, asOf: '2026-08-19', previousValue: 12.9 } });
-        const { container } = renderChip();
-
-        await waitFor(() => expect(screen.getByText('11.80')).toBeTruthy());
-        expect(container.querySelector('.vix-chip')?.className).toContain('red');
+        expect(container.querySelector('.vix-chip')?.className).toBe('vix-chip');
+        expect(container.querySelector('.vix-chip .change')?.className).toBe('change');
     });
 
     it('shows the day change against the close before it', async () => {
@@ -49,7 +34,6 @@ describe('VixChip', () => {
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('-6.00%')).toBeTruthy());
-        expect(container.querySelector('.vix-chip .change')?.className).toContain('falling');
     });
 
     it('signs a rise, which is the good news to a put seller', async () => {
@@ -57,17 +41,24 @@ describe('VixChip', () => {
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('+6.47%')).toBeTruthy());
-        expect(container.querySelector('.vix-chip .change')?.className).toContain('rising');
     });
 
-    it('holds the change open when there is no session before it', async () => {
+    it('hides a change that rounds to zero', async () => {
+        mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 14.89 } });
+        const { container } = renderChip();
+
+        await waitFor(() => expect(screen.getByText('14.89')).toBeTruthy());
+        expect(screen.queryByText('0.00%')).toBeNull();
+        expect(container.querySelector('.vix-chip .change')).toBeNull();
+        expect(container.querySelector('.vix-chip')?.getAttribute('title')).not.toContain('0.00%');
+    });
+
+    it('leaves no empty change space when there is no session before it', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: null } });
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('14.89')).toBeTruthy());
-        const change = container.querySelector('.vix-chip .change');
-        expect(change?.className).toContain('pending');
-        expect(change?.getAttribute('aria-hidden')).toBe('true');
+        expect(container.querySelector('.vix-chip .change')).toBeNull();
     });
 
     it('holds its place before the figure lands, so the buttons beside it stay put', () => {

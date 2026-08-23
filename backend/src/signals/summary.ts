@@ -7,8 +7,10 @@ import {
     matchesSymbolFilter,
     splitSymbolFilter,
     type ExpiryFilter,
+    type NumberSource,
     type IsoDate,
     type SignalMonth,
+    type SummaryFilters,
     type SummaryCell,
     type SummaryColumn,
     type Trade,
@@ -96,13 +98,14 @@ function total(values: number[]): number | null {
  * contracts at a huge yield. A trade whose collateral is unknown cannot be
  * weighted, so it only counts if nothing in the cell has collateral at all.
  */
-function weightedYield(trades: Trade[]): number | null {
+function weightedYield(trades: Trade[], numberSource: NumberSource): number | null {
     const plain: number[] = [];
     let weighted = 0;
     let weight = 0;
 
     for (const trade of trades) {
-        const yieldValue = trade.actualAnnualizedYield ?? trade.annualizedYield;
+        const yieldValue =
+            numberSource === 'actual' ? (trade.actualAnnualizedYield ?? trade.annualizedYield) : trade.annualizedYield;
         if (yieldValue === null) continue;
         plain.push(yieldValue);
         if (trade.collateral === null || trade.collateral <= 0) continue;
@@ -118,7 +121,7 @@ function weightedYield(trades: Trade[]): number | null {
  * way the grid's tickets do. Capture only began 2026-08-05, so an older week
  * would otherwise report nothing at all rather than the numbers it does have.
  */
-function summarizeCell(trades: Trade[]): SummaryCell {
+function summarizeCell(trades: Trade[], numberSource: NumberSource): SummaryCell {
     const nonNull = (values: (number | null)[]) => values.filter((value): value is number => value !== null);
     return {
         signals: trades.length,
@@ -127,19 +130,26 @@ function summarizeCell(trades: Trade[]): SummaryCell {
         captured: trades.filter((trade) => trade.actualPremium !== null).length,
         halfRollup: trades.filter(hasHalfFigure).length,
         halfKept: trades.filter(hasKeptHalf).length,
-        premium: total(nonNull(trades.map((trade) => trade.actualPremium ?? trade.premium))),
+        premium: total(
+            nonNull(
+                trades.map((trade) =>
+                    numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium,
+                ),
+            ),
+        ),
         collateral: total(nonNull(trades.map((trade) => trade.collateral))),
-        annualizedYield: weightedYield(trades),
+        annualizedYield: weightedYield(trades, numberSource),
     };
 }
 
-function cellsFor(trades: Trade[]): Record<SummaryColumn, SummaryCell> {
+function cellsFor(trades: Trade[], numberSource: NumberSource): Record<SummaryColumn, SummaryCell> {
     const cells = {} as Record<SummaryColumn, SummaryCell>;
     for (const column of SUMMARY_COLUMNS) {
         // `all` is computed over every surviving trade rather than by adding the
         // group cells up, so its yield stays weighted across the whole set.
         cells[column] = summarizeCell(
             column === 'all' ? trades : trades.filter((trade) => groupIdForTrade(trade) === column),
+            numberSource,
         );
     }
     return cells;
@@ -158,10 +168,20 @@ function cellsFor(trades: Trade[]): Record<SummaryColumn, SummaryCell> {
 export function summarizeRange(
     rows: SignalRow[],
     weekStarts: IsoDate[],
-    symbols: string[],
-    expiry: ExpiryFilter = 'all',
+    requested: SummaryFilters | string[],
+    legacyExpiry: ExpiryFilter = 'all',
 ): { weeks: WeekSummaryRow[]; total: Record<SummaryColumn, SummaryCell> } {
-    const wanted = splitSymbolFilter(symbols);
+    const filters: SummaryFilters = Array.isArray(requested)
+        ? {
+              symbols: requested,
+              expiry: legacyExpiry,
+              moneyness: 'all',
+              half: 'all',
+              owned: 'all',
+              numberSource: 'actual',
+          }
+        : requested;
+    const wanted = splitSymbolFilter(filters.symbols);
     const byWeek = new Map<IsoDate, Trade[]>();
     for (const weekStart of weekStarts) byWeek.set(weekStart, []);
     const kept: Trade[] = [];
@@ -171,7 +191,11 @@ export function summarizeRange(
         if (!reportDate) continue;
         const trade = toTrade(row);
         if (!matchesSymbolFilter(trade.symbol, wanted)) continue;
-        if (!matchesExpiry(trade, expiry)) continue;
+        if (!matchesExpiry(trade, filters.expiry)) continue;
+        if (filters.moneyness !== 'all' && trade.moneyness !== filters.moneyness) continue;
+        if (filters.half === 'yes' && !hasKeptHalf(trade)) continue;
+        if (filters.half === 'no' && (!hasHalfFigure(trade) || hasKeptHalf(trade))) continue;
+        if (filters.owned === 'owned' && trade.ownedLiveContracts === 0 && trade.ownedPaperContracts === 0) continue;
         const week = byWeek.get(weekStartOf(reportDate));
         if (!week) continue;
         week.push(trade);
@@ -182,8 +206,8 @@ export function summarizeRange(
         weeks: weekStarts.map((weekStart) => ({
             weekStart,
             weekEnd: toIsoDate(weekEndFor(fromIsoDate(weekStart))),
-            cells: cellsFor(byWeek.get(weekStart) ?? []),
+            cells: cellsFor(byWeek.get(weekStart) ?? [], filters.numberSource),
         })),
-        total: cellsFor(kept),
+        total: cellsFor(kept, filters.numberSource),
     };
 }

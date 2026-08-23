@@ -1,6 +1,7 @@
 import type { DaySignals, NumberSource } from '@weboptions/shared';
-import { formatPercent } from './format';
+import { formatMoney, formatPercent } from './format';
 import { summarizeWeek } from './summary';
+import { AppliedFilters, type AppliedFilter } from './AppliedFilters';
 import './WeekScore.css';
 
 /**
@@ -16,9 +17,10 @@ export function WeekScore({
 }: {
     days: DaySignals[];
     numberSource: NumberSource;
-    appliedFilters?: readonly string[];
+    appliedFilters?: readonly AppliedFilter[];
 }) {
-    const { signals, priced, otm, premiumDrift, driftSamples } = summarizeWeek(days, numberSource);
+    const { signals, priced, otm, premiumDrift, driftSamples, totalPremium, premiumUsesFallback, totalCollateral } =
+        summarizeWeek(days, numberSource);
     const unpriced = signals - priced;
 
     return (
@@ -26,6 +28,28 @@ export function WeekScore({
             <span>
                 <b>{signals}</b> {signals === 1 ? 'signal' : 'signals'}
             </span>
+
+            {totalPremium !== null && (
+                <span>
+                    Premium:{' '}
+                    <b
+                        className={premiumUsesFallback ? 'value-quoted' : undefined}
+                        title={
+                            premiumUsesFallback
+                                ? 'Includes contracts with no captured quote, counted at the numbers VADER advertised'
+                                : undefined
+                        }
+                    >
+                        {formatMoney(totalPremium)}
+                    </b>
+                </span>
+            )}
+
+            {totalCollateral !== null && (
+                <span>
+                    Collateral: <b>{formatMoney(totalCollateral)}</b>
+                </span>
+            )}
 
             {priced > 0 && (
                 <span
@@ -41,15 +65,7 @@ export function WeekScore({
 
             {premiumDrift !== null && <Drift value={premiumDrift} samples={driftSamples} />}
 
-            {appliedFilters.length > 0 && (
-                <span className="score-filters" aria-label="Applied filters">
-                    {appliedFilters.map((filter) => (
-                        <span key={filter} className="score-filter">
-                            {filter}
-                        </span>
-                    ))}
-                </span>
-            )}
+            <AppliedFilters filters={appliedFilters} className="score-filters" />
         </p>
     );
 }
@@ -60,12 +76,12 @@ function Drift({ value, samples }: { value: number; samples: number }) {
     const title = `Averaged over the ${samples} contracts quoted on the morning they were signalled.`;
 
     if (rounded === 0) {
-        return <span title={title}>Premium landed on VADER&rsquo;s number</span>;
+        return <span title={title}>Actual premium matched VADER</span>;
     }
 
     return (
         <span className={`score-drift ${rounded < 0 ? 'under' : 'over'}`} title={title}>
-            Premium <b>{Math.abs(rounded).toFixed(1)}%</b> {rounded < 0 ? 'under' : 'over'} VADER
+            Actual premium <b>{Math.abs(rounded).toFixed(1)}%</b> {rounded < 0 ? 'under' : 'over'} VADER
         </span>
     );
 }

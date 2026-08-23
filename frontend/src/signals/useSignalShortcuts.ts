@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { isTyping, useWeekArrows } from '../hooks/useWeekArrows';
-import type { GroupId } from './grouping';
+import type { TierSelection } from './grouping';
 
 /**
  * The page's single-key shortcuts. Stepping between weeks with the arrows is
@@ -12,7 +12,7 @@ import type { GroupId } from './grouping';
  * guard is also why Escape out of the symbol box belongs to the input itself.
  */
 
-const ISOLATE_KEYS: Record<string, GroupId> = {
+const TIER_KEYS: Record<string, TierSelection> = {
     t: 'top-picks',
     c: 'conservative',
     b: 'balanced',
@@ -22,7 +22,7 @@ const ISOLATE_KEYS: Record<string, GroupId> = {
 interface Handlers {
     onPreviousWeek: () => void;
     onNextWeek: () => void;
-    onIsolateGroup: (id: GroupId) => void;
+    onToggleTier: (tier: TierSelection) => void;
     onToggleAllGroups: () => void;
     onFocusSymbolFilter: () => void;
     onToggleFilters: () => void;
@@ -82,9 +82,9 @@ export function useSignalShortcuts(handlers: Handlers): void {
             } else if (key === 'r') {
                 event.preventDefault();
                 latest.current.onResetMenus();
-            } else if (key in ISOLATE_KEYS) {
+            } else if (key in TIER_KEYS) {
                 event.preventDefault();
-                latest.current.onIsolateGroup(ISOLATE_KEYS[key]!);
+                latest.current.onToggleTier(TIER_KEYS[key]!);
             }
         }
 

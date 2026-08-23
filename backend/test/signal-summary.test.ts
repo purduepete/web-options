@@ -15,7 +15,7 @@ import * as authRepository from '../src/auth/repository';
 import * as signalsRepository from '../src/signals/repository';
 import type { SignalRow } from '../src/signals/shape';
 import { monthsFrom, spanOf, summarizeRange } from '../src/signals/summary';
-import { MAX_FILTER_SYMBOLS, parseSymbolList } from '@weboptions/shared';
+import { MAX_FILTER_SYMBOLS, parseSymbolList, type SummaryFilters } from '@weboptions/shared';
 
 const VALID_KEY = 'woak_' + 'a'.repeat(48);
 const VALID_HASH = hashKey(VALID_KEY);
@@ -59,6 +59,18 @@ function get(path: string) {
         keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
     );
     return request(createApp(config)).get(path).set('X-API-Key', VALID_KEY);
+}
+
+function filters(overrides: Partial<SummaryFilters> = {}): SummaryFilters {
+    return {
+        symbols: [],
+        expiry: 'all',
+        moneyness: 'all',
+        half: 'all',
+        owned: 'all',
+        numberSource: 'actual',
+        ...overrides,
+    };
 }
 
 afterEach(() => {
@@ -293,6 +305,49 @@ describe('summarizeRange', () => {
         expect(weeks).toHaveLength(1);
         expect(weeks[0]!.cells.all.signals).toBe(0);
     });
+
+    it('filters by moneyness before rolling the figures up', () => {
+        const rows = [
+            row({ close_underlying: 120, close_date: '2026-08-14' }),
+            row({ symbol: 'NVDA', close_underlying: 80, close_date: '2026-08-14' }),
+            row({ symbol: 'INTC' }),
+        ];
+
+        expect(summarizeRange(rows, ['2026-08-10'], filters({ moneyness: 'otm' })).total.all.signals).toBe(1);
+        expect(summarizeRange(rows, ['2026-08-10'], filters({ moneyness: 'itm' })).total.all.signals).toBe(1);
+    });
+
+    it('filters only measured outcomes on either side of half', () => {
+        const rows = [
+            row({ best_premium_kept: 0.75 }),
+            row({ symbol: 'NVDA', best_premium_kept: 0.25 }),
+            row({ symbol: 'INTC', best_premium_kept: null }),
+        ];
+
+        expect(summarizeRange(rows, ['2026-08-10'], filters({ half: 'yes' })).total.all.signals).toBe(1);
+        expect(summarizeRange(rows, ['2026-08-10'], filters({ half: 'no' })).total.all.signals).toBe(1);
+    });
+
+    it('filters to live or paper contracts already owned', () => {
+        const rows = [
+            row({ owned_live_contracts: 1 }),
+            row({ symbol: 'NVDA', owned_paper_contracts: 2 }),
+            row({ symbol: 'INTC' }),
+        ];
+
+        expect(summarizeRange(rows, ['2026-08-10'], filters({ owned: 'owned' })).total.all.signals).toBe(2);
+    });
+
+    it('uses only VADER figures in quoted mode and captured-first figures in actual mode', () => {
+        const rows = [row({ premium: 100, annualized_yield: 40, actual_mark: 2 })];
+        const quoted = summarizeRange(rows, ['2026-08-10'], filters({ numberSource: 'quoted' })).total.all;
+        const actual = summarizeRange(rows, ['2026-08-10'], filters({ numberSource: 'actual' })).total.all;
+
+        expect(quoted.premium).toBe(100);
+        expect(quoted.annualizedYield).toBe(40);
+        expect(actual.premium).toBe(200);
+        expect(actual.annualizedYield).toBe(182.5);
+    });
 });
 
 describe('the summary routes without a key', () => {
@@ -383,5 +438,25 @@ describe('GET /api/signal-summary', () => {
         expect(response.status).toBe(200);
         expect(response.body.expiry).toBe('all');
         expect(response.body.total.all.signals).toBe(1);
+    });
+
+    it('applies and echoes every Summary filter and number source', async () => {
+        vi.spyOn(signalsRepository, 'fetchRange').mockResolvedValue([
+            row({ close_underlying: 120, close_date: '2026-08-14', best_premium_kept: 0.75, owned_live_contracts: 1 }),
+        ]);
+
+        const response = await get(
+            '/api/signal-summary?month=2026-08&moneyness=otm&half=yes&owned=owned&numberSource=quoted',
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+            moneyness: 'otm',
+            half: 'yes',
+            owned: 'owned',
+            numberSource: 'quoted',
+        });
+        expect(response.body.total.all.signals).toBe(1);
+        expect(response.body.total.all.premium).toBe(100);
     });
 });

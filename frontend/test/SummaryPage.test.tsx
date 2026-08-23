@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { SUMMARY_COLUMNS } from '@weboptions/shared';
@@ -13,8 +13,8 @@ vi.mock('../src/api', async () => {
     return {
         ...actual,
         fetchSignalMonths: () => fetchSignalMonths(),
-        fetchSignalSummary: (month: string, symbols?: readonly string[], expiry?: string) =>
-            fetchSignalSummary(month, symbols, expiry),
+        fetchSignalSummary: (month: string, filters: import('@weboptions/shared').SummaryFilters) =>
+            fetchSignalSummary(month, filters),
     };
 });
 
@@ -76,7 +76,7 @@ const AUGUST = {
                 priced: 4,
                 otm: 3,
                 captured: 2,
-                halfRollup: 4,
+                halfRollup: 2,
                 halfKept: 1,
                 premium: 520,
                 annualizedYield: 36,
@@ -91,7 +91,7 @@ const AUGUST = {
             priced: 4,
             otm: 3,
             captured: 2,
-            halfRollup: 4,
+            halfRollup: 2,
             halfKept: 1,
             premium: 520,
             annualizedYield: 36,
@@ -100,12 +100,29 @@ const AUGUST = {
     }),
 };
 
+const DEFAULT_FILTERS = {
+    symbols: [],
+    expiry: 'all',
+    moneyness: 'all',
+    half: 'all',
+    owned: 'all',
+    numberSource: 'actual',
+};
+
+function openFilters() {
+    if (!screen.queryByRole('dialog', { name: 'Filters' })) {
+        fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+    }
+}
+
 function renderPage(entry = '/summary') {
-    return render(
+    const rendered = render(
         <MemoryRouter initialEntries={[entry]}>
             <SummaryPage />
         </MemoryRouter>,
     );
+    openFilters();
+    return rendered;
 }
 
 /** The months showing numbers they have been told are out of date. */
@@ -127,7 +144,7 @@ describe('SummaryPage', () => {
         await screen.findByRole('table');
 
         expect(fetchSignalSummary).toHaveBeenCalledTimes(1);
-        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', [], 'all');
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', DEFAULT_FILTERS);
         expect(screen.getByRole('button', { name: /August 2026/ }).getAttribute('aria-expanded')).toBe('true');
         expect(screen.getByRole('button', { name: /July 2026/ }).getAttribute('aria-expanded')).toBe('false');
     });
@@ -227,15 +244,22 @@ describe('SummaryPage', () => {
         expect(screen.getAllByText('3 (75.0%)').length).toBe(4);
     });
 
-    it('rates the trades over half their premium against the ones the rollup reached', async () => {
+    it('rates the trades over half their premium against every signal', async () => {
         renderPage();
 
         await screen.findByRole('table');
 
-        // One of the four `all` cells rolled up, in the week row and in the total.
+        // One of all four signals was over half, in the week row and in the total.
         expect(screen.getAllByText('1 (25.0%)').length).toBe(2);
         // Balanced has signals but no rollup behind them, so it says nothing at all.
         expect(screen.getAllByText('over half:').length).toBe(2);
+    });
+
+    it('does not offer owned filtering', async () => {
+        renderPage();
+        await screen.findByRole('table');
+
+        expect(screen.queryByRole('button', { name: /^Owned:/ })).toBeNull();
     });
 
     it('fetches a month when it is opened, and not again when it is reopened', async () => {
@@ -247,7 +271,7 @@ describe('SummaryPage', () => {
 
         await user.click(july);
         await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
-        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-07', [], 'all');
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-07', DEFAULT_FILTERS);
 
         await user.click(july);
         await user.click(july);
@@ -263,7 +287,10 @@ describe('SummaryPage', () => {
         await user.type(screen.getByLabelText(/Filter by symbols/), 'amd, nvda');
 
         await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
-        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', ['AMD', 'NVDA'], 'all');
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+            ...DEFAULT_FILTERS,
+            symbols: ['AMD', 'NVDA'],
+        });
     });
 
     it('reloads every open month when the filter changes, in whatever order they answer', async () => {
@@ -273,6 +300,7 @@ describe('SummaryPage', () => {
         await screen.findByRole('table');
         await user.click(screen.getByRole('button', { name: /July 2026/ }));
         await waitFor(() => expect(screen.getAllByRole('table').length).toBe(2));
+        openFilters();
 
         const pending = new Map<string, (value: unknown) => void>();
         fetchSignalSummary.mockImplementation((month: string) => new Promise((resolve) => pending.set(month, resolve)));
@@ -299,7 +327,7 @@ describe('SummaryPage', () => {
 
         await screen.findByRole('table');
 
-        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', ['AMD'], 'all');
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', { ...DEFAULT_FILTERS, symbols: ['AMD'] });
         expect(screen.getByLabelText(/Filter by symbols/).getAttribute('value')).toBe('AMD');
     });
 
@@ -312,7 +340,10 @@ describe('SummaryPage', () => {
         await user.click(screen.getByRole('menuitemradio', { name: /Expired/ }));
 
         await waitFor(() => expect(fetchSignalSummary).toHaveBeenCalledTimes(2));
-        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', [], 'expired');
+        expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+            ...DEFAULT_FILTERS,
+            expiry: 'expired',
+        });
     });
 
     it('opens with the contracts filter the address asked for', async () => {
@@ -320,7 +351,7 @@ describe('SummaryPage', () => {
 
         await screen.findByRole('table');
 
-        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', [], 'active');
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', { ...DEFAULT_FILTERS, expiry: 'active' });
     });
 
     it('clears only its own box when the symbol filter is crossed out', async () => {
@@ -330,7 +361,39 @@ describe('SummaryPage', () => {
         await screen.findByRole('table');
         await user.click(screen.getByRole('button', { name: /Clear the symbol filter/ }));
 
-        await waitFor(() => expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', [], 'expired'));
+        await waitFor(() =>
+            expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+                ...DEFAULT_FILTERS,
+                expiry: 'expired',
+            }),
+        );
+    });
+
+    it('shows applied filters and removes only the chip that was clicked', async () => {
+        const user = userEvent.setup();
+        renderPage('/summary?symbols=AMD&expiry=expired&moneyness=itm&half=yes');
+        await screen.findByRole('table');
+
+        const row = screen.getByLabelText('Applied filters');
+        expect(within(row).getByRole('button', { name: 'Remove Symbols: AMD filter' })).toBeTruthy();
+        expect(within(row).getByRole('button', { name: 'Remove Expiry: expired filter' })).toBeTruthy();
+        expect(within(row).getByRole('button', { name: 'Remove Moneyness: ITM filter' })).toBeTruthy();
+        expect(within(row).getByRole('button', { name: 'Remove Half: Yes filter' })).toBeTruthy();
+
+        await user.click(within(row).getByRole('button', { name: 'Remove Expiry: expired filter' }));
+
+        await waitFor(() =>
+            expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+                ...DEFAULT_FILTERS,
+                symbols: ['AMD'],
+                moneyness: 'itm',
+                half: 'yes',
+            }),
+        );
+        expect(screen.queryByRole('button', { name: 'Remove Expiry: expired filter' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Remove Symbols: AMD filter' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Remove Moneyness: ITM filter' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Remove Half: Yes filter' })).toBeTruthy();
     });
 
     it('serves the unfiltered numbers from memory once the filter is cleared', async () => {
@@ -376,6 +439,32 @@ describe('SummaryPage', () => {
         await user.keyboard('j');
         await waitFor(() =>
             expect(screen.getByRole('button', { name: /July 2026/ }).getAttribute('aria-expanded')).toBe('true'),
+        );
+    });
+
+    it('cycles the added filters and sends the selected number source', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByRole('table');
+
+        await user.keyboard('mo');
+        await waitFor(() =>
+            expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+                ...DEFAULT_FILTERS,
+                moneyness: 'itm',
+                half: 'yes',
+            }),
+        );
+
+        await user.click(screen.getByRole('button', { name: /^Numbers:/ }));
+        await user.click(screen.getByRole('menuitemradio', { name: /VADER/ }));
+        await waitFor(() =>
+            expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
+                ...DEFAULT_FILTERS,
+                moneyness: 'itm',
+                half: 'yes',
+                numberSource: 'quoted',
+            }),
         );
     });
 

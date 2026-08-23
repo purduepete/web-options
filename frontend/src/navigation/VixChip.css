@@ -1,11 +1,11 @@
-/* No box: it sits among icon buttons, and a border would make it a fourth control.
-   The label stays muted so the number is what the eye lands on. */
+/* The border follows the neutral text color in every theme. */
 .vix-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     flex-shrink: 0;
-    padding: 0 0.25rem;
+    padding: 0.15rem 0.35rem;
+    border: var(--border-width) solid currentColor;
     font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.03em;
@@ -26,34 +26,12 @@
     visibility: hidden;
 }
 
-/* The change takes the same reading as the level: for a put seller a rising VIX is
-   the good news, because it is what pays for the risk. */
 .vix-chip .change {
     display: inline-flex;
     align-items: center;
     gap: 0.15rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-}
-
-.vix-chip .change.rising {
-    color: var(--positive);
-}
-
-.vix-chip .change.falling {
-    color: var(--negative);
-}
-
-.vix-chip.green b {
-    color: var(--positive);
-}
-
-.vix-chip.yellow b {
-    color: var(--warning);
-}
-
-.vix-chip.red b {
-    color: var(--negative);
 }
 
 /* A 320px bar has room for the level or the day change, not both: with both, the

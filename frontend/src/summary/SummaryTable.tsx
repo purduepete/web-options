@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { SUMMARY_COLUMNS, SUMMARY_COLUMN_LABELS } from '@weboptions/shared';
-import type { SummaryCell, SummaryColumn, WeekSummaryRow } from '@weboptions/shared';
+import type { NumberSource, SummaryCell, SummaryColumn, WeekSummaryRow } from '@weboptions/shared';
 import { formatCompactMoney, formatMoney, formatPercent, formatWeekTitle } from '../signals/format';
 import './SummaryTable.css';
 
@@ -25,9 +25,9 @@ function otmRate(cell: SummaryCell): number | null {
     return cell.priced === 0 ? null : (cell.otm / cell.priced) * 100;
 }
 
-/** Out of the trades the nightly rollup has reached, not out of every signal. */
+/** Out of every signal in the cell, including ones the nightly rollup has not reached yet. */
 function halfRate(cell: SummaryCell): number | null {
-    return cell.halfRollup === 0 ? null : (cell.halfKept / cell.halfRollup) * 100;
+    return cell.signals === 0 ? null : (cell.halfKept / cell.signals) * 100;
 }
 
 /* The aggregates are set off by the air around them rather than by a heavier
@@ -36,12 +36,12 @@ function Gap() {
     return <td className="summary-gap" aria-hidden="true" />;
 }
 
-function Cell({ cell }: { cell: SummaryCell }) {
+function Cell({ cell, numberSource }: { cell: SummaryCell; numberSource: NumberSource }) {
     if (cell.signals === 0) {
         return <span className="summary-empty">No signals</span>;
     }
 
-    const borrowed = cell.captured < cell.signals;
+    const borrowed = numberSource === 'actual' && cell.captured < cell.signals;
     const figureClass = borrowed ? 'summary-figure value-quoted' : 'summary-figure';
     const figureTitle = borrowed ? FALLBACK_TITLE : undefined;
 
@@ -81,10 +81,7 @@ function Cell({ cell }: { cell: SummaryCell }) {
                 printed as a zero: the weeks before it have no figure, not a
                 figure of none. */}
             {cell.halfRollup > 0 && (
-                <span
-                    className="summary-metric"
-                    title={`${cell.halfKept} of ${cell.halfRollup} the rollup has reached`}
-                >
+                <span className="summary-metric" title={`${cell.halfKept} of ${cell.signals} signals`}>
                     <span className="summary-unit">over half:</span>
                     <b className="summary-figure">
                         {cell.halfKept} ({formatPercent(halfRate(cell))})
@@ -99,10 +96,12 @@ export function SummaryTable({
     label,
     weeks,
     total,
+    numberSource,
 }: {
     label: string;
     weeks: readonly WeekSummaryRow[];
     total: Record<SummaryColumn, SummaryCell>;
+    numberSource: NumberSource;
 }) {
     return (
         <table className="summary-table enter">
@@ -146,7 +145,7 @@ export function SummaryTable({
                             <Fragment key={column}>
                                 {column === 'all' ? <Gap /> : null}
                                 <td className={`summary-column-${column}`} data-label={SUMMARY_COLUMN_LABELS[column]}>
-                                    <Cell cell={week.cells[column]} />
+                                    <Cell cell={week.cells[column]} numberSource={numberSource} />
                                 </td>
                             </Fragment>
                         ))}
@@ -165,7 +164,7 @@ export function SummaryTable({
                         <Fragment key={column}>
                             {column === 'all' ? <Gap /> : null}
                             <td className={`summary-column-${column}`} data-label={SUMMARY_COLUMN_LABELS[column]}>
-                                <Cell cell={total[column]} />
+                                <Cell cell={total[column]} numberSource={numberSource} />
                             </td>
                         </Fragment>
                     ))}

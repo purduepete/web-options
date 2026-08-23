@@ -13,6 +13,7 @@ import {
     filterDaysByHalf,
     filterDaysByMoneyness,
     filterDaysBySymbol,
+    filterDaysByTier,
     groupTrades,
     shiftWeek,
     weekdayColumn,
@@ -213,6 +214,33 @@ describe('filterDaysByOwned', () => {
 
         expect(filterDaysByOwned(owned, 'owned')[0]?.trades.map((item) => item.symbol)).toEqual(['LIVE', 'PAPER']);
         expect(filterDaysByOwned(owned, 'all')).toEqual(owned);
+    });
+});
+
+describe('filterDaysByTier', () => {
+    const days = [
+        day('2025-08-11', 'Monday', [
+            trade('SAFE', { tier: 'Conservative' }),
+            trade('MIDDLE', { tier: 'balanced' }),
+            trade('PICK', { tier: 'Balanced', isTopPick: true }),
+            trade('HOT', { tier: 'Aggressive' }),
+            trade('UNKNOWN', { tier: null }),
+        ]),
+    ];
+
+    it('keeps every tier when the filter is neutral', () => {
+        expect(filterDaysByTier(days, [])).toBe(days);
+    });
+
+    it('matches the displayed trade group case-insensitively', () => {
+        expect(filterDaysByTier(days, ['balanced'])[0]?.trades.map((item) => item.symbol)).toEqual(['MIDDLE']);
+    });
+
+    it('offers top picks as their own tier without duplicating their underlying tier', () => {
+        expect(filterDaysByTier(days, ['top-picks', 'balanced'])[0]?.trades.map((item) => item.symbol)).toEqual([
+            'MIDDLE',
+            'PICK',
+        ]);
     });
 });
 

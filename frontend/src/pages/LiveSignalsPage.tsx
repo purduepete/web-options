@@ -1,26 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
-import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
+import { DEFAULT_NUMBER_SOURCE, GROUP_LABELS } from '@weboptions/shared';
 import type { Trade, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
 import { TradeDetail } from '../signals/TradeDetail';
 import { WeekScore } from '../signals/WeekScore';
-import { NumberSourceMenu } from '../signals/NumberSourceMenu';
-import {
-    ExpiryFilterMenu,
-    GradeFilterMenu,
-    HalfFilterMenu,
-    MoneynessFilterMenu,
-    OwnedFilterMenu,
-} from '../signals/FilterMenu';
+import type { AppliedFilter } from '../signals/AppliedFilters';
+import { SignalFilterControls } from '../signals/SignalFilterControls';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
     MONEYNESS_FILTERS,
     OWNED_FILTERS,
+    SELECTABLE_TIER_FILTERS,
     buildGroups,
     cycle,
     filterDaysByExpiry,
@@ -29,16 +24,25 @@ import {
     filterDaysByMoneyness,
     filterDaysByOwned,
     filterDaysBySymbol,
+    filterDaysByTier,
     groupTrades,
     readMoneynessFilter,
     shiftWeek,
 } from '../signals/grouping';
-import type { ExpiryFilter, GradeFilter, GroupId, HalfFilter, MoneynessFilter, OwnedFilter } from '../signals/grouping';
+import type {
+    ExpiryFilter,
+    GradeFilter,
+    GroupId,
+    HalfFilter,
+    MoneynessFilter,
+    OwnedFilter,
+    TierSelection,
+} from '../signals/grouping';
 import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ChevronDownIcon, CloseIcon, RotateCcwIcon, SlidersIcon, TableIcon } from '../components/icons';
+import { ChevronDownIcon, RotateCcwIcon, SlidersIcon, TableIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { Modal } from '../components/Modal';
 import { WeekNav } from '../components/WeekNav';
@@ -76,6 +80,14 @@ function readGradeFilter(value: string | null): GradeFilter[] {
     return allowed.filter((item) => selected.includes(item));
 }
 
+function readTierFilter(value: string | null): TierSelection[] {
+    const selected =
+        value
+            ?.split(',')
+            .filter((item): item is TierSelection => SELECTABLE_TIER_FILTERS.includes(item as TierSelection)) ?? [];
+    return SELECTABLE_TIER_FILTERS.filter((item) => selected.includes(item));
+}
+
 export function LiveSignalsPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
@@ -85,6 +97,7 @@ export function LiveSignalsPage() {
     const moneyness = readMoneynessFilter(params.get('moneyness'));
     const half = readHalfFilter(params.get('half'));
     const owned = readOwnedFilter(params.get('owned'));
+    const tier = readTierFilter(params.get('tier'));
     const grades = readGradeFilter(params.get('grade'));
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -132,24 +145,27 @@ export function LiveSignalsPage() {
 
     const days = useMemo(
         () =>
-            filterDaysByOwned(
-                filterDaysByGrade(
-                    filterDaysByHalf(
-                        filterDaysByMoneyness(
-                            filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
-                            moneyness,
+            filterDaysByTier(
+                filterDaysByOwned(
+                    filterDaysByGrade(
+                        filterDaysByHalf(
+                            filterDaysByMoneyness(
+                                filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
+                                moneyness,
+                            ),
+                            half,
                         ),
-                        half,
+                        grades,
+                        numberSource,
+                        gradeSettings,
+                        [...cautionSymbols],
+                        vix,
                     ),
-                    grades,
-                    numberSource,
-                    gradeSettings,
-                    [...cautionSymbols],
-                    vix,
+                    owned,
                 ),
-                owned,
+                tier,
             ),
-        [data, symbol, expiry, moneyness, half, owned, grades, numberSource, gradeSettings, cautionSymbols, vix],
+        [data, symbol, expiry, moneyness, half, owned, tier, grades, numberSource, gradeSettings, cautionSymbols, vix],
     );
     const groups = useMemo(() => buildGroups(days), [days]);
 
@@ -275,8 +291,21 @@ export function LiveSignalsPage() {
         [setParams],
     );
 
-    // Both filters live in the URL, so they clear in one write rather than two
-    // history entries that each undo half of it.
+    const setTierParam = useCallback(
+        (next: TierSelection[]) => {
+            const ordered = SELECTABLE_TIER_FILTERS.filter((filter) => next.includes(filter));
+            setParams((current) => {
+                const updated = new URLSearchParams(current);
+                if (ordered.length === 0 || ordered.length === SELECTABLE_TIER_FILTERS.length) updated.delete('tier');
+                else updated.set('tier', ordered.join(','));
+                return updated;
+            });
+        },
+        [setParams],
+    );
+
+    // The filters live in the URL, so they clear in one write rather than a
+    // history entry for each control.
     const resetMenus = useCallback(() => {
         setNumberSource(DEFAULT_NUMBER_SOURCE);
         setParams((current) => {
@@ -287,6 +316,7 @@ export function LiveSignalsPage() {
             updated.delete('half');
             updated.delete('owned');
             updated.delete('grade');
+            updated.delete('tier');
             return updated;
         });
     }, [setNumberSource, setParams]);
@@ -298,6 +328,7 @@ export function LiveSignalsPage() {
         moneyness === 'all' &&
         half === 'all' &&
         owned === 'all' &&
+        tier.length === 0 &&
         grades.length === 0;
     const activeFilterCount =
         (symbol.trim() !== '' ? 1 : 0) +
@@ -305,18 +336,47 @@ export function LiveSignalsPage() {
         (moneyness !== 'all' ? 1 : 0) +
         (half !== 'all' ? 1 : 0) +
         (owned !== 'all' ? 1 : 0) +
+        (tier.length > 0 ? 1 : 0) +
         (grades.length > 0 ? 1 : 0);
     const filtersNarrowed = activeFilterCount > 0;
-    const appliedFilters = [
-        symbol.trim() ? `Symbol: ${symbol.trim()}` : null,
-        expiry !== 'all' ? `Expiry: ${expiry}` : null,
-        moneyness !== 'all' ? `Moneyness: ${moneyness.toUpperCase()}` : null,
-        half !== 'all' ? `Half: ${half === 'yes' ? 'Yes' : 'No'}` : null,
-        owned !== 'all' ? 'Owned' : null,
-        grades.length > 0
-            ? `Grade: ${grades.map((grade) => grade[0]!.toUpperCase() + grade.slice(1)).join(' + ')}`
-            : null,
-    ].filter((filter): filter is string => filter !== null);
+    const appliedFilters: AppliedFilter[] = [];
+    if (symbol.trim()) {
+        appliedFilters.push({ key: 'symbol', label: `Symbol: ${symbol.trim()}`, remove: () => setSymbolParam('') });
+    }
+    if (expiry !== 'all') {
+        appliedFilters.push({ key: 'expiry', label: `Expiry: ${expiry}`, remove: () => setExpiryParam('all') });
+    }
+    if (moneyness !== 'all') {
+        appliedFilters.push({
+            key: 'moneyness',
+            label: `Moneyness: ${moneyness.toUpperCase()}`,
+            remove: () => setMoneynessParam('all'),
+        });
+    }
+    if (half !== 'all') {
+        appliedFilters.push({
+            key: 'half',
+            label: `Half: ${half === 'yes' ? 'Yes' : 'No'}`,
+            remove: () => setHalfParam('all'),
+        });
+    }
+    if (owned !== 'all') {
+        appliedFilters.push({ key: 'owned', label: 'Owned', remove: () => setOwnedParam('all') });
+    }
+    if (tier.length > 0) {
+        appliedFilters.push({
+            key: 'tier',
+            label: `Tier: ${tier.map((filter) => GROUP_LABELS[filter]).join(' + ')}`,
+            remove: () => setTierParam([]),
+        });
+    }
+    if (grades.length > 0) {
+        appliedFilters.push({
+            key: 'grade',
+            label: `Grade: ${grades.map((grade) => grade[0]!.toUpperCase() + grade.slice(1)).join(' + ')}`,
+            remove: () => setGradeParam([]),
+        });
+    }
 
     useEffect(() => {
         if (!filtersOpen || phone) return;
@@ -365,6 +425,12 @@ export function LiveSignalsPage() {
 
     const cycleOwned = useCallback(() => setOwnedParam(cycle(OWNED_FILTERS, owned)), [owned, setOwnedParam]);
 
+    const toggleTier = useCallback(
+        (next: TierSelection) =>
+            setTierParam(tier.includes(next) ? tier.filter((filter) => filter !== next) : [...tier, next]),
+        [tier, setTierParam],
+    );
+
     const goPrevious = useCallback(() => {
         if (!data?.hasPriorWeekData) return;
         setWeekParam(shiftWeek(data.weekStart, -7));
@@ -391,7 +457,7 @@ export function LiveSignalsPage() {
     useSignalShortcuts({
         onPreviousWeek: goPrevious,
         onNextWeek: goNext,
-        onIsolateGroup: toggleGroup,
+        onToggleTier: toggleTier,
         onToggleAllGroups: toggleAllGroups,
         onFocusSymbolFilter: focusSymbolFilter,
         onToggleFilters: toggleFilters,
@@ -414,70 +480,26 @@ export function LiveSignalsPage() {
     }
 
     const filterControls = (
-        <>
-            <div className="filter-section filter-section-view">
-                <h2>View</h2>
-                <NumberSourceMenu value={numberSource} onChange={setNumberSource} />
-            </div>
-            <div className="filter-section filter-section-expiry">
-                <h2>Contract</h2>
-                <ExpiryFilterMenu value={expiry} onChange={setExpiryParam} />
-            </div>
-            <div className="filter-section filter-section-half">
-                <h2>Performance</h2>
-                <HalfFilterMenu value={half} onChange={setHalfParam} />
-            </div>
-            <div className="filter-section filter-section-owned">
-                <h2>Ownership</h2>
-                <OwnedFilterMenu
-                    value={owned}
-                    onChange={(next) =>
-                        setParams((current) => {
-                            const updated = new URLSearchParams(current);
-                            if (next === 'all') updated.delete('owned');
-                            else updated.set('owned', next);
-                            return updated;
-                        })
-                    }
-                />
-            </div>
-            <div className="filter-section filter-section-moneyness">
-                <h2>Contract</h2>
-                <MoneynessFilterMenu value={moneyness} onChange={setMoneynessParam} />
-            </div>
-            <div className="filter-section filter-section-grade">
-                <h2>Performance</h2>
-                <GradeFilterMenu value={grades} onChange={setGradeParam} />
-            </div>
-            <div className="filter-section filter-section-symbol">
-                <h2>Symbol</h2>
-                <div className={`symbol-filter${symbol ? ' has-value' : ''}`}>
-                    <input
-                        type="text"
-                        ref={symbolInputRef}
-                        value={symbol}
-                        onChange={(event) => setSymbolParam(event.target.value.toUpperCase())}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Escape') event.currentTarget.blur();
-                        }}
-                        placeholder="Filter by symbol"
-                        aria-label="Filter by symbol"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                    {symbol && (
-                        <button
-                            type="button"
-                            className="symbol-filter-clear"
-                            onClick={() => setSymbolParam('')}
-                            aria-label="Clear symbol filter"
-                        >
-                            <CloseIcon />
-                        </button>
-                    )}
-                </div>
-            </div>
-        </>
+        <SignalFilterControls
+            numberSource={numberSource}
+            expiry={expiry}
+            moneyness={moneyness}
+            half={half}
+            owned={owned}
+            tier={tier}
+            symbol={symbol}
+            symbolAriaLabel="Filter by symbol"
+            symbolInputRef={symbolInputRef}
+            onNumberSourceChange={setNumberSource}
+            onExpiryChange={setExpiryParam}
+            onMoneynessChange={setMoneynessParam}
+            onHalfChange={setHalfParam}
+            onOwnedChange={setOwnedParam}
+            onTierChange={setTierParam}
+            onSymbolChange={setSymbolParam}
+            grades={grades}
+            onGradesChange={setGradeParam}
+        />
     );
 
     return (

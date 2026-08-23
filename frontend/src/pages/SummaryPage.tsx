@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { parseExpiryFilter, parseSymbolList } from '@weboptions/shared';
-import type { ExpiryFilter, SignalMonth, SignalSummaryResponse } from '@weboptions/shared';
+import {
+    DEFAULT_NUMBER_SOURCE,
+    parseExpiryFilter,
+    parseHalfFilter,
+    parseMoneynessFilter,
+    parseSymbolList,
+} from '@weboptions/shared';
+import type { ExpiryFilter, HalfFilter, MoneynessFilter, SignalMonth, SignalSummaryResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchSignalMonths, fetchSignalSummary } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { SummaryTable } from '../summary/SummaryTable';
-import { ExpiryFilterMenu } from '../signals/FilterMenu';
-import { EXPIRY_FILTERS, cycle } from '../signals/grouping';
+import { AppliedFilters, type AppliedFilter } from '../signals/AppliedFilters';
+import { SignalFilterControls } from '../signals/SignalFilterControls';
+import { EXPIRY_FILTERS, HALF_FILTERS, MONEYNESS_FILTERS, cycle } from '../signals/grouping';
+import { useNumberSource } from '../signals/useNumberSource';
 import { isTyping } from '../hooks/useWeekArrows';
-import { ChevronDownIcon, CloseIcon } from '../components/icons';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { ChevronDownIcon, RotateCcwIcon, SlidersIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
+import { Modal } from '../components/Modal';
 import './SummaryPage.css';
 
 /**
@@ -40,6 +51,9 @@ export function SummaryPage() {
     const [params, setParams] = useSearchParams();
     const symbolsParam = params.get('symbols') ?? '';
     const expiry = parseExpiryFilter(params.get('expiry'));
+    const moneyness = parseMoneynessFilter(params.get('moneyness'));
+    const half = parseHalfFilter(params.get('half'));
+    const [numberSource, setNumberSource] = useNumberSource();
     const [draft, setDraft] = useState(symbolsParam);
     const [months, setMonths] = useState<SignalMonth[] | null>(null);
     const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -51,6 +65,10 @@ export function SummaryPage() {
     // both spends one spinner instead of two, so the page settles once.
     const [opening, setOpening] = useState(true);
     const filterInputRef = useRef<HTMLInputElement>(null);
+    const filtersTriggerRef = useRef<HTMLButtonElement>(null);
+    const filtersPanelRef = useRef<HTMLDivElement>(null);
+    const phone = useMediaQuery('(max-width: 640px)');
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const inFlight = useRef(new Set<string>());
     // A filter change gives every open month a new cache key, and dropping the
     // table for a spinner while the answer comes back rebuilds the page under
@@ -61,7 +79,10 @@ export function SummaryPage() {
     // Both filters are part of a month's identity, not something applied
     // afterwards: the server does the narrowing before the numbers are rolled
     // up, so each combination has its own answer to cache.
-    const cacheKey = useCallback((month: string) => `${month}|${symbols.join(',')}|${expiry}`, [symbols, expiry]);
+    const cacheKey = useCallback(
+        (month: string) => `${month}|${symbols.join(',')}|${expiry}|${moneyness}|${half}|${numberSource}`,
+        [symbols, expiry, moneyness, half, numberSource],
+    );
 
     // Typing narrows the whole archive, so it waits for a pause rather than
     // asking the server again on every letter.
@@ -123,7 +144,7 @@ export function SummaryPage() {
             const key = cacheKey(month);
             if (summaries[key] || failed.has(key) || inFlight.current.has(key)) continue;
             inFlight.current.add(key);
-            fetchSignalSummary(month, symbols, expiry)
+            fetchSignalSummary(month, { symbols, expiry, moneyness, half, owned: 'all', numberSource })
                 .then((result) => {
                     setSummaries((current) => ({ ...current, [key]: result }));
                 })
@@ -139,7 +160,7 @@ export function SummaryPage() {
                     inFlight.current.delete(key);
                 });
         }
-    }, [expanded, summaries, failed, symbols, expiry, cacheKey, forget]);
+    }, [expanded, summaries, failed, symbols, expiry, moneyness, half, numberSource, cacheKey, forget]);
 
     const toggleMonth = useCallback((month: string) => {
         setExpanded((current) => {
@@ -169,6 +190,21 @@ export function SummaryPage() {
         [setParams],
     );
 
+    const setFilterParam = useCallback(
+        (name: 'moneyness' | 'half', next: string) => {
+            setParams(
+                (current) => {
+                    const updated = new URLSearchParams(current);
+                    if (next === 'all') updated.delete(name);
+                    else updated.set(name, next);
+                    return updated;
+                },
+                { replace: true },
+            );
+        },
+        [setParams],
+    );
+
     const clearSymbols = useCallback(() => {
         setDraft('');
         setParams(
@@ -184,16 +220,49 @@ export function SummaryPage() {
     // The shortcut clears the whole head, where the cross clears only its own box.
     const reset = useCallback(() => {
         setDraft('');
+        setNumberSource(DEFAULT_NUMBER_SOURCE);
         setParams(
             (current) => {
                 const updated = new URLSearchParams(current);
                 updated.delete('symbols');
                 updated.delete('expiry');
+                updated.delete('moneyness');
+                updated.delete('half');
+                updated.delete('owned');
                 return updated;
             },
             { replace: true },
         );
-    }, [setParams]);
+    }, [setNumberSource, setParams]);
+
+    useEffect(() => {
+        if (!filtersOpen || phone) return;
+        function onPointerDown(event: Event) {
+            const target = event.target as Node | null;
+            if (!filtersPanelRef.current?.contains(target) && !filtersTriggerRef.current?.contains(target)) {
+                setFiltersOpen(false);
+                filtersTriggerRef.current?.focus();
+            }
+        }
+        function onKeyDown(event: globalThis.KeyboardEvent) {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setFiltersOpen(false);
+            filtersTriggerRef.current?.focus();
+        }
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [filtersOpen, phone]);
+
+    const focusSymbolFilter = useCallback(() => {
+        flushSync(() => setFiltersOpen(true));
+        filterInputRef.current?.focus();
+        filterInputRef.current?.select();
+    }, []);
 
     useEffect(() => {
         function onKeyDown(event: globalThis.KeyboardEvent) {
@@ -203,14 +272,22 @@ export function SummaryPage() {
             if (key === '/') {
                 // Without this the slash lands in the box we just focused.
                 event.preventDefault();
-                filterInputRef.current?.focus();
-                filterInputRef.current?.select();
+                focusSymbolFilter();
             } else if (key === 'j') {
                 event.preventDefault();
                 toggleAllMonths();
             } else if (key === 'e') {
                 event.preventDefault();
                 setExpiry(cycle(EXPIRY_FILTERS, expiry));
+            } else if (key === 'm') {
+                event.preventDefault();
+                setFilterParam('moneyness', cycle(MONEYNESS_FILTERS, moneyness));
+            } else if (key === 'o') {
+                event.preventDefault();
+                setFilterParam('half', cycle(HALF_FILTERS, half));
+            } else if (key === 'f') {
+                event.preventDefault();
+                setFiltersOpen((open) => !open);
             } else if (key === 'r') {
                 event.preventDefault();
                 reset();
@@ -218,41 +295,121 @@ export function SummaryPage() {
         }
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [toggleAllMonths, reset, setExpiry, expiry]);
+    }, [toggleAllMonths, reset, setExpiry, expiry, moneyness, half, setFilterParam, focusSymbolFilter]);
+
+    const atDefaults =
+        symbolsParam.trim() === '' &&
+        expiry === 'all' &&
+        moneyness === 'all' &&
+        half === 'all' &&
+        numberSource === DEFAULT_NUMBER_SOURCE;
+    const activeFilterCount =
+        (symbolsParam.trim() ? 1 : 0) +
+        (expiry !== 'all' ? 1 : 0) +
+        (moneyness !== 'all' ? 1 : 0) +
+        (half !== 'all' ? 1 : 0);
+
+    const appliedFilters: AppliedFilter[] = [];
+    if (symbolsParam.trim()) {
+        appliedFilters.push({ key: 'symbols', label: `Symbols: ${symbolsParam.trim()}`, remove: clearSymbols });
+    }
+    if (expiry !== 'all') {
+        appliedFilters.push({ key: 'expiry', label: `Expiry: ${expiry}`, remove: () => setExpiry('all') });
+    }
+    if (moneyness !== 'all') {
+        appliedFilters.push({
+            key: 'moneyness',
+            label: `Moneyness: ${moneyness.toUpperCase()}`,
+            remove: () => setFilterParam('moneyness', 'all'),
+        });
+    }
+    if (half !== 'all') {
+        appliedFilters.push({
+            key: 'half',
+            label: `Half: ${half === 'yes' ? 'Yes' : 'No'}`,
+            remove: () => setFilterParam('half', 'all'),
+        });
+    }
+
+    const filterControls = (
+        <SignalFilterControls
+            numberSource={numberSource}
+            expiry={expiry}
+            moneyness={moneyness}
+            half={half}
+            symbol={draft}
+            symbolInputRef={filterInputRef}
+            clearSymbolAriaLabel="Clear the symbol filter"
+            onNumberSourceChange={setNumberSource}
+            onExpiryChange={setExpiry}
+            onMoneynessChange={(next: MoneynessFilter) => setFilterParam('moneyness', next)}
+            onHalfChange={(next: HalfFilter) => setFilterParam('half', next)}
+            onSymbolChange={(next) => {
+                setDraft(next);
+                if (next === '') clearSymbols();
+            }}
+        />
+    );
 
     return (
         <main className="summary-page">
             <div className="page-head">
                 <h1>Summary</h1>
 
-                <ExpiryFilterMenu value={expiry} onChange={setExpiry} />
+                <button
+                    type="button"
+                    className={`menus-reset${atDefaults ? ' is-idle' : ''}`}
+                    onClick={reset}
+                    disabled={atDefaults}
+                    aria-hidden={atDefaults || undefined}
+                    tabIndex={atDefaults ? -1 : undefined}
+                    title="Reset filters"
+                >
+                    <RotateCcwIcon width={14} height={14} />
+                    <span>Reset</span>
+                </button>
 
-                <div className={`symbol-filter${draft ? ' has-value' : ''}`}>
-                    <input
-                        type="text"
-                        ref={filterInputRef}
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value.toUpperCase())}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Escape') event.currentTarget.blur();
-                        }}
-                        placeholder="Filter by symbol"
-                        aria-label="Filter by symbols, comma separated"
-                        autoComplete="off"
-                        spellCheck={false}
-                    />
-                    {draft && (
-                        <button
-                            type="button"
-                            className="symbol-filter-clear"
-                            onClick={clearSymbols}
-                            aria-label="Clear the symbol filter"
-                        >
-                            <CloseIcon width={14} height={14} />
-                        </button>
-                    )}
-                </div>
+                <button
+                    type="button"
+                    ref={filtersTriggerRef}
+                    className={`filters-toggle${activeFilterCount > 0 ? ' narrowed' : ''}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={filtersOpen}
+                    aria-controls="summary-filters"
+                    onClick={() => setFiltersOpen((open) => !open)}
+                >
+                    <SlidersIcon width={15} height={15} />
+                    <span>{activeFilterCount ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
+                    <ChevronDownIcon width={14} height={14} className={filtersOpen ? 'rotated' : ''} />
+                </button>
+
+                {!phone && filtersOpen && (
+                    <div
+                        className="filter-bar"
+                        id="summary-filters"
+                        ref={filtersPanelRef}
+                        role="dialog"
+                        aria-label="Filters"
+                    >
+                        {filterControls}
+                    </div>
+                )}
+
+                {phone && (
+                    <Modal
+                        open={filtersOpen}
+                        title="Filters"
+                        onClose={() => setFiltersOpen(false)}
+                        className="signal-filters-modal"
+                    >
+                        <div className="filter-bar" id="summary-filters">
+                            {filterControls}
+                        </div>
+                    </Modal>
+                )}
             </div>
+
+            <AppliedFilters filters={appliedFilters} className="summary-applied-filters" />
 
             {error && (
                 <p className="signals-error" role="alert">
@@ -299,7 +456,12 @@ export function SummaryPage() {
                                 {failed.has(key) && !fresh ? (
                                     <p className="summary-none">This month could not be loaded.</p>
                                 ) : summary ? (
-                                    <SummaryTable label={month.label} weeks={summary.weeks} total={summary.total} />
+                                    <SummaryTable
+                                        label={month.label}
+                                        weeks={summary.weeks}
+                                        total={summary.total}
+                                        numberSource={numberSource}
+                                    />
                                 ) : (
                                     <Loading />
                                 )}

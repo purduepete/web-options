@@ -17,6 +17,17 @@ export interface WeekSummary {
     premiumDrift: number | null;
     /** How many contracts that mean was taken over. */
     driftSamples: number;
+    /** Total premium from the source the cards are showing. */
+    totalPremium: number | null;
+    /** Actual mode had to borrow at least one advertised premium. */
+    premiumUsesFallback: boolean;
+    /** What every displayed contract would require to secure. */
+    totalCollateral: number | null;
+}
+
+export interface PremiumTotal {
+    value: number | null;
+    usesFallback: boolean;
 }
 
 /**
@@ -28,13 +39,28 @@ export function premiumDriftPercent(actual: number | null, quoted: number | null
     return ((actual - quoted) / quoted) * 100;
 }
 
+/** Total premium from the source the cards show, including per-contract fallback. */
+export function totalPremium(trades: Trade[], source: NumberSource): PremiumTotal {
+    const premiums = trades
+        .map((trade) => (source === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium))
+        .filter((value): value is number => value !== null);
+
+    return {
+        value: premiums.length === 0 ? null : premiums.reduce((sum, value) => sum + value, 0),
+        usesFallback:
+            source === 'actual' && trades.some((trade) => trade.actualPremium === null && trade.premium !== null),
+    };
+}
+
 export function summarizeWeek(days: DaySignals[], source: NumberSource): WeekSummary {
     const trades = days.flatMap((day) => day.trades);
     const priced = trades.filter((trade) => trade.moneyness !== null);
+    const premium = totalPremium(trades, source);
 
-    // In VADER's own mode there is nothing to drift from.
+    // VADER mode shows where the captured market landed against the advertised
+    // numbers. Actual mode is already showing that market, so it needs no recap.
     const drifts =
-        source === 'actual'
+        source === 'quoted'
             ? trades
                   .map((trade) => premiumDriftPercent(trade.actualPremium, trade.premium))
                   .filter((value): value is number => value !== null)
@@ -46,6 +72,9 @@ export function summarizeWeek(days: DaySignals[], source: NumberSource): WeekSum
         otm: priced.filter((trade) => trade.moneyness === 'otm').length,
         premiumDrift: drifts.length === 0 ? null : drifts.reduce((sum, value) => sum + value, 0) / drifts.length,
         driftSamples: drifts.length,
+        totalPremium: premium.value,
+        premiumUsesFallback: premium.usesFallback,
+        totalCollateral: totalCollateral(trades),
     };
 }
 

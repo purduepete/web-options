@@ -1,4 +1,4 @@
-import { gradeVix, VIX_CALM_BELOW, VIX_DEAD_BELOW } from '@weboptions/shared';
+import { VIX_CALM_BELOW, VIX_DEAD_BELOW } from '@weboptions/shared';
 import { TrendingDownIcon, TrendingUpIcon } from '../components/icons';
 import { useVix } from '../grade/VixProvider';
 import { formatDayLabel } from '../signals/format';
@@ -17,12 +17,13 @@ import './VixChip.css';
  */
 const PLACEHOLDER_VALUE = 88.88;
 
-/** Held open while the change is loading, and by a first-ever close that has none. */
+/** Held open only while the whole chip is loading. */
 const PLACEHOLDER_CHANGE = '+8.88%';
 
-function formatChange(value: number, previous: number): string {
+function formatChange(value: number, previous: number): string | null {
     // Round before reading the sign, so a rounding remainder cannot print "-0.00%".
     const percent = Number((((value - previous) / previous) * 100).toFixed(2));
+    if (percent === 0) return null;
     return `${percent > 0 ? '+' : ''}${percent.toFixed(2)}%`;
 }
 
@@ -33,28 +34,28 @@ export function VixChip() {
     // be divided by, so it is treated as no previous close at all.
     const previous = vix?.previousValue || null;
     const rising = previous !== null && vix !== null && vix.value >= previous;
-    const change = previous !== null && vix !== null ? formatChange(vix.value, previous) : PLACEHOLDER_CHANGE;
+    const actualChange = previous !== null && vix !== null ? formatChange(vix.value, previous) : null;
+    const change = actualChange ?? PLACEHOLDER_CHANGE;
 
     return (
         <span
-            className={vix ? `vix-chip ${gradeVix(shown)}` : 'vix-chip pending'}
+            className={vix ? 'vix-chip' : 'vix-chip pending'}
             aria-hidden={vix ? undefined : true}
             title={
                 vix
                     ? `VIX closed at ${vix.value.toFixed(2)} on ${formatDayLabel(vix.asOf)}` +
-                      `${previous === null ? '' : `, ${change} on the session before`}. ` +
+                      `${actualChange === null ? '' : `, ${actualChange} on the session before`}. ` +
                       `Below ${VIX_CALM_BELOW} grades yellow and below ${VIX_DEAD_BELOW} red: premium is thin.`
                     : undefined
             }
         >
             VIX <b>{shown.toFixed(2)}</b>
-            <span
-                className={`change ${rising ? 'rising' : 'falling'}${previous === null ? ' pending' : ''}`}
-                aria-hidden={previous === null ? true : undefined}
-            >
-                {rising ? <TrendingUpIcon width={12} height={12} /> : <TrendingDownIcon width={12} height={12} />}
-                {change}
-            </span>
+            {(actualChange !== null || vix === null) && (
+                <span className={`change${actualChange === null ? ' pending' : ''}`} aria-hidden={vix === null}>
+                    {rising ? <TrendingUpIcon width={12} height={12} /> : <TrendingDownIcon width={12} height={12} />}
+                    {change}
+                </span>
+            )}
         </span>
     );
 }

@@ -10,6 +10,7 @@ import type { OptionRight } from '@weboptions/shared';
 const MONEY = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const CENTS = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const COMPACT_MONEY = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 });
+const THOUSANDS = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 const PADDED_DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
 
 /** What every figure in the app prints when it has no value. */
@@ -76,6 +77,12 @@ export function formatCents(value: number | null): string {
 /** `142300` becomes `$142K`. Rounds hard, so the exact figure belongs in a title beside it. */
 export function formatCompactMoney(value: number | null): string {
     return value == null ? EMPTY : `$${COMPACT_MONEY.format(value)}`;
+}
+
+/** `37545` becomes `$37.5K`, while `500` stays `$500`. */
+export function formatThousandsMoney(value: number | null): string {
+    if (value == null) return EMPTY;
+    return value < 1000 ? formatMoney(value) : `$${THOUSANDS.format(value / 1000)}K`;
 }
 
 export function formatDelta(value: number | null): string {

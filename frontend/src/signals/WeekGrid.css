@@ -129,11 +129,17 @@
 
 /* What the day would cost to put on, seamed off the date rather than given its
    own flex item: three children would strand the date in the middle of the head. */
+.day-premium,
 .day-collateral {
     margin-left: 0.4rem;
     padding-left: 0.4rem;
     border-left: var(--border-width) solid var(--border);
     font-variant-numeric: tabular-nums;
+}
+
+.day-premium.is-fallback {
+    text-decoration: underline dotted;
+    text-underline-offset: 0.18em;
 }
 
 .no-trades {

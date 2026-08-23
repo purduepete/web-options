@@ -54,7 +54,7 @@ describe('summarizeWeek', () => {
         expect(summary.otm).toBe(2);
     });
 
-    it('averages the premium drift over the contracts that were quoted', () => {
+    it('averages actual premium drift while the tickets show VADER', () => {
         const days = [
             day('2025-08-11', [
                 trade({ premium: 100, actualPremium: 80 }),
@@ -62,15 +62,34 @@ describe('summarizeWeek', () => {
                 trade({ premium: 100, actualPremium: null }),
             ]),
         ];
-        const summary = summarizeWeek(days, 'actual');
+        const summary = summarizeWeek(days, 'quoted');
         expect(summary.driftSamples).toBe(2);
         expect(summary.premiumDrift).toBeCloseTo(-30);
     });
 
-    it("has no drift to report when the tickets are showing VADER's own numbers", () => {
-        const summary = summarizeWeek([day('2025-08-11', [trade({ premium: 100, actualPremium: 80 })])], 'quoted');
+    it('has no drift to report when the tickets are showing actual numbers', () => {
+        const summary = summarizeWeek([day('2025-08-11', [trade({ premium: 100, actualPremium: 80 })])], 'actual');
         expect(summary.premiumDrift).toBeNull();
         expect(summary.driftSamples).toBe(0);
+    });
+
+    it('totals the selected premium source and records actual-mode fallback', () => {
+        const days = [
+            day('2025-08-11', [
+                trade({ premium: 100, actualPremium: 80 }),
+                trade({ premium: 200, actualPremium: null }),
+            ]),
+        ];
+
+        expect(summarizeWeek(days, 'actual')).toMatchObject({ totalPremium: 280, premiumUsesFallback: true });
+        expect(summarizeWeek(days, 'quoted')).toMatchObject({ totalPremium: 300, premiumUsesFallback: false });
+    });
+
+    it('omits the premium total when no displayed trade has one', () => {
+        const summary = summarizeWeek([day('2025-08-11', [trade({ premium: null, actualPremium: null })])], 'actual');
+
+        expect(summary.totalPremium).toBeNull();
+        expect(summary.premiumUsesFallback).toBe(false);
     });
 
     it('reports nothing at all for a week the filters emptied', () => {
@@ -80,7 +99,19 @@ describe('summarizeWeek', () => {
             otm: 0,
             premiumDrift: null,
             driftSamples: 0,
+            totalPremium: null,
+            premiumUsesFallback: false,
+            totalCollateral: null,
         });
+    });
+
+    it('totals the collateral required across the displayed week', () => {
+        const summary = summarizeWeek(
+            [day('2025-08-11', [trade({ collateral: 10000 })]), day('2025-08-12', [trade({ collateral: 2500 })])],
+            'actual',
+        );
+
+        expect(summary.totalCollateral).toBe(12500);
     });
 });
 

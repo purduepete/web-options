@@ -83,10 +83,28 @@
     white-space: nowrap;
 }
 
+.shortcut-chord {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.shortcuts-or {
+    color: var(--text-subtle);
+    font-size: 0.65rem;
+}
+
 .shortcuts-section dd {
     margin: 0;
     font-size: 0.85rem;
     color: var(--text-muted);
+}
+
+.shortcuts-section dd small {
+    display: block;
+    margin-top: 0.05rem;
+    color: var(--text-subtle);
+    font-size: 0.65rem;
 }
 
 .shortcuts-section kbd {

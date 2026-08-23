@@ -24,6 +24,10 @@ import {
     isIsoDate,
     normalizeCautionSymbols,
     parseExpiryFilter,
+    parseHalfFilter,
+    parseMoneynessFilter,
+    parseNumberSource,
+    parseOwnedFilter,
     parseSymbolList,
 } from '@weboptions/shared';
 import type { AppConfig } from '../config';
@@ -165,6 +169,10 @@ export function createApiRouter(config: AppConfig): Router {
 
         const symbols = parseSymbolList(req.query.symbols);
         const expiry = parseExpiryFilter(req.query.expiry);
+        const moneyness = parseMoneynessFilter(req.query.moneyness);
+        const half = parseHalfFilter(req.query.half);
+        const owned = parseOwnedFilter(req.query.owned);
+        const numberSource = parseNumberSource(req.query.numberSource);
 
         try {
             const found = monthsFrom(await signalDates(config.db)).find((entry) => entry.month === month);
@@ -174,11 +182,22 @@ export function createApiRouter(config: AppConfig): Router {
             }
             const span = spanOf(found);
             const rows = await fetchRange(config.db, span.from, span.to);
-            const { weeks, total } = summarizeRange(rows, found.weekStarts, symbols, expiry);
+            const { weeks, total } = summarizeRange(rows, found.weekStarts, {
+                symbols,
+                expiry,
+                moneyness,
+                half,
+                owned,
+                numberSource,
+            });
             const body: SignalSummaryResponse = {
                 month,
                 symbols,
                 expiry,
+                moneyness,
+                half,
+                owned,
+                numberSource,
                 weeks,
                 total,
             };

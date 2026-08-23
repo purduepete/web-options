@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CloseIcon } from '../components/icons';
-import { SHORTCUT_SECTIONS } from './shortcutList';
+import { SHORTCUT_GROUPS } from './shortcutList';
 import './ShortcutsOverlay.css';
 
 export function ShortcutsOverlay() {
@@ -53,18 +53,30 @@ export function ShortcutsOverlay() {
                 </div>
 
                 <div className="shortcuts-body">
-                    {SHORTCUT_SECTIONS.map((section) => (
-                        <section className="shortcuts-section" key={section.title}>
-                            <h3>{section.title}</h3>
+                    {SHORTCUT_GROUPS.map((group) => (
+                        <section className="shortcuts-section" key={group.title}>
+                            <h3>{group.title}</h3>
                             <dl>
-                                {section.shortcuts.map((shortcut) => (
-                                    <Fragment key={shortcut.keys.join('+')}>
+                                {group.entries.map((entry) => (
+                                    <Fragment
+                                        key={`${entry.chords.map((chord) => chord.join('+')).join('|')}-${entry.description}`}
+                                    >
                                         <dt>
-                                            {shortcut.keys.map((key) => (
-                                                <kbd key={key}>{key}</kbd>
+                                            {entry.chords.map((chord, index) => (
+                                                <Fragment key={chord.join('+')}>
+                                                    {index > 0 && <span className="shortcuts-or">or</span>}
+                                                    <span className="shortcut-chord">
+                                                        {chord.map((key) => (
+                                                            <kbd key={key}>{key}</kbd>
+                                                        ))}
+                                                    </span>
+                                                </Fragment>
                                             ))}
                                         </dt>
-                                        <dd>{shortcut.description}</dd>
+                                        <dd>
+                                            <span>{entry.description}</span>
+                                            {entry.scope && <small>{entry.scope}</small>}
+                                        </dd>
                                     </Fragment>
                                 ))}
                             </dl>

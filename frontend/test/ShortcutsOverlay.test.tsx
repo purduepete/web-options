@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ShortcutsOverlay } from '../src/shortcuts/ShortcutsOverlay';
-import { SHORTCUT_SECTIONS } from '../src/shortcuts/shortcutList';
+import { SHORTCUT_GROUPS } from '../src/shortcuts/shortcutList';
 
 const OPEN = '{Control>}{Shift>}?{/Shift}{/Control}';
 
@@ -11,6 +11,15 @@ function dialog(): HTMLElement | null {
 }
 
 describe('ShortcutsOverlay', () => {
+    it('shows examples for the cycling contract filters', async () => {
+        const user = userEvent.setup();
+        render(<ShortcutsOverlay />);
+        await user.keyboard(OPEN);
+
+        expect(screen.getByText('Next contracts filter (All → Expired → Active)')).toBeTruthy();
+        expect(screen.getByText('Next moneyness filter (All → ITM → OTM)')).toBeTruthy();
+    });
+
     it('stays out of the way until it is asked for', () => {
         render(<ShortcutsOverlay />);
         expect(dialog()).toBeNull();
@@ -40,12 +49,22 @@ describe('ShortcutsOverlay', () => {
         render(<ShortcutsOverlay />);
         await user.keyboard(OPEN);
 
-        for (const section of SHORTCUT_SECTIONS) {
-            expect(screen.getByRole('heading', { name: section.title })).toBeTruthy();
-            for (const shortcut of section.shortcuts) {
-                expect(screen.getAllByText(shortcut.description).length).toBeGreaterThan(0);
+        for (const group of SHORTCUT_GROUPS) {
+            expect(screen.getByRole('heading', { name: group.title })).toBeTruthy();
+            for (const entry of group.entries) {
+                expect(screen.getAllByText(entry.description).length).toBeGreaterThan(0);
             }
         }
+    });
+
+    it('lists shared commands once and keeps the two meanings of c separate', async () => {
+        const user = userEvent.setup();
+        render(<ShortcutsOverlay />);
+        await user.keyboard(OPEN);
+
+        expect(screen.getAllByText('Focus the symbol filter')).toHaveLength(1);
+        expect(screen.getByText('Toggle Conservative tier')).toBeTruthy();
+        expect(screen.getByText('Next captured filter')).toBeTruthy();
     });
 
     it('closes on Escape, on the close button and on the backdrop', async () => {

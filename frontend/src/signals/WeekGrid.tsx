@@ -14,8 +14,9 @@ import {
     formatPercent,
     formatSignedPercent,
     formatStrike,
+    formatThousandsMoney,
 } from './format';
-import { premiumDriftPercent, totalCollateral } from './summary';
+import { premiumDriftPercent, totalCollateral, totalPremium } from './summary';
 import { CautionBadge } from '../caution/CautionBadge';
 import { useCautionSymbols } from '../caution/CautionProvider';
 import { useGradeSettings } from '../grade/GradeSettingsProvider';
@@ -199,17 +200,29 @@ function DayCard({
     onToggleDay,
 }: DayCardProps) {
     const collateral = totalCollateral(day.trades);
+    const premium = totalPremium(day.trades, numberSource);
     const heading = (
         <>
             <span className="day-name">{day.name}</span>
             <span className="day-date">
                 {formatDayLabel(day.date)} ({day.trades.length})
+                {premium.value !== null && (
+                    <span
+                        className={`day-premium${premium.usesFallback ? ' is-fallback' : ''}`}
+                        title={
+                            `${formatMoney(premium.value)} premium on this day.` +
+                            (premium.usesFallback ? ' Includes VADER numbers where no captured quote exists.' : '')
+                        }
+                    >
+                        P: {formatThousandsMoney(premium.value)}
+                    </span>
+                )}
                 {collateral !== null && (
                     <span
                         className="day-collateral"
                         title={`${formatMoney(collateral)} to secure every contract on this day.`}
                     >
-                        {formatCompactMoney(collateral)}
+                        C: {formatCompactMoney(collateral)}
                         <span className="sr-only"> collateral</span>
                     </span>
                 )}
@@ -394,15 +407,15 @@ function Figure({ shown, format }: { shown: Displayed; format: (value: number | 
 /**
  * How far the captured number landed from the advertised one, signed against
  * VADER: a minus sign means the market was worse than the signal promised.
- * Only meaningful while the captured numbers are the ones on screen.
+ * VADER view shows this comparison; Actual already shows the captured number.
  */
 function absoluteDiff(source: NumberSource, actual: number | null, quoted: number | null): number | null {
-    if (source !== 'actual' || actual === null || quoted === null) return null;
+    if (source !== 'quoted' || actual === null || quoted === null) return null;
     return actual - quoted;
 }
 
 function percentDiff(source: NumberSource, actual: number | null, quoted: number | null): number | null {
-    return source === 'actual' ? premiumDriftPercent(actual, quoted) : null;
+    return source === 'quoted' ? premiumDriftPercent(actual, quoted) : null;
 }
 
 function formatMagnitude(value: number, places: number, suffix: string): string {

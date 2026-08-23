@@ -9,6 +9,7 @@ import type {
     MeResponse,
     OwnedOptionsResponse,
     SignalMonthsResponse,
+    SummaryFilters,
     SignalSummaryResponse,
     SymbolDetail,
     VixResponse,
@@ -129,14 +130,14 @@ export function fetchSignalMonths(): Promise<SignalMonthsResponse> {
     return getJson<SignalMonthsResponse>('/api/signal-months');
 }
 
-export function fetchSignalSummary(
-    month: string,
-    symbols: readonly string[] = [],
-    expiry: ExpiryFilter = 'all',
-): Promise<SignalSummaryResponse> {
+export function fetchSignalSummary(month: string, filters: SummaryFilters): Promise<SignalSummaryResponse> {
     const query = new URLSearchParams({ month });
-    if (symbols.length > 0) query.set('symbols', symbols.join(','));
-    if (expiry !== 'all') query.set('expiry', expiry);
+    if (filters.symbols.length > 0) query.set('symbols', filters.symbols.join(','));
+    if (filters.expiry !== 'all') query.set('expiry', filters.expiry);
+    if (filters.moneyness !== 'all') query.set('moneyness', filters.moneyness);
+    if (filters.half !== 'all') query.set('half', filters.half);
+    if (filters.owned !== 'all') query.set('owned', filters.owned);
+    query.set('numberSource', filters.numberSource);
     return getJson<SignalSummaryResponse>(`/api/signal-summary?${query}`);
 }
 

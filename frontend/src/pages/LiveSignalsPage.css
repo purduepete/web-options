@@ -186,6 +186,16 @@
     grid-row: 2;
 }
 
+.filter-section-tier {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.signals-page .filter-section-symbol {
+    grid-column: 2 / -1;
+    grid-row: 3;
+}
+
 .filter-section > .choice-menu {
     width: 100%;
 }
@@ -286,7 +296,8 @@
     .filter-section-half,
     .filter-section-owned,
     .filter-section-moneyness,
-    .filter-section-grade {
+    .filter-section-grade,
+    .filter-section-tier {
         grid-column: auto;
         grid-row: auto;
     }

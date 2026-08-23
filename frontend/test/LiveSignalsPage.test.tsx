@@ -116,7 +116,8 @@ function quotedValues(scope: HTMLElement): string[] {
 /** Opens one of the head's menus and picks one of its choices. */
 async function choose(user: ReturnType<typeof userEvent.setup>, menu: RegExp, option: string) {
     await user.click(screen.getByRole('button', { name: menu }));
-    await user.click(screen.getByRole('menuitemradio', { name: new RegExp(`^${option}`) }));
+    const matcher = { name: new RegExp(`^${option}`) };
+    await user.click(screen.queryByRole('menuitemradio', matcher) ?? screen.getByRole('menuitemcheckbox', matcher));
 }
 
 beforeEach(() => {
@@ -357,6 +358,98 @@ describe('LiveSignalsPage', () => {
         expect(screen.queryByText('GREEN $100P')).toBeNull();
     });
 
+    it('filters the week and totals by tier', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('SAFE', { tier: 'Conservative' }),
+                        trade('MIDDLE', { tier: 'Balanced' }),
+                        trade('PICK', { tier: 'Balanced', isTopPick: true }),
+                        trade('HOT', { tier: 'Aggressive' }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await choose(user, /^Tier:/, 'Balanced');
+
+        expect(screen.getByText('MIDDLE $100P')).toBeTruthy();
+        expect(screen.queryByText('PICK $100P')).toBeNull();
+        expect(screen.queryByText('SAFE $100P')).toBeNull();
+        expect(screen.queryByText('HOT $100P')).toBeNull();
+        expect(document.querySelector('.week-score')?.textContent).toContain('1 signal');
+        expect(document.querySelector('.score-filters')?.textContent).toContain('Tier: Balanced');
+    });
+
+    it('keeps every selected tier and filters by their union', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('SAFE', { tier: 'Conservative' }),
+                        trade('MIDDLE', { tier: 'Balanced' }),
+                        trade('HOT', { tier: 'Aggressive' }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await user.click(screen.getByRole('button', { name: /^Tier:/ }));
+        await user.click(screen.getByRole('menuitemcheckbox', { name: /^Conservative/ }));
+        await user.click(screen.getByRole('menuitemcheckbox', { name: /^Aggressive/ }));
+
+        expect(screen.getByText('SAFE $100P')).toBeTruthy();
+        expect(screen.getByText('HOT $100P')).toBeTruthy();
+        expect(screen.queryByText('MIDDLE $100P')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Tier: Conservative, Aggressive' })).toBeTruthy();
+        expect(document.querySelector('.score-filters')?.textContent).toContain('Tier: Conservative + Aggressive');
+    });
+
+    it('filters the week to top picks', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('REGULAR', { tier: 'Conservative' }),
+                        trade('PICK', { tier: 'Aggressive', isTopPick: true }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+        await screen.findByTestId('week-grid');
+
+        await choose(user, /^Tier:/, 'Top Picks');
+
+        expect(screen.getByText('PICK $100P')).toBeTruthy();
+        expect(screen.queryByText('REGULAR $100P')).toBeNull();
+        expect(document.querySelector('.score-filters')?.textContent).toContain('Tier: Top Picks');
+    });
+
+    it('starts with a valid tier from the URL and ignores an invalid one', async () => {
+        const first = renderPage('/?tier=aggressive');
+        await screen.findByTestId('week-grid');
+        expect(screen.getByRole('button', { name: 'Tier: Aggressive' })).toBeTruthy();
+
+        first.unmount();
+        const second = renderPage('/?tier=aggressive,top-picks,invalid,aggressive');
+        await screen.findByTestId('week-grid');
+        expect(screen.getByRole('button', { name: 'Tier: Top Picks, Aggressive' })).toBeTruthy();
+
+        second.unmount();
+        renderPage('/?tier=unknown');
+        await screen.findByTestId('week-grid');
+        expect(screen.getByRole('button', { name: 'Tier: Tier' })).toBeTruthy();
+    });
+
     it('labels both rows of filter controls consistently', async () => {
         renderPage();
         await screen.findByTestId('week-grid');
@@ -523,19 +616,19 @@ describe('LiveSignalsPage', () => {
         expect(screen.queryByText('AMD $100P')).toBeNull();
     });
 
-    it('toggles a single group from the keyboard, leaving others alone', async () => {
+    it('toggles tier filters from the keyboard and combines them', async () => {
         const user = userEvent.setup();
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
 
-        // t collapses Top Picks; Aggressive stays open
         await user.keyboard('t');
-        expect(screen.getByRole('button', { name: /Top Picks/ }).getAttribute('aria-expanded')).toBe('false');
-        expect(screen.getByRole('button', { name: /Aggressive/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Tier: Top Picks' })).toBeTruthy();
 
-        // t again reopens Top Picks
+        await user.keyboard('a');
+        expect(screen.getByRole('button', { name: 'Tier: Top Picks, Aggressive' })).toBeTruthy();
+
         await user.keyboard('t');
-        expect(screen.getByRole('button', { name: /Top Picks/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Tier: Aggressive' })).toBeTruthy();
     });
 
     it('j toggles all groups regardless of individual state', async () => {
@@ -558,7 +651,7 @@ describe('LiveSignalsPage', () => {
         await user.keyboard('t');
 
         expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('T');
-        expect(screen.getByRole('button', { name: /Aggressive/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Tier: Tier' })).toBeTruthy();
     });
 
     it('leaves nothing behind on a day that has no trades in a group', async () => {
@@ -619,7 +712,7 @@ describe('LiveSignalsPage menu reset', () => {
 
     it('puts every menu back in one press', async () => {
         const user = userEvent.setup();
-        renderPage('/?symbol=MSFT&expiry=active&moneyness=itm&half=yes&grade=red,yellow');
+        renderPage('/?symbol=MSFT&expiry=active&moneyness=itm&half=yes&grade=red,yellow&tier=aggressive');
         await screen.findByTestId('week-grid');
         await choose(user, /^Numbers:/, 'VADER');
 
@@ -632,6 +725,7 @@ describe('LiveSignalsPage menu reset', () => {
         expect(screen.getByRole('button', { name: 'Moneyness: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Over half: All' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Signal grade: Grade' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Tier: Tier' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
     });
 
@@ -898,6 +992,7 @@ describe('LiveSignalsPage week score', () => {
         renderPage();
         await screen.findByTestId('week-grid');
         expect(scoreLine()).toContain('3 signals');
+        expect(scoreLine()).toContain('Collateral: $30,000');
     });
 
     it('scores only what the filters left on screen', async () => {
@@ -924,7 +1019,7 @@ describe('LiveSignalsPage week score', () => {
         expect(scoreLine()).toContain('2 of 3 closed OTM (66.7%)');
     });
 
-    it('averages how far the captured premium landed from VADER', async () => {
+    it('shows actual premium drift only while viewing VADER numbers', async () => {
         const drifted = week({
             days: [
                 day('2025-08-11', 'Monday', [
@@ -936,10 +1031,12 @@ describe('LiveSignalsPage week score', () => {
         fetchWeekSignals.mockResolvedValue(drifted);
         renderPage();
         await screen.findByTestId('week-grid');
-        expect(scoreLine()).toContain('Premium 30.0% under VADER');
+        expect(scoreLine()).toContain('Premium: $200');
+        expect(scoreLine()).not.toContain('under VADER');
 
         await choose(userEvent.setup(), /^Numbers:/, 'VADER');
-        expect(scoreLine()).not.toContain('Premium');
+        expect(scoreLine()).toContain('Premium: $300');
+        expect(scoreLine()).toContain('Actual premium 30.0% under VADER');
     });
 
     it('says nothing at all for a week the filters emptied', async () => {
@@ -958,15 +1055,55 @@ describe('LiveSignalsPage week score', () => {
         expect(score?.querySelector('.score-filters')?.textContent).toContain('Grade: Red + Yellow');
     });
 
+    it('removes one applied filter from the score without clearing the others', async () => {
+        const user = userEvent.setup();
+        renderPage('/?symbol=MSFT&expiry=active');
+        await screen.findByTestId('week-grid');
+
+        await user.click(screen.getByRole('button', { name: 'Remove Symbol: MSFT filter' }));
+
+        expect(screen.queryByRole('button', { name: 'Remove Symbol: MSFT filter' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Remove Expiry: active filter' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Filters · 1' })).toBeTruthy();
+    });
+
     it('totals the collateral each day would take to secure', async () => {
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
         expect(within(monday).getByTitle('$20,000 to secure every contract on this day.').textContent).toContain(
-            '$20K',
+            'C: $20K',
         );
 
         const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
         expect(within(tuesday).getByTitle('$10,000 to secure every contract on this day.')).toBeTruthy();
+    });
+
+    it('shows each day premium in thousands with one useful decimal', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [
+                    day('2025-08-11', 'Monday', [
+                        trade('AAPL', { premium: 20000, actualPremium: 18000 }),
+                        trade('MSFT', { premium: 22000, actualPremium: 19500 }),
+                    ]),
+                ],
+            }),
+        );
+        renderPage();
+
+        const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(within(monday).getByTitle('$37,500 premium on this day.').textContent).toContain('P: $37.5K');
+    });
+
+    it('keeps a day premium below one thousand in dollars', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { premium: 500, actualPremium: 500 })])] }),
+        );
+        renderPage();
+
+        const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
+        expect(within(monday).getByTitle('$500 premium on this day.').textContent).toContain('P: $500');
+        expect(within(monday).queryByText(/0\.5K/)).toBeNull();
     });
 
     it('leaves the total off a day with no collateral to report', async () => {
@@ -1074,15 +1211,25 @@ describe('LiveSignalsPage number source', () => {
         expect(within(await tuesday()).queryByText(/wide spread/)).toBeNull();
     });
 
-    it('shows how far each captured number moved from VADER', async () => {
+    it('hides captured-number drift while viewing Actual numbers', async () => {
         fetchWeekSignals.mockResolvedValue(quotedWeek());
         renderPage();
         const card = await tuesday();
 
-        // Delta absolute: -0.31 against -0.20. Premium percent: 175 against 120.
-        expect(within(card).getByText('(0.11)')).toBeTruthy();
-        expect(within(card).getByText('(45.8%)')).toBeTruthy();
+        expect(within(card).queryByText('(0.11)')).toBeNull();
+        expect(within(card).queryByText('(45.8%)')).toBeNull();
+    });
 
+    it('shows actual drift beside the VADER numbers', async () => {
+        const user = userEvent.setup();
+        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        renderPage();
+        await tuesday();
+
+        await choose(user, /^Numbers:/, 'VADER');
+
+        const card = await tuesday();
+        // Delta absolute: -0.31 against -0.20. Premium percent: 175 against 120.
         expect(within(card).getByText('(0.11)').className).toContain('diff-down');
         expect(within(card).getByText('(45.8%)').className).toContain('diff-up');
 
@@ -1093,24 +1240,15 @@ describe('LiveSignalsPage number source', () => {
         expect(arrowOf('(0.11)')).toBe(arrowOf('(45.8%)'));
     });
 
-    it("hides the differences in VADER's own mode, where there is nothing to compare", async () => {
+    it('leaves a VADER number undifferenced when no captured value exists', async () => {
         const user = userEvent.setup();
-        fetchWeekSignals.mockResolvedValue(quotedWeek());
+        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualPremium: null }));
         renderPage();
         await tuesday();
 
         await choose(user, /^Numbers:/, 'VADER');
 
         const card = await tuesday();
-        expect(within(card).queryByText('(0.11)')).toBeNull();
-        expect(within(card).queryByText('(45.8%)')).toBeNull();
-    });
-
-    it("leaves a fallen-back number undifferenced, since it is VADER's already", async () => {
-        fetchWeekSignals.mockResolvedValue(quotedWeek({ actualPremium: null }));
-        renderPage();
-        const card = await tuesday();
-
         expect(within(card).getByText('(0.11)')).toBeTruthy();
         expect(within(card).queryByText('(45.8%)')).toBeNull();
     });

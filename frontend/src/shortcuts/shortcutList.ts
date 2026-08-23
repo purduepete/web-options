@@ -1,67 +1,64 @@
-export interface Shortcut {
-    keys: string[];
+export interface ShortcutEntry {
+    chords: string[][];
     description: string;
+    scope?: string;
 }
 
-export interface ShortcutSection {
+export interface ShortcutGroup {
     title: string;
-    shortcuts: Shortcut[];
+    entries: ShortcutEntry[];
 }
 
 /** The one list the app documents itself from, so nothing drifts. */
-export const SHORTCUT_SECTIONS: ShortcutSection[] = [
+export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     {
         title: 'Anywhere',
-        shortcuts: [
-            { keys: ['Ctrl', 'K'], description: 'Open the command palette' },
-            { keys: ['Ctrl', '/'], description: 'Open the command palette' },
-            { keys: ['Ctrl', '\\'], description: 'Open the menu' },
-            { keys: ['Ctrl', 'Shift', '?'], description: 'Show this list' },
-            { keys: ['Esc'], description: 'Close the palette, the menu or this list' },
+        entries: [
+            {
+                chords: [
+                    ['Ctrl', 'K'],
+                    ['Ctrl', '/'],
+                ],
+                description: 'Open the command palette',
+            },
+            { chords: [['Ctrl', '\\']], description: 'Open the menu' },
+            { chords: [['Ctrl', 'Shift', '?']], description: 'Show this list' },
+            { chords: [['Esc']], description: 'Close the palette, the menu or this list' },
         ],
     },
     {
-        title: 'Live signals',
-        shortcuts: [
-            { keys: ['←'], description: 'Previous week' },
-            { keys: ['→'], description: 'Next week' },
-            { keys: ['t'], description: 'Top picks only' },
-            { keys: ['c'], description: 'Conservative only' },
-            { keys: ['b'], description: 'Balanced only' },
-            { keys: ['a'], description: 'Aggressive only' },
-            { keys: ['j'], description: 'Collapse or expand every group' },
-            { keys: ['f'], description: 'Toggle the filter panel' },
-            { keys: ['/'], description: 'Filter by symbol, or !symbol to exclude' },
-            { keys: ['e'], description: 'Next contracts filter' },
-            { keys: ['m'], description: 'Next moneyness filter' },
-            { keys: ['o'], description: 'Next over-half filter' },
-            { keys: ['u'], description: 'Next owned filter' },
-            { keys: ['r'], description: 'Reset the menus' },
+        title: 'Pages',
+        entries: [
+            { chords: [['←'], ['→']], description: 'Previous or next week', scope: 'Live · Calendars' },
+            { chords: [['/']], description: 'Focus the symbol filter', scope: 'Live · Summary · Owned' },
+            { chords: [['r']], description: 'Reset filters', scope: 'Live · Summary · Owned' },
+            { chords: [['f']], description: 'Toggle the filter panel', scope: 'Live · Summary · Owned' },
+            {
+                chords: [['e']],
+                description: 'Next contracts filter (All → Expired → Active)',
+                scope: 'Live · Summary',
+            },
+            {
+                chords: [['m']],
+                description: 'Next moneyness filter (All → ITM → OTM)',
+                scope: 'Live · Summary · Owned',
+            },
+            { chords: [['o']], description: 'Next over-half filter', scope: 'Live · Summary' },
+            { chords: [['u']], description: 'Next owned filter', scope: 'Live' },
+            { chords: [['j']], description: 'Toggle every group or month', scope: 'Live · Summary' },
         ],
     },
     {
-        title: 'Summary',
-        shortcuts: [
-            { keys: ['/'], description: 'Filter by symbols, or !symbol to exclude' },
-            { keys: ['j'], description: 'Collapse or expand every month' },
-            { keys: ['e'], description: 'Next contracts filter' },
-            { keys: ['r'], description: 'Clear every filter' },
+        title: 'Live signals only',
+        entries: [
+            { chords: [['t']], description: 'Toggle Top Picks tier' },
+            { chords: [['c']], description: 'Toggle Conservative tier' },
+            { chords: [['b']], description: 'Toggle Balanced tier' },
+            { chords: [['a']], description: 'Toggle Aggressive tier' },
         ],
     },
     {
-        title: 'Owned contracts',
-        shortcuts: [
-            { keys: ['f'], description: 'Toggle the filter panel' },
-            { keys: ['/'], description: 'Filter by symbol, or !symbol to exclude' },
-            { keys: ['m'], description: 'Next moneyness filter' },
-            { keys: ['r'], description: 'Reset the menus' },
-        ],
-    },
-    {
-        title: 'Weekly calendars',
-        shortcuts: [
-            { keys: ['←'], description: 'Previous week' },
-            { keys: ['→'], description: 'Next week' },
-        ],
+        title: 'Owned contracts only',
+        entries: [{ chords: [['c']], description: 'Next captured filter' }],
     },
 ];

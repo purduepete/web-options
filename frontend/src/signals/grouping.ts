@@ -4,13 +4,19 @@ import type {
     GradeBand,
     GradeSettings,
     GroupId,
+    HalfFilter,
+    MoneynessFilter,
     NumberSource,
+    OwnedFilter,
     Trade,
 } from '@weboptions/shared';
 import {
     EXPIRY_FILTERS,
+    HALF_FILTERS,
     GROUP_IDS,
     GROUP_LABELS,
+    MONEYNESS_FILTERS,
+    OWNED_FILTERS,
     groupIdForTrade,
     hasExpired,
     hasHalfFigure,
@@ -35,30 +41,21 @@ import {
 // contracts filter is there for the same reason: the summary applies it before
 // the numbers are rolled up, where the browser never sees the trades at all.
 export { EXPIRY_FILTERS, TIER_ORDER };
-export type { ExpiryFilter, GroupId };
+export { HALF_FILTERS, MONEYNESS_FILTERS, OWNED_FILTERS };
+export type { ExpiryFilter, GroupId, HalfFilter, MoneynessFilter, OwnedFilter };
+
+export const TIER_FILTERS = ['all', 'top-picks', ...TIER_ORDER] as const;
+export type TierFilter = (typeof TIER_FILTERS)[number];
+export type TierSelection = Exclude<TierFilter, 'all'>;
+export const SELECTABLE_TIER_FILTERS = TIER_FILTERS.filter((filter): filter is TierSelection => filter !== 'all');
 
 export type GradeFilter = Exclude<GradeBand, 'ungraded'>;
 export const GRADE_FILTERS: readonly GradeFilter[] = ['red', 'yellow', 'green'];
-
-/** Where the contract closed against its strike. Atm is a rounding edge, not a choice. */
-export const MONEYNESS_FILTERS = ['all', 'itm', 'otm'] as const;
-
-export type MoneynessFilter = (typeof MONEYNESS_FILTERS)[number];
 
 /** Reads the moneyness param. Anything unrecognised narrows nothing. */
 export function readMoneynessFilter(value: string | null): MoneynessFilter {
     return MONEYNESS_FILTERS.includes(value as MoneynessFilter) ? (value as MoneynessFilter) : 'all';
 }
-
-/** Whether the trade has been up over half its premium at some close. */
-export const HALF_FILTERS = ['all', 'yes', 'no'] as const;
-
-export type HalfFilter = (typeof HALF_FILTERS)[number];
-
-/** Whether the reader wants every signal or only contracts already owned. */
-export const OWNED_FILTERS = ['all', 'owned'] as const;
-
-export type OwnedFilter = (typeof OWNED_FILTERS)[number];
 
 /** The next choice along, wrapping. What a filter's shortcut key steps through. */
 export function cycle<T extends string>(choices: readonly T[], current: T): T {
@@ -156,6 +153,15 @@ export function filterDaysByOwned(days: DaySignals[], filter: OwnedFilter): DayS
     return days.map((day) => ({
         ...day,
         trades: day.trades.filter((trade) => trade.ownedLiveContracts > 0 || trade.ownedPaperContracts > 0),
+    }));
+}
+
+export function filterDaysByTier(days: DaySignals[], filters: readonly TierSelection[]): DaySignals[] {
+    if (filters.length === 0) return days;
+    const selected: ReadonlySet<GroupId> = new Set(filters);
+    return days.map((day) => ({
+        ...day,
+        trades: day.trades.filter((trade) => selected.has(groupIdForTrade(trade))),
     }));
 }
 

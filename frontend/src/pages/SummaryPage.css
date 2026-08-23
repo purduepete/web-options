@@ -6,38 +6,38 @@
     gap: 0.75rem;
 }
 
-.summary-page .page-head h1 {
-    flex: 0 1 auto;
-    margin-right: 0.75rem;
+.summary-page .page-head {
+    position: relative;
 }
 
-/* The pair is pinned to the end of the bar, the way the week navigation is on
-   the live signals page, so the title keeps the near end to itself. The menu
-   carries the margin because it is the first of the two and always there. */
-.summary-page .page-head .choice-menu {
-    margin-left: auto;
+.summary-page .page-head h1 {
+    flex: 0 1 auto;
+    margin-right: auto;
+}
+
+.summary-page .filter-bar {
+    width: min(28rem, calc(100vw - 2rem));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-page .filter-section-half {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.summary-applied-filters {
+    min-height: 1.75rem;
 }
 
 /* A phone stacks the head instead: each control takes its own line, and neither
    has an end of a row left to be pinned to. */
 @media (max-width: 640px) {
-    .summary-page .page-head .choice-menu {
-        width: 100%;
-        margin-left: 0;
+    .summary-page .page-head h1 {
+        margin-right: auto;
     }
 
-    .summary-page .page-head .symbol-filter {
-        flex: 0 0 auto;
-        width: 100%;
-        max-width: none;
-    }
-
-    /* A text input will not centre its own text when a minimum height stretches
-       it: the line stays at the top and takes the caret with it. The line box is
-       given the height instead, so the text sits in the middle of it. */
-    .summary-page .page-head .symbol-filter input {
-        padding-block: 0;
-        line-height: calc(44px - 2 * var(--border-width));
+    .summary-page .filter-bar {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -129,6 +129,8 @@
    mistake for a month with no signals. */
 @media print {
     .summary-page .symbol-filter,
+    .summary-page .menus-reset,
+    .summary-page .filters-toggle,
     .summary-month-head svg {
         display: none;
     }

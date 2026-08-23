@@ -6,11 +6,14 @@
  * with local getters shifts it a day earlier in any negative-offset zone (Pacific).
  */
 
+import type { HalfFilter, MoneynessFilter, OwnedFilter } from './signalFilters';
+
 export * from './theme';
 export * from './storage';
 export * from './caution';
 export * from './grade';
 export * from './market';
+export * from './signalFilters';
 
 /** A calendar date with no time and no zone, formatted `YYYY-MM-DD`. */
 export type IsoDate = string;
@@ -210,6 +213,10 @@ export interface SignalSummaryResponse {
     month: string;
     symbols: string[];
     expiry: ExpiryFilter;
+    moneyness: MoneynessFilter;
+    half: HalfFilter;
+    owned: OwnedFilter;
+    numberSource: NumberSource;
     weeks: WeekSummaryRow[];
     /* Computed over every trade in the month, not by adding the weeks up, so the
        yields stay means rather than means of means. */
