@@ -1,0 +1,257 @@
+{
+  "publishDate": "2026-08-24",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 15.13",
+      "text": "Premium is relatively thin on quiet days, so entries are concentrated after the week's scheduled events."
+    },
+    {
+      "label": "30-Year Treasury Yield: 5.24%",
+      "text": "Elevated long-term rates can pressure growth and technology shares, so tech entries wait until after Nvidia reports."
+    },
+    {
+      "label": "PCE inflation report: Wednesday, 5:30 AM Pacific",
+      "text": "The inflation release sets the first trading window for non-tech puts and calls."
+    },
+    {
+      "label": "Fed Chair speech: Friday, 8:00 AM Pacific",
+      "text": "The final window opens after the speech, with longer-dated contracts held until market reaction is visible."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Aug 24",
+      "rule": "No new positions. Wait for the Wednesday inflation release before using the first trade window.",
+      "event": "No scheduled entry window.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Aug 25",
+      "rule": "Stay sidelined. The first entries open Wednesday after PCE, once the inflation number is known.",
+      "event": "No scheduled entry window.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Aug 26",
+      "rule": "After 5:30 AM Pacific, review PCE and let the opening move settle. Sell the non-tech contracts below; use smaller size if the report is hot.",
+      "event": "PCE at 5:30 AM Pacific. First trading window opens after the report.",
+      "trades": [
+        {
+          "ticker": "KKR",
+          "type": "put",
+          "strike": "$105P",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "-0.35",
+          "ann": "37.1%",
+          "premium": "$267",
+          "collateral": "$10,500",
+          "risk": "aggressive",
+          "note": "A quality asset manager at an entry price you would accept."
+        },
+        {
+          "ticker": "ZTS",
+          "type": "put",
+          "strike": "$75P",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "-0.33",
+          "ann": "34.1%",
+          "premium": "$175",
+          "collateral": "$7,500",
+          "risk": "aggressive",
+          "note": "Pet medicine demand has limited connection to the Fed report."
+        },
+        {
+          "ticker": "GM",
+          "type": "put",
+          "strike": "$85P",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "-0.33",
+          "ann": "30.1%",
+          "premium": "$175",
+          "collateral": "$8,500",
+          "risk": "aggressive",
+          "note": "Entry is 3.3% below Friday's stock price."
+        },
+        {
+          "ticker": "FCX",
+          "type": "put",
+          "strike": "$70P",
+          "expiry": "2026-10-16",
+          "dte": 53,
+          "delta": "-0.29",
+          "ann": "31.2%",
+          "premium": "$317",
+          "collateral": "$7,000",
+          "risk": "balanced",
+          "note": "The widest cushion on the slate, 8.7% below the stock price."
+        },
+        {
+          "ticker": "HWM",
+          "type": "call",
+          "strike": "$280C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.39",
+          "ann": "32.0%",
+          "premium": "$595",
+          "collateral": "$27,168",
+          "risk": "balanced",
+          "note": "The highest premium per day among the listed contracts."
+        },
+        {
+          "ticker": "V",
+          "type": "call",
+          "strike": "$380C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.35",
+          "ann": "18.2%",
+          "premium": "$462",
+          "collateral": "$37,104",
+          "risk": "conservative",
+          "note": "Covered-call income for long-term Visa holders."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Aug 27",
+      "rule": "After Nvidia reports Wednesday night, wait for Thursday's open to reflect the result. Then tech contracts become eligible.",
+      "event": "Nvidia reports Wednesday after the close. Second trading window opens Thursday after the open.",
+      "trades": [
+        {
+          "ticker": "SHOP",
+          "type": "call",
+          "strike": "$155C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.41",
+          "ann": "50.1%",
+          "premium": "$512",
+          "collateral": "$14,925",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate, with a correspondingly higher delta."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$190C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.37",
+          "ann": "43.6%",
+          "premium": "$537",
+          "collateral": "$17,994",
+          "risk": "balanced",
+          "note": "Strike is 5.6% above Friday's close."
+        },
+        {
+          "ticker": "IBM",
+          "type": "call",
+          "strike": "$245C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.36",
+          "ann": "31.3%",
+          "premium": "$505",
+          "collateral": "$23,568",
+          "risk": "balanced",
+          "note": "A steadier technology name than the larger AI stocks."
+        },
+        {
+          "ticker": "CSCO",
+          "type": "call",
+          "strike": "$115C",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "0.36",
+          "ann": "27.5%",
+          "premium": "$209",
+          "collateral": "$11,104",
+          "risk": "conservative",
+          "note": "A lower-drama covered call on established shares."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "put",
+          "strike": "$250P",
+          "expiry": "2026-09-18",
+          "dte": 25,
+          "delta": "-0.31",
+          "ann": "24.9%",
+          "premium": "$427",
+          "collateral": "$25,000",
+          "risk": "aggressive",
+          "note": "Entry is 3.3% below Friday's price."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Aug 28",
+      "rule": "Wait until after the Fed Chair speaks at 8:00 AM Pacific. If the reaction is calm, use the listed contracts normally. If stocks drop on a hawkish message, limit entries to puts at acceptable ownership prices.",
+      "event": "Fed Chair speech at 8:00 AM Pacific. Final trading window opens after the speech.",
+      "trades": [
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$225C",
+          "expiry": "2026-10-16",
+          "dte": 53,
+          "delta": "0.37",
+          "ann": "20.3%",
+          "premium": "$632",
+          "collateral": "$21,420",
+          "risk": "aggressive",
+          "note": "Largest single premium on the slate."
+        },
+        {
+          "ticker": "PYPL",
+          "type": "put",
+          "strike": "$57.5P",
+          "expiry": "2026-10-16",
+          "dte": 53,
+          "delta": "-0.26",
+          "ann": "15.7%",
+          "premium": "$131",
+          "collateral": "$5,750",
+          "risk": "balanced",
+          "note": "Lowest assignment probability among the 15 contracts."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$85C",
+          "expiry": "2026-10-16",
+          "dte": 53,
+          "delta": "0.33",
+          "ann": "19.4%",
+          "premium": "$222",
+          "collateral": "$7,880",
+          "risk": "conservative",
+          "note": "Nearly 8% of room before shares are called away."
+        },
+        {
+          "ticker": "NVO",
+          "type": "call",
+          "strike": "$50C",
+          "expiry": "2026-10-16",
+          "dte": 53,
+          "delta": "0.33",
+          "ann": "19.2%",
+          "premium": "$130",
+          "collateral": "$4,674",
+          "risk": "conservative",
+          "note": "Smallest collateral requirement on the slate."
+        }
+      ]
+    }
+  ]
+}
