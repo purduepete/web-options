@@ -13,8 +13,6 @@ import type {
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
-    GROUP_IDS,
-    GROUP_LABELS,
     MONEYNESS_FILTERS,
     OWNED_FILTERS,
     groupIdForTrade,
@@ -42,7 +40,17 @@ import {
 // the numbers are rolled up, where the browser never sees the trades at all.
 export { EXPIRY_FILTERS, TIER_ORDER };
 export { HALF_FILTERS, MONEYNESS_FILTERS, OWNED_FILTERS };
-export type { ExpiryFilter, GroupId, HalfFilter, MoneynessFilter, OwnedFilter };
+export type { ExpiryFilter, HalfFilter, MoneynessFilter, OwnedFilter };
+
+export type LiveGroupId = GroupId;
+export const LIVE_GROUP_IDS: readonly LiveGroupId[] = ['top-picks', ...TIER_ORDER, 'other'];
+export const LIVE_GROUP_LABELS: Record<LiveGroupId, string> = {
+    'top-picks': 'Top Picks',
+    conservative: 'Conservative',
+    balanced: 'Balanced',
+    aggressive: 'Aggressive',
+    other: 'Other',
+};
 
 export const TIER_FILTERS = ['all', 'top-picks', ...TIER_ORDER] as const;
 export type TierFilter = (typeof TIER_FILTERS)[number];
@@ -64,11 +72,15 @@ export function cycle<T extends string>(choices: readonly T[], current: T): T {
 }
 
 export interface SignalGroup {
-    id: GroupId;
+    id: LiveGroupId;
     label: string;
     /** Top picks come from every tier, so only that group spells the tier out. */
     showTierBadge: boolean;
     matches: (trade: Trade) => boolean;
+}
+
+export function liveGroupIdForTrade(trade: Trade): LiveGroupId {
+    return groupIdForTrade(trade);
 }
 
 /**
@@ -158,10 +170,10 @@ export function filterDaysByOwned(days: DaySignals[], filter: OwnedFilter): DayS
 
 export function filterDaysByTier(days: DaySignals[], filters: readonly TierSelection[]): DaySignals[] {
     if (filters.length === 0) return days;
-    const selected: ReadonlySet<GroupId> = new Set(filters);
+    const selected: ReadonlySet<LiveGroupId> = new Set(filters);
     return days.map((day) => ({
         ...day,
-        trades: day.trades.filter((trade) => selected.has(groupIdForTrade(trade))),
+        trades: day.trades.filter((trade) => selected.has(liveGroupIdForTrade(trade))),
     }));
 }
 
@@ -217,11 +229,11 @@ export function filterDaysByGrade(
 export function buildGroups(days: DaySignals[]): SignalGroup[] {
     const someTradeIs = (predicate: (trade: Trade) => boolean) => days.some((day) => day.trades.some(predicate));
 
-    return GROUP_IDS.filter((id) => someTradeIs((trade) => groupIdForTrade(trade) === id)).map((id) => ({
+    return LIVE_GROUP_IDS.filter((id) => someTradeIs((trade) => liveGroupIdForTrade(trade) === id)).map((id) => ({
         id,
-        label: GROUP_LABELS[id],
+        label: LIVE_GROUP_LABELS[id],
         showTierBadge: id === 'top-picks',
-        matches: (trade: Trade) => groupIdForTrade(trade) === id,
+        matches: (trade: Trade) => liveGroupIdForTrade(trade) === id,
     }));
 }
 

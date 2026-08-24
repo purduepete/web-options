@@ -211,7 +211,7 @@ function DayCard({
                         className={`day-premium${premium.usesFallback ? ' is-fallback' : ''}`}
                         title={
                             `${formatMoney(premium.value)} premium on this day.` +
-                            (premium.usesFallback ? ' Includes VADER numbers where no captured quote exists.' : '')
+                            (premium.usesFallback ? ' Includes recommended values where no captured quote exists.' : '')
                         }
                     >
                         P: {formatThousandsMoney(premium.value)}
@@ -355,7 +355,7 @@ function RiskGroup({
 }
 
 /**
- * Which number a ticket shows, and whether it had to borrow VADER's.
+ * Which number a ticket shows, and whether it had to use the recommendation.
  *
  * Fallback is per value rather than per ticket: a quote can carry a delta and a
  * mark independently, and a week before capture began (2026-07-17) has neither.
@@ -374,7 +374,7 @@ function displayed(source: NumberSource, actual: number | null, quoted: number |
     return { value: quoted, fallback: quoted !== null };
 }
 
-const FALLBACK_TITLE = 'No 7:30am quote was captured — showing the number VADER advertised.';
+const FALLBACK_TITLE = 'No 7:30am quote was captured — showing the recommended value.';
 
 /**
  * The band behind a ticket's dot, or null for no dot at all.
@@ -399,7 +399,7 @@ function Figure({ shown, format }: { shown: Displayed; format: (value: number | 
     return (
         <b className="value-quoted" title={FALLBACK_TITLE}>
             {format(shown.value)}
-            <span className="sr-only"> (VADER estimate)</span>
+            <span className="sr-only"> (recommended value)</span>
         </b>
     );
 }
@@ -641,7 +641,9 @@ function Ticket({
                     <MoneynessBadge trade={trade} />
                     {showTierBadge ? (
                         <span className={`tier-badge ${(trade.tier ?? '').toLowerCase()}`}>
-                            {trade.tier ?? 'Unclassified'}
+                            {trade.tier
+                                ? trade.tier[0]!.toUpperCase() + trade.tier.slice(1).toLowerCase()
+                                : 'Unclassified'}
                         </span>
                     ) : (
                         trade.isTopPick && <span className="top-pick">Top pick</span>

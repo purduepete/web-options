@@ -1,17 +1,28 @@
-/* The border follows the neutral text color in every theme. */
 .vix-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     flex-shrink: 0;
     padding: 0.15rem 0.35rem;
-    border: var(--border-width) solid currentColor;
+    border: var(--border-width) solid var(--border);
     font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     color: var(--text-muted);
     white-space: nowrap;
     user-select: none;
+}
+
+.vix-chip.level-high {
+    border-color: var(--positive);
+}
+
+.vix-chip.level-medium {
+    border-color: var(--warning);
+}
+
+.vix-chip.level-low {
+    border-color: var(--negative);
 }
 
 .vix-chip b {
@@ -32,6 +43,14 @@
     gap: 0.15rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+}
+
+.vix-chip .change.rising {
+    color: var(--positive);
+}
+
+.vix-chip .change.falling {
+    color: var(--negative);
 }
 
 /* A 320px bar has room for the level or the day change, not both: with both, the

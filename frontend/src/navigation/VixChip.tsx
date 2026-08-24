@@ -20,11 +20,21 @@ const PLACEHOLDER_VALUE = 88.88;
 /** Held open only while the whole chip is loading. */
 const PLACEHOLDER_CHANGE = '+8.88%';
 
-function formatChange(value: number, previous: number): string | null {
+function sessionChange(value: number, previous: number): number {
     // Round before reading the sign, so a rounding remainder cannot print "-0.00%".
-    const percent = Number((((value - previous) / previous) * 100).toFixed(2));
-    if (percent === 0) return null;
+    return Number((((value - previous) / previous) * 100).toFixed(2));
+}
+
+function formatChange(percent: number): string {
     return `${percent > 0 ? '+' : ''}${percent.toFixed(2)}%`;
+}
+
+function borderClass(value: number, now: Date = new Date()): string {
+    const day = now.getDay();
+    if (day === 0 || day === 6) return '';
+    if (value > 15) return ' level-high';
+    if (value > 12) return ' level-medium';
+    return ' level-low';
 }
 
 export function VixChip() {
@@ -33,13 +43,15 @@ export function VixChip() {
     // A close of zero would be a broken row rather than a quiet day, and it cannot
     // be divided by, so it is treated as no previous close at all.
     const previous = vix?.previousValue || null;
-    const rising = previous !== null && vix !== null && vix.value >= previous;
-    const actualChange = previous !== null && vix !== null ? formatChange(vix.value, previous) : null;
+    const changePercent = previous !== null && vix !== null ? sessionChange(vix.value, previous) : null;
+    const actualChange = changePercent === null ? null : formatChange(changePercent);
     const change = actualChange ?? PLACEHOLDER_CHANGE;
+    const changeClass =
+        changePercent === null ? ' pending' : changePercent > 0 ? ' rising' : changePercent < 0 ? ' falling' : '';
 
     return (
         <span
-            className={vix ? 'vix-chip' : 'vix-chip pending'}
+            className={vix ? `vix-chip${borderClass(vix.value)}` : 'vix-chip pending'}
             aria-hidden={vix ? undefined : true}
             title={
                 vix
@@ -51,8 +63,9 @@ export function VixChip() {
         >
             VIX <b>{shown.toFixed(2)}</b>
             {(actualChange !== null || vix === null) && (
-                <span className={`change${actualChange === null ? ' pending' : ''}`} aria-hidden={vix === null}>
-                    {rising ? <TrendingUpIcon width={12} height={12} /> : <TrendingDownIcon width={12} height={12} />}
+                <span className={`change${changeClass}`} aria-hidden={vix === null}>
+                    {changePercent !== null && changePercent > 0 && <TrendingUpIcon width={12} height={12} />}
+                    {changePercent !== null && changePercent < 0 && <TrendingDownIcon width={12} height={12} />}
                     {change}
                 </span>
             )}

@@ -166,12 +166,12 @@ describe('LiveSignalsPage', () => {
         expect(within(tuesday).getByText('AMD $100P')).toBeTruthy();
         expect(within(tuesday).getByText('08/15/2025')).toBeTruthy();
         expect(within(tuesday).getByText('$10,000')).toBeTruthy();
-        // Nothing was quoted for these fixtures, so the advertised numbers stand
+        // Nothing was captured for these fixtures, so the recommended numbers stand
         // in — each one marked, and named for a screen reader.
         expect(quotedValues(tuesday)).toEqual([
-            '-0.20 (VADER estimate)',
-            '20.0% (VADER estimate)',
-            '$120 (VADER estimate)',
+            '-0.20 (recommended value)',
+            '20.0% (recommended value)',
+            '$120 (recommended value)',
         ]);
     });
 
@@ -432,6 +432,22 @@ describe('LiveSignalsPage', () => {
         expect(screen.getByText('PICK $100P')).toBeTruthy();
         expect(screen.queryByText('REGULAR $100P')).toBeNull();
         expect(document.querySelector('.score-filters')?.textContent).toContain('Tier: Top Picks');
+    });
+
+    it('ignores the removed Weekly Picks tier URL value', async () => {
+        fetchWeekSignals.mockResolvedValue(
+            week({
+                days: [day('2025-08-11', 'Monday', [trade('REGULAR'), trade('SIGNAL')])],
+            }),
+        );
+
+        renderPage('/?tier=weekly-picks');
+        await screen.findByTestId('week-grid');
+
+        expect(screen.getByRole('button', { name: 'Tier: Tier' })).toBeTruthy();
+        expect(screen.getByText('SIGNAL $100P')).toBeTruthy();
+        expect(screen.getByText('REGULAR $100P')).toBeTruthy();
+        expect(document.querySelector('.score-filters')).toBeNull();
     });
 
     it('starts with a valid tier from the URL and ignores an invalid one', async () => {
@@ -1196,7 +1212,7 @@ describe('LiveSignalsPage number source', () => {
         const card = await tuesday();
 
         expect(within(card).getByText('-0.31')).toBeTruthy();
-        expect(quotedValues(card)).toEqual(['20.0% (VADER estimate)', '$120 (VADER estimate)']);
+        expect(quotedValues(card)).toEqual(['20.0% (recommended value)', '$120 (recommended value)']);
     });
 
     it('flags a premium taken across a wide spread', async () => {

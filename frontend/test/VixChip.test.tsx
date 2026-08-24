@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../src/api', () => ({
@@ -20,13 +20,23 @@ function renderChip() {
 }
 
 describe('VixChip', () => {
-    it('keeps the chip and change free of grade classes', async () => {
+    let dayOfWeek: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        dayOfWeek = vi.spyOn(Date.prototype, 'getDay').mockReturnValue(3);
+    });
+
+    afterEach(() => {
+        dayOfWeek.mockRestore();
+    });
+
+    it('uses the weekday border thresholds and colors a decline red', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 15.84 } });
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('14.89')).toBeTruthy());
-        expect(container.querySelector('.vix-chip')?.className).toBe('vix-chip');
-        expect(container.querySelector('.vix-chip .change')?.className).toBe('change');
+        expect(container.querySelector('.vix-chip')?.className).toBe('vix-chip level-medium');
+        expect(container.querySelector('.vix-chip .change')?.className).toBe('change falling');
     });
 
     it('shows the day change against the close before it', async () => {
@@ -41,16 +51,40 @@ describe('VixChip', () => {
         const { container } = renderChip();
 
         await waitFor(() => expect(screen.getByText('+6.47%')).toBeTruthy());
+        expect(container.querySelector('.vix-chip')?.className).toBe('vix-chip level-high');
+        expect(container.querySelector('.vix-chip .change')?.className).toBe('change rising');
     });
 
-    it('hides a change that rounds to zero', async () => {
+    it('shows a flat change without an arrow or direction color', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 14.89 } });
         const { container } = renderChip();
 
-        await waitFor(() => expect(screen.getByText('14.89')).toBeTruthy());
-        expect(screen.queryByText('0.00%')).toBeNull();
-        expect(container.querySelector('.vix-chip .change')).toBeNull();
-        expect(container.querySelector('.vix-chip')?.getAttribute('title')).not.toContain('0.00%');
+        await waitFor(() => expect(screen.getByText('0.00%')).toBeTruthy());
+        expect(container.querySelector('.vix-chip .change')?.className).toBe('change');
+        expect(container.querySelector('.vix-chip .change svg')).toBeNull();
+        expect(container.querySelector('.vix-chip')?.getAttribute('title')).toContain('0.00%');
+    });
+
+    it.each([
+        [15.01, 'level-high'],
+        [15, 'level-medium'],
+        [12.01, 'level-medium'],
+        [12, 'level-low'],
+    ])('uses strict weekday thresholds for %s', async (value, expectedClass) => {
+        mockFetchVix.mockResolvedValue({ vix: { value, asOf: '2026-08-19', previousValue: null } });
+        const { container } = renderChip();
+
+        await waitFor(() => expect(screen.getByText(value.toFixed(2))).toBeTruthy());
+        expect(container.querySelector('.vix-chip')?.className).toBe(`vix-chip ${expectedClass}`);
+    });
+
+    it('uses the default border color on weekends', async () => {
+        dayOfWeek.mockReturnValue(6);
+        mockFetchVix.mockResolvedValue({ vix: { value: 18, asOf: '2026-08-21', previousValue: 17 } });
+        const { container } = renderChip();
+
+        await waitFor(() => expect(screen.getByText('18.00')).toBeTruthy());
+        expect(container.querySelector('.vix-chip')?.className).toBe('vix-chip');
     });
 
     it('leaves no empty change space when there is no session before it', async () => {

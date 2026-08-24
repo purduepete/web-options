@@ -36,7 +36,7 @@ export function WeekScore({
                         className={premiumUsesFallback ? 'value-quoted' : undefined}
                         title={
                             premiumUsesFallback
-                                ? 'Includes contracts with no captured quote, counted at the numbers VADER advertised'
+                                ? 'Includes contracts with no captured quote, counted at their recommended values'
                                 : undefined
                         }
                     >

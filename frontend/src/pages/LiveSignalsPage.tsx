@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
-import { DEFAULT_NUMBER_SOURCE, GROUP_LABELS } from '@weboptions/shared';
+import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
 import type { Trade, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
@@ -13,6 +13,7 @@ import { SignalFilterControls } from '../signals/SignalFilterControls';
 import {
     EXPIRY_FILTERS,
     HALF_FILTERS,
+    LIVE_GROUP_LABELS,
     MONEYNESS_FILTERS,
     OWNED_FILTERS,
     SELECTABLE_TIER_FILTERS,
@@ -32,7 +33,6 @@ import {
 import type {
     ExpiryFilter,
     GradeFilter,
-    GroupId,
     HalfFilter,
     MoneynessFilter,
     OwnedFilter,
@@ -366,7 +366,7 @@ export function LiveSignalsPage() {
     if (tier.length > 0) {
         appliedFilters.push({
             key: 'tier',
-            label: `Tier: ${tier.map((filter) => GROUP_LABELS[filter]).join(' + ')}`,
+            label: `Tier: ${tier.map((filter) => LIVE_GROUP_LABELS[filter]).join(' + ')}`,
             remove: () => setTierParam([]),
         });
     }

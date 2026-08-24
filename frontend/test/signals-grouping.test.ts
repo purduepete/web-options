@@ -300,12 +300,13 @@ describe('buildGroups', () => {
         expect(buildGroups([day('2025-08-11', 'Monday', [])])).toEqual([]);
     });
 
-    it('puts top picks first, then the tiers in risk order', () => {
+    it('puts top picks first and the tiers in risk order', () => {
         const days = [
             day('2025-08-11', 'Monday', [
                 trade('AAPL', { tier: 'Aggressive' }),
                 trade('MSFT', { tier: 'Balanced' }),
                 trade('NVDA', { isTopPick: true, tier: 'Balanced' }),
+                trade('MRK', { tier: 'Conservative' }),
             ]),
             day('2025-08-12', 'Tuesday', [trade('AMD', { tier: 'Conservative' })]),
         ];
