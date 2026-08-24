@@ -89,3 +89,19 @@ describe('GET /api/week-signals week flags', () => {
         expect(response.body.isCurrentWeek).toBe(true);
     });
 });
+
+describe('GET /api/earliest-week', () => {
+    it('returns the earliest Telegram signal week', async () => {
+        vi.spyOn(authRepository, 'findActiveKey').mockResolvedValue({
+            label: 'Test key',
+            prefix: 'woak_aaaaaaa',
+            expiresAt: null,
+        });
+        vi.spyOn(signalsRepository, 'earliestWeekMonday').mockResolvedValue('2026-08-03');
+
+        const response = await request(createApp(config)).get('/api/earliest-week').set('X-API-Key', VALID_KEY);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ weekStart: '2026-08-03' });
+    });
+});

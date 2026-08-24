@@ -65,14 +65,7 @@ export async function listCalendars(db: DbConfig): Promise<CalendarSummary[]> {
     }));
 }
 
-export async function fetchCalendar(db: DbConfig, publishDate: string): Promise<CalendarWeek | null> {
-    const pool = await getPool(db);
-
-    const weekResult = await pool.request().input('publishDate', sql.VarChar(10), publishDate).query(WEEK_QUERY);
-
-    const weekRow = weekResult.recordset[0];
-    if (!weekRow) return null;
-
+async function hydrateCalendar(pool: sql.ConnectionPool, weekRow: Record<string, unknown>): Promise<CalendarWeek> {
     const weekId = weekRow.id as number;
     const [dayResult, tradeResult] = await Promise.all([
         pool.request().input('weekId', sql.Int, weekId).query(DAYS_QUERY),
@@ -103,7 +96,7 @@ export async function fetchCalendar(db: DbConfig, publishDate: string): Promise<
         publishDate: sqlDateToIso(weekRow.publish_date)!,
         weekStart: sqlDateToIso(weekRow.week_start)!,
         weekEnd: sqlDateToIso(weekRow.week_end)!,
-        title: weekRow.title ?? null,
+        title: typeof weekRow.title === 'string' ? weekRow.title : null,
         macro: parseMacro(weekRow.macro),
         // Empty days still render: the rule and event are the point of an empty day.
         days: dayResult.recordset.map((row) => ({
@@ -114,4 +107,11 @@ export async function fetchCalendar(db: DbConfig, publishDate: string): Promise<
             trades: tradesByDay.get(row.id as number) ?? [],
         })),
     };
+}
+
+export async function fetchCalendar(db: DbConfig, publishDate: string): Promise<CalendarWeek | null> {
+    const pool = await getPool(db);
+    const result = await pool.request().input('publishDate', sql.VarChar(10), publishDate).query(WEEK_QUERY);
+    const weekRow = result.recordset[0];
+    return weekRow ? hydrateCalendar(pool, weekRow) : null;
 }

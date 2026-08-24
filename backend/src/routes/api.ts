@@ -114,19 +114,22 @@ export function createApiRouter(config: AppConfig): Router {
         }
 
         try {
-            const days = await fetchWeek(config.db, monday);
-            const hasPriorWeekData = await weekHasData(config.db, addDays(monday, -7));
-            // A future week is never navigable, even if it somehow had rows.
-            const hasNextWeekData = monday >= currentMonday ? false : await weekHasData(config.db, addDays(monday, 7));
+            const weekStart = toIsoDate(monday);
+            const [signalDays, hasPriorWeekData, hasNextWeekData] = await Promise.all([
+                fetchWeek(config.db, monday),
+                weekHasData(config.db, addDays(monday, -7)),
+                // A future week is never navigable, even if it somehow had rows.
+                monday >= currentMonday ? Promise.resolve(false) : weekHasData(config.db, addDays(monday, 7)),
+            ]);
 
             const body: WeekSignalsResponse = {
-                weekStart: toIsoDate(monday),
+                weekStart,
                 weekEnd: toIsoDate(addDays(monday, 4)),
                 generatedAt: localTimestamp(),
                 isCurrentWeek: toIsoDate(monday) === toIsoDate(currentMonday),
                 hasPriorWeekData,
                 hasNextWeekData,
-                days,
+                days: signalDays,
             };
             res.json(body);
         } catch (error) {
