@@ -449,7 +449,10 @@ export function OwnedContractsPage() {
 
     // Everything downstream — the filters, the order, the totals and the rows —
     // reads one projection, so none of them has to know which source is on.
-    const sourced = useMemo(() => applyPriceSource(positions ?? [], priceSource), [positions, priceSource]);
+    const sourced = useMemo(
+        () => applyPriceSource(positions ?? [], priceSource, underlyings),
+        [positions, priceSource, underlyings],
+    );
 
     // Stored prices are cached by definition, whether they were read back from the
     // browser or pulled with the payload.

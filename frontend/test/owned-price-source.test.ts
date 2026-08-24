@@ -59,6 +59,38 @@ describe('applyPriceSource', () => {
         expect(row?.unrealizedCreditCapturedPct).toBe(25);
     });
 
+    it('derives cushion and moneyness from the current underlying in live mode', () => {
+        const [row] = applyPriceSource(
+            [
+                position({
+                    symbol: 'UAL',
+                    putCall: 'P',
+                    strikePrice: 120,
+                    underlyingPrice: null,
+                    percentFromStrike: null,
+                    moneyness: null,
+                }),
+            ],
+            'live',
+            { UAL: { price: 114.18, changePct: 0.9 } },
+        );
+
+        expect(row?.underlyingPrice).toBe(114.18);
+        expect(row?.percentFromStrike).toBeCloseTo(-4.85);
+        expect(row?.moneyness).toBe('itm');
+    });
+
+    it('keeps stored underlying fields when a live underlying quote is unavailable', () => {
+        const [row] = applyPriceSource(
+            [position({ underlyingPrice: 172.5, percentFromStrike: 15, moneyness: 'otm' })],
+            'live',
+        );
+
+        expect(row?.underlyingPrice).toBe(172.5);
+        expect(row?.percentFromStrike).toBe(15);
+        expect(row?.moneyness).toBe('otm');
+    });
+
     it('prefers a real close over the stored mark', () => {
         const [row] = applyPriceSource(
             [position({ cachedPrice: { ...position().cachedPrice, closePrice: 0.8 } })],

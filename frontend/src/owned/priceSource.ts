@@ -1,4 +1,4 @@
-import type { OwnedOptionPosition } from '@weboptions/shared';
+import type { Moneyness, OwnedOptionPosition, UnderlyingQuote } from '@weboptions/shared';
 
 /**
  * Which of the two prices upstream sends for a contract the page is reading:
@@ -55,6 +55,24 @@ function priceOf(position: OwnedOptionPosition, source: PriceSource): number | n
         : (quote.midPrice ?? quote.bid ?? quote.ask);
 }
 
+function liveUnderlyingFields(
+    position: OwnedOptionPosition,
+    quote: UnderlyingQuote | undefined,
+): Pick<OwnedOptionPosition, 'underlyingPrice' | 'percentFromStrike' | 'moneyness'> | null {
+    if (!quote || !Number.isFinite(quote.price) || position.strikePrice <= 0) return null;
+    const distance = quote.price - position.strikePrice;
+    let moneyness: Moneyness = 'atm';
+    if (distance !== 0) {
+        const isInTheMoney = position.putCall === 'P' ? distance < 0 : distance > 0;
+        moneyness = isInTheMoney ? 'itm' : 'otm';
+    }
+    return {
+        underlyingPrice: quote.price,
+        percentFromStrike: (distance / position.strikePrice) * 100,
+        moneyness,
+    };
+}
+
 /**
  * Upstream blends the two sources and derives the cost, the P/L and the captured
  * share from whichever won. Reading one source alone means deriving those three
@@ -65,14 +83,17 @@ function priceOf(position: OwnedOptionPosition, source: PriceSource): number | n
 export function applyPriceSource(
     positions: readonly OwnedOptionPosition[],
     source: PriceSource,
+    underlyings: Readonly<Record<string, UnderlyingQuote>> = {},
 ): OwnedOptionPosition[] {
     return positions.map((position) => {
         const price = priceOf(position, source);
         const cost = price === null ? null : price * position.contracts * 100;
         const captured = cost === null ? null : position.entryCredit - cost;
         const { cachedPrice, quote } = position;
+        const underlying = source === 'live' ? liveUnderlyingFields(position, underlyings[position.symbol]) : null;
         return {
             ...position,
+            ...underlying,
             estimatedBuybackCost: cost,
             unrealizedCreditCaptured: captured,
             unrealizedCreditCapturedPct:
