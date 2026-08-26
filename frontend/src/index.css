@@ -1,6 +1,6 @@
 /*
  * Design tokens. Three themes on `data-theme`, squared corners everywhere, and a
- * highlight colour the user picks that lands on `--highlight` at runtime.
+ * highlight color the user picks that lands on `--highlight` at runtime.
  *
  * The font is self-hosted: jimbrownhome is reachable over Tailscale from places
  * where a Google Fonts round trip is the slowest thing on the page.
@@ -53,7 +53,7 @@
 
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 5%);
 
-    /* A favourite is a mark the user made, not another accent the theme owns,
+    /* A favorite is a mark the user made, not another accent the theme owns,
        so the star holds the same amber in all three themes. */
     --star: #eab308;
     --star-strong: #ca8a04;
@@ -80,7 +80,7 @@
     --surface-2: var(--gray-100);
     --surface-hover: var(--gray-100);
     /* The bar and the mega panel sit above the page in light and flush with it
-       in the dark themes, so they carry their own colour rather than reusing
+    in the dark themes, so they carry their own color rather than reusing
        either the page or the card one. */
     --nav-bg: var(--white);
     --nav-bg-rgb: 255 255 255;

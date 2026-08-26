@@ -55,7 +55,7 @@
     margin-top: 0.15rem;
 }
 
-/* Only the icons carry a colour. Tinting the whole banner, as this used to,
+/* Only the icons carry a color. Tinting the whole banner, as this used to,
    made the event read as a warning label rather than as a sentence. */
 .event-banner {
     background: var(--surface-2);

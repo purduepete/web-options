@@ -47,8 +47,8 @@ export function ThemeControls() {
             </fieldset>
 
             <fieldset className="theme-group">
-                <legend>Highlight colour</legend>
-                <div className="swatches" role="radiogroup" aria-label="Highlight colour">
+                <legend>Highlight color</legend>
+                <div className="swatches" role="radiogroup" aria-label="Highlight color">
                     {HIGHLIGHT_OPTIONS.map((option) => {
                         const selected = highlightColor.toLowerCase() === option.value.toLowerCase();
                         return (

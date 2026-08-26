@@ -18,7 +18,7 @@ export interface ToggleResult {
 }
 
 /**
- * Favourites keep insertion order rather than jumping to the front: the menu is
+ * Favorites keep insertion order rather than jumping to the front: the menu is
  * a stable list the user builds, not a history.
  */
 export function toggleFavorite(list: readonly string[], id: string, max = MAX_FAVORITES): ToggleResult {
@@ -29,6 +29,23 @@ export function toggleFavorite(list: readonly string[], id: string, max = MAX_FA
         return { list: [...list], changed: false };
     }
     return { list: [...list, id], changed: true };
+}
+
+export function reorderFavorite(list: readonly string[], startIndex: number, endIndex: number): string[] {
+    if (
+        startIndex === endIndex ||
+        startIndex < 0 ||
+        endIndex < 0 ||
+        startIndex >= list.length ||
+        endIndex >= list.length
+    ) {
+        return [...list];
+    }
+    const reordered = [...list];
+    const [favorite] = reordered.splice(startIndex, 1);
+    if (favorite === undefined) return [...list];
+    reordered.splice(endIndex, 0, favorite);
+    return reordered;
 }
 
 /** Drops anything that is no longer a real route, e.g. after a menu rename. */

@@ -15,13 +15,12 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
         title: 'Anywhere',
         entries: [
             {
-                chords: [
-                    ['Ctrl', 'K'],
-                    ['Ctrl', '/'],
-                ],
+                chords: [['Ctrl', '/']],
                 description: 'Open the command palette',
             },
             { chords: [['Ctrl', '\\']], description: 'Open the menu' },
+            { chords: [['Ctrl', '0']], description: 'Open Live Signals' },
+            { chords: [['Ctrl', '1–9']], description: 'Open a favorite by position' },
             { chords: [['Ctrl', 'Shift', '?']], description: 'Show this list' },
             { chords: [['Esc']], description: 'Close the palette, the menu or this list' },
         ],

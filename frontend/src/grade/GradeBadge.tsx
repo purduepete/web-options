@@ -13,8 +13,8 @@ const BAND_LABELS: Record<GradeBand, string> = {
  * This app's own grade, not webportfolio's.
  *
  * It shares that app's threshold names and defaults but not its arithmetic, so the
- * label says whose grade it is rather than letting the colour imply the two agree.
- * The reasons are listed below it: a colour with no explanation is a verdict.
+ * label says whose grade it is rather than letting the color imply the two agree.
+ * The reasons are listed below it: a color with no explanation is a verdict.
  */
 export function GradeBadge({ grade }: { grade: GradeResult }) {
     return (

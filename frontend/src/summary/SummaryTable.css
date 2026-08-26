@@ -52,7 +52,7 @@
     background: var(--surface-2);
     color: var(--text-heading);
     /* Uniform across the header row so the tier accents below only change its
-       colour, never its weight. */
+    color, never its weight. */
     border-top: 2px solid var(--border);
     font-size: 0.72rem;
     font-weight: 600;
@@ -61,7 +61,7 @@
     white-space: nowrap;
 }
 
-/* The same colours the week grid gives its risk-group headings, so a column
+/* The same colors the week grid gives its risk-group headings, so a column
    here and a section there are recognisably the same thing. */
 .summary-table thead th.summary-column-top-picks {
     color: var(--top-pick);

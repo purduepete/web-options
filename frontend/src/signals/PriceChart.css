@@ -106,7 +106,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* A dash of the line's own colour, so the key reads without a second lookup. */
+/* A dash of the line's own color, so the key reads without a second lookup. */
 .chart-key::before {
     content: '';
     display: inline-block;

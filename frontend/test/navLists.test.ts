@@ -4,6 +4,7 @@ import {
     pruneUnknown,
     readStringList,
     recordVisit,
+    reorderFavorite,
     toggleFavorite,
     writeStringList,
 } from '../src/navigation/navLists';
@@ -48,6 +49,16 @@ describe('toggleFavorite', () => {
     });
 });
 
+describe('reorderFavorite', () => {
+    it('moves one favorite without dropping the others', () => {
+        expect(reorderFavorite(['/a', '/b', '/c'], 2, 0)).toEqual(['/c', '/a', '/b']);
+    });
+
+    it('leaves the order alone when either position is outside the list', () => {
+        expect(reorderFavorite(['/a', '/b'], 0, 2)).toEqual(['/a', '/b']);
+    });
+});
+
 describe('pruneUnknown', () => {
     it('drops ids that are no longer routes', () => {
         const known = new Set(['/', '/calendars']);
@@ -77,11 +88,12 @@ describe('nav model', () => {
         expect(ids).toEqual([
             '/',
             '/summary',
-            '/owned-contracts',
             '/calendars/latest',
-            '/settings/appearance',
-            '/settings/caution',
+            '/owned-contracts',
+            '/settings/favorites',
             '/settings/grading',
+            '/settings/caution',
+            '/settings/appearance',
             '/settings/key',
         ]);
     });

@@ -96,16 +96,20 @@ describe('Navbar on desktop', () => {
         expect(menu.getAttribute('aria-expanded')).toBe('false');
     });
 
-    it('shows placeholders without making them links', async () => {
+    it('hides future placeholders and puts Owned Contracts under Tools', async () => {
         const user = userEvent.setup();
         renderNavbar();
 
         await user.click(screen.getByRole('button', { name: /Menu/ }));
 
-        expect(screen.getByText('Week Explorer')).toBeTruthy();
-        expect(screen.queryByRole('link', { name: /Week Explorer/ })).toBeNull();
-        // A placeholder cannot be favourited either.
-        expect(screen.queryByRole('button', { name: /Favourite Week Explorer/ })).toBeNull();
+        expect(screen.queryByText('Week Explorer')).toBeNull();
+        expect(screen.queryByText('Symbol Lookup')).toBeNull();
+        expect(screen.queryByText('Export')).toBeNull();
+
+        const tools = screen.getByRole('heading', { name: 'Tools' }).parentElement;
+        expect(tools?.textContent).toContain('Owned Contracts');
+        const signals = screen.getByRole('heading', { name: 'Signals' }).parentElement;
+        expect(signals?.textContent).not.toContain('Owned Contracts');
     });
 
     it('cycles the theme from the bar and comes back around', async () => {
@@ -139,16 +143,17 @@ describe('Navbar on desktop', () => {
         const view = renderNavbar();
 
         await user.click(screen.getByRole('button', { name: /Menu/ }));
-        fireEvent.click(screen.getByRole('button', { name: 'Favourite Live Signals' }));
-        expect(screen.getByRole('button', { name: 'Remove Live Signals from favourites' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Favorite Live Signals' }));
+        expect(screen.getByRole('button', { name: 'Remove Live Signals from favorites' })).toBeTruthy();
 
-        const favourites = screen.getByRole('heading', { name: /Favourites/ }).parentElement;
-        expect(favourites?.textContent).toContain('Live Signals');
+        const favorites = screen.getByRole('heading', { name: /Favorites/ }).parentElement;
+        expect(favorites?.textContent).toContain('Live Signals');
+        expect(favorites?.textContent).not.toMatch(/\d/);
 
         view.unmount();
         renderNavbar();
         await user.click(screen.getByRole('button', { name: /Menu/ }));
-        expect(screen.getByRole('button', { name: 'Remove Live Signals from favourites' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Remove Live Signals from favorites' })).toBeTruthy();
     });
 
     it('records the current page as recently visited', async () => {

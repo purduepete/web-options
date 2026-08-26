@@ -9,19 +9,16 @@ function Probe({ onToggle }: { onToggle: () => void }) {
 }
 
 describe('useCommandHotkey', () => {
-    it('toggles on Ctrl+K, Cmd+K and Ctrl+/', async () => {
+    it('toggles on Ctrl+/ and Cmd+/', async () => {
         const user = userEvent.setup();
         const onToggle = vi.fn();
         render(<Probe onToggle={onToggle} />);
 
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
         expect(onToggle).toHaveBeenCalledTimes(1);
 
-        await user.keyboard('{Meta>}k{/Meta}');
+        await user.keyboard('{Meta>}/{/Meta}');
         expect(onToggle).toHaveBeenCalledTimes(2);
-
-        await user.keyboard('{Control>}/{/Control}');
-        expect(onToggle).toHaveBeenCalledTimes(3);
     });
 
     it('fires even while a text field has focus', async () => {
@@ -30,17 +27,19 @@ describe('useCommandHotkey', () => {
         const { getByRole } = render(<Probe onToggle={onToggle} />);
 
         await user.click(getByRole('textbox'));
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
 
         expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
-    it('ignores a bare k and other modifier combinations', async () => {
+    it('ignores Ctrl+K, Cmd+K and other combinations', async () => {
         const user = userEvent.setup();
         const onToggle = vi.fn();
         render(<Probe onToggle={onToggle} />);
 
         await user.keyboard('k');
+        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Meta>}k{/Meta}');
         await user.keyboard('{Alt>}k{/Alt}');
         await user.keyboard('{Shift>}K{/Shift}');
 
@@ -53,7 +52,7 @@ describe('useCommandHotkey', () => {
         const view = render(<Probe onToggle={onToggle} />);
 
         view.unmount();
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
 
         expect(onToggle).not.toHaveBeenCalled();
     });

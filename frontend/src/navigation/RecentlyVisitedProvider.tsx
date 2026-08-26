@@ -23,7 +23,7 @@ export function RecentlyVisitedProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         // Only menu destinations are recorded. A deep link like /calendars/2026-08-10
-        // is not in the model and would show up as an unlabelled row.
+        // is not in the model and would show up as an unlabeled row.
         if (!isNavigable(pathname)) return;
         setIds((current) => {
             const next = recordVisit(current, pathname);

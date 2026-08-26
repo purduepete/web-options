@@ -126,7 +126,7 @@
     letter-spacing: 0.03em;
 }
 
-/* The same tag in a neutral colour: it qualifies the figures below rather than
+/* The same tag in a neutral color: it qualifies the figures below rather than
    warning about them, so it must not read as a problem the way `detail-stale` does. */
 .detail-tag {
     padding: 0.05rem 0.3rem;

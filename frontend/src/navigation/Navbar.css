@@ -324,7 +324,7 @@ a.nav-link.active {
     }
 }
 
-/* Amber rather than the highlight colour, matching the sibling apps: a favourite
+/* Amber rather than the highlight color, matching the sibling apps: a favorite
    is a mark the user made, not another accent the theme owns. */
 .star[aria-pressed='true'] {
     color: var(--star);

@@ -2,8 +2,7 @@
  * The mega menu is described by data, not by JSX, so the command palette (Phase 6)
  * can walk the same list without duplicating the labels or the routes.
  *
- * `disabled` items are deliberate placeholders: they show what is coming without
- * pretending to work.
+ * `disabled` items are future placeholders kept out of the rendered menu.
  */
 
 export interface NavItem {
@@ -39,12 +38,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/summary',
             },
             {
-                id: '/owned-contracts',
-                label: 'Owned Contracts',
-                description: 'Current live and paper option positions',
-                path: '/owned-contracts',
-            },
-            {
                 id: 'week-explorer',
                 label: 'Week Explorer',
                 description: 'Compare several weeks side by side',
@@ -71,6 +64,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Tools',
         items: [
             {
+                id: '/owned-contracts',
+                label: 'Owned Contracts',
+                description: 'Current live and paper option positions',
+                path: '/owned-contracts',
+            },
+            {
                 id: 'symbol-lookup',
                 label: 'Symbol Lookup',
                 description: 'Every signal ever seen for one ticker',
@@ -89,10 +88,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Settings',
         items: [
             {
-                id: '/settings/appearance',
-                label: 'Appearance',
-                description: 'Theme and highlight colour',
-                path: '/settings/appearance',
+                id: '/settings/favorites',
+                label: 'Favorites',
+                description: 'Order favorite pages and their shortcuts',
+                path: '/settings/favorites',
+            },
+            {
+                id: '/settings/grading',
+                label: 'Grading',
+                description: 'Thresholds behind the trade grade',
+                path: '/settings/grading',
             },
             {
                 id: '/settings/caution',
@@ -101,10 +106,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
                 path: '/settings/caution',
             },
             {
-                id: '/settings/grading',
-                label: 'Grading',
-                description: 'Thresholds behind the trade grade',
-                path: '/settings/grading',
+                id: '/settings/appearance',
+                label: 'Appearance',
+                description: 'Theme and highlight color',
+                path: '/settings/appearance',
             },
             {
                 id: '/settings/key',
@@ -122,7 +127,7 @@ export function findNavItem(id: string): NavItem | undefined {
     return ITEMS_BY_ID.get(id);
 }
 
-/** Only real routes can be favourited or recorded as visited. */
+/** Only real routes can be favorited or recorded as visited. */
 export function navigableItems(): readonly NavItem[] {
     return [...ITEMS_BY_ID.values()].filter((item) => item.path && !item.disabled);
 }

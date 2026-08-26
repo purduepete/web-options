@@ -133,6 +133,19 @@ export function MenuIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function GripVerticalIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <circle cx="9" cy="6" r="1" />
+            <circle cx="9" cy="12" r="1" />
+            <circle cx="9" cy="18" r="1" />
+            <circle cx="15" cy="6" r="1" />
+            <circle cx="15" cy="12" r="1" />
+            <circle cx="15" cy="18" r="1" />
+        </svg>
+    );
+}
+
 export function CloseIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>

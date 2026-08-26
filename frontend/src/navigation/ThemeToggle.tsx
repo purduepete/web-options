@@ -13,7 +13,7 @@ const CYCLE: Record<ResolvedTheme, { icon: typeof SunIcon; label: string; next: 
  *
  * `system` is deliberately not in the cycle: three clicks bring you back to
  * where you started, and nothing here depends on what the operating system is
- * doing. It stays on the appearance page, along with the highlight colour.
+ * doing. It stays on the appearance page, along with the highlight color.
  */
 export function ThemeToggle() {
     const { theme, setPreference } = useTheme();

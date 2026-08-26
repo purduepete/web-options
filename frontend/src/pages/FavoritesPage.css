@@ -1,0 +1,147 @@
+.favorites-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.favorites-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.favorites-page-head p {
+    margin: 0.25rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.favorites-sortable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-width: min(100%, 42rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.favorite-sortable-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.65rem 0.55rem 0.35rem;
+    border: var(--border-width) solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.favorite-sortable-row.is-dragging {
+    z-index: 1;
+    border-color: var(--highlight);
+    box-shadow: var(--shadow-xs);
+}
+
+.favorite-drag-handle {
+    display: inline-grid;
+    place-items: center;
+    padding: 0.4rem;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-faint);
+    cursor: grab;
+    touch-action: none;
+}
+
+.favorite-drag-handle:hover {
+    border-color: var(--border);
+    background: var(--surface-raised);
+    color: var(--text);
+}
+
+.favorite-drag-handle:active {
+    cursor: grabbing;
+}
+
+.favorite-remove {
+    display: inline-grid;
+    place-items: center;
+    padding: 0.4rem;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-faint);
+}
+
+.favorite-remove:hover {
+    border-color: currentColor;
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+}
+
+.favorite-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+.favorite-sortable-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.favorite-sortable-label {
+    overflow-wrap: anywhere;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.favorite-sortable-description {
+    overflow-wrap: anywhere;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.favorite-shortcut {
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.favorites-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    max-width: min(100%, 42rem);
+    padding: 1rem;
+    border: var(--border-width) dashed var(--border);
+    color: var(--text-muted);
+}
+
+.favorites-empty svg {
+    flex: 0 0 auto;
+}
+
+.favorites-empty p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+    .favorite-sortable-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .favorite-shortcut {
+        grid-column: 2;
+    }
+
+    .favorite-remove {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+}

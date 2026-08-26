@@ -6,7 +6,7 @@ import type { TierSelection } from './grouping';
  * The page's single-key shortcuts. Stepping between weeks with the arrows is
  * shared with the published calendars, so it lives in `useWeekArrows`.
  *
- * Anything with a modifier is left alone: Ctrl+K belongs to the command palette
+ * Anything with a modifier is left alone: Ctrl+/ belongs to the command palette
  * and Ctrl+R belongs to the browser. Typing in a field is left alone too, or
  * filtering for "AMD" would isolate the aggressive group on the way past. That
  * guard is also why Escape out of the symbol box belongs to the input itself.

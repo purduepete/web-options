@@ -128,7 +128,7 @@ const DEFAULT_LIMIT = 50;
 /**
  * Scores every command and returns the survivors, best first. An empty query
  * matches everything and preserves the caller's order, which is how the palette
- * shows favourites and recents before anything is typed.
+ * shows favorites and recents before anything is typed.
  */
 export function rankCommands(
     query: string,

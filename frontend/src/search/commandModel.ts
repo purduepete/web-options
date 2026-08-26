@@ -18,7 +18,7 @@ export interface Command {
     /** Heading the command is listed under. Order of first appearance wins. */
     group: string;
     icon: CommandIcon;
-    /** Added to the match score. Favourites and recents ride to the top on this. */
+    /** Added to the match score. Favorites and recents ride to the top on this. */
     boost?: number;
     run: () => void;
 }

@@ -60,7 +60,7 @@
     border: var(--border-width) solid var(--border);
 }
 
-/* The swatch IS the colour, so hover must not repaint it. */
+/* The swatch IS the color, so hover must not repaint it. */
 .swatch:hover:not(:disabled) {
     background: inherit;
     border-color: var(--text-muted);

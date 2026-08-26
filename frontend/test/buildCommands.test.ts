@@ -46,21 +46,21 @@ describe('buildCommands', () => {
         expect(navigate).toHaveBeenCalledWith('/calendars/latest');
     });
 
-    it('lists favourites and recents first, boosted, and does not repeat them under Pages', () => {
+    it('lists favorites and recents first, boosted, and does not repeat them under Pages', () => {
         const commands = build({ favorites: [item('/calendars/latest')], recent: [item('/settings/key')] });
 
         expect(ids(commands).slice(0, 2)).toEqual(['page:/calendars/latest', 'page:/settings/key']);
-        expect(commands[0]?.group).toBe('Favourites');
+        expect(commands[0]?.group).toBe('Favorites');
         expect(commands[1]?.group).toBe('Recent');
         expect(commands[0]?.boost).toBeGreaterThan(commands[1]?.boost ?? 0);
         expect(ids(commands).filter((id) => id === 'page:/calendars/latest')).toHaveLength(1);
     });
 
-    it('prefers the favourite entry when a page is both favourite and recent', () => {
+    it('prefers the favorite entry when a page is both favorite and recent', () => {
         const commands = build({ favorites: [item('/calendars/latest')], recent: [item('/calendars/latest')] });
 
         expect(ids(commands).filter((id) => id === 'page:/calendars/latest')).toHaveLength(1);
-        expect(commands[0]?.group).toBe('Favourites');
+        expect(commands[0]?.group).toBe('Favorites');
     });
 
     it('leaves the individual weeks out: the calendar page steps through them', () => {

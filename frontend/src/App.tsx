@@ -12,6 +12,7 @@ import { ApiKeyPage } from './pages/ApiKeyPage';
 import { AppearancePage } from './pages/AppearancePage';
 import { CalendarWeekPage } from './pages/CalendarWeekPage';
 import { CautionPage } from './pages/CautionPage';
+import { FavoritesPage } from './pages/FavoritesPage';
 import { GradingPage } from './pages/GradingPage';
 import { LatestCalendarPage } from './pages/LatestCalendarPage';
 import { LiveSignalsPage } from './pages/LiveSignalsPage';
@@ -54,6 +55,7 @@ function Gate() {
                                         <Route path="owned-contracts" element={<OwnedContractsPage />} />
                                         <Route path="calendars/latest" element={<LatestCalendarPage />} />
                                         <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
+                                        <Route path="settings/favorites" element={<FavoritesPage />} />
                                         <Route path="settings/appearance" element={<AppearancePage />} />
                                         <Route path="settings/caution" element={<CautionPage />} />
                                         <Route path="settings/grading" element={<GradingPage />} />

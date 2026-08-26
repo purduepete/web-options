@@ -37,7 +37,7 @@
     border-color: var(--text-muted);
 }
 
-/* A put expiring worthless is the win, so it takes the gain colour. */
+/* A put expiring worthless is the win, so it takes the gain color. */
 .outcome-chip.expired-otm {
     color: var(--positive);
     border-color: var(--positive);
@@ -58,7 +58,7 @@
     border-color: var(--text-muted);
 }
 
-/* In the money is assignment risk on a put, so it reads as the loss colour —
+/* In the money is assignment risk on a put, so it reads as the loss color —
    the same way round as the ticket's own .moneyness badge. */
 .moneyness-chip.itm {
     color: var(--negative);

@@ -8,7 +8,7 @@ export function ApiKeyPage() {
         <main>
             <h1>API key</h1>
             <p>
-                <KeyIcon /> This browser is using <strong>{identity?.label ?? 'an unlabelled key'}</strong>.
+                <KeyIcon /> This browser is using <strong>{identity?.label ?? 'an unlabeled key'}</strong>.
             </p>
             <p className="muted">
                 The key itself is never shown again after it is minted. Forgetting it here clears it from this browser

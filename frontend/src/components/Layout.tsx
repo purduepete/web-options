@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { FavoriteShortcuts } from '../navigation/FavoriteShortcuts';
 import { Navbar } from '../navigation/Navbar';
 import { CommandPaletteHost } from '../search/CommandPaletteHost';
 import { ShortcutsOverlay } from '../shortcuts/ShortcutsOverlay';
@@ -12,6 +13,7 @@ export function Layout() {
 
     return (
         <>
+            <FavoriteShortcuts />
             <Navbar onNotify={notify} onOpenSearch={() => setPaletteOpen(true)} />
             {/* Keyed so two routes sharing a component still count as an arrival. */}
             <Fragment key={pathname}>

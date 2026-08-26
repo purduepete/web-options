@@ -2,7 +2,7 @@ import { THEME_PREFERENCES, type ThemePreference } from '@weboptions/shared';
 import { navigableItems, type NavItem } from '../navigation/navModel';
 import type { Command } from './commandModel';
 
-/** Favourites beat recents, recents beat everything else, at equal match quality. */
+/** Favorites beat recents, recents beat everything else, at equal match quality. */
 const FAVORITE_BOOST = 40;
 const RECENT_BOOST = 20;
 
@@ -46,13 +46,13 @@ export function buildCommands({
             label: item.label,
             hint: item.description,
             group,
-            icon: group === 'Favourites' ? 'star' : group === 'Recent' ? 'clock' : 'page',
+            icon: group === 'Favorites' ? 'star' : group === 'Recent' ? 'clock' : 'page',
             boost,
             run: () => navigate(item.path as string),
         });
     }
 
-    favorites.forEach((item) => addPage(item, 'Favourites', FAVORITE_BOOST));
+    favorites.forEach((item) => addPage(item, 'Favorites', FAVORITE_BOOST));
     recent.forEach((item) => addPage(item, 'Recent', RECENT_BOOST));
     navigableItems().forEach((item) => addPage(item, 'Pages'));
 
@@ -61,7 +61,7 @@ export function buildCommands({
         commands.push({
             id: `theme:${candidate}`,
             label: THEME_LABELS[candidate],
-            keywords: 'appearance colour scheme dark light',
+            keywords: 'appearance color scheme dark light',
             group: 'Actions',
             icon: 'theme',
             run: () => setPreference(candidate),

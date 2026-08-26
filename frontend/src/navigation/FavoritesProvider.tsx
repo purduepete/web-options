@@ -1,6 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { STORAGE_KEYS } from '@weboptions/shared';
-import { MAX_FAVORITES, pruneUnknown, readStringList, toggleFavorite as toggle, writeStringList } from './navLists';
+import {
+    MAX_FAVORITES,
+    pruneUnknown,
+    readStringList,
+    reorderFavorite,
+    toggleFavorite as toggle,
+    writeStringList,
+} from './navLists';
 import { findNavItem, type NavItem } from './navModel';
 
 interface FavoritesValue {
@@ -8,6 +15,7 @@ interface FavoritesValue {
     isFavorite: (id: string) => boolean;
     /** False when the cap refused the addition. */
     toggleFavorite: (id: string) => boolean;
+    reorderFavorites: (startIndex: number, endIndex: number) => void;
     isFull: boolean;
 }
 
@@ -36,15 +44,20 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         [ids],
     );
 
+    const reorderFavorites = useCallback((startIndex: number, endIndex: number) => {
+        setIds((current) => reorderFavorite(current, startIndex, endIndex));
+    }, []);
+
     const value = useMemo<FavoritesValue>(() => {
         const favorites = ids.map(findNavItem).filter((item): item is NavItem => Boolean(item));
         return {
             favorites,
             isFavorite: (id: string) => ids.includes(id),
             toggleFavorite,
+            reorderFavorites,
             isFull: ids.length >= MAX_FAVORITES,
         };
-    }, [ids, toggleFavorite]);
+    }, [ids, reorderFavorites, toggleFavorite]);
 
     return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
 }

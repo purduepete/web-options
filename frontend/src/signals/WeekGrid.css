@@ -201,7 +201,7 @@
 }
 
 /* Top picks are a classification of the trade, like the three tiers, so they
-   carry their own colour rather than the highlight the user picked. */
+    carry their own color rather than the highlight the user picked. */
 .risk-group-heading.top-picks {
     color: var(--top-pick);
 }
@@ -219,7 +219,7 @@
 }
 
 /* Pushed to the trailing edge so the ratios line up down the column, and left in
-   the muted colour until every priced contract cleared its strike. */
+    the muted color until every priced contract cleared its strike. */
 .otm-score {
     margin-left: auto;
     padding-left: 0.4rem;
@@ -267,7 +267,7 @@
 }
 
 /* Hatched rather than dimmed: an expired contract is settled history, but its
-   numbers still have to be readable. The shorthand above set the colour, so this
+    numbers still have to be readable. The shorthand above set the color, so this
    only layers an image over it. */
 .ticket.is-expired {
     background-image: repeating-linear-gradient(
@@ -291,7 +291,7 @@
 
 /* The grade, or the trade's own best close where it beat half the premium. A
    corner off the card rather than anything in the rows: it takes no space from
-   the numbers, and the reasons behind the colour are one click away in the
+    the numbers, and the reasons behind the color are one click away in the
    drill-in. */
 .grade-corner {
     position: absolute;
@@ -386,7 +386,7 @@
     letter-spacing: 0.03em;
 }
 
-/* In the money is assignment risk on a cash-secured put, so it reads as the loss colour. */
+/* In the money is assignment risk on a cash-secured put, so it reads as the loss color. */
 .moneyness.itm {
     color: var(--negative);
     border-color: var(--negative);
@@ -457,7 +457,7 @@
     white-space: nowrap;
 }
 
-/* Green up, red down: the colour reads the direction, not the desirability. */
+/* Green up, red down: the color reads the direction, not the desirability. */
 .ticket .value-diff.diff-up {
     color: var(--positive);
 }

@@ -89,7 +89,7 @@
 }
 
 /* Padding and font are the head's, not this button's: a head with two button
-   heights in it is the thing this avoids. Only the colour is its own. */
+    heights in it is the thing this avoids. Only the color is its own. */
 .owned-refresh-button {
     display: inline-flex;
     align-items: center;

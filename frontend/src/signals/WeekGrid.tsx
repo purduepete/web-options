@@ -426,9 +426,9 @@ const DELTA_DIFF_TITLE = "Captured delta minus VADER's.";
 const PREMIUM_DIFF_TITLE = "Captured premium against VADER's, as a percentage.";
 
 /**
- * Colour always reads the raw sign. The arrow usually agrees, but delta passes
+ * Color always reads the raw sign. The arrow usually agrees, but delta passes
  * invertArrow because puts run negative: a more negative delta is MORE delta,
- * so the arrow points up while the colour stays red.
+ * so the arrow points up while the color stays red.
  */
 function DiffArrow({ up }: { up: boolean }) {
     return (

@@ -24,6 +24,10 @@ import { NAV_SECTIONS, type NavItem, type NavSection } from './navModel';
 import './Navbar.css';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
+const MENU_SECTIONS = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => item.path && !item.disabled),
+})).filter((section) => section.items.length > 0);
 
 /** Kept here rather than in the nav model, which stays plain data. */
 const SECTION_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -69,7 +73,7 @@ export function Navbar({
                 closeAll();
                 return;
             }
-            // Ctrl+\ opens the menu, next to the Ctrl+K that opens the search.
+            // Ctrl+\ opens the menu, next to the Ctrl+/ that opens search.
             if (event.key === '\\' && (event.ctrlKey || event.metaKey) && !event.altKey) {
                 event.preventDefault();
                 if (isDesktop) setMenuOpen((open) => !open);
@@ -152,7 +156,7 @@ export function Navbar({
                     <div className="mega-inner">
                         <QuickAccess />
                         <div className="section-grid">
-                            {NAV_SECTIONS.map((section) => (
+                            {MENU_SECTIONS.map((section) => (
                                 <SectionColumn key={section.id} section={section} onNotify={onNotify} />
                             ))}
                         </div>
@@ -163,7 +167,7 @@ export function Navbar({
             {!isDesktop && drawerOpen && (
                 <nav className="drawer" aria-label="Main">
                     <QuickAccess />
-                    {NAV_SECTIONS.map((section) => (
+                    {MENU_SECTIONS.map((section) => (
                         <div className="accordion" key={section.id}>
                             <button
                                 type="button"
@@ -227,13 +231,13 @@ function ItemList({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (
                             className="star"
                             aria-pressed={isFavorite(item.id)}
                             aria-label={
-                                isFavorite(item.id) ? `Remove ${item.label} from favourites` : `Favourite ${item.label}`
+                                isFavorite(item.id) ? `Remove ${item.label} from favorites` : `Favorite ${item.label}`
                             }
-                            title={isFavorite(item.id) ? 'Remove from favourites' : 'Add to favourites'}
+                            title={isFavorite(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                             onClick={() => {
                                 const changed = toggleFavorite(item.id);
                                 if (!changed && isFull) {
-                                    onNotify?.(`Favourites are capped at ${MAX_FAVORITES}. Remove one first.`);
+                                    onNotify?.(`Favorites are capped at ${MAX_FAVORITES}. Remove one first.`);
                                 }
                             }}
                         >
@@ -247,8 +251,8 @@ function ItemList({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (
 }
 
 /**
- * Favourites and history ride above the sections, as pills. The app this menu is
- * modelled on keeps favourites in a sidebar; there is no sidebar here, so they
+ * Favorites and history ride above the sections, as pills. The app this menu is
+ * modeled on keeps favorites in a sidebar; there is no sidebar here, so they
  * sit beside the history they behave like.
  */
 function QuickAccess() {
@@ -257,7 +261,7 @@ function QuickAccess() {
 
     return (
         <>
-            <PillRow icon={<StarIcon filled />} title="Favourites" items={favorites} />
+            <PillRow icon={<StarIcon filled />} title="Favorites" items={favorites} />
             <PillRow icon={<ClockIcon />} title="Recently visited" items={recent} />
         </>
     );
@@ -275,7 +279,7 @@ function PillRow({ icon, title, items }: { icon: ReactNode; title: string; items
             <ul className="pills">
                 {items.map((item) => (
                     <li key={item.id}>
-                        <NavLink to={item.path ?? '/'} end className="pill">
+                        <NavLink to={item.path ?? '/'} end className="pill" title={item.description}>
                             {item.label}
                         </NavLink>
                     </li>

@@ -66,13 +66,13 @@ describe('command palette wiring', () => {
         })) as typeof window.matchMedia;
     });
 
-    it('opens on Ctrl+K, navigates on Enter and closes', async () => {
+    it('opens on Ctrl+/, navigates on Enter and closes', async () => {
         const user = userEvent.setup();
         renderApp();
 
         expect(screen.queryByRole('dialog')).toBeNull();
 
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
         expect(screen.getByRole('dialog')).toBeTruthy();
 
         await user.keyboard('weekly calendars{Enter}');
@@ -81,14 +81,14 @@ describe('command palette wiring', () => {
         expect(screen.getByText('latest week page')).toBeTruthy();
     });
 
-    it('opens from the navbar search button and closes on the second Ctrl+K', async () => {
+    it('opens from the navbar search button and closes on Ctrl+/', async () => {
         const user = userEvent.setup();
         renderApp();
 
         await user.click(screen.getByRole('button', { name: /Search/ }));
         expect(screen.getByRole('dialog')).toBeTruthy();
 
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
         expect(screen.queryByRole('dialog')).toBeNull();
     });
 
@@ -96,7 +96,7 @@ describe('command palette wiring', () => {
         const user = userEvent.setup();
         renderApp();
 
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
         await screen.findByRole('dialog');
 
         expect(screen.queryAllByRole('option', { name: /Week of/ })).toHaveLength(0);
@@ -106,7 +106,7 @@ describe('command palette wiring', () => {
         const user = userEvent.setup();
         renderApp();
 
-        await user.keyboard('{Control>}k{/Control}');
+        await user.keyboard('{Control>}/{/Control}');
         await user.keyboard('light theme{Enter}');
 
         expect(document.documentElement.getAttribute('data-theme')).toBe('light');
