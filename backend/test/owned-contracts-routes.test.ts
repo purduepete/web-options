@@ -85,6 +85,36 @@ describe('GET /api/owned-contracts', () => {
         );
     });
 
+    it('forwards an explicit forced refresh to WebPortfolio', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify({ success: true, data: [] }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        const response = await agent().get('/api/owned-contracts?refresh=true').set('x-api-key', VALID_KEY);
+
+        expect(response.status).toBe(200);
+        expect(fetchSpy).toHaveBeenCalledWith(
+            new URL('/api/option-transactions/open-positions/realtime?refresh=true', config.webportfolio.apiUrl!),
+            {
+                headers: { Accept: 'application/json', 'X-API-Key': 'service-key' },
+                signal: expect.any(AbortSignal),
+            },
+        );
+    });
+
+    it('rejects unsupported refresh values before calling WebPortfolio', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+        const response = await agent().get('/api/owned-contracts?refresh=false').set('x-api-key', VALID_KEY);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ error: 'refresh must be true when provided' });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it('maps WebPortfolio auth failures without leaking credentials', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             new Response(JSON.stringify({ success: false, error: 'forbidden' }), {

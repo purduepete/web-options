@@ -61,3 +61,10 @@
         display: none;
     }
 }
+
+/* The three 44px tools and the drawer take priority on the narrowest phones. */
+@media (max-width: 360px) {
+    .vix-chip {
+        display: none;
+    }
+}

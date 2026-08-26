@@ -141,8 +141,8 @@ export function fetchSignalSummary(month: string, filters: SummaryFilters): Prom
     return getJson<SignalSummaryResponse>(`/api/signal-summary?${query}`);
 }
 
-export function fetchOwnedContracts(): Promise<OwnedOptionsResponse> {
-    return getJson<OwnedOptionsResponse>('/api/owned-contracts');
+export function fetchOwnedContracts(refresh = false): Promise<OwnedOptionsResponse> {
+    return getJson<OwnedOptionsResponse>(refresh ? '/api/owned-contracts?refresh=true' : '/api/owned-contracts');
 }
 
 export function fetchCalendars(): Promise<CalendarsIndexResponse> {

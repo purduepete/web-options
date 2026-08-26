@@ -32,6 +32,7 @@ import {
 } from '../owned/filters';
 import { applyPriceSource, readPriceSource, writePriceSource, type PriceSource } from '../owned/priceSource';
 import { OwnedPriceSourceMenu } from '../owned/PriceSourceMenu';
+import { quoteIssue } from '../owned/quoteStatus';
 import { mergeRoster } from '../owned/roster';
 import { OwnedSortMenu } from '../owned/SortMenu';
 import {
@@ -252,7 +253,7 @@ export function OwnedContractsPage() {
             if (mode === 'initial') setLoading(true);
             else if (mode === 'refresh') setRefreshing(true);
             setError(null);
-            fetchOwnedContracts()
+            fetchOwnedContracts(mode === 'refresh')
                 .then(async (result) => {
                     if (id !== latestLoad.current) return;
                     // A roster load settles which contracts are open and nothing else,
@@ -429,6 +430,12 @@ export function OwnedContractsPage() {
         function onKeyDown(event: globalThis.KeyboardEvent) {
             if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
             if (isTyping(event.target)) return;
+            if (event.shiftKey && event.key === 'R') {
+                if (priceSource !== 'live' || loading || refreshing) return;
+                event.preventDefault();
+                load('refresh');
+                return;
+            }
             if (event.key === '/') {
                 event.preventDefault();
                 // Nothing hidden can take the caret, so the fold is opened in the
@@ -441,11 +448,21 @@ export function OwnedContractsPage() {
             if (event.key === 'f') setFiltersOpen((open) => !open);
             else if (event.key === 'm') setMoneynessParam(cycle(MONEYNESS_FILTERS, moneynessFilter));
             else if (event.key === 'c') setCapturedParam(cycle(CAPTURED_FILTERS, capturedFilter));
-            else if (event.key === 'r') resetMenus();
+            else if (!event.shiftKey && event.key === 'r') resetMenus();
         }
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
-    }, [capturedFilter, moneynessFilter, resetMenus, setCapturedParam, setMoneynessParam]);
+    }, [
+        capturedFilter,
+        load,
+        loading,
+        moneynessFilter,
+        priceSource,
+        refreshing,
+        resetMenus,
+        setCapturedParam,
+        setMoneynessParam,
+    ]);
 
     // Everything downstream — the filters, the order, the totals and the rows —
     // reads one projection, so none of them has to know which source is on.
@@ -698,6 +715,7 @@ export function OwnedContractsPage() {
                                 position={position}
                                 quoteSource={quoteSourceFor(position, fromCache)}
                                 pageQuoteSource={summary.quoteSource}
+                                showQuoteIssue={priceSource === 'live'}
                                 underlying={underlyings[position.symbol]}
                                 signal={signalFor(signals, position)}
                             />
@@ -713,12 +731,14 @@ function OwnedContractRow({
     position,
     quoteSource,
     pageQuoteSource,
+    showQuoteIssue,
     underlying: quote,
     signal,
 }: {
     position: OwnedOptionPosition;
     quoteSource: 'Live' | 'Cached';
     pageQuoteSource: 'Live' | 'Cached';
+    showQuoteIssue: boolean;
     underlying: UnderlyingQuote | undefined;
     signal: SignalMatch | undefined;
 }) {
@@ -726,6 +746,7 @@ function OwnedContractRow({
     const expirationRisk = expirationRiskText(position);
     const moneyness = moneynessText(position, signal);
     const delta = deltaBand(position.quote.delta);
+    const issue = showQuoteIssue ? quoteIssue(position) : null;
     return (
         <article className={`owned-contract-row is-${toneFor(position.unrealizedCreditCaptured)}`}>
             <div className="owned-contract-identity">
@@ -796,6 +817,13 @@ function OwnedContractRow({
                         </strong>
                     </div>
                     {quoteSource === pageQuoteSource ? null : <span className="owned-quote-status">{quoteSource}</span>}
+                    <span
+                        className={issue ? 'owned-quote-issue' : 'owned-quote-issue is-idle'}
+                        aria-hidden={issue === null}
+                        title={issue ?? undefined}
+                    >
+                        {issue ?? 'Live quote unavailable'}
+                    </span>
                 </div>
             </div>
             <div className="owned-contract-meta">

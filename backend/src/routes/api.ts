@@ -210,7 +210,12 @@ export function createApiRouter(config: AppConfig): Router {
         }
     });
 
-    router.get('/owned-contracts', async (_req, res) => {
+    router.get('/owned-contracts', async (req, res) => {
+        const refresh = req.query.refresh;
+        if (refresh !== undefined && refresh !== 'true') {
+            res.status(400).json({ error: 'refresh must be true when provided' });
+            return;
+        }
         const { apiUrl, serviceKey } = config.webportfolio;
         if (!apiUrl || !serviceKey) {
             res.status(503).json({ error: 'webportfolio API is not configured', code: 'webportfolio_not_configured' });
@@ -218,6 +223,7 @@ export function createApiRouter(config: AppConfig): Router {
         }
 
         const url = new URL('/api/option-transactions/open-positions/realtime', apiUrl);
+        if (refresh === 'true') url.searchParams.set('refresh', 'true');
         let response: Response;
         try {
             response = await fetch(url, {

@@ -124,6 +124,13 @@ describe('Navbar on desktop', () => {
         }
     });
 
+    it('puts page reload in the top bar', () => {
+        renderNavbar();
+
+        const reload = screen.getByRole('button', { name: 'Reload page' });
+        expect(reload.getAttribute('title')).toBe('Reload page');
+    });
+
     it('closes the panel once a destination is chosen', async () => {
         const user = userEvent.setup();
         renderNavbar();
@@ -173,6 +180,7 @@ describe('Navbar on mobile', () => {
     it('hides the section buttons behind a drawer', () => {
         renderNavbar();
         expect(screen.queryByRole('button', { name: /Signals/ })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Reload page' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
     });
 

@@ -45,9 +45,10 @@ describe('touch targets', () => {
     });
 
     it('sizes the navbar triggers without asking the device what it is', () => {
-        const match = /\.search-trigger,\s*\.menu-trigger,\s*\.drawer-toggle,\s*\.theme-toggle \{([^}]*)\}/.exec(
-            navbarCss,
-        );
+        const match =
+            /\.search-trigger,\s*\.menu-trigger,\s*\.drawer-toggle,\s*\.reload-trigger,\s*\.theme-toggle \{([^}]*)\}/.exec(
+                navbarCss,
+            );
         expect(match).toBeTruthy();
         const block = match?.[1] ?? '';
         expect(block).toContain('min-width: 44px');

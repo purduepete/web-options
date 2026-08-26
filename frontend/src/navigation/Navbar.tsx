@@ -10,6 +10,7 @@ import {
     CloseIcon,
     MenuIcon,
     PageIcon,
+    RotateCcwIcon,
     SearchIcon,
     SlidersIcon,
     StarIcon,
@@ -133,6 +134,16 @@ export function Navbar({
                                 <SearchIcon />
                             </button>
                         )}
+
+                        <button
+                            type="button"
+                            className="reload-trigger"
+                            aria-label="Reload page"
+                            title="Reload page"
+                            onClick={() => window.location.reload()}
+                        >
+                            <RotateCcwIcon />
+                        </button>
 
                         <ThemeToggle />
                     </div>

@@ -58,6 +58,9 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     },
     {
         title: 'Owned contracts only',
-        entries: [{ chords: [['c']], description: 'Next captured filter' }],
+        entries: [
+            { chords: [['Shift', 'R']], description: 'Refresh live contract data' },
+            { chords: [['c']], description: 'Next captured filter' },
+        ],
     },
 ];

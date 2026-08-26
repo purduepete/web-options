@@ -367,6 +367,7 @@
 
 .owned-contract-delta-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
 }
@@ -460,6 +461,20 @@
     font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
+}
+
+.owned-quote-issue {
+    flex: 0 1 auto;
+    color: var(--warning);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+}
+
+.owned-quote-issue.is-idle {
+    visibility: hidden;
 }
 
 .owned-contract-meta span:first-child {

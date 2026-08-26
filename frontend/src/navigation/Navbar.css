@@ -56,6 +56,7 @@
 }
 
 .search-trigger,
+.reload-trigger,
 .theme-toggle {
     display: inline-flex;
     align-items: center;
@@ -66,6 +67,7 @@
 }
 
 .search-trigger:hover,
+.reload-trigger:hover,
 .theme-toggle:hover {
     background: transparent;
     color: var(--text);
@@ -112,6 +114,7 @@
 .search-trigger,
 .menu-trigger,
 .drawer-toggle,
+.reload-trigger,
 .theme-toggle {
     min-width: 44px;
     min-height: 44px;
