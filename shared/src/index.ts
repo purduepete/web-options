@@ -227,6 +227,8 @@ export interface OwnedOptionQuote {
     transactionId: number | null;
     occSymbol: string;
     quoteStatus: string;
+    quoteSource?: 'live' | 'memory_cache' | 'stored_daily' | 'unavailable';
+    quoteReason?: string | null;
     asOf: string | null;
     delta: number | null;
     midPrice: number | null;

@@ -32,7 +32,7 @@ import {
 } from '../owned/filters';
 import { applyPriceSource, readPriceSource, writePriceSource, type PriceSource } from '../owned/priceSource';
 import { OwnedPriceSourceMenu } from '../owned/PriceSourceMenu';
-import { quoteIssue } from '../owned/quoteStatus';
+import { quoteIssue, quoteSourceLabel } from '../owned/quoteStatus';
 import { mergeRoster } from '../owned/roster';
 import { OwnedSortMenu } from '../owned/SortMenu';
 import {
@@ -195,11 +195,6 @@ function expirationRiskText(position: OwnedOptionPosition): string | null {
     if (position.expirationBucket === 'expired') return 'EXPIRED';
     if (position.expirationBucket === 'this_week') return 'THIS WEEK';
     return null;
-}
-
-/** A payload read back from the store is cached whatever each row remembers. */
-function quoteSourceFor(position: OwnedOptionPosition, fromCache: boolean): 'Live' | 'Cached' {
-    return fromCache || position.quote.quoteStatus !== 'ok' ? 'Cached' : 'Live';
 }
 
 function capturedPercent(position: OwnedOptionPosition): number | null {
@@ -499,7 +494,7 @@ export function OwnedContractsPage() {
         // What the page as a whole is showing, so a row only says anything when
         // it is the odd one out.
         const quoteSource: 'Live' | 'Cached' =
-            rows.length > 0 && rows.every((row) => quoteSourceFor(row, fromCache) === 'Cached') ? 'Cached' : 'Live';
+            rows.length > 0 && rows.every((row) => quoteSourceLabel(row, fromCache) === 'Cached') ? 'Cached' : 'Live';
         return {
             total: rows.length,
             live: live.length,
@@ -713,7 +708,7 @@ export function OwnedContractsPage() {
                             <OwnedContractRow
                                 key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
                                 position={position}
-                                quoteSource={quoteSourceFor(position, fromCache)}
+                                quoteSource={quoteSourceLabel(position, fromCache)}
                                 pageQuoteSource={summary.quoteSource}
                                 showQuoteIssue={priceSource === 'live'}
                                 underlying={underlyings[position.symbol]}
