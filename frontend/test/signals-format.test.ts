@@ -49,9 +49,9 @@ describe('signal formatters', () => {
         expect(formatMoney(0)).toBe('$0');
     });
 
-    it('gives delta two decimals', () => {
-        expect(formatDelta(-0.257)).toBe('-0.26');
-        expect(formatDelta(0.2)).toBe('0.20');
+    it('gives delta three decimals', () => {
+        expect(formatDelta(-0.257)).toBe('-0.257');
+        expect(formatDelta(0.2)).toBe('0.200');
     });
 
     it('builds the strike label from the strike and the right', () => {

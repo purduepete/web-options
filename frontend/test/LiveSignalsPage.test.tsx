@@ -169,7 +169,7 @@ describe('LiveSignalsPage', () => {
         // Nothing was captured for these fixtures, so the recommended numbers stand
         // in — each one marked, and named for a screen reader.
         expect(quotedValues(tuesday)).toEqual([
-            '-0.20 (recommended value)',
+            '-0.200 (recommended value)',
             '20.0% (recommended value)',
             '$120 (recommended value)',
         ]);
@@ -1161,7 +1161,7 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         const card = await tuesday();
 
-        expect(within(card).getByText('-0.31')).toBeTruthy();
+        expect(within(card).getByText('-0.310')).toBeTruthy();
         expect(within(card).getByText('26.5%')).toBeTruthy();
         expect(within(card).getByText('$175')).toBeTruthy();
         // A real quote is never marked as borrowed.
@@ -1178,7 +1178,7 @@ describe('LiveSignalsPage number source', () => {
 
         expect(screen.getByRole('button', { name: 'Numbers: VADER' })).toBeTruthy();
         const card = await tuesday();
-        expect(within(card).getByText('-0.20')).toBeTruthy();
+        expect(within(card).getByText('-0.200')).toBeTruthy();
         expect(within(card).getByText('20.0%')).toBeTruthy();
         expect(within(card).getByText('$120')).toBeTruthy();
         // In VADER's own mode there is nothing to mark: these are the source.
@@ -1211,7 +1211,7 @@ describe('LiveSignalsPage number source', () => {
         renderPage();
         const card = await tuesday();
 
-        expect(within(card).getByText('-0.31')).toBeTruthy();
+        expect(within(card).getByText('-0.310')).toBeTruthy();
         expect(quotedValues(card)).toEqual(['20.0% (recommended value)', '$120 (recommended value)']);
     });
 

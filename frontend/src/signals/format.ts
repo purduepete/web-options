@@ -86,7 +86,7 @@ export function formatThousandsMoney(value: number | null): string {
 }
 
 export function formatDelta(value: number | null): string {
-    return value == null ? EMPTY : value.toFixed(2);
+    return value == null ? EMPTY : value.toFixed(3);
 }
 
 export function formatDte(value: number | null): string {

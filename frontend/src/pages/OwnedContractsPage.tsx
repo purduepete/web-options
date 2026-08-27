@@ -44,7 +44,7 @@ import {
 } from '../owned/sort';
 import { signalFor, signalKey, type SignalMap, type SignalMatch } from '../owned/types';
 import { CapturedFilterMenu, MoneynessFilterMenu } from '../signals/FilterMenu';
-import { EMPTY } from '../signals/format';
+import { EMPTY, formatDelta } from '../signals/format';
 import { MONEYNESS_FILTERS, cycle, readMoneynessFilter, type MoneynessFilter } from '../signals/grouping';
 import './OwnedContractsPage.css';
 
@@ -808,7 +808,7 @@ function OwnedContractRow({
                     <div className="owned-contract-delta-metric">
                         <span>Delta</span>
                         <strong className={delta ? `is-${delta}` : undefined}>
-                            {position.quote.delta === null ? EMPTY : position.quote.delta.toFixed(2)}
+                            {formatDelta(position.quote.delta)}
                         </strong>
                     </div>
                     {quoteSource === pageQuoteSource ? null : <span className="owned-quote-status">{quoteSource}</span>}
