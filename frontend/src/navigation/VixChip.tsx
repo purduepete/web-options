@@ -29,7 +29,7 @@ function formatChange(percent: number): string {
     return `${percent > 0 ? '+' : ''}${percent.toFixed(2)}%`;
 }
 
-function borderClass(value: number, now: Date = new Date()): string {
+function levelClass(value: number, now: Date = new Date()): string {
     const day = now.getDay();
     if (day === 0 || day === 6) return '';
     if (value > 15) return ' level-high';
@@ -51,7 +51,7 @@ export function VixChip() {
 
     return (
         <span
-            className={vix ? `vix-chip${borderClass(vix.value)}` : 'vix-chip pending'}
+            className={vix ? `vix-chip${levelClass(vix.value)}` : 'vix-chip pending'}
             aria-hidden={vix ? undefined : true}
             title={
                 vix

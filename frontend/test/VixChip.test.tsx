@@ -30,7 +30,7 @@ describe('VixChip', () => {
         dayOfWeek.mockRestore();
     });
 
-    it('uses the weekday border thresholds and colors a decline red', async () => {
+    it('uses the weekday level thresholds and colors a decline red', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 15.84 } });
         const { container } = renderChip();
 
@@ -78,7 +78,7 @@ describe('VixChip', () => {
         expect(container.querySelector('.vix-chip')?.className).toBe(`vix-chip ${expectedClass}`);
     });
 
-    it('uses the default border color on weekends', async () => {
+    it('does not assign a level color on weekends', async () => {
         dayOfWeek.mockReturnValue(6);
         mockFetchVix.mockResolvedValue({ vix: { value: 18, asOf: '2026-08-21', previousValue: 17 } });
         const { container } = renderChip();

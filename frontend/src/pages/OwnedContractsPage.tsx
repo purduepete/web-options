@@ -14,6 +14,8 @@ import {
     FlaskConicalIcon,
     RotateCcwIcon,
     SlidersIcon,
+    TrendingDownIcon,
+    TrendingUpIcon,
     ZapIcon,
 } from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -68,10 +70,10 @@ function percent(value: number | null): string {
     return `${value.toFixed(1)}%`;
 }
 
-function signedPercent(value: number | null): string {
+function signedPercent(value: number | null, fractionDigits = 1): string {
     if (value === null || !Number.isFinite(value)) return EMPTY;
     const sign = value > 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
+    return `${sign}${value.toFixed(fractionDigits)}%`;
 }
 
 function twoDigits(value: number): string {
@@ -136,7 +138,7 @@ function underlyingPrice(position: OwnedOptionPosition, signal: SignalMatch | un
 interface UnderlyingSnapshot {
     price: string;
     move: string | null;
-    moveTone: 'good' | 'bad';
+    moveTone: 'good' | 'bad' | 'flat';
 }
 
 /**
@@ -153,8 +155,8 @@ function underlyingSnapshot(
         const change = quote.changePct;
         return {
             price: money(quote.price),
-            move: change === null ? null : signedPercent(change),
-            moveTone: change !== null && change < 0 ? 'bad' : 'good',
+            move: change === null ? null : signedPercent(change, 2),
+            moveTone: change === null || change === 0 ? 'flat' : change < 0 ? 'bad' : 'good',
         };
     }
     const current = underlyingPrice(position, signal);
@@ -567,21 +569,24 @@ export function OwnedContractsPage() {
                     </p>
                 </div>
 
-                {/* Refreshing repulls the live quote, so it is offered to the mode
-                    that reads one. Hidden rather than removed: the head keeps the
-                    width it had, and the controls beside it stay where they were. */}
-                <button
-                    type="button"
-                    className={`owned-refresh-button${priceSource === 'live' ? '' : ' is-idle'}`}
-                    onClick={() => load('refresh')}
-                    disabled={priceSource !== 'live' || loading || refreshing}
-                    aria-hidden={priceSource === 'live' ? undefined : true}
-                    tabIndex={priceSource === 'live' ? undefined : -1}
-                    title="Refresh owned contracts"
-                >
-                    <RotateCcwIcon width={14} height={14} aria-hidden="true" />
-                    {refreshing ? 'Refreshing' : 'Refresh'}
-                </button>
+                <div className="owned-quote-controls">
+                    {phone ? <OwnedPriceSourceMenu value={priceSource} onChange={setPriceSource} /> : null}
+                    {/* Refreshing repulls the live quote, so it is offered to the mode
+                        that reads one. Hidden rather than removed: the head keeps the
+                        width it had, and the controls beside it stay where they were. */}
+                    <button
+                        type="button"
+                        className={`owned-refresh-button${priceSource === 'live' ? '' : ' is-idle'}`}
+                        onClick={() => load('refresh')}
+                        disabled={priceSource !== 'live' || loading || refreshing}
+                        aria-hidden={priceSource === 'live' ? undefined : true}
+                        tabIndex={priceSource === 'live' ? undefined : -1}
+                        title="Refresh owned contracts"
+                    >
+                        <RotateCcwIcon width={14} height={14} aria-hidden="true" />
+                        {refreshing ? 'Refreshing' : 'Refresh'}
+                    </button>
+                </div>
 
                 <button
                     type="button"
@@ -606,7 +611,7 @@ export function OwnedContractsPage() {
                     onClick={() => setFiltersOpen((open) => !open)}
                 >
                     <SlidersIcon width={15} height={15} />
-                    <span>{activeFilterCount ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
+                    <span>{activeFilterCount ? `Sort & Filter · ${activeFilterCount}` : 'Sort & Filter'}</span>
                     <ChevronDownIcon width={14} height={14} className={filtersOpen ? 'rotated' : ''} />
                 </button>
 
@@ -616,7 +621,7 @@ export function OwnedContractsPage() {
                         id="owned-filters"
                         ref={filtersPanelRef}
                         role="dialog"
-                        aria-label="Filters"
+                        aria-label="Sort and filter"
                     >
                         {filterControls}
                     </div>
@@ -625,7 +630,7 @@ export function OwnedContractsPage() {
                 {phone && (
                     <Modal
                         open={filtersOpen}
-                        title="Filters"
+                        title="Sort & Filter"
                         onClose={() => setFiltersOpen(false)}
                         className="owned-filters-modal"
                     >
@@ -652,7 +657,7 @@ export function OwnedContractsPage() {
                     <div className="owned-applied-filters" aria-label="Sort and applied filters">
                         {/* Which prices are on reads as a property of the list, so it is
                             chosen here rather than from behind the filter trigger. */}
-                        <OwnedPriceSourceMenu value={priceSource} onChange={setPriceSource} />
+                        {phone ? null : <OwnedPriceSourceMenu value={priceSource} onChange={setPriceSource} />}
                         <span
                             className="owned-sort-chip"
                             aria-label={`Sorted by ${OWNED_SORT_LABELS[sort.key]}, ${sort.direction === 'asc' ? 'ascending' : 'descending'}`}
@@ -763,6 +768,12 @@ function OwnedContractRow({
                                     <>
                                         {', '}
                                         <span className={`owned-contract-move is-${underlying.moveTone}`}>
+                                            {underlying.moveTone === 'good' ? (
+                                                <TrendingUpIcon width={12} height={12} aria-hidden="true" />
+                                            ) : null}
+                                            {underlying.moveTone === 'bad' ? (
+                                                <TrendingDownIcon width={12} height={12} aria-hidden="true" />
+                                            ) : null}
                                             {underlying.move}
                                         </span>
                                     </>

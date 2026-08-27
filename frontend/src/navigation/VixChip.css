@@ -13,16 +13,16 @@
     user-select: none;
 }
 
-.vix-chip.level-high {
-    border-color: var(--positive);
+.vix-chip.level-high b {
+    color: var(--positive);
 }
 
-.vix-chip.level-medium {
-    border-color: var(--warning);
+.vix-chip.level-medium b {
+    color: var(--warning);
 }
 
-.vix-chip.level-low {
-    border-color: var(--negative);
+.vix-chip.level-low b {
+    color: var(--negative);
 }
 
 .vix-chip b {

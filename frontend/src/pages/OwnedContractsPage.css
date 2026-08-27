@@ -20,8 +20,14 @@
     margin-right: auto;
 }
 
+/* The wrapper exists for the phone's paired quote controls. Above that breakpoint
+   it gives up its box so Refresh keeps its place in the page head. */
+.owned-quote-controls {
+    display: contents;
+}
+
 .owned-contracts-page .filter-bar {
-    width: min(28rem, calc(100vw - 2rem));
+    width: min(20rem, calc(100vw - 2rem));
     grid-template-columns: 1fr;
 }
 
@@ -99,7 +105,7 @@
     padding: 0.3rem 0.6rem;
     background: rgba(var(--highlight-rgb), 0.14);
     border: var(--border-width) solid rgba(var(--highlight-rgb), 0.42);
-    color: var(--highlight);
+    color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 600;
 }
@@ -239,6 +245,16 @@
     color: var(--danger);
 }
 
+.owned-contract-move {
+    display: inline;
+}
+
+.owned-contract-move svg {
+    display: inline-block;
+    margin-right: 0.15rem;
+    vertical-align: -0.15em;
+}
+
 .owned-contract-identity-metric {
     display: flex;
     flex-wrap: wrap;
@@ -366,6 +382,7 @@
 }
 
 .owned-contract-delta-row {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -464,11 +481,14 @@
 }
 
 .owned-quote-issue {
-    flex: 0 1 auto;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    max-width: 100%;
     color: var(--warning);
     font-size: 0.62rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1;
     overflow-wrap: anywhere;
     text-transform: uppercase;
 }
@@ -620,6 +640,13 @@
 }
 
 @media (max-width: 640px) {
+    .owned-quote-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0%, 1fr));
+        gap: 0.5rem;
+        width: 100%;
+    }
+
     .owned-refresh-button {
         width: 100%;
     }
@@ -627,6 +654,10 @@
     /* A row of its own here, so hiding it would leave a band of nothing. */
     .owned-refresh-button.is-idle {
         display: none;
+    }
+
+    .owned-quote-controls:has(.owned-refresh-button.is-idle) .choice-menu {
+        grid-column: 1 / -1;
     }
 
     .owned-contracts-metrics {
