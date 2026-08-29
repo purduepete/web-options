@@ -1,0 +1,80 @@
+{
+  "publishDate": "2026-07-20",
+  "title": null,
+  "macro": [
+    {
+      "label": "S&P 500: 7,458",
+      "text": "The market fell about 1.5% last week, mostly in technology. Calls can be sold farther above current prices on owned technology shares."
+    },
+    {
+      "label": "VIX: 18.77",
+      "text": "Higher fear is lifting premium, mainly on chips and large technology names reporting this week."
+    },
+    {
+      "label": "10-Year Treasury Yield: 4.56%",
+      "text": "High yields pressure rate-sensitive stocks. Keep covered-call strikes farther out on utilities, real estate, and telecoms."
+    },
+    {
+      "label": "3-Month T-Bill: 3.76%",
+      "text": "Use 3.76% as the cash return hurdle. Trades that cannot beat it do not justify taking additional risk."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Jul 20",
+      "rule": "Sell the clean, non-technology names Monday or Tuesday before Wednesday reports pull attention and volatility toward technology. These contracts have no earnings scheduled this week.",
+      "event": "Setup day. No major economic release is scheduled.",
+      "trades": [
+        { "ticker": "C", "type": "put", "strike": "$120P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.22", "ann": "15.1%", "premium": "$174", "collateral": "$12,000", "risk": "conservative", "note": "Citi already reported; strike is 7% below the current price." },
+        { "ticker": "UNH", "type": "put", "strike": "$400P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.23", "ann": "14.2%", "premium": "$545", "collateral": "$40,000", "risk": "conservative", "note": "Health insurance led the move toward safer stocks; collateral is large." },
+        { "ticker": "PEP", "type": "call", "strike": "$145C", "expiry": "2026-08-21", "dte": 35, "delta": "0.25", "ann": "12.2%", "premium": "$161", "collateral": "$13,712", "risk": "conservative", "note": "Steady consumer-staples exposure for a choppy market." },
+        { "ticker": "JNJ", "type": "call", "strike": "$270C", "expiry": "2026-08-21", "dte": 35, "delta": "0.21", "ann": "9.2%", "premium": "$223", "collateral": "$25,304", "risk": "conservative", "note": "Healthcare call with a strike set well above the current price." },
+        { "ticker": "DG", "type": "put", "strike": "$120P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.31", "ann": "26.2%", "premium": "$301", "collateral": "$12,000", "risk": "balanced", "note": "Discount retail can benefit when shoppers trade down." },
+        { "ticker": "ABT", "type": "call", "strike": "$105C", "expiry": "2026-08-21", "dte": 35, "delta": "0.34", "ann": "20.2%", "premium": "$195", "collateral": "$10,068", "risk": "balanced", "note": "Healthcare exposure with a higher delta for additional premium." },
+        { "ticker": "WMT", "type": "call", "strike": "$117C", "expiry": "2026-08-07", "dte": 18, "delta": "0.37", "ann": "27.2%", "premium": "$179", "collateral": "$11,424", "risk": "balanced", "note": "No earnings until August; plan to buy back near max profit." },
+        { "ticker": "WFC", "type": "put", "strike": "$85P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.35", "ann": "22.5%", "premium": "$183", "collateral": "$8,500", "risk": "aggressive", "note": "Wells Fargo already reported; delta is aggressive on an acceptable ownership price." }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Jul 21",
+      "rule": "The clean-name window remains open Tuesday. Open the same non-technology contracts before Wednesday reports, sizing each position to the account.",
+      "event": "Final setup day before the Wednesday earnings cluster.",
+      "trades": [
+        { "ticker": "C", "type": "put", "strike": "$120P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.22", "ann": "15.1%", "premium": "$174", "collateral": "$12,000", "risk": "conservative", "note": "Citi already reported; strike is 7% below the current price." },
+        { "ticker": "UNH", "type": "put", "strike": "$400P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.23", "ann": "14.2%", "premium": "$545", "collateral": "$40,000", "risk": "conservative", "note": "Health insurance led the move toward safer stocks; collateral is large." },
+        { "ticker": "PEP", "type": "call", "strike": "$145C", "expiry": "2026-08-21", "dte": 35, "delta": "0.25", "ann": "12.2%", "premium": "$161", "collateral": "$13,712", "risk": "conservative", "note": "Steady consumer-staples exposure for a choppy market." },
+        { "ticker": "JNJ", "type": "call", "strike": "$270C", "expiry": "2026-08-21", "dte": 35, "delta": "0.21", "ann": "9.2%", "premium": "$223", "collateral": "$25,304", "risk": "conservative", "note": "Healthcare call with a strike set well above the current price." },
+        { "ticker": "DG", "type": "put", "strike": "$120P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.31", "ann": "26.2%", "premium": "$301", "collateral": "$12,000", "risk": "balanced", "note": "Discount retail can benefit when shoppers trade down." },
+        { "ticker": "ABT", "type": "call", "strike": "$105C", "expiry": "2026-08-21", "dte": 35, "delta": "0.34", "ann": "20.2%", "premium": "$195", "collateral": "$10,068", "risk": "balanced", "note": "Healthcare exposure with a higher delta for additional premium." },
+        { "ticker": "WMT", "type": "call", "strike": "$117C", "expiry": "2026-08-07", "dte": 18, "delta": "0.37", "ann": "27.2%", "premium": "$179", "collateral": "$11,424", "risk": "balanced", "note": "No earnings until August; plan to buy back near max profit." },
+        { "ticker": "WFC", "type": "put", "strike": "$85P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.35", "ann": "22.5%", "premium": "$183", "collateral": "$8,500", "risk": "aggressive", "note": "Wells Fargo already reported; delta is aggressive on an acceptable ownership price." }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Jul 22",
+      "rule": "No new risk. Alphabet, Texas Instruments, Tesla, IBM, and ServiceNow report today, so avoid opening technology trades into the earnings cluster.",
+      "event": "Major technology earnings reports today. Review existing technology positions before the open.",
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Jul 23",
+      "rule": "After the reports and the market reaction settle, sell CRM and NVDA puts only if Wednesday guidance reassured the group. Skip them and use the clean list if the guidance was weak.",
+      "event": "Conditional technology window after Wednesday earnings and guidance are known.",
+      "trades": [
+        { "ticker": "CRM", "type": "put", "strike": "$160P", "expiry": "2026-08-21", "dte": 35, "delta": "-0.29", "ann": "29.5%", "premium": "$453", "collateral": "$16,000", "risk": "balanced", "note": "Salesforce does not report this week, but it trades with the software group." },
+        { "ticker": "NVDA", "type": "put", "strike": "$192.5P", "expiry": "2026-07-31", "dte": 11, "delta": "-0.26", "ann": "41.3%", "premium": "$305", "collateral": "$19,250", "risk": "aggressive", "note": "Highest yield in the technology window; only use if guidance holds up." }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Jul 24",
+      "rule": "Keep the T-Bill return as the final filter. Hold cash when a remaining trade does not compensate for its risk.",
+      "event": "Reaction day. No separate entry window is specified.",
+      "trades": []
+    }
+  ]
+}
