@@ -151,7 +151,7 @@ ORDER BY tcp.contract_key, tcp.price_date ASC
 ## HTML report layout
 
 File: `docs/exit-target-analysis-<YYYY-MM-DD>.html` (regenerated on demand, not committed).
-Style: webapp-style design system (indigo/violet accent, squared corners, dark default + light toggle).
+Style: indigo/violet accent, squared corners, dark default plus a light toggle.
 
 Sections:
 

@@ -20,6 +20,7 @@ const weekGridCss = read('../src/signals/WeekGrid.css');
 const calendarGridCss = read('../src/calendars/CalendarGrid.css');
 const calendarGridTsx = read('../src/calendars/CalendarGrid.tsx');
 const indexCss = read('../src/index.css');
+const tradeDetailCss = read('../src/signals/TradeDetail.css').replace(/\r\n/g, '\n');
 
 /** The bodies of every `@media` block in a stylesheet. */
 function mediaBlocks(css: string): string[] {
@@ -70,6 +71,12 @@ describe('week grid stylesheets', () => {
 
     it('keeps the day cards on subgrid so the rows stay shared', () => {
         expect(weekGridCss).toMatch(/\.day-card\s*\{[^}]*grid-template-rows:\s*subgrid/);
+    });
+
+    it('reserves a desktop track for the trade detail tier pill', () => {
+        expect(tradeDetailCss).toMatch(
+            /\.past-signals li \.past-row\s*\{[^}]*grid-template-columns:\s*6rem\s+1\.75rem\s+2rem\s+minmax\(0,\s*1fr\)\s+3\.5rem\s+8rem/,
+        );
     });
 
     it('gives the calendar the shared card styling before its own overrides', () => {

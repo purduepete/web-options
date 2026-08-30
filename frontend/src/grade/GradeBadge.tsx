@@ -56,3 +56,32 @@ export function MoneynessChip({ moneyness, title }: { moneyness: Moneyness | nul
         </span>
     );
 }
+
+const TIER_PILL_LABELS = {
+    conservative: 'Conservative',
+    balanced: 'Balanced',
+    aggressive: 'Aggressive',
+} as const;
+
+type TierPillTier = keyof typeof TIER_PILL_LABELS;
+
+export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: boolean }) {
+    if (isTopPick) {
+        return (
+            <span className="tier-pill tp" title="Top pick">
+                TP
+                <span className="sr-only"> (Top pick)</span>
+            </span>
+        );
+    }
+
+    const normalized = tier?.toLowerCase();
+    if (normalized !== 'conservative' && normalized !== 'balanced' && normalized !== 'aggressive') return null;
+
+    return (
+        <span className={`tier-pill ${normalized}`} title={TIER_PILL_LABELS[normalized]}>
+            {normalized.charAt(0).toUpperCase()}
+            <span className="sr-only"> ({TIER_PILL_LABELS[normalized]})</span>
+        </span>
+    );
+}

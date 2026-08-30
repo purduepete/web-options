@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import type { IsoDate, Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
-import { gradeTrade } from '@weboptions/shared';
+import { gradeTrade, RECENT_SIGNAL_WINDOW_DAYS } from '@weboptions/shared';
 import { Modal } from '../components/Modal';
 import {
     ChevronLeftIcon,
@@ -11,7 +11,7 @@ import {
 } from '../components/icons';
 import { SymbolMark } from '../components/SymbolMark';
 import { Loading } from '../components/Loading';
-import { GradeBadge, MoneynessChip, OutcomeChip } from '../grade/GradeBadge';
+import { GradeBadge, MoneynessChip, OutcomeChip, TierPill } from '../grade/GradeBadge';
 import { useGradeSettings } from '../grade/GradeSettingsProvider';
 import { useVixValue } from '../grade/VixProvider';
 import { useCautionSymbols } from '../caution/CautionProvider';
@@ -27,6 +27,7 @@ import {
     formatSignedMoney,
     formatSignedPercent,
     formatStrike,
+    shareOf,
 } from './format';
 import './TradeDetail.css';
 
@@ -50,15 +51,84 @@ export interface TradeDetailProps {
     /** Null at the ends of the day, which is what disables the arrow. */
     onPrevious?: (() => void) | null;
     onNext?: (() => void) | null;
+    /** Opens another signal on the same underlying. Omitted, the list is not clickable. */
+    onOpenSignal?: (target: SignalTarget) => void;
+}
+
+export interface SignalTarget {
+    symbol: string;
+    reportDate: IsoDate;
+    strike: number;
+    expiration: IsoDate;
+}
+
+/**
+ * Trade context for the Tampermonkey research overlays, in the same shape as
+ * webportfolio's `buildOptionResearchHash`. Empty when the contract is not fully
+ * named, since there is nothing for an overlay to describe.
+ */
+function tradeContext(input: {
+    symbol: string;
+    strike: number | null;
+    expiration: IsoDate | null;
+    delta: number | null;
+    premium: number | null;
+    underlyingPrice: number | null;
+    underlyingChangePct: number | null;
+}): string[] {
+    const { strike, expiration, underlyingPrice: underlying } = input;
+    if (strike === null || expiration === null) return [];
+
+    const parts = [
+        `trade_ticker=${encodeURIComponent(input.symbol)}`,
+        `trade_strike=${strike.toFixed(2)}`,
+        `trade_expiration=${expiration}`,
+    ];
+    if (input.delta !== null) parts.push(`trade_delta=${(-Math.abs(input.delta)).toFixed(4)}`);
+    if (input.premium !== null) parts.push(`trade_optionPrice=${(input.premium / 100).toFixed(2)}`);
+    if (underlying !== null) parts.push(`trade_underlyingPrice=${underlying.toFixed(2)}`);
+    if (input.underlyingChangePct !== null) {
+        parts.push(`trade_underlyingChange=${input.underlyingChangePct.toFixed(2)}`);
+    }
+    // Against the STRIKE, which is the denominator the overlays label "% above strike".
+    if (underlying !== null && strike > 0) {
+        parts.push(`trade_strikePct=${(((underlying - strike) / strike) * 100).toFixed(2)}`);
+    }
+    return parts;
+}
+
+/** A fragment never leaves the browser, so the context reaches the overlay and not the site. */
+function withContext(url: string, context: string[]): string {
+    return context.length === 0 ? url : `${url}#${context.join('&')}`;
 }
 
 /** Yahoo has no bearing on these; they are only ever links. */
 function seekingAlphaUrl(symbol: string): string {
-    return `https://seekingalpha.com/symbol/${encodeURIComponent(symbol)}`;
+    return `https://seekingalpha.com/symbol/${encodeURIComponent(symbol.toUpperCase())}`;
 }
 
-function fidelityUrl(symbol: string): string {
-    return `https://digital.fidelity.com/prgw/digital/research/quote/dashboard/summary?symbol=${encodeURIComponent(symbol)}`;
+/** The option chain rather than the stock summary, because that is where the overlay fires. */
+function fidelityUrl(symbol: string, context: string[]): string {
+    const base = `https://digital.fidelity.com/ftgw/digital/exp-options-research/?symbol=${encodeURIComponent(symbol.toUpperCase())}`;
+    // Fidelity's overlay reads query parameters, and takes the ticker from `symbol`.
+    const params = context.filter((part) => !part.startsWith('trade_ticker='));
+    return params.length === 0 ? base : `${base}&${params.join('&')}`;
+}
+
+function tradingViewUrl(symbol: string): string {
+    return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(symbol.toUpperCase())}`;
+}
+
+/** Null when the contract is not fully named, since this one is per-contract rather than per-symbol. */
+function barchartUrl(trade: Trade): string | null {
+    if (trade.strike === null || trade.expiration === null) return null;
+    const params = new URLSearchParams({
+        symbol: trade.symbol,
+        expirationDate: trade.expiration,
+        strikePrice: trade.strike.toFixed(2),
+        symbolType: trade.optionRight,
+    });
+    return `https://www.barchart.com/options/price-history?${params.toString()}`;
 }
 
 const WEB_PORTFOLIO_TRADE_URL = 'https://jimbrownhome.tail8ad282.ts.net/trading/option-trade';
@@ -120,7 +190,9 @@ export function TradeDetail({
     position,
     onPrevious,
     onNext,
+    onOpenSignal,
 }: TradeDetailProps) {
+    const onOpen = onOpenSignal;
     const { detail, loading, error } = useSymbolDetail(trade, reportDate);
     const settings = useGradeSettings();
     const cautionSymbols = useCautionSymbols();
@@ -182,6 +254,16 @@ export function TradeDetail({
     // The premium is per CONTRACT, so it is 100 shares' worth of a per-share strike.
     const shownPremium = numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium;
     const breakeven = trade.strike !== null && shownPremium !== null ? trade.strike - shownPremium / 100 : null;
+    const barchart = barchartUrl(trade);
+    const context = tradeContext({
+        symbol: trade.symbol,
+        strike: trade.strike,
+        expiration: trade.expiration,
+        delta: shownDelta,
+        premium: shownPremium,
+        underlyingPrice: price,
+        underlyingChangePct: dayChangePct,
+    });
 
     return (
         <Modal
@@ -199,6 +281,61 @@ export function TradeDetail({
                     </p>
                 </div>
                 <div className="detail-links">
+                    <div className="research-links">
+                        {/* The anchor carries the name, so the mark is decorative. */}
+                    <a
+                        className="pill link-icon"
+                        href={withContext(seekingAlphaUrl(trade.symbol), context)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Seeking Alpha"
+                        title="Seeking Alpha"
+                    >
+                        <span className="site-mark site-seekingalpha" aria-hidden="true" />
+                    </a>
+                    <a
+                        className="pill link-icon"
+                        href={fidelityUrl(trade.symbol, context)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Fidelity"
+                        title="Fidelity option chain"
+                    >
+                        <span className="site-mark site-fidelity" aria-hidden="true" />
+                    </a>
+                    {barchart && (
+                        <a
+                            className="pill link-icon"
+                            href={withContext(barchart, context)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Barchart option price history"
+                            title="Barchart option price history"
+                        >
+                            <span className="site-mark site-barchart" aria-hidden="true" />
+                        </a>
+                    )}
+                    <a
+                        className="pill link-icon"
+                        href={withContext(tradingViewUrl(trade.symbol), context)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="TradingView"
+                        title="TradingView chart"
+                    >
+                        <span className="site-mark site-tradingview" aria-hidden="true" />
+                    </a>
+                    </div>
+                    <a
+                        className="pill link-icon purchase-link"
+                        href={webPortfolioTradeUrl(trade, numberSource)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Trade in Web Portfolio"
+                        title="Execute Option Trade"
+                    >
+                        <CircleArrowRightIcon />
+                    </a>
                     {position && (
                         <div className="detail-nav">
                             <button
@@ -222,24 +359,6 @@ export function TradeDetail({
                             </button>
                         </div>
                     )}
-                    {/* noreferrer as well as noopener: these are research sites, and
-                        the referrer would name the reader's own page to them. */}
-                    <a className="pill" href={seekingAlphaUrl(trade.symbol)} target="_blank" rel="noopener noreferrer">
-                        Seeking Alpha
-                    </a>
-                    <a className="pill" href={fidelityUrl(trade.symbol)} target="_blank" rel="noopener noreferrer">
-                        Fidelity
-                    </a>
-                    <a
-                        className="pill"
-                        href={webPortfolioTradeUrl(trade, numberSource)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Trade in Web Portfolio"
-                        title="Execute Option Trade"
-                    >
-                        <CircleArrowRightIcon width={16} height={16} />
-                    </a>
                 </div>
             </header>
 
@@ -473,7 +592,21 @@ export function TradeDetail({
                         )}
 
                         <section className="detail-section past-section">
-                            <h3>Earlier signals on {trade.symbol}</h3>
+                            <h3>
+                                Other signals on {trade.symbol}
+                                {detail.recentSignals !== null && detail.recentSignals.total > 0 && (
+                                    <span
+                                        className="past-stats"
+                                        title={`Over the last ${RECENT_SIGNAL_WINDOW_DAYS} trading days: ${detail.recentSignals.inTheMoney} of ${detail.recentSignals.total} in the money, ${detail.recentSignals.assigned} of ${detail.recentSignals.total} assigned.`}
+                                    >
+                                        <span>
+                                            {detail.recentSignals.total} in {RECENT_SIGNAL_WINDOW_DAYS} days
+                                        </span>
+                                        <span>{shareOf(detail.recentSignals.inTheMoney, detail.recentSignals.total)} ITM</span>
+                                        <span>{shareOf(detail.recentSignals.assigned, detail.recentSignals.total)} assigned</span>
+                                    </span>
+                                )}
+                            </h3>
                             {detail.pastSignals.length === 0 ? (
                                 <p className="detail-empty">No other signals on this underlying.</p>
                             ) : (
@@ -489,8 +622,21 @@ export function TradeDetail({
                                             const reference = signal.closeAtExpiration ?? detail.price;
                                             const owned =
                                                 signal.ownedLiveContracts > 0 || signal.ownedPaperContracts > 0;
-                                            return (
-                                                <li key={`${signal.reportDate}-${signal.strike}-${signal.expiration}`}>
+                                            // Copied out so the null checks still hold inside the click
+                                            // handler, which they would not on the mutable prop.
+                                            const { strike, expiration } = signal;
+                                            const openRow =
+                                                onOpen && strike !== null && expiration !== null
+                                                    ? () =>
+                                                          onOpen({
+                                                              symbol: trade.symbol,
+                                                              reportDate: signal.reportDate,
+                                                              strike,
+                                                              expiration,
+                                                          })
+                                                    : null;
+                                            const body = (
+                                                <>
                                                     <span className="past-date">{formatMDY(signal.reportDate)}</span>
                                                     <span className="past-ownership">
                                                         {signal.ownedLiveContracts > 0 && (
@@ -513,6 +659,7 @@ export function TradeDetail({
                                                         )}
                                                         {!owned && <span aria-hidden="true" />}
                                                     </span>
+                                                    <TierPill tier={signal.tier} isTopPick={signal.isTopPick} />
                                                     <span className="past-strike">
                                                         {formatCents(signal.strike)}P ·{' '}
                                                         {formatPercent(signal.annualizedYield)}
@@ -526,6 +673,22 @@ export function TradeDetail({
                                                         }
                                                     />
                                                     <OutcomeChip outcome={signal.outcome} />
+                                                </>
+                                            );
+                                            return (
+                                                <li key={`${signal.reportDate}-${signal.strike}-${signal.expiration}`}>
+                                                    {openRow ? (
+                                                        <button
+                                                            type="button"
+                                                            className="past-row"
+                                                            onClick={openRow}
+                                                            title={`Open ${trade.symbol} ${formatCents(signal.strike)}P from ${formatMDY(signal.reportDate)}`}
+                                                        >
+                                                            {body}
+                                                        </button>
+                                                    ) : (
+                                                        <div className="past-row">{body}</div>
+                                                    )}
                                                 </li>
                                             );
                                         })}

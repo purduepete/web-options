@@ -25,24 +25,43 @@
     color: var(--text-muted);
 }
 
-/* The research links wrap onto their own line before they squeeze the name. On a
-   phone they always do, so they take the whole of it: the step run against the
-   left gutter and the links against the right, rather than a short run floating
-   under the name with empty space beside it. */
 .detail-links {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.4rem;
+    gap: 0.4rem 0.6rem;
     flex: 1 1 100%;
+}
+
+.research-links {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    justify-content: center;
+    gap: 0.4rem;
 }
 
 .detail-nav {
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    margin-right: auto;
+    justify-self: end;
+}
+
+.purchase-link {
+    position: relative;
+    flex: none;
+    margin-left: 1rem;
+}
+
+.purchase-link::before {
+    position: absolute;
+    top: 50%;
+    left: -0.8rem;
+    height: 2.5rem;
+    border-left: var(--border-width) solid var(--border-soft);
+    content: '';
+    transform: translateY(-50%);
 }
 
 .nav-step {
@@ -52,9 +71,54 @@
     cursor: pointer;
 }
 
-.nav-step svg {
+/* Square, so the research links measure the same as the step buttons beside them
+   and the whole run reads as one row of controls. */
+.link-icon {
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+}
+
+.nav-step svg,
+.link-icon svg {
     width: 1rem;
     height: 1rem;
+}
+
+/* Each site's own favicon reduced to its silhouette and painted in currentColor, so a
+   brand mark picks up the muted and hover colours of the stroke icons beside it. The
+   images carry shape in their alpha only; nothing is drawn from their pixels. */
+.site-mark {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    background-color: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.site-seekingalpha {
+    -webkit-mask-image: url('/site-icons/seekingalpha.png');
+    mask-image: url('/site-icons/seekingalpha.png');
+}
+
+.site-fidelity {
+    -webkit-mask-image: url('/site-icons/fidelity.png');
+    mask-image: url('/site-icons/fidelity.png');
+}
+
+.site-barchart {
+    -webkit-mask-image: url('/site-icons/barchart.png');
+    mask-image: url('/site-icons/barchart.png');
+}
+
+.site-tradingview {
+    -webkit-mask-image: url('/site-icons/tradingview.png');
+    mask-image: url('/site-icons/tradingview.png');
 }
 
 /* Kept in place rather than removed at the ends of the day, so the run holds its
@@ -78,9 +142,36 @@
 }
 
 @media (pointer: coarse) {
-    .nav-step {
+    .nav-step,
+    .link-icon {
         min-width: 44px;
         min-height: 44px;
+    }
+}
+
+@media (max-width: 640px) {
+    .detail-links {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "research research"
+            "purchase navigation";
+        justify-content: stretch;
+    }
+
+    .research-links {
+        grid-area: research;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .purchase-link {
+        grid-area: purchase;
+        justify-self: center;
+    }
+
+    .detail-nav {
+        grid-area: navigation;
+        justify-self: end;
     }
 }
 
@@ -107,6 +198,7 @@
 
 .detail-section h3 {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     margin: 0 0 0.5rem;
@@ -116,6 +208,23 @@
     letter-spacing: 0.05em;
     color: var(--text-muted);
     user-select: none;
+}
+
+/* The list is trimmed, so this says how much of the symbol's activity it leaves out. */
+.past-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.5rem;
+    margin-left: auto;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.75;
+}
+
+.past-stats > * + *::before {
+    content: '\00b7';
+    margin-right: 0.5rem;
 }
 
 .detail-stale {
@@ -192,11 +301,20 @@
     list-style: none;
 }
 
-.past-signals li {
+/* The whole row is the control, so it drops the shared button chrome and keeps only
+   the layout. The padding is what gives the hover somewhere to land, and the matching
+   negative margin keeps the rows sitting where they did before it was a button. */
+.past-row {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.25rem 0.6rem;
+    width: 100%;
+    padding: 0.2rem 0.35rem;
+    margin: -0.2rem -0.35rem;
+    background: none;
+    border: none;
+    text-align: left;
     font-size: 0.85rem;
     font-variant-numeric: tabular-nums;
 }
@@ -213,15 +331,13 @@
 }
 
 @media (min-width: 640px) {
-    /* Wide enough for the whole head on one line, so the run goes back to sitting
-       beside the name. */
     .detail-links {
         flex: 0 1 auto;
         margin-left: auto;
     }
 
     .detail-nav {
-        margin-right: 0.3rem;
+        margin-right: 0;
     }
 
     /* Counted rather than fitted, so the pairs a reader compares land under one
@@ -235,9 +351,9 @@
        track either side of them lands in a different place on every line. Only the
        strike track flexes; the two chip columns are fixed, and 8rem is the widest
        outcome label. */
-    .past-signals li {
+    .past-signals li .past-row {
         display: grid;
-        grid-template-columns: 6rem 1.75rem minmax(0, 1fr) 3.5rem 8rem;
+        grid-template-columns: 6rem 1.75rem 2rem minmax(0, 1fr) 3.5rem 8rem;
         align-items: center;
     }
 
@@ -252,14 +368,14 @@
         gap: 0.2rem;
     }
 
-    .past-signals li > * {
+    .past-row > * {
         justify-self: start;
     }
 
     /* Ragged left, flush right: a chip is read by its edge, and only the right one
        is common to a three-letter and a nine-letter label. */
-    .past-signals li > .moneyness-chip,
-    .past-signals li > .outcome-chip {
+    .past-row > .moneyness-chip,
+    .past-row > .outcome-chip {
         justify-self: end;
     }
 }

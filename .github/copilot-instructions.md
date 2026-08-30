@@ -1,10 +1,16 @@
 # WebOptions repository instructions
 
-## Upstream data: the webportfolio repo
+## Upstream repo: webportfolio
 
 The signal data this app renders is produced by a separate app, **webportfolio**,
 checked out at `C:\Files\Dev\main\webportfolio`. That repo owns the ingest jobs,
 the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader.
+
+It is the upstream for style and behaviour as well. Where a screen, a URL shape, a
+visual treatment, or a percentage definition exists in both apps, webportfolio's
+version is the contract. **Read its source before building the WebOptions
+equivalent**, because a hand-built version that looks right will still diverge on
+the details that matter.
 
 - Workspace search tools cannot reach outside this folder. To search webportfolio,
   use terminal commands rather than the grep/file search tools.
@@ -35,6 +41,27 @@ the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader
   and the server/database/user constants are in
   [scripts/weboptions.ps1](scripts/weboptions.ps1). Clear `DB_*` from the
   environment afterwards.
+
+### Parity sources
+
+Paths are relative to `C:\Files\Dev\main\webportfolio`.
+
+- `frontend/src/utils/optionResearchLinks.ts` owns the research link set and the
+  `#trade_*` context hash the Tampermonkey overlays read, including the key order
+  and each value's decimal places. Fidelity is the one exception: query parameters
+  on `/ftgw/digital/exp-options-research/`, with no `trade_ticker`. Never
+  hand-build one of these URLs.
+- `frontend/src/pages/performance/OptionsWatchlist.tsx` and `CashSecuredPuts.tsx`
+  are the canonical callers, and they define what the percentages mean.
+  `underlyingChange` is measured against the prior close; `strikePct` against the
+  strike, not the underlying.
+- `frontend/src/pages/trading/OptionTrade.tsx` is where the Web Portfolio trade
+  link lands, and it decides which query parameters that link has to carry.
+- `scripts/tampermonkey/` holds the overlay userscripts that consume the context.
+  They fix the parameter names, so renaming one here breaks them with no error.
+- `frontend/src/index.css` puts the `.theme-midnight` rules outside `@layer` and
+  marks them `!important`, so they beat the Tailwind classes written on the JSX.
+  Read the stylesheet. The JSX on its own will mislead you.
 
 ## Option numbers: VADER's versus captured
 

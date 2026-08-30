@@ -12,6 +12,7 @@ import type {
     SummaryFilters,
     SignalSummaryResponse,
     SymbolDetail,
+    Trade,
     VixResponse,
     WeekSignalsResponse,
 } from '@weboptions/shared';
@@ -124,6 +125,22 @@ export function fetchWeekSignals(week?: string): Promise<WeekSignalsResponse> {
 
 export function fetchEarliestWeek(): Promise<EarliestWeekResponse> {
     return getJson<EarliestWeekResponse>('/api/earliest-week');
+}
+
+/** One signal, so the drill-in can jump to a contract from a week the page has not loaded. */
+export function fetchSignal(target: {
+    symbol: string;
+    reportDate: string;
+    strike: number;
+    expiration: string;
+}): Promise<Trade> {
+    const query = new URLSearchParams({
+        symbol: target.symbol,
+        reportDate: target.reportDate,
+        strike: String(target.strike),
+        expiration: target.expiration,
+    });
+    return getJson<Trade>(`/api/signal?${query}`);
 }
 
 export function fetchSignalMonths(): Promise<SignalMonthsResponse> {

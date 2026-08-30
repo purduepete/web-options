@@ -1,12 +1,13 @@
-import type { IsoDate, SymbolDetail } from '@weboptions/shared';
+import { RECENT_SIGNAL_WINDOW_DAYS, type IsoDate, type SymbolDetail } from '@weboptions/shared';
 import type { DbConfig } from '../config';
-import { resolvePastSignals, sixMonthSlice, sma } from './metrics';
+import { recentSignalStats, resolvePastSignals, sixMonthSlice, sma } from './metrics';
 import {
     ownedContractsFor,
     outcomeFor,
     type PastSignalExclusion,
     pastSignalsFor,
     readCached,
+    recentSignalsFor,
     writeCached,
 } from './repository';
 import { fetchDailyBars, fetchQuote, normalizeSymbol, type SymbolQuote } from './yahoo';
@@ -26,7 +27,11 @@ import { fetchDailyBars, fetchQuote, normalizeSymbol, type SymbolQuote } from '.
 
 const BARS_TTL_MS = 12 * 60 * 60 * 1000;
 
-const PAST_SIGNAL_LIMIT = 5;
+/**
+ * Caps the signals NOT held. Owned ones are all kept on top of this, so the list is
+ * "everything I took, plus the five most recent of the rest".
+ */
+const OTHER_SIGNAL_LIMIT = 5;
 
 /**
  * No market-calendar modelling. A weekend refresh re-fetches an unchanged series and
@@ -41,8 +46,12 @@ function isFresh(refreshedAt: Date | null, now: number): boolean {
 const inFlight = new Map<string, Promise<SymbolDetail | null>>();
 
 export interface SymbolDetailOptions {
-    /** The contract the modal is showing, kept out of its own "past signals" list. */
-    exclude?: PastSignalExclusion;
+    /**
+     * The contract the modal is showing. With `reportDate` it names one signal, which
+     * is the one row kept out of its own "other signals" list — the other mornings of
+     * the same contract are exactly the comparison the list is for.
+     */
+    exclude?: Omit<PastSignalExclusion, 'reportDate'>;
     /**
      * The morning this contract was signalled. Together with the contract it names
      * one row of the end-of-day rollup; without it there is no outcome to look up,
@@ -95,13 +104,23 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
     const priceDate = livePrice !== null ? (live?.priceDate ?? null) : (profile?.priceDate ?? null);
     // Stale means "this figure is older than it looks", so an absent price is not stale.
     const stale = livePrice === null && price !== null;
+    // The live close runs ahead of the cached bars, so it settles an expiration that
+    // landed after the series was last written.
+    const latest = price !== null && priceDate !== null ? { date: priceDate, close: price } : null;
 
     const seeds = await pastSignalsFor(
         db,
         symbol,
-        options.exclude ?? { strike: null, expiration: null },
-        PAST_SIGNAL_LIMIT,
+        {
+            strike: options.exclude?.strike ?? null,
+            expiration: options.exclude?.expiration ?? null,
+            reportDate: options.reportDate ?? null,
+        },
+        OTHER_SIGNAL_LIMIT,
     ).catch(() => []);
+
+    const recentRows = await recentSignalsFor(db, symbol, RECENT_SIGNAL_WINDOW_DAYS).catch(() => null);
+    const recentSignals = recentRows ? recentSignalStats(recentRows, bars, today, latest, price) : null;
 
     // Soft-failed like everything else here: an unrolled-up signal and an unreachable
     // rollup both leave the rest of the modal worth showing.
@@ -129,9 +148,9 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         sma50: sma(bars, 50),
         sma200: sma(bars, 200),
         bars: sixMonthSlice(bars),
-        pastSignals: resolvePastSignals(seeds, bars, today),
-        ownedContracts,
-        outcome,
+        pastSignals: resolvePastSignals(seeds, bars, today, latest),
+        recentSignals,
+        ownedContracts,        outcome,
     };
 }
 

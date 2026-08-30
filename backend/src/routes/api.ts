@@ -38,7 +38,7 @@ import { readVix } from '../market/vix';
 import { fetchQuote } from '../market/yahoo';
 import { requireApiKey } from '../middleware/apiKey';
 import { readGradeSettings, replaceGradeSettings } from '../settings/repository';
-import { earliestWeekMonday, fetchRange, fetchWeek, signalDates, weekHasData } from '../signals/repository';
+import { earliestWeekMonday, fetchRange, fetchSignal, fetchWeek, signalDates, weekHasData } from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
 import { monthsFrom, spanOf, summarizeRange } from '../signals/summary';
 import { addDays, currentWeekMonday, fromIsoDate, parseWeekParam, toIsoDate } from '../weeks';
@@ -323,6 +323,44 @@ export function createApiRouter(config: AppConfig): Router {
         try {
             const body: CautionSymbolsResponse = { symbols: await replaceCautionSymbols(config.db, symbols) };
             res.json(body);
+        } catch (error) {
+            next(error);
+        }
+    });
+
+    /**
+     * One signal, named by the four columns that identify it. Exists so the drill-in
+     * can jump to another signal on the same underlying without the page having to
+     * load that whole week to find it.
+     */
+    router.get('/signal', async (req, res, next) => {
+        const { symbol, reportDate, expiration } = req.query;
+        const strike = Number(req.query.strike);
+
+        if (typeof symbol !== 'string' || symbol.length === 0) {
+            res.status(400).json({ error: 'symbol is required' });
+            return;
+        }
+        if (typeof reportDate !== 'string' || !isIsoDate(reportDate)) {
+            res.status(400).json({ error: 'reportDate must be YYYY-MM-DD' });
+            return;
+        }
+        if (typeof expiration !== 'string' || !isIsoDate(expiration)) {
+            res.status(400).json({ error: 'expiration must be YYYY-MM-DD' });
+            return;
+        }
+        if (!Number.isFinite(strike)) {
+            res.status(400).json({ error: 'strike must be a number' });
+            return;
+        }
+
+        try {
+            const trade = await fetchSignal(config.db, { symbol, reportDate, strike, expiration });
+            if (!trade) {
+                res.status(404).json({ error: 'signal not found' });
+                return;
+            }
+            res.json(trade);
         } catch (error) {
             next(error);
         }

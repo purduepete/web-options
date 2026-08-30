@@ -1,9 +1,9 @@
 import sql from 'mssql';
-import type { DaySignals, IsoDate } from '@weboptions/shared';
+import type { DaySignals, IsoDate, Trade } from '@weboptions/shared';
 import type { DbConfig } from '../config';
 import { getPool } from '../db';
 import { addDays, mondayOf, toIsoDate } from '../weeks';
-import { groupIntoDays, sqlDateToIso, type SignalRow } from './shape';
+import { groupIntoDays, sqlDateToIso, toTrade, type SignalRow } from './shape';
 import { EARLIEST_DATE_QUERY, EXISTS_QUERY, SIGNAL_DATES_QUERY, SIGNAL_QUERY } from './sql';
 
 async function requestFor(db: DbConfig): Promise<sql.Request> {
@@ -40,6 +40,27 @@ export async function fetchRange(db: DbConfig, from: IsoDate, to: IsoDate): Prom
     const request = bindRange(await requestFor(db), from, to);
     const result = await request.query<SignalRow>(SIGNAL_QUERY);
     return result.recordset;
+}
+
+/**
+ * One signal, for opening the drill-in on a contract whose week is not loaded.
+ *
+ * Reuses the week query over a single day rather than adding SQL of its own, so the
+ * Trade this returns is built the same way as every other, down to the tier dedup and
+ * the ownership join. A day is tens of rows, so narrowing it here costs nothing.
+ */
+export async function fetchSignal(
+    db: DbConfig,
+    target: { symbol: string; reportDate: IsoDate; strike: number; expiration: IsoDate },
+): Promise<Trade | null> {
+    const rows = await fetchRange(db, target.reportDate, target.reportDate);
+    const match = rows.find(
+        (row) =>
+            row.symbol === target.symbol &&
+            Number(row.strike) === target.strike &&
+            sqlDateToIso(row.expiration) === target.expiration,
+    );
+    return match ? toTrade(match) : null;
 }
 
 /** Every date with signals, ascending. Small: one row per trading day, ever. */

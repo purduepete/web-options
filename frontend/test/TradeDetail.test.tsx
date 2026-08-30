@@ -68,6 +68,7 @@ function detail(extra: Partial<SymbolDetail> = {}): SymbolDetail {
             { date: '2026-08-18', close: 182.35 },
         ],
         pastSignals: [],
+        recentSignals: null,
         ownedContracts: null,
         outcome: null,
         ...extra,
@@ -298,8 +299,81 @@ describe('TradeDetail', () => {
             const alpha = screen.getByRole<HTMLAnchorElement>('link', { name: 'Seeking Alpha' });
             const fidelity = screen.getByRole<HTMLAnchorElement>('link', { name: 'Fidelity' });
 
-            expect(alpha.href).toBe('https://seekingalpha.com/symbol/VST');
-            expect(fidelity.href).toContain('symbol=VST');
+            expect(new URL(alpha.href).pathname).toBe('/symbol/VST');
+            // The option chain, since that is the page the research overlay reads.
+            expect(new URL(fidelity.href).pathname).toBe('/ftgw/digital/exp-options-research/');
+            expect(new URL(fidelity.href).searchParams.get('symbol')).toBe('VST');
+        });
+
+        it('opens TradingView on the symbol', () => {
+            renderDetail();
+
+            const url = new URL(screen.getByRole<HTMLAnchorElement>('link', { name: 'TradingView' }).href);
+
+            expect(url.pathname).toBe('/chart/');
+            expect(url.searchParams.get('symbol')).toBe('VST');
+        });
+
+        it('hands the overlays the trade context as a hash', async () => {
+            renderDetail();
+            const alpha = screen.getByRole<HTMLAnchorElement>('link', { name: 'Seeking Alpha' });
+            await waitFor(() => expect(alpha.href).toContain('trade_underlyingPrice'));
+
+            const context = new URLSearchParams(new URL(alpha.href).hash.slice(1));
+
+            expect(context.get('trade_ticker')).toBe('VST');
+            expect(context.get('trade_strike')).toBe('170.00');
+            expect(context.get('trade_expiration')).toBe('2026-08-21');
+            expect(context.get('trade_delta')).toBe('-0.1800');
+            expect(context.get('trade_optionPrice')).toBe('1.45');
+            expect(context.get('trade_underlyingPrice')).toBe('182.35');
+            expect(context.get('trade_underlyingChange')).toBe('1.25');
+            expect(context.get('trade_strikePct')).toBe('7.26');
+        });
+
+        it('hands Fidelity the same context as query parameters, which is what its overlay reads', async () => {
+            renderDetail();
+            const fidelity = screen.getByRole<HTMLAnchorElement>('link', { name: 'Fidelity' });
+            await waitFor(() => expect(fidelity.href).toContain('trade_underlyingPrice'));
+
+            const params = new URL(fidelity.href).searchParams;
+
+            expect(params.get('trade_strike')).toBe('170.00');
+            expect(params.get('trade_expiration')).toBe('2026-08-21');
+            expect(params.get('trade_optionPrice')).toBe('1.45');
+            expect(params.get('trade_strikePct')).toBe('7.26');
+            expect(new URL(fidelity.href).hash).toBe('');
+            // The ticker already sits in `symbol`, so repeating it would be noise.
+            expect(params.get('trade_ticker')).toBeNull();
+        });
+
+        it('leaves the context off a contract it cannot name', () => {
+            renderDetail({ trade: { ...trade(), expiration: null } });
+
+            expect(screen.getByRole<HTMLAnchorElement>('link', { name: 'Seeking Alpha' }).href).toBe(
+                'https://seekingalpha.com/symbol/VST',
+            );
+        });
+
+        it('opens Barchart on the contract rather than the symbol', () => {
+            renderDetail();
+
+            const url = new URL(
+                screen.getByRole<HTMLAnchorElement>('link', { name: 'Barchart option price history' }).href,
+            );
+
+            expect(url.pathname).toBe('/options/price-history');
+            expect(url.searchParams.get('symbol')).toBe('VST');
+            expect(url.searchParams.get('expirationDate')).toBe('2026-08-21');
+            expect(url.searchParams.get('strikePrice')).toBe('170.00');
+            expect(url.searchParams.get('symbolType')).toBe('P');
+        });
+
+        it('drops the Barchart link when the contract is not fully named', () => {
+            renderDetail({ trade: { ...trade(), expiration: null } });
+
+            expect(screen.queryByRole('link', { name: 'Barchart option price history' })).toBeNull();
+            expect(screen.getByRole('link', { name: 'Fidelity' })).toBeTruthy();
         });
 
         it('opens Web Portfolio with the quoted contract values', () => {
@@ -332,7 +406,13 @@ describe('TradeDetail', () => {
         it('names neither the reader nor their page to the site it opens', () => {
             renderDetail();
 
-            for (const name of ['Seeking Alpha', 'Fidelity', 'Trade in Web Portfolio']) {
+            for (const name of [
+                'Seeking Alpha',
+                'Fidelity',
+                'Barchart option price history',
+                'TradingView',
+                'Trade in Web Portfolio',
+            ]) {
                 const link = screen.getByRole('link', { name });
                 expect(link.getAttribute('rel')).toBe('noopener noreferrer');
                 expect(link.getAttribute('target')).toBe('_blank');
@@ -345,6 +425,25 @@ describe('TradeDetail', () => {
             expect(await (renderDetail(), screen.findByText('No other signals on this underlying.'))).toBeTruthy();
         });
 
+        it('reports the recent total and how it went, which the trimmed list cannot', async () => {
+            fetchSymbolDetail.mockResolvedValue(
+                detail({ recentSignals: { total: 11, inTheMoney: 4, assigned: 3 } }),
+            );
+            renderDetail();
+
+            expect(await screen.findByText('11 in 20 days')).toBeTruthy();
+            expect(screen.getByText('36% ITM')).toBeTruthy();
+            expect(screen.getByText('27% assigned')).toBeTruthy();
+        });
+
+        it('says nothing about a total it could not read', async () => {
+            fetchSymbolDetail.mockResolvedValue(detail({ recentSignals: null }));
+            renderDetail();
+
+            await screen.findByText('No other signals on this underlying.');
+            expect(screen.queryByText(/in 20 days/)).toBeNull();
+        });
+
         it('lists each with how it resolved', async () => {
             fetchSymbolDetail.mockResolvedValue(
                 detail({
@@ -354,6 +453,8 @@ describe('TradeDetail', () => {
                             strike: 150,
                             expiration: '2026-07-18',
                             annualizedYield: 41,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'expired_otm',
                             closeAtExpiration: 161.2,
                             ownedLiveContracts: 0,
@@ -364,6 +465,8 @@ describe('TradeDetail', () => {
                             strike: 175,
                             expiration: '2026-06-06',
                             annualizedYield: 55,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'expired_itm',
                             closeAtExpiration: 168.4,
                             ownedLiveContracts: 0,
@@ -389,6 +492,8 @@ describe('TradeDetail', () => {
                             strike: 160,
                             expiration: '2026-09-11',
                             annualizedYield: 33,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'open',
                             closeAtExpiration: null,
                             ownedLiveContracts: 0,
@@ -399,6 +504,8 @@ describe('TradeDetail', () => {
                             strike: 160,
                             expiration: '2026-09-18',
                             annualizedYield: 27,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'open',
                             closeAtExpiration: null,
                             ownedLiveContracts: 0,
@@ -409,10 +516,148 @@ describe('TradeDetail', () => {
             );
             renderDetail();
 
-            await screen.findByText('Earlier signals on VST');
+            await screen.findByText('Other signals on VST');
             const rows = [...screen.getByRole('dialog').querySelectorAll('.past-signals li')];
             expect(rows[0]?.querySelector('.past-date')?.textContent).toBe('08/18/2026');
             expect(screen.getByTitle('1 paper-owned contract')).toBeTruthy();
+        });
+
+        it('opens the signal a row names when it is clicked', async () => {
+            const onOpenSignal = vi.fn();
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    pastSignals: [
+                        {
+                            reportDate: '2026-08-13',
+                            strike: 160,
+                            expiration: '2026-09-11',
+                            annualizedYield: 33,
+                            tier: null,
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                    ],
+                }),
+            );
+            renderDetail({ onOpenSignal });
+
+            await screen.findByText('Other signals on VST');
+            const row = screen.getByRole('dialog').querySelector('.past-signals li button.past-row');
+            fireEvent.click(row as HTMLElement);
+
+            expect(onOpenSignal).toHaveBeenCalledWith({
+                symbol: 'VST',
+                reportDate: '2026-08-13',
+                strike: 160,
+                expiration: '2026-09-11',
+            });
+        });
+
+        it('leaves the rows inert when nothing is listening', async () => {
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    pastSignals: [
+                        {
+                            reportDate: '2026-08-13',
+                            strike: 160,
+                            expiration: '2026-09-11',
+                            annualizedYield: 33,
+                            tier: null,
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                    ],
+                }),
+            );
+            renderDetail();
+
+            await screen.findByText('Other signals on VST');
+            expect(screen.getByRole('dialog').querySelector('.past-signals li button')).toBeNull();
+        });
+
+        it('shows the source list pill and lets top pick take precedence', async () => {
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    pastSignals: [
+                        {
+                            reportDate: '2026-08-13',
+                            strike: 160,
+                            expiration: '2026-09-11',
+                            annualizedYield: 33,
+                            tier: 'conservative',
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                        {
+                            reportDate: '2026-08-12',
+                            strike: 161,
+                            expiration: '2026-09-12',
+                            annualizedYield: 34,
+                            tier: 'balanced',
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                        {
+                            reportDate: '2026-08-11',
+                            strike: 162,
+                            expiration: '2026-09-13',
+                            annualizedYield: 35,
+                            tier: 'aggressive',
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                        {
+                            reportDate: '2026-08-10',
+                            strike: 163,
+                            expiration: '2026-09-14',
+                            annualizedYield: 36,
+                            tier: 'balanced',
+                            isTopPick: true,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                        {
+                            reportDate: '2026-08-09',
+                            strike: 164,
+                            expiration: '2026-09-15',
+                            annualizedYield: 37,
+                            tier: null,
+                            isTopPick: false,
+                            outcome: 'open',
+                            closeAtExpiration: null,
+                            ownedLiveContracts: 0,
+                            ownedPaperContracts: 0,
+                        },
+                    ],
+                }),
+            );
+            renderDetail();
+
+            await screen.findByText('Other signals on VST');
+            const pills = [...screen.getByRole('dialog').querySelectorAll('.tier-pill')];
+            expect(pills.map((pill) => `${pill.className}:${pill.getAttribute('title')}`)).toEqual([
+                'tier-pill conservative:Conservative',
+                'tier-pill balanced:Balanced',
+                'tier-pill aggressive:Aggressive',
+                'tier-pill tp:Top pick',
+            ]);
         });
 
         it('marks a settled signal against its expiration close', async () => {
@@ -424,6 +669,8 @@ describe('TradeDetail', () => {
                             strike: 150,
                             expiration: '2026-07-18',
                             annualizedYield: 41,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'expired_otm',
                             closeAtExpiration: 161.2,
                             ownedLiveContracts: 0,
@@ -434,6 +681,8 @@ describe('TradeDetail', () => {
                             strike: 175,
                             expiration: '2026-06-06',
                             annualizedYield: 55,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'expired_itm',
                             closeAtExpiration: 168.4,
                             ownedLiveContracts: 0,
@@ -460,6 +709,8 @@ describe('TradeDetail', () => {
                             strike: 190,
                             expiration: '2026-08-29',
                             annualizedYield: 48,
+                            tier: null,
+                            isTopPick: false,
                             outcome: 'open',
                             closeAtExpiration: null,
                             ownedLiveContracts: 0,

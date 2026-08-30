@@ -1,4 +1,4 @@
-import type { IsoDate, PastSignal, SymbolBar, SymbolOutcome } from '@weboptions/shared';
+import type { IsoDate, PastSignal, RecentSignalStats, SymbolBar, SymbolOutcome } from '@weboptions/shared';
 
 /** Pure arithmetic over a close-only daily series. Every function tolerates a short one. */
 
@@ -44,23 +44,32 @@ export function closeOnOrAfter(bars: readonly SymbolBar[], date: IsoDate): Symbo
  * reach because it is in the FUTURE is `open` — that trade may still work out. One
  * the series does not reach because it fell off the back of the two year window is
  * `unknown`, and saying anything else about it would be a guess.
+ *
+ * `latest` is the symbol's own most recent close, which is refetched on every open
+ * and so runs ahead of the cached bars. A contract that expired on Friday against a
+ * series that stops on Thursday is not a mystery, it is a stale cache, and reporting
+ * it as `unknown` was wrong. The date has to match the expiration exactly: a close
+ * from some later day is a different number, and guessing with it is what `unknown`
+ * exists to avoid.
  */
 export function resolveOutcome(
     bars: readonly SymbolBar[],
     strike: number | null,
     expiration: IsoDate | null,
     today: IsoDate,
+    latest: { date: IsoDate; close: number } | null = null,
 ): { outcome: SymbolOutcome; closeAtExpiration: number | null } {
     if (strike === null || expiration === null) return { outcome: 'unknown', closeAtExpiration: null };
     if (expiration >= today) return { outcome: 'open', closeAtExpiration: null };
 
     const bar = closeOnOrAfter(bars, expiration);
-    if (!bar) return { outcome: 'unknown', closeAtExpiration: null };
+    const close = bar ? bar.close : latest && latest.date === expiration ? latest.close : null;
+    if (close === null) return { outcome: 'unknown', closeAtExpiration: null };
 
     // A put finishing at or above its strike expires worthless, which is the win.
     return {
-        outcome: bar.close >= strike ? 'expired_otm' : 'expired_itm',
-        closeAtExpiration: bar.close,
+        outcome: close >= strike ? 'expired_otm' : 'expired_itm',
+        closeAtExpiration: close,
     };
 }
 
@@ -69,9 +78,42 @@ export function resolvePastSignals(
     signals: readonly Omit<PastSignal, 'outcome' | 'closeAtExpiration'>[],
     bars: readonly SymbolBar[],
     today: IsoDate,
+    latest: { date: IsoDate; close: number } | null = null,
 ): PastSignal[] {
     return signals.map((signal) => ({
         ...signal,
-        ...resolveOutcome(bars, signal.strike, signal.expiration, today),
+        ...resolveOutcome(bars, signal.strike, signal.expiration, today, latest),
     }));
+}
+
+/**
+ * How the recent window has gone, judged by the same `resolveOutcome` the rows use so
+ * the summary can never disagree with the list under it.
+ *
+ * `total` is the denominator for both figures, per the window's own definition: a
+ * signal that has not expired counts against `assigned` rather than being excluded
+ * from it.
+ */
+export function recentSignalStats(
+    signals: readonly { strike: number | null; expiration: IsoDate | null }[],
+    bars: readonly SymbolBar[],
+    today: IsoDate,
+    latest: { date: IsoDate; close: number } | null,
+    price: number | null,
+): RecentSignalStats {
+    let inTheMoney = 0;
+    let assigned = 0;
+
+    for (const signal of signals) {
+        const { outcome } = resolveOutcome(bars, signal.strike, signal.expiration, today, latest);
+        if (outcome === 'expired_itm') {
+            assigned += 1;
+            inTheMoney += 1;
+        } else if (outcome === 'open' && price !== null && signal.strike !== null && price < signal.strike) {
+            // A put not yet expired is in the money while the underlying sits below it.
+            inTheMoney += 1;
+        }
+    }
+
+    return { total: signals.length, inTheMoney, assigned };
 }

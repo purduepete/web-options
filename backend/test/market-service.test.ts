@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SymbolBar } from '@weboptions/shared';
+import { RECENT_SIGNAL_WINDOW_DAYS } from '@weboptions/shared';
 import type { DbConfig } from '../src/config';
 import * as repository from '../src/market/repository';
 import { getSymbolDetail, resetInFlight } from '../src/market/service';
@@ -48,6 +49,7 @@ function cachedMarket(): void {
 beforeEach(() => {
     resetInFlight();
     vi.spyOn(repository, 'pastSignalsFor').mockResolvedValue([]);
+    vi.spyOn(repository, 'recentSignalsFor').mockResolvedValue([]);
     vi.spyOn(repository, 'outcomeFor').mockResolvedValue(null);
     vi.spyOn(repository, 'ownedContractsFor').mockResolvedValue(0);
     vi.spyOn(repository, 'writeCached').mockResolvedValue(undefined);
@@ -214,11 +216,15 @@ describe('getSymbolDetail', () => {
         await getSymbolDetail(db, 'VST', {
             today: TODAY,
             exclude: { strike: 170, expiration: '2026-08-21' },
+            reportDate: '2026-08-10',
         });
 
+        // The report date goes in too, so only the morning being viewed is dropped and
+        // the other mornings of the same contract still make the list.
         expect(vi.mocked(repository.pastSignalsFor).mock.calls[0]?.[2]).toEqual({
             strike: 170,
             expiration: '2026-08-21',
+            reportDate: '2026-08-10',
         });
     });
 
@@ -232,6 +238,32 @@ describe('getSymbolDetail', () => {
         vi.mocked(repository.pastSignalsFor).mockRejectedValue(new Error('timeout'));
 
         expect((await getSymbolDetail(db, 'VST', { today: TODAY }))?.pastSignals).toEqual([]);
+    });
+
+    it('counts recent signals over the shared trading-day window', async () => {
+        cachedMarket();
+        // The bars are a flat 100 and the live quote is 182.35, so in order: unexpired
+        // and under water, expired below its strike, expired above it.
+        vi.mocked(repository.recentSignalsFor).mockResolvedValue([
+            { strike: 200, expiration: '2026-09-30' },
+            { strike: 150, expiration: '2025-06-01' },
+            { strike: 50, expiration: '2025-06-01' },
+        ]);
+
+        const detail = await getSymbolDetail(db, 'VST', { today: TODAY });
+
+        expect(detail?.recentSignals).toEqual({ total: 3, inTheMoney: 2, assigned: 1 });
+        expect(vi.mocked(repository.recentSignalsFor).mock.calls[0]?.[2]).toBe(RECENT_SIGNAL_WINDOW_DAYS);
+    });
+
+    it('still answers when the recent-signal count throws', async () => {
+        cachedMarket();
+        vi.mocked(repository.recentSignalsFor).mockRejectedValue(new Error('timeout'));
+
+        const detail = await getSymbolDetail(db, 'VST', { today: TODAY });
+
+        expect(detail?.recentSignals).toBeNull();
+        expect(detail?.price).toBe(182.35);
     });
 
     it('looks the outcome up by the contract AND the morning it was signalled', async () => {

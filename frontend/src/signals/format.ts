@@ -45,6 +45,11 @@ export function formatPercent(value: number | null): string {
     return value == null ? EMPTY : `${value.toFixed(1)}%`;
 }
 
+/** A whole-number share, for counts small enough that a decimal would imply precision it lacks. */
+export function shareOf(part: number, whole: number): string {
+    return whole === 0 ? EMPTY : `${Math.round((part / whole) * 100)}%`;
+}
+
 /** Always carries its sign, so `+3.2%` reads as clearly above as `-3.2%` reads below. */
 export function formatSignedPercent(value: number | null): string {
     if (value == null) return EMPTY;

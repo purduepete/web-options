@@ -121,12 +121,41 @@ describe('resolveOutcome', () => {
     ])('cannot judge a signal missing its strike or expiration (%s, %s)', (strike, expiration) => {
         expect(resolveOutcome(bars, strike, expiration, '2026-02-01').outcome).toBe('unknown');
     });
+
+    it('settles an expiration the cached bars stop short of, using the live close', () => {
+        // Bars end 01-02, the put expired 01-03, and the refetched quote has that day.
+        expect(resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-03', close: 9 })).toEqual(
+            { outcome: 'expired_itm', closeAtExpiration: 9 },
+        );
+    });
+
+    it('will not settle an expiration with a close from a different day', () => {
+        expect(
+            resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-09', close: 9 }).outcome,
+        ).toBe('unknown');
+    });
+
+    it('prefers a real bar over the live close', () => {
+        expect(resolveOutcome(bars, 20, '2026-01-03', '2026-02-01', { date: '2026-01-03', close: 99 })).toEqual({
+            outcome: 'expired_itm',
+            closeAtExpiration: 12,
+        });
+    });
 });
 
 describe('resolvePastSignals', () => {
     it('fills in each signal without disturbing the rest of it', () => {
         const resolved = resolvePastSignals(
-            [{ reportDate: '2026-01-01', strike: 11, expiration: '2026-01-03', annualizedYield: 42 }],
+            [
+                {
+                    reportDate: '2026-01-01',
+                    strike: 11,
+                    expiration: '2026-01-03',
+                    annualizedYield: 42,
+                    tier: null,
+                    isTopPick: false,
+                },
+            ],
             series([10, 11, 12]),
             '2026-02-01',
         );
@@ -137,6 +166,8 @@ describe('resolvePastSignals', () => {
                 strike: 11,
                 expiration: '2026-01-03',
                 annualizedYield: 42,
+                tier: null,
+                isTopPick: false,
                 outcome: 'expired_otm',
                 closeAtExpiration: 12,
             },

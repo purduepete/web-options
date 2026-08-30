@@ -121,62 +121,92 @@ export async function writeCached(
 }
 
 /**
- * Prior VADER puts on the same underlying, newest first.
+ * Other VADER puts on the same underlying, newest first.
  *
  * Deliberately NOT filtered by expiration: a signal from last week that has not
  * expired yet is exactly the context a reader wants, and `resolveOutcome` labels it
  * `open` rather than pretending it resolved.
  *
- * The contract being viewed is excluded by strike and expiration rather than by
- * contract key, because `Trade` carries no key — and rebuilding the COALESCE
- * fallback here would only match the rows whose real key is missing.
+ * The signal being viewed is excluded by strike, expiration and report date rather
+ * than by contract key, because `Trade` carries no key — and rebuilding the COALESCE
+ * fallback here would only match the rows whose real key is missing. Without the
+ * report date the exclusion would take every morning of that contract with it.
  *
- * One row per contract: the same put is signalled on several mornings, and five
- * rows of the same strike would be a list of nothing.
+ * One row per MORNING, not per contract. The same put is recommended on several
+ * mornings at a different yield each time, and each of those is a recommendation the
+ * reader made a decision about. Collapsing them hid whole weeks of the list. The
+ * dedup that remains is only within a single morning, where one contract can appear
+ * under two tiers at once; it keeps the classified row over an unclassified one, the
+ * same rule the week grid uses.
+ *
+ * `@otherLimit` caps only the signals NOT held. A position the reader actually took
+ * is never trimmed, however old it is, because dropping one would read as though it
+ * was never taken. `recentSignalCountFor` is what says how many were left out.
  */
 const PAST_SIGNALS_QUERY = `
-SELECT TOP (@limit)
-    report_date, strike, expiration, annualized_yield,
+SELECT
+    report_date, strike, expiration, annualized_yield, tier, is_top_pick,
     owned_live_contracts, owned_paper_contracts
 FROM (
     SELECT
-        s.report_date,
-        s.strike,
-        s.expiration,
-        s.annualized_yield,
-        own.owned_live_contracts,
-        own.owned_paper_contracts,
+        d.*,
         ROW_NUMBER() OVER (
-            PARTITION BY s.strike, s.expiration
-            ORDER BY s.report_date DESC
-        ) AS rn
-    FROM opt.telegram_signal s
-    OUTER APPLY (
+            PARTITION BY d.is_owned
+            ORDER BY d.report_date DESC, d.strike DESC
+        ) AS rank_in_group
+    FROM (
         SELECT
-            COALESCE(SUM(CASE WHEN ot.is_paper = 0 THEN ot.contracts ELSE 0 END), 0) AS owned_live_contracts,
-            COALESCE(SUM(CASE WHEN ot.is_paper = 1 THEN ot.contracts ELSE 0 END), 0) AS owned_paper_contracts
-        FROM dbo.option_transactions ot
-        WHERE ot.symbol = s.symbol
-          AND ot.strike_price = s.strike
-          AND ot.expiration_date = s.expiration
-          AND CAST(ot.transaction_date AS DATE) = s.report_date
-          AND ot.status = 'open'
-          AND ot.action = 'sell_to_open'
-    ) own
-    WHERE s.is_current = 1
-      AND s.parse_status = 'parsed'
-      AND s.option_right = 'P'
-      AND s.symbol = @symbol
-      AND NOT (
-            @excludeStrike IS NOT NULL
-        AND @excludeExpiration IS NOT NULL
-        AND s.strike = @excludeStrike
-        AND s.expiration = CAST(@excludeExpiration AS DATE)
-      )
-) d
-WHERE rn = 1
-ORDER BY CASE WHEN owned_live_contracts > 0 OR owned_paper_contracts > 0 THEN 0 ELSE 1 END,
-         report_date DESC
+            s.report_date,
+            s.strike,
+            s.expiration,
+            s.annualized_yield,
+            COALESCE(s.tier, s.profile) AS tier,
+            MAX(CAST(s.is_top_pick AS INT)) OVER (
+                PARTITION BY s.report_date, s.strike, s.expiration
+            ) AS is_top_pick,
+            own.owned_live_contracts,
+            own.owned_paper_contracts,
+            CASE
+                WHEN own.owned_live_contracts > 0 OR own.owned_paper_contracts > 0 THEN 1
+                ELSE 0
+            END AS is_owned,
+            ROW_NUMBER() OVER (
+                PARTITION BY s.report_date, s.strike, s.expiration
+                ORDER BY CASE WHEN COALESCE(s.tier, s.profile) IS NULL THEN 1 ELSE 0 END,
+                         s.annualized_yield DESC
+            ) AS rn
+        FROM opt.telegram_signal s
+        OUTER APPLY (
+            SELECT
+                COALESCE(SUM(CASE WHEN ot.is_paper = 0 THEN ot.contracts ELSE 0 END), 0) AS owned_live_contracts,
+                COALESCE(SUM(CASE WHEN ot.is_paper = 1 THEN ot.contracts ELSE 0 END), 0) AS owned_paper_contracts
+            FROM dbo.option_transactions ot
+            WHERE ot.symbol = s.symbol
+              AND ot.strike_price = s.strike
+              AND ot.expiration_date = s.expiration
+              AND ot.status = 'open'
+              AND ot.action = 'sell_to_open'
+              -- The position has to have been opened on the morning the signal was given.
+              -- Without this a later signal on the same contract wears an earlier
+              -- morning's badge, which reads as though it was the trade that was taken.
+              AND CAST(ot.transaction_date AS DATE) = s.report_date
+        ) own
+        WHERE s.is_current = 1
+          AND s.parse_status = 'parsed'
+          AND s.option_right = 'P'
+          AND s.symbol = @symbol
+          AND NOT (
+                @excludeStrike IS NOT NULL
+            AND @excludeExpiration IS NOT NULL
+            AND s.strike = @excludeStrike
+            AND s.expiration = CAST(@excludeExpiration AS DATE)
+            AND (@excludeReportDate IS NULL OR s.report_date = CAST(@excludeReportDate AS DATE))
+          )
+    ) d
+    WHERE d.rn = 1
+) g
+WHERE g.is_owned = 1 OR g.rank_in_group <= @otherLimit
+ORDER BY g.is_owned DESC, g.report_date DESC, g.strike DESC
 `;
 
 export type PastSignalSeed = Omit<PastSignal, 'outcome' | 'closeAtExpiration'>;
@@ -184,13 +214,15 @@ export type PastSignalSeed = Omit<PastSignal, 'outcome' | 'closeAtExpiration'>;
 export interface PastSignalExclusion {
     strike: number | null;
     expiration: IsoDate | null;
+    /** Null drops every morning of the contract, which is the pre-report-date behaviour. */
+    reportDate: IsoDate | null;
 }
 
 export async function pastSignalsFor(
     db: DbConfig,
     symbol: string,
     exclude: PastSignalExclusion,
-    limit: number,
+    otherLimit: number,
 ): Promise<PastSignalSeed[]> {
     const pool = await getPool(db);
     const result = await pool
@@ -198,7 +230,8 @@ export async function pastSignalsFor(
         .input('symbol', sql.VarChar(20), symbol)
         .input('excludeStrike', sql.Decimal(18, 4), exclude.strike)
         .input('excludeExpiration', sql.VarChar(10), exclude.expiration)
-        .input('limit', sql.Int, limit)
+        .input('excludeReportDate', sql.VarChar(10), exclude.reportDate)
+        .input('otherLimit', sql.Int, otherLimit)
         .query<Record<string, unknown>>(PAST_SIGNALS_QUERY);
 
     return result.recordset.map((row) => ({
@@ -206,8 +239,65 @@ export async function pastSignalsFor(
         strike: toNumber(row.strike),
         expiration: sqlDateToIso(row.expiration),
         annualizedYield: toNumber(row.annualized_yield),
+        tier: (row.tier as string | null) ?? null,
+        isTopPick: Boolean(toNumber(row.is_top_pick)),
         ownedLiveContracts: Math.trunc(toNumber(row.owned_live_contracts) ?? 0),
         ownedPaperContracts: Math.trunc(toNumber(row.owned_paper_contracts) ?? 0),
+    }));
+}
+
+/**
+ * The signals this underlying had recently, at the same one-per-morning grain as the
+ * list so the two agree. Rows rather than a count, because whether each one is in the
+ * money needs prices, and `resolveOutcome` already knows how to decide that.
+ *
+ * A trading day here is a day VADER reported on, taken from the signals themselves.
+ * That needs no market calendar to maintain and cannot be wrong about a holiday. It
+ * does mean a day the job failed does not count, which is the honest answer: there
+ * is no data for it either way.
+ *
+ * Includes the signal being viewed. This is the total the trimmed list is a window onto.
+ */
+const RECENT_SIGNALS_QUERY = `
+DECLARE @cutoff DATE = (
+    SELECT MIN(report_date)
+    FROM (
+        SELECT DISTINCT TOP (@tradingDays) report_date
+        FROM opt.telegram_signal
+        WHERE is_current = 1 AND parse_status = 'parsed'
+        ORDER BY report_date DESC
+    ) recent
+);
+
+SELECT DISTINCT s.report_date, s.strike, s.expiration
+FROM opt.telegram_signal s
+WHERE s.is_current = 1
+  AND s.parse_status = 'parsed'
+  AND s.option_right = 'P'
+  AND s.symbol = @symbol
+  AND s.report_date >= @cutoff
+`;
+
+export interface RecentSignalRow {
+    strike: number | null;
+    expiration: IsoDate | null;
+}
+
+export async function recentSignalsFor(
+    db: DbConfig,
+    symbol: string,
+    tradingDays: number,
+): Promise<RecentSignalRow[]> {
+    const pool = await getPool(db);
+    const result = await pool
+        .request()
+        .input('symbol', sql.VarChar(20), symbol)
+        .input('tradingDays', sql.Int, tradingDays)
+        .query<Record<string, unknown>>(RECENT_SIGNALS_QUERY);
+
+    return result.recordset.map((row) => ({
+        strike: toNumber(row.strike),
+        expiration: sqlDateToIso(row.expiration),
     }));
 }
 

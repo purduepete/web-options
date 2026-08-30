@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
-import type { Trade, WeekSignalsResponse } from '@weboptions/shared';
-import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchWeekSignals } from '../api';
+import type { IsoDate, Trade, WeekSignalsResponse } from '@weboptions/shared';
+import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchSignal, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
 import { TradeDetail } from '../signals/TradeDetail';
+import type { SignalTarget } from '../signals/TradeDetail';
 import { WeekScore } from '../signals/WeekScore';
 import type { AppliedFilter } from '../signals/AppliedFilters';
 import { SignalFilterControls } from '../signals/SignalFilterControls';
@@ -106,6 +107,10 @@ export function LiveSignalsPage() {
     // The drill-in. Held here rather than in the grid so the page can suspend its
     // own single-key shortcuts while it is open.
     const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+    // Set only when the drill-in jumped to a signal from another week. That trade is
+    // not in `days`, so `selectedDay` cannot supply its report date and the outcome
+    // lookup would go missing without this.
+    const [jumpedReportDate, setJumpedReportDate] = useState<IsoDate | null>(null);
     const [numberSource, setNumberSource] = useNumberSource();
     const gradeSettings = useGradeSettings();
     const cautionSymbols = useCautionSymbols();
@@ -200,6 +205,34 @@ export function LiveSignalsPage() {
         () => (siblingIndex >= 0 && siblingIndex < daySiblings.length - 1 ? () => stepTrade(1) : null),
         [siblingIndex, daySiblings.length, stepTrade],
     );
+
+    const openFromGrid = useCallback((trade: Trade) => {
+        setJumpedReportDate(null);
+        setSelectedTrade(trade);
+    }, []);
+
+    const closeDetail = useCallback(() => {
+        setJumpedReportDate(null);
+        setSelectedTrade(null);
+    }, []);
+
+    /**
+     * Swaps the drill-in onto another signal on the same underlying. The trade is
+     * fetched because it may belong to a week this page has not loaded. A click while
+     * an earlier one is still in flight wins, so a slow first answer cannot land on
+     * top of a later choice.
+     */
+    const jumpToken = useRef(0);
+    const openSignal = useCallback((target: SignalTarget) => {
+        const token = (jumpToken.current += 1);
+        fetchSignal(target)
+            .then((trade) => {
+                if (jumpToken.current !== token) return;
+                setJumpedReportDate(target.reportDate);
+                setSelectedTrade(trade);
+            })
+            .catch(() => undefined);
+    }, []);
 
     const setWeekParam = useCallback(
         (next: string | null) => {
@@ -617,7 +650,7 @@ export function LiveSignalsPage() {
                         halfFilter={half}
                         gradeFilter={grades}
                         numberSource={numberSource}
-                        onOpenTrade={setSelectedTrade}
+                        onOpenTrade={openFromGrid}
                         currentWeek={data.isCurrentWeek}
                     />
                 </>
@@ -626,11 +659,12 @@ export function LiveSignalsPage() {
             <TradeDetail
                 trade={selectedTrade}
                 numberSource={numberSource}
-                onClose={() => setSelectedTrade(null)}
-                reportDate={selectedDay?.date ?? null}
+                onClose={closeDetail}
+                reportDate={jumpedReportDate ?? selectedDay?.date ?? null}
                 position={siblingIndex >= 0 ? `${siblingIndex + 1} of ${daySiblings.length}` : null}
                 onPrevious={previousTrade}
                 onNext={nextTrade}
+                onOpenSignal={openSignal}
             />
         </main>
     );

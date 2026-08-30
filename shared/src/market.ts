@@ -29,6 +29,8 @@ export interface PastSignal {
     strike: number | null;
     expiration: IsoDate | null;
     annualizedYield: number | null;
+    tier: string | null;
+    isTopPick: boolean;
     closeAtExpiration: number | null;
     outcome: SymbolOutcome;
     ownedLiveContracts: number;
@@ -99,6 +101,8 @@ export interface SymbolDetail {
     sma200: number | null;
     bars: SymbolBar[];
     pastSignals: PastSignal[];
+    /** Null when the window could not be read. */
+    recentSignals: RecentSignalStats | null;
     /** Open contracts matching the viewed symbol, strike, and expiration. Null when unavailable. */
     ownedContracts: number | null;
     /**
@@ -107,6 +111,30 @@ export interface SymbolDetail {
      * signals and no outcome.
      */
     outcome: SignalOutcome | null;
+}
+
+/**
+ * Trading days behind `RecentSignalStats`. Counted as the days VADER actually
+ * reported on, which are trading days by construction, so no market calendar is
+ * needed. Shared so the label and the query cannot drift apart.
+ */
+export const RECENT_SIGNAL_WINDOW_DAYS = 20;
+
+/**
+ * How this underlying has been doing lately, over the last `RECENT_SIGNAL_WINDOW_DAYS`
+ * trading days. Covers every signal in the window, including the one being viewed and
+ * the ones `pastSignals` trims away, which is what the trimmed list cannot tell you.
+ *
+ * `total` is the denominator for BOTH figures, so a signal that has not expired yet
+ * counts against `assigned` rather than being left out of it. That keeps the two
+ * percentages comparable and stops a two-contract sample reading as "50% assigned".
+ */
+export interface RecentSignalStats {
+    total: number;
+    /** In the money at expiration if it has expired, against today's price if not. */
+    inTheMoney: number;
+    /** Expired in the money. */
+    assigned: number;
 }
 
 /**
