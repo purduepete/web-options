@@ -31,7 +31,10 @@
         "verify-readonly": "tsx backend/tools/verify-readonly.ts",
         "keys": "tsx backend/tools/manage-keys.ts",
         "extract-calendar": "tsx backend/tools/extract-calendar.ts",
+        "render-calendar": "tsx backend/tools/render-calendar.ts",
+        "validate-calendar": "tsx backend/tools/render-calendar.ts --check",
         "ingest-calendar": "tsx backend/tools/ingest-calendar.ts",
+        "test:calendar": "vitest run backend/test/calendar-normalize.test.ts backend/test/calendar-extract.test.ts backend/test/calendar-render.test.ts backend/test/calendar-routes.test.ts frontend/test/calendar-groups.test.ts frontend/test/CalendarPages.test.tsx",
         "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p backend/tsconfig.tools.json && tsc -p frontend --noEmit"
     },
     "devDependencies": {

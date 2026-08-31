@@ -133,12 +133,21 @@ prompt on its next request.
 ## Ingesting a calendar
 
 ```powershell
-npm run extract-calendar -- <path-to-week.html>   # parse, print, change nothing
-npm run ingest-calendar -- <path-to-week.html>    # write it into opt
+npm run validate-calendar -- .\data\calendars\weekly-options-calendar-<date>.json <count> <iso-published-timestamp>
+npm run render-calendar -- .\data\calendars\weekly-options-calendar-<date>.json <count> <iso-published-timestamp>
+npm run test:calendar
+npx tsx backend/tools/ingest-calendar.ts .\data\calendars\weekly-options-calendar-<date>.json
 ```
 
-Extract first. It prints exactly what would be written, which is the only cheap
-moment to catch a newsletter that has changed its markup.
+The JSON sidecar is the source for the standalone HTML and the SQL rows. The
+validator checks the five weekdays, advertised trade count, calendar dates,
+Pacific time labels, risk tiers, and prohibited punctuation before it writes
+anything. The renderer writes the dated HTML to `OneDrive\Trading\Vader` by
+default; a fourth positional value names another file or directory.
+
+The ingest command above is a dry run. Review its summary, get the required
+independent database-write review, then add `--confirm`. Run the dry command
+again afterward; it should report `unchanged` and a matching source hash.
 
 ## API
 

@@ -1,0 +1,244 @@
+{
+  "publishDate": "2026-08-31",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 14.43",
+      "text": "Volatility fell for four straight sessions, so premium is thin and entries need careful sizing."
+    },
+    {
+      "label": "2-Year Treasury Yield: 4.34%",
+      "text": "Rate expectations moved higher after the Fed chair's remarks, leaving growth shares sensitive to this week's data."
+    },
+    {
+      "label": "Early-week calls",
+      "text": "Tuesday's ISM release and Wednesday's ADP report set the two covered-call windows."
+    },
+    {
+      "label": "Jobs report: Friday, 5:30 AM Pacific",
+      "text": "The main put window opens after payrolls, unemployment, and wage growth are known."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Aug 31",
+      "rule": "No new positions. Month-end positioning can move prices without fresh company news, so wait for Tuesday's first scheduled window.",
+      "event": "Month-end positioning and the G20 finance meeting begin. No timed release.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Sep 1",
+      "rule": "After 7:30 AM Pacific, once ISM Manufacturing is out and the first reaction is visible, sell the mega-cap calls below.",
+      "event": "ISM Manufacturing and its prices-paid measure at 7:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$272.5C",
+          "expiry": "2026-09-18",
+          "dte": 18,
+          "delta": "+0.39",
+          "ann": "36.2%",
+          "premium": "$475",
+          "collateral": "$26,643",
+          "risk": "balanced",
+          "note": "Highest listed annualized yield, with a 2.3% cushion."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$84C",
+          "expiry": "2026-09-25",
+          "dte": 25,
+          "delta": "+0.40",
+          "ann": "32.7%",
+          "premium": "$183",
+          "collateral": "$8,172",
+          "risk": "balanced",
+          "note": "One week longer than the other Tuesday calls, at the top delta."
+        },
+        {
+          "ticker": "AAPL",
+          "type": "call",
+          "strike": "$330C",
+          "expiry": "2026-09-18",
+          "dte": 18,
+          "delta": "+0.31",
+          "ann": "22.2%",
+          "premium": "$350",
+          "collateral": "$31,970",
+          "risk": "conservative",
+          "note": "Largest collateral on the slate, with deep contract liquidity."
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Sep 2",
+      "rule": "After 6:45 AM Pacific, once ADP employment is out and the market has chosen a direction, sell the consumer-facing calls below.",
+      "event": "ADP employment at 5:15 AM Pacific. Fed Beige Book at 11:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "TTWO",
+          "type": "call",
+          "strike": "$250C",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "+0.38",
+          "ann": "29.3%",
+          "premium": "$870",
+          "collateral": "$23,539",
+          "risk": "balanced",
+          "note": "Largest single premium on the slate."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$82.5C",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "+0.40",
+          "ann": "26.0%",
+          "premium": "$258",
+          "collateral": "$7,882",
+          "risk": "conservative",
+          "note": "Under $8,000 of collateral and 4.7% out of the money."
+        },
+        {
+          "ticker": "CMG",
+          "type": "call",
+          "strike": "$40C",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "+0.38",
+          "ann": "24.9%",
+          "premium": "$120",
+          "collateral": "$3,803",
+          "risk": "conservative",
+          "note": "Smallest collateral requirement among the calls."
+        },
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$220C",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "+0.35",
+          "ann": "19.8%",
+          "premium": "$523",
+          "collateral": "$20,982",
+          "risk": "conservative",
+          "note": "Lowest delta in this window, with a 4.9% cushion."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Sep 3",
+      "rule": "No new positions from this slate. Let ISM Services and the Fed speakers pass, and decide Friday's put orders before the close.",
+      "event": "ISM Services at 7:00 AM Pacific. Fed speakers throughout the day; Lululemon reports after the close.",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Sep 4",
+      "rule": "Wait for the jobs report, then let the opening reaction settle. From 7:00 AM Pacific, sell only puts you would be content to own through the long weekend.",
+      "event": "August jobs report at 5:30 AM Pacific. The market is closed Monday, September 7.",
+      "trades": [
+        {
+          "ticker": "ABNB",
+          "type": "put",
+          "strike": "$185P",
+          "expiry": "2026-09-18",
+          "dte": 18,
+          "delta": "-0.34",
+          "ann": "33.1%",
+          "premium": "$302",
+          "collateral": "$18,500",
+          "risk": "balanced",
+          "note": "Best listed put yield, with no earnings report until November."
+        },
+        {
+          "ticker": "LUV",
+          "type": "put",
+          "strike": "$37.5P",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "-0.32",
+          "ann": "26.3%",
+          "premium": "$125",
+          "collateral": "$3,750",
+          "risk": "conservative",
+          "note": "Smallest collateral on the slate, with a 5.4% cushion."
+        },
+        {
+          "ticker": "MCD",
+          "type": "put",
+          "strike": "$260P",
+          "expiry": "2026-09-25",
+          "dte": 25,
+          "delta": "-0.36",
+          "ann": "22.3%",
+          "premium": "$398",
+          "collateral": "$26,000",
+          "risk": "conservative",
+          "note": "Largest put collateral, with the strike 1.9% below shares."
+        },
+        {
+          "ticker": "CVS",
+          "type": "put",
+          "strike": "$90P",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "-0.35",
+          "ann": "20.2%",
+          "premium": "$230",
+          "collateral": "$9,000",
+          "risk": "conservative",
+          "note": "Strike is 3.3% below the share price."
+        },
+        {
+          "ticker": "KO",
+          "type": "put",
+          "strike": "$88P",
+          "expiry": "2026-09-25",
+          "dte": 25,
+          "delta": "-0.34",
+          "ann": "18.2%",
+          "premium": "$110",
+          "collateral": "$8,800",
+          "risk": "conservative",
+          "note": "Tightest cushion on the slate at 1.85%."
+        },
+        {
+          "ticker": "NEM",
+          "type": "put",
+          "strike": "$115P",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "-0.21",
+          "ann": "18.0%",
+          "premium": "$261",
+          "collateral": "$11,500",
+          "risk": "conservative",
+          "note": "Widest cushion and lowest delta among the 14 contracts."
+        },
+        {
+          "ticker": "DIS",
+          "type": "put",
+          "strike": "$105P",
+          "expiry": "2026-10-16",
+          "dte": 46,
+          "delta": "-0.34",
+          "ann": "16.0%",
+          "premium": "$212",
+          "collateral": "$10,500",
+          "risk": "conservative",
+          "note": "Lowest listed yield, on a widely held company."
+        }
+      ]
+    }
+  ]
+}
