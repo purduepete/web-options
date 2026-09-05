@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
     DEFAULT_NUMBER_SOURCE,
+    STORAGE_KEYS,
     parseExpiryFilter,
     parseHalfFilter,
     parseMoneynessFilter,
@@ -18,6 +19,7 @@ import { EXPIRY_FILTERS, HALF_FILTERS, MONEYNESS_FILTERS, cycle } from '../signa
 import { useNumberSource } from '../signals/useNumberSource';
 import { isTyping } from '../hooks/useWeekArrows';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useStoredFilters } from '../hooks/useStoredFilters';
 import { ChevronDownIcon, RotateCcwIcon, SlidersIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { Modal } from '../components/Modal';
@@ -46,9 +48,13 @@ function initialMonth(months: readonly SignalMonth[]): string[] {
     return newest ? [newest.month] : [];
 }
 
+/** What the page keeps between visits, so a bare path opens where it was left. */
+const SUMMARY_FILTER_PARAMS = ['symbols', 'expiry', 'moneyness', 'half'] as const;
+
 export function SummaryPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
+    const hydrated = useStoredFilters({ storageKey: STORAGE_KEYS.summaryFilters, keys: SUMMARY_FILTER_PARAMS });
     const symbolsParam = params.get('symbols') ?? '';
     const expiry = parseExpiryFilter(params.get('expiry'));
     const moneyness = parseMoneynessFilter(params.get('moneyness'));
@@ -102,6 +108,14 @@ export function SummaryPage() {
         return () => clearTimeout(timer);
     }, [draft, symbolsParam, setParams]);
 
+    // The box is seeded once, so a restore or a back button landing on a
+    // different symbol list afterwards has to be caught here. Typing never
+    // reaches this: the param only catches up once the pause has passed, and by
+    // then it already matches the draft.
+    useEffect(() => {
+        setDraft(symbolsParam);
+    }, [symbolsParam]);
+
     useEffect(() => {
         let cancelled = false;
         fetchSignalMonths()
@@ -140,6 +154,9 @@ export function SummaryPage() {
     // cache key already makes a late answer harmless: it is filed under the
     // filter it was asked for, and only the current filter is ever read.
     useEffect(() => {
+        // The stored filters are part of a month's cache key, so nothing is
+        // asked for until the URL has them.
+        if (!hydrated) return;
         for (const month of expanded) {
             const key = cacheKey(month);
             if (summaries[key] || failed.has(key) || inFlight.current.has(key)) continue;
@@ -160,7 +177,7 @@ export function SummaryPage() {
                     inFlight.current.delete(key);
                 });
         }
-    }, [expanded, summaries, failed, symbols, expiry, moneyness, half, numberSource, cacheKey, forget]);
+    }, [hydrated, expanded, summaries, failed, symbols, expiry, moneyness, half, numberSource, cacheKey, forget]);
 
     const toggleMonth = useCallback((month: string) => {
         setExpanded((current) => {

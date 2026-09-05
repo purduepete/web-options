@@ -54,6 +54,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
             { chords: [['c']], description: 'Toggle Conservative tier' },
             { chords: [['b']], description: 'Toggle Balanced tier' },
             { chords: [['a']], description: 'Toggle Aggressive tier' },
+            { chords: [['←'], ['→']], description: 'Previous or next trade', scope: 'In the trade detail' },
         ],
     },
     {
@@ -61,6 +62,8 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
         entries: [
             { chords: [['Shift', 'R']], description: 'Refresh live contract data' },
             { chords: [['c']], description: 'Next captured filter' },
+            { chords: [['g']], description: 'Next grouping (None → Delta → Captured)' },
+            { chords: [['d']], description: 'Next price source (End of day → Live)' },
         ],
     },
 ];

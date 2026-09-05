@@ -9,4 +9,7 @@ export const STORAGE_KEYS = {
     favorites: 'nav_favorites',
     recentlyVisited: 'nav_recently_visited',
     signalNumberSource: 'weboptions_signal_number_source',
+    ownedFilters: 'weboptions.filters.owned-contracts.v1',
+    liveSignalsFilters: 'weboptions.filters.live-signals.v1',
+    summaryFilters: 'weboptions.filters.summary.v1',
 } as const;

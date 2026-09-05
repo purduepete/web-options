@@ -37,6 +37,9 @@
 }
 
 .owned-contracts-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     margin: 0.15rem 0 0;
     color: var(--text-muted);
     font-size: 0.72rem;
@@ -188,6 +191,32 @@
 .owned-contract-list.is-stale {
     opacity: 0.55;
     transition: opacity 0.15s ease;
+}
+
+/* A band's own row, spanning every column rather than joining the subgrid. */
+.owned-group-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0.4rem 0.75rem 0.3rem;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: var(--border-width) solid var(--border);
+}
+
+.owned-group-heading:not(:first-child) {
+    margin-top: 0.35rem;
+}
+
+.owned-group-heading-count {
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
 }
 
 .owned-contract-row {

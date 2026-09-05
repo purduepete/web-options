@@ -331,6 +331,46 @@ describe('SummaryPage', () => {
         expect(screen.getByLabelText(/Filter by symbols/).getAttribute('value')).toBe('AMD');
     });
 
+    it('opens on the filters it was left with, and asks for them once', async () => {
+        localStorage.setItem('weboptions.filters.summary.v1', 'symbols=AMD&moneyness=itm');
+        renderPage();
+
+        await screen.findByRole('table');
+
+        expect(screen.getByLabelText(/Filter by symbols/).getAttribute('value')).toBe('AMD');
+        expect(fetchSignalSummary).toHaveBeenCalledTimes(1);
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', {
+            ...DEFAULT_FILTERS,
+            symbols: ['AMD'],
+            moneyness: 'itm',
+        });
+    });
+
+    it('leaves a filter named in the address alone, stored one or not', async () => {
+        localStorage.setItem('weboptions.filters.summary.v1', 'symbols=AMD');
+        renderPage('/summary?symbols=NVDA');
+
+        await screen.findByRole('table');
+
+        expect(screen.getByLabelText(/Filter by symbols/).getAttribute('value')).toBe('NVDA');
+        expect(fetchSignalSummary).toHaveBeenCalledWith('2026-08', { ...DEFAULT_FILTERS, symbols: ['NVDA'] });
+    });
+
+    it('keeps what is being typed while the restored filter settles', async () => {
+        const user = userEvent.setup();
+        localStorage.setItem('weboptions.filters.summary.v1', 'symbols=AMD');
+        renderPage();
+
+        await screen.findByRole('table');
+        const input = screen.getByLabelText(/Filter by symbols/);
+        await user.clear(input);
+        await user.type(input, 'NVDA');
+
+        expect(input.getAttribute('value')).toBe('NVDA');
+        await waitFor(() => expect(localStorage.getItem('weboptions.filters.summary.v1')).toBe('symbols=NVDA'));
+        expect(input.getAttribute('value')).toBe('NVDA');
+    });
+
     it('narrows to the contracts chosen, and reads the choice back out of the address', async () => {
         const user = userEvent.setup();
         renderPage();

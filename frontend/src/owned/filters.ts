@@ -84,6 +84,13 @@ export interface OwnedFilterState {
     captured?: CapturedFilter;
 }
 
+/** Falls back to the estimated buyback cost when the nightly rollup has not reached it yet. */
+export function capturedPercent(position: OwnedOptionPosition): number | null {
+    if (position.unrealizedCreditCapturedPct !== null) return position.unrealizedCreditCapturedPct;
+    if (position.estimatedBuybackCost === null || position.entryCredit <= 0) return null;
+    return ((position.entryCredit - position.estimatedBuybackCost) / position.entryCredit) * 100;
+}
+
 /**
  * Narrows the rows client-side. Atm and unknown moneyness drop out whenever a
  * moneyness is asked for, mirroring `filterDaysByMoneyness`, and a row with no

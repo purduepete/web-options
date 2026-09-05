@@ -316,6 +316,37 @@ describe('LiveSignalsPage', () => {
         expect(screen.queryByText('AAPL $100P')).toBeNull();
     });
 
+    it('opens on the filter it was left with', async () => {
+        localStorage.setItem('weboptions.filters.live-signals.v1', 'symbol=MSFT');
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('MSFT');
+        expect(screen.queryByText('AAPL $100P')).toBeNull();
+    });
+
+    it('leaves a link to a named week unfiltered, and leaves the stored filter where it is', async () => {
+        localStorage.setItem('weboptions.filters.live-signals.v1', 'symbol=MSFT');
+        renderPage('/?week=2026-08-11');
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        expect((screen.getByLabelText('Filter by symbol') as HTMLInputElement).value).toBe('');
+        expect(screen.getByText('AAPL $100P')).toBeTruthy();
+        expect(localStorage.getItem('weboptions.filters.live-signals.v1')).toBe('symbol=MSFT');
+    });
+
+    it('remembers a filter as it is applied', async () => {
+        const user = userEvent.setup();
+        renderPage();
+        await screen.findByRole('region', { name: 'Monday Aug 11' });
+
+        await user.type(screen.getByLabelText('Filter by symbol'), 'amd');
+
+        await waitFor(() =>
+            expect(localStorage.getItem('weboptions.filters.live-signals.v1')).toBe('symbol=AMD'),
+        );
+    });
+
     it('clears the filter from the button', async () => {
         const user = userEvent.setup();
         renderPage('/?symbol=MSFT');

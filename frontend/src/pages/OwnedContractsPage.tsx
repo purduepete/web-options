@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import type { OwnedOptionPosition, UnderlyingQuote } from '@weboptions/shared';
+import { STORAGE_KEYS } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchOwnedContracts, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { Loading } from '../components/Loading';
@@ -14,17 +15,20 @@ import {
     FlaskConicalIcon,
     RotateCcwIcon,
     SlidersIcon,
+    TableIcon,
     TrendingDownIcon,
     TrendingUpIcon,
     ZapIcon,
 } from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useStoredFilters } from '../hooks/useStoredFilters';
 import { isTyping } from '../hooks/useWeekArrows';
 import { clearOwnedCache, readOwnedCache, writeOwnedCache } from '../owned/cache';
 import {
     CAPTURED_FILTERS,
     CAPTURED_LABELS,
     annualizedReturn,
+    capturedPercent,
     deltaBand,
     filterOwnedPositions,
     parseLocalDate,
@@ -32,7 +36,23 @@ import {
     strikeCushion,
     type CapturedFilter,
 } from '../owned/filters';
-import { applyPriceSource, readPriceSource, writePriceSource, type PriceSource } from '../owned/priceSource';
+import {
+    OWNED_GROUPS,
+    OWNED_GROUP_LABELS,
+    OWNED_GROUP_SORTS,
+    groupOwnedPositions,
+    readOwnedGroup,
+    writeOwnedGroup,
+    type OwnedGroup,
+} from '../owned/group';
+import { OwnedGroupMenu } from '../owned/GroupMenu';
+import {
+    applyPriceSource,
+    PRICE_SOURCES,
+    readPriceSource,
+    writePriceSource,
+    type PriceSource,
+} from '../owned/priceSource';
 import { OwnedPriceSourceMenu } from '../owned/PriceSourceMenu';
 import { quoteIssue, quoteSourceLabel } from '../owned/quoteStatus';
 import { mergeRoster } from '../owned/roster';
@@ -199,12 +219,6 @@ function expirationRiskText(position: OwnedOptionPosition): string | null {
     return null;
 }
 
-function capturedPercent(position: OwnedOptionPosition): number | null {
-    if (position.unrealizedCreditCapturedPct !== null) return position.unrealizedCreditCapturedPct;
-    if (position.estimatedBuybackCost === null || position.entryCredit <= 0) return null;
-    return ((position.entryCredit - position.estimatedBuybackCost) / position.entryCredit) * 100;
-}
-
 function exitTargetText(position: OwnedOptionPosition): string {
     const captured = capturedPercent(position);
     if (captured === null) return EMPTY;
@@ -215,15 +229,23 @@ function exitTargetText(position: OwnedOptionPosition): string {
     return `${nextTarget}% @ ${money((position.entryCredit * (1 - nextTarget / 100)) / shares)}`;
 }
 
+/** What the page keeps between visits, so a bare path opens where it was left. */
+const OWNED_FILTER_PARAMS = ['symbol', 'moneyness', 'captured'] as const;
+
 export function OwnedContractsPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
+    const hydrated = useStoredFilters({ storageKey: STORAGE_KEYS.ownedFilters, keys: OWNED_FILTER_PARAMS });
     const symbol = params.get('symbol') ?? '';
     const moneynessFilter = readMoneynessFilter(params.get('moneyness'));
     const capturedFilter = readCapturedFilter(params.get('captured'));
-    // The sort and the price source are reading preferences rather than views
-    // worth sharing, so they live in local storage instead of the URL.
-    const [sort, setSortState] = useState<OwnedSortState>(readOwnedSort);
+    // The sort, the group and the price source are reading preferences rather
+    // than views worth sharing, so they live in local storage instead of the URL.
+    // Only the menu's own choice is stored: a grouping imposes its order on top,
+    // and turning the grouping off hands the stored choice back.
+    const [group, setGroupState] = useState<OwnedGroup>(readOwnedGroup);
+    const [chosenSort, setChosenSort] = useState<OwnedSortState>(readOwnedSort);
+    const [sort, setSortState] = useState<OwnedSortState>(() => OWNED_GROUP_SORTS[group] ?? chosenSort);
     const [priceSource, setPriceSourceState] = useState<PriceSource>(readPriceSource);
     const [cached] = useState(readOwnedCache);
     const [positions, setPositions] = useState<OwnedOptionPosition[] | null>(cached?.response.positions ?? null);
@@ -245,10 +267,10 @@ export function OwnedContractsPage() {
     const filtersPanelRef = useRef<HTMLDivElement>(null);
 
     const load = useCallback(
-        (mode: 'initial' | 'refresh' | 'roster') => {
+        (mode: 'initial' | 'refresh' | 'roster' | 'reload') => {
             const id = ++latestLoad.current;
             if (mode === 'initial') setLoading(true);
-            else if (mode === 'refresh') setRefreshing(true);
+            else if (mode !== 'roster') setRefreshing(true);
             setError(null);
             fetchOwnedContracts(mode === 'refresh')
                 .then(async (result) => {
@@ -297,7 +319,7 @@ export function OwnedContractsPage() {
                 .finally(() => {
                     if (id !== latestLoad.current) return;
                     if (mode === 'initial') setLoading(false);
-                    else if (mode === 'refresh') setRefreshing(false);
+                    else if (mode !== 'roster') setRefreshing(false);
                 });
         },
         [cached, forget],
@@ -311,13 +333,33 @@ export function OwnedContractsPage() {
 
     const setSort = useCallback((next: OwnedSortState) => {
         setSortState(next);
+        setChosenSort(next);
         writeOwnedSort(next);
     }, []);
 
-    const setPriceSource = useCallback((next: PriceSource) => {
-        setPriceSourceState(next);
-        writePriceSource(next);
-    }, []);
+    // A bucket has its own reason to exist, so switching into one also switches
+    // to the order that reason implies. Leaving one restores the menu's choice.
+    const setGroup = useCallback(
+        (next: OwnedGroup) => {
+            setGroupState(next);
+            writeOwnedGroup(next);
+            setSortState(OWNED_GROUP_SORTS[next] ?? chosenSort);
+        },
+        [chosenSort],
+    );
+
+    // Each source has its own upstream: live re-pulls the option quotes, stored
+    // reads the daily table back. Switching fetches so neither one is answered
+    // from numbers gathered for the other.
+    const setPriceSource = useCallback(
+        (next: PriceSource) => {
+            if (next === priceSource) return;
+            setPriceSourceState(next);
+            writePriceSource(next);
+            load(next === 'live' ? 'refresh' : 'reload');
+        },
+        [priceSource, load],
+    );
 
     const setSymbolParam = useCallback(
         (next: string) => {
@@ -445,12 +487,15 @@ export function OwnedContractsPage() {
             if (event.key === 'f') setFiltersOpen((open) => !open);
             else if (event.key === 'm') setMoneynessParam(cycle(MONEYNESS_FILTERS, moneynessFilter));
             else if (event.key === 'c') setCapturedParam(cycle(CAPTURED_FILTERS, capturedFilter));
+            else if (event.key === 'g') setGroup(cycle(OWNED_GROUPS, group));
+            else if (event.key === 'd') setPriceSource(cycle(PRICE_SOURCES, priceSource));
             else if (!event.shiftKey && event.key === 'r') resetMenus();
         }
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [
         capturedFilter,
+        group,
         load,
         loading,
         moneynessFilter,
@@ -458,7 +503,9 @@ export function OwnedContractsPage() {
         refreshing,
         resetMenus,
         setCapturedParam,
+        setGroup,
         setMoneynessParam,
+        setPriceSource,
     ]);
 
     // Everything downstream — the filters, the order, the totals and the rows —
@@ -471,6 +518,26 @@ export function OwnedContractsPage() {
     // Stored prices are cached by definition, whether they were read back from the
     // browser or pulled with the payload.
     const showCacheBadge = fromCache || priceSource === 'eod';
+
+    // Cached rows are ready before a restored filter is, and showing them first
+    // would narrow the list under the reader a tick later.
+    const settling = loading || !hydrated;
+
+    // The daily table is written a contract at a time and a contract can be missed,
+    // so what it was last carried to is the newest date in it, not the payload's own.
+    const storedThrough = useMemo(
+        () =>
+            (positions ?? []).reduce<string | null>((newest, position) => {
+                const date = position.cachedPrice.priceDate;
+                return date !== null && (newest === null || date > newest) ? date : newest;
+            }, null),
+        [positions],
+    );
+
+    const updatedText =
+        priceSource === 'eod'
+            ? storedThrough && dateText(storedThrough)
+            : generatedAt && timestampText(generatedAt);
 
     const visible = useMemo(
         () =>
@@ -485,6 +552,9 @@ export function OwnedContractsPage() {
             ),
         [capturedFilter, moneynessFilter, signals, sort, sourced, symbol],
     );
+
+    // Grouping runs after the sort, so a bucket keeps the order the sort gave it.
+    const groupedVisible = useMemo(() => groupOwnedPositions(visible, group), [group, visible]);
 
     const summary = useMemo(() => {
         const rows = visible;
@@ -513,6 +583,10 @@ export function OwnedContractsPage() {
             <div className="filter-section owned-filter-sort">
                 <h2>Sort</h2>
                 <OwnedSortMenu value={sort} onChange={setSort} />
+            </div>
+            <div className="filter-section owned-filter-group">
+                <h2>Group</h2>
+                <OwnedGroupMenu value={group} onChange={setGroup} />
             </div>
             <div className="filter-section owned-filter-moneyness">
                 <h2>Contract</h2>
@@ -559,7 +633,7 @@ export function OwnedContractsPage() {
                 <div className="owned-contracts-title">
                     <h1>Owned Contracts</h1>
                     <p className="owned-contracts-subtitle">
-                        {generatedAt ? `Updated ${timestampText(generatedAt)}` : 'Current open positions'}
+                        {updatedText ? `Updated ${updatedText}` : 'Current open positions'}
                         <span
                             className={showCacheBadge ? 'owned-cache-badge' : 'owned-cache-badge is-idle'}
                             aria-hidden={!showCacheBadge}
@@ -647,9 +721,9 @@ export function OwnedContractsPage() {
                 </p>
             ) : null}
 
-            {loading ? <Loading label="Loading owned contracts" /> : null}
+            {settling ? <Loading label="Loading owned contracts" /> : null}
 
-            {loading ? null : (
+            {settling ? null : (
                 <>
                     {/* Always present: the order is a fact about the list even when
                         nothing is narrowing it, and a row that comes and goes would
@@ -669,6 +743,12 @@ export function OwnedContractsPage() {
                             )}
                             <span>{OWNED_SORT_LABELS[sort.key]}</span>
                         </span>
+                        {group !== 'none' && (
+                            <span className="owned-sort-chip" aria-label={`Grouped by ${OWNED_GROUP_LABELS[group]}`}>
+                                <TableIcon width={13} height={13} aria-hidden="true" />
+                                <span>{OWNED_GROUP_LABELS[group]}</span>
+                            </span>
+                        )}
                         {appliedFilters.map((filter) => (
                             <button
                                 key={filter.key}
@@ -709,16 +789,26 @@ export function OwnedContractsPage() {
                         className={refreshing ? 'owned-contract-list is-stale' : 'owned-contract-list'}
                         aria-busy={refreshing}
                     >
-                        {visible.map((position) => (
-                            <OwnedContractRow
-                                key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
-                                position={position}
-                                quoteSource={quoteSourceLabel(position, fromCache)}
-                                pageQuoteSource={summary.quoteSource}
-                                showQuoteIssue={priceSource === 'live'}
-                                underlying={underlyings[position.symbol]}
-                                signal={signalFor(signals, position)}
-                            />
+                        {groupedVisible.map((bucket, index) => (
+                            <Fragment key={bucket.label || `group-${index}`}>
+                                {bucket.label ? (
+                                    <h3 className="owned-group-heading">
+                                        <span>{bucket.label}</span>
+                                        <span className="owned-group-heading-count">{bucket.positions.length}</span>
+                                    </h3>
+                                ) : null}
+                                {bucket.positions.map((position) => (
+                                    <OwnedContractRow
+                                        key={`${position.isPaper ? 'paper' : 'live'}-${position.id}`}
+                                        position={position}
+                                        quoteSource={quoteSourceLabel(position, fromCache)}
+                                        pageQuoteSource={summary.quoteSource}
+                                        showQuoteIssue={priceSource === 'live'}
+                                        underlying={underlyings[position.symbol]}
+                                        signal={signalFor(signals, position)}
+                                    />
+                                ))}
+                            </Fragment>
                         ))}
                     </section>
                 </>

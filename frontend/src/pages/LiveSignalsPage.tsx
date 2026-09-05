@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
-import { DEFAULT_NUMBER_SOURCE } from '@weboptions/shared';
+import { DEFAULT_NUMBER_SOURCE, STORAGE_KEYS } from '@weboptions/shared';
 import type { IsoDate, Trade, WeekSignalsResponse } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchSignal, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
@@ -43,6 +43,7 @@ import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useStoredFilters } from '../hooks/useStoredFilters';
 import { ChevronDownIcon, RotateCcwIcon, SlidersIcon, TableIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { Modal } from '../components/Modal';
@@ -89,9 +90,18 @@ function readTierFilter(value: string | null): TierSelection[] {
     return SELECTABLE_TIER_FILTERS.filter((item) => selected.includes(item));
 }
 
+/** What the page keeps between visits. The week is navigation, so it is not here. */
+const LIVE_FILTER_PARAMS = ['symbol', 'expiry', 'moneyness', 'half', 'owned', 'grade', 'tier'] as const;
+
 export function LiveSignalsPage() {
     const { forget } = useApiKey();
     const [params, setParams] = useSearchParams();
+    // A week in the URL makes it someone's link, so the stored filters stand down.
+    useStoredFilters({
+        storageKey: STORAGE_KEYS.liveSignalsFilters,
+        keys: LIVE_FILTER_PARAMS,
+        guardKeys: ['week'],
+    });
     const week = params.get('week') ?? undefined;
     const symbol = params.get('symbol') ?? '';
     const expiry = readExpiryFilter(params.get('expiry'));
