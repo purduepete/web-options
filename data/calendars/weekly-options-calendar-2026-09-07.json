@@ -1,0 +1,257 @@
+{
+  "publishDate": "2026-09-07",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 14.53",
+      "text": "S&P 500 at 7,718.60. A calm VIX pays less for the same distance from the money, so favor the farther strike over the closer one."
+    },
+    {
+      "label": "10-Year Treasury Yield: 4.77%",
+      "text": "Up from 4.72% the prior Friday. Rate-sensitive names, utilities, housing, and long-dated growth shares, move hardest when yields rise."
+    },
+    {
+      "label": "Two Fed-relevant prints this week",
+      "text": "Thursday's PPI and Friday's CPI are the releases that can reprice the whole board. Nothing new goes on in the hour before either one."
+    },
+    {
+      "label": "Thursday earnings: two software reports",
+      "text": "No positions run through an earnings report. A large company's print can reprice its suppliers and closest competitors within minutes."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Sep 7",
+      "rule": "US markets closed for Labor Day. No new positions this session.",
+      "event": "Labor Day holiday, markets closed.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Sep 8",
+      "rule": "Calls go on while the week is quiet. No scheduled release can reprice the board before Thursday. This window stays open through Wednesday's close for names not placed today.",
+      "event": "Unscheduled oil-headline risk from the Middle East; no timed release.",
+      "trades": [
+        {
+          "ticker": "AAPL",
+          "type": "call",
+          "strike": "$327.5C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.34",
+          "ann": "35.8%",
+          "premium": "$345",
+          "collateral": "$31,997",
+          "risk": "balanced",
+          "note": "Eleven days of premium on a strike 2.4% above the share price."
+        },
+        {
+          "ticker": "CVS",
+          "type": "call",
+          "strike": "$99C",
+          "expiry": "2026-09-25",
+          "dte": 18,
+          "delta": "+0.38",
+          "ann": "32.9%",
+          "premium": "$157",
+          "collateral": "$9,674",
+          "risk": "balanced",
+          "note": "The only late-September expiration on this week's slate."
+        },
+        {
+          "ticker": "INTC",
+          "type": "call",
+          "strike": "$100C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "101.1%",
+          "premium": "$292",
+          "collateral": "$9,580",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate, with a 4.4% cushion."
+        },
+        {
+          "ticker": "AMAT",
+          "type": "call",
+          "strike": "$470C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "84.3%",
+          "premium": "$1,155",
+          "collateral": "$45,471",
+          "risk": "aggressive",
+          "note": "Largest premium on the slate."
+        },
+        {
+          "ticker": "CRWD",
+          "type": "call",
+          "strike": "$220C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "79.0%",
+          "premium": "$508",
+          "collateral": "$21,310",
+          "risk": "aggressive",
+          "note": "Second-largest premium in this window, behind AMAT."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "70.9%",
+          "premium": "$373",
+          "collateral": "$17,433",
+          "risk": "aggressive",
+          "note": "Strike sits 3.3% above the share price, with 11,605 contracts of open interest behind it."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$80C",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "52.8%",
+          "premium": "$125",
+          "collateral": "$7,825",
+          "risk": "aggressive",
+          "note": "Narrowest cushion on the slate, 2.2% above the share price."
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Sep 9",
+      "rule": "Same window as Tuesday: place any remaining calls from that list before today's close. Thursday's PPI print takes over from tomorrow morning.",
+      "event": null,
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Sep 10",
+      "rule": "PPI prints an hour before the open. Place these six calls after 7:00 AM Pacific, once the opening swing has settled.",
+      "event": "PPI (Producer Price Index) at 5:30 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$220C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.39",
+          "ann": "25.1%",
+          "premium": "$570",
+          "collateral": "$21,225",
+          "risk": "conservative",
+          "note": "Conservative-tier line with the strike 3.7% above the share price."
+        },
+        {
+          "ticker": "NEM",
+          "type": "call",
+          "strike": "$140C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.30",
+          "ann": "24.5%",
+          "premium": "$335",
+          "collateral": "$12,809",
+          "risk": "conservative",
+          "note": "Second-widest cushion on the slate, at 9.3%."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$270C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.37",
+          "ann": "23.5%",
+          "premium": "$650",
+          "collateral": "$25,851",
+          "risk": "conservative",
+          "note": "Deepest market in this window, with 19,379 contracts of open interest."
+        },
+        {
+          "ticker": "UPS",
+          "type": "call",
+          "strike": "$105C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.39",
+          "ann": "20.9%",
+          "premium": "$229",
+          "collateral": "$10,229",
+          "risk": "conservative",
+          "note": "Smallest ticket among the conservative-tier calls."
+        },
+        {
+          "ticker": "GLW",
+          "type": "call",
+          "strike": "$175C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.31",
+          "ann": "35.5%",
+          "premium": "$585",
+          "collateral": "$15,430",
+          "risk": "balanced",
+          "note": "Widest cushion on the slate, 13.4% above the share price."
+        },
+        {
+          "ticker": "QCOM",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "+0.36",
+          "ann": "30.5%",
+          "premium": "$550",
+          "collateral": "$16,874",
+          "risk": "balanced",
+          "note": "A 6.7% cushion on a household name at 39 days."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Sep 11",
+      "rule": "CPI prints at 5:30 AM Pacific. Once it's out, this week's two cash-secured puts go on from 7:00 AM Pacific.",
+      "event": "CPI (Consumer Price Index) at 5:30 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "NVO",
+          "type": "put",
+          "strike": "$45P",
+          "expiry": "2026-10-16",
+          "dte": 39,
+          "delta": "-0.37",
+          "ann": "29.5%",
+          "premium": "$142",
+          "collateral": "$4,500",
+          "risk": "balanced",
+          "note": "Smallest ticket on the slate."
+        },
+        {
+          "ticker": "UBER",
+          "type": "put",
+          "strike": "$74P",
+          "expiry": "2026-09-18",
+          "dte": 11,
+          "delta": "-0.34",
+          "ann": "53.1%",
+          "premium": "$119",
+          "collateral": "$7,400",
+          "risk": "aggressive",
+          "note": "Highest annualized yield among this week's puts."
+        }
+      ]
+    }
+  ]
+}
