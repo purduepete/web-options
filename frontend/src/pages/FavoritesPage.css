@@ -36,7 +36,6 @@
     padding: 0.55rem 0.65rem 0.55rem 0.35rem;
     border: var(--border-width) solid var(--border);
     background: var(--surface);
-    box-shadow: var(--shadow-sm);
 }
 
 .favorite-sortable-row.is-dragging {
