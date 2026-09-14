@@ -1,0 +1,266 @@
+{
+  "publishDate": "2026-09-14",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 15.84",
+      "text": "S&P 500 at 7,656.98. The VIX touched 17.84 Thursday and gave back most of that Friday. In the mid-15s, normal strike distances are fine this week."
+    },
+    {
+      "label": "Odds of a Wednesday rate rise: about 90%",
+      "text": "Up from near 61% before Thursday's producer price report. With the move mostly priced in, don't open a new position in the hour before 11:00 AM Pacific Wednesday; place it after the decision is out."
+    },
+    {
+      "label": "Friday is quarterly expiration",
+      "text": "A closing imbalance can decide an at-the-money strike either way in the final hour. Decide what you want for any in-the-money short option and act on it Thursday."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Sep 14",
+      "rule": "Nothing scheduled stands between today's open and Tuesday's factory survey, and the board still prices in Wednesday's Fed decision. Sell these six calls now for the fuller premium; a rate hike is already the base case, so it carries little fresh risk for a call seller.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "INTC",
+          "type": "call",
+          "strike": "$107C",
+          "expiry": "2026-09-25",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "99.1%",
+          "premium": "$308",
+          "collateral": "$10,294",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate, with a 3.9% cushion above the strike."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$79C",
+          "expiry": "2026-09-25",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "53.6%",
+          "premium": "$125",
+          "collateral": "$7,740",
+          "risk": "aggressive",
+          "note": "Tightest bid-ask spread on the slate, at 1.6% of the mid price."
+        },
+        {
+          "ticker": "SLV",
+          "type": "call",
+          "strike": "$60C",
+          "expiry": "2026-09-30",
+          "dte": 16,
+          "delta": "+0.38",
+          "ann": "52.0%",
+          "premium": "$133",
+          "collateral": "$5,812",
+          "risk": "aggressive",
+          "note": "The only non-equity underlying on this week's slate."
+        },
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$215C",
+          "expiry": "2026-09-25",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "48.2%",
+          "premium": "$306",
+          "collateral": "$21,045",
+          "risk": "balanced",
+          "note": "The only industrial name on this week's slate."
+        },
+        {
+          "ticker": "IBM",
+          "type": "call",
+          "strike": "$250C",
+          "expiry": "2026-10-02",
+          "dte": 18,
+          "delta": "+0.39",
+          "ann": "44.0%",
+          "premium": "$528",
+          "collateral": "$24,329",
+          "risk": "balanced",
+          "note": "Largest premium in this window."
+        },
+        {
+          "ticker": "GOOGL",
+          "type": "call",
+          "strike": "$350C",
+          "expiry": "2026-10-02",
+          "dte": 18,
+          "delta": "+0.33",
+          "ann": "28.8%",
+          "premium": "$480",
+          "collateral": "$33,850",
+          "risk": "conservative",
+          "note": "Lowest assignment odds in this window."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Sep 15",
+      "rule": "Same window as Monday: the six calls above are still fair to place today if you didn't get to them yesterday, once the factory survey is out.",
+      "event": "Factory survey at 5:30 AM Pacific.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Sep 16",
+      "rule": "The Fed decision, projections, and first questions land by 11:00 AM Pacific. From 11:30 AM Pacific, these four puts go on; premium is thinner than this morning's board, in exchange for knowing the rate path first.",
+      "event": "FOMC rate decision at 11:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "CRWD",
+          "type": "put",
+          "strike": "$200P",
+          "expiry": "2026-09-25",
+          "dte": 11,
+          "delta": "-0.34",
+          "ann": "77.6%",
+          "premium": "$468",
+          "collateral": "$20,000",
+          "risk": "aggressive",
+          "note": "Highest-yielding put on the slate."
+        },
+        {
+          "ticker": "ORCL",
+          "type": "put",
+          "strike": "$145P",
+          "expiry": "2026-09-25",
+          "dte": 11,
+          "delta": "-0.33",
+          "ann": "77.2%",
+          "premium": "$338",
+          "collateral": "$14,500",
+          "risk": "aggressive",
+          "note": "Its quarterly earnings report has already passed."
+        },
+        {
+          "ticker": "NOW",
+          "type": "put",
+          "strike": "$125P",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "-0.32",
+          "ann": "43.8%",
+          "premium": "$480",
+          "collateral": "$12,500",
+          "risk": "aggressive",
+          "note": "Widest cushion on the slate, at 5.7% below the share price."
+        },
+        {
+          "ticker": "AAPL",
+          "type": "put",
+          "strike": "$325P",
+          "expiry": "2026-10-02",
+          "dte": 18,
+          "delta": "-0.33",
+          "ann": "26.8%",
+          "premium": "$430",
+          "collateral": "$32,500",
+          "risk": "conservative",
+          "note": "The only Conservative-tier line in this window."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Sep 17",
+      "rule": "Claims and housing data are out before the open, and by 6:00 AM Pacific the overnight reaction to Wednesday has settled. These six October-expiration calls are where the extra time does the work.",
+      "event": "Weekly jobless claims and housing data before the open.",
+      "trades": [
+        {
+          "ticker": "ANET",
+          "type": "call",
+          "strike": "$210C",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "+0.40",
+          "ann": "43.1%",
+          "premium": "$755",
+          "collateral": "$19,959",
+          "risk": "balanced",
+          "note": "Largest premium on this week's slate."
+        },
+        {
+          "ticker": "BSX",
+          "type": "call",
+          "strike": "$45C",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "+0.38",
+          "ann": "31.8%",
+          "premium": "$120",
+          "collateral": "$4,298",
+          "risk": "balanced",
+          "note": "Smallest collateral requirement on the slate."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$75C",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "+0.37",
+          "ann": "28.7%",
+          "premium": "$181",
+          "collateral": "$7,167",
+          "risk": "balanced",
+          "note": "Lowest delta in this window."
+        },
+        {
+          "ticker": "PYPL",
+          "type": "call",
+          "strike": "$56C",
+          "expiry": "2026-10-23",
+          "dte": 39,
+          "delta": "+0.39",
+          "ann": "28.6%",
+          "premium": "$164",
+          "collateral": "$5,372",
+          "risk": "balanced",
+          "note": "Longest-dated contract on the slate, at 39 days."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$265C",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "+0.40",
+          "ann": "28.1%",
+          "premium": "$633",
+          "collateral": "$25,677",
+          "risk": "balanced",
+          "note": "Deepest market on the slate, with 13,692 contracts of open interest."
+        },
+        {
+          "ticker": "WMT",
+          "type": "call",
+          "strike": "$110C",
+          "expiry": "2026-10-16",
+          "dte": 32,
+          "delta": "+0.38",
+          "ann": "20.3%",
+          "premium": "$191",
+          "collateral": "$10,715",
+          "risk": "conservative",
+          "note": "The only consumer-staples name on this week's slate."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Sep 18",
+      "rule": "No new positions from this slate today. This is quarterly expiration: decide what you want for any in-the-money short option and act on it before today's close.",
+      "event": "Quarterly options expiration.",
+      "trades": []
+    }
+  ]
+}
