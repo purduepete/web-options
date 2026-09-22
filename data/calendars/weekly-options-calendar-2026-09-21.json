@@ -1,0 +1,257 @@
+{
+  "publishDate": "2026-09-21",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 14.81",
+      "text": "S&P 500 at 7,650.50. The VIX closed below the prior Friday's 15.84 after touching 18.94 on Fed day. Strikes now pay less than before the decision; take the thinner premium rather than moving the strike closer to make it up."
+    },
+    {
+      "label": "10-Year Treasury Yield: about 5%",
+      "text": "Crossed 5% last week for the first time since July 2007, eased Thursday, and was back near 5% by Friday. Banks and other rate-sensitive names moved hardest on the swing."
+    },
+    {
+      "label": "Thursday: Trump-Xi summit",
+      "text": "Trade and chip exports are on the table. A single headline can push a stock past its strike overnight, so names exposed to the outcome wait for Friday."
+    },
+    {
+      "label": "Unscheduled oil risk",
+      "text": "Reports that more strikes on Iran are under consideration mean oil, already near $100 a barrel, can move on any day this week."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Sep 21",
+      "rule": "None of these six touch chip exports or China revenue, so Thursday's summit has little to move them. From 7:00 AM Pacific, once the weekend's news has been priced in, these are fair to place.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$140C",
+          "expiry": "2026-10-02",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "83.3%",
+          "premium": "$340",
+          "collateral": "$13,547",
+          "risk": "aggressive",
+          "note": "Highest annualized yield in this window."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "call",
+          "strike": "$355C",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "+0.38",
+          "ann": "31.1%",
+          "premium": "$733",
+          "collateral": "$34,441",
+          "risk": "balanced",
+          "note": "Largest premium on the slate."
+        },
+        {
+          "ticker": "IBM",
+          "type": "call",
+          "strike": "$240C",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "+0.34",
+          "ann": "29.7%",
+          "premium": "$468",
+          "collateral": "$22,955",
+          "risk": "balanced",
+          "note": "Widest cushion in this window, 4.6% above the share price."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$75C",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "+0.34",
+          "ann": "28.2%",
+          "premium": "$139",
+          "collateral": "$7,179",
+          "risk": "balanced",
+          "note": "Deepest market on the slate, with 27,097 contracts open."
+        },
+        {
+          "ticker": "CLX",
+          "type": "put",
+          "strike": "$80P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.31",
+          "ann": "24.6%",
+          "premium": "$135",
+          "collateral": "$8,000",
+          "risk": "conservative",
+          "note": "Higher annualized yield of this window's two puts."
+        },
+        {
+          "ticker": "DIS",
+          "type": "put",
+          "strike": "$100P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.33",
+          "ann": "21.2%",
+          "premium": "$145",
+          "collateral": "$10,000",
+          "risk": "conservative",
+          "note": "Larger dollar premium of this window's two puts."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Sep 22",
+      "rule": "No new positions from this slate. Nothing scheduled sits between Monday's window and Wednesday's Fed speeches.",
+      "event": null,
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Sep 23",
+      "rule": "The week's first Fed speeches and the weekly oil report are out by 8:00 AM Pacific. These two financial-sector puts wait for both, since bank shares move hardest on the day's rate tone.",
+      "event": "Fed speeches and weekly oil inventory report before 8:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "BX",
+          "type": "put",
+          "strike": "$120P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.32",
+          "ann": "32.5%",
+          "premium": "$268",
+          "collateral": "$12,000",
+          "risk": "balanced",
+          "note": "Wider cushion of this window's two puts, 4.0% below the share price."
+        },
+        {
+          "ticker": "V",
+          "type": "put",
+          "strike": "$360P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.32",
+          "ann": "18.1%",
+          "premium": "$448",
+          "collateral": "$36,000",
+          "risk": "conservative",
+          "note": "The only Conservative-tier line in this window."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Sep 24",
+      "rule": "No new positions today. Trump and Xi meet with trade and chip exports on the table, and one headline can gap a stock past its strike before the close.",
+      "event": "Trump-Xi summit. Costco and Darden report earnings.",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Sep 25",
+      "rule": "The summit and the durable goods number are both out by 7:30 AM Pacific. These seven chip- and China-exposed names go on once the first hour has priced the reaction.",
+      "event": "Durable goods report at 5:30 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "INTC",
+          "type": "call",
+          "strike": "$115C",
+          "expiry": "2026-10-02",
+          "dte": 11,
+          "delta": "+0.35",
+          "ann": "90.9%",
+          "premium": "$298",
+          "collateral": "$10,860",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$227.5C",
+          "expiry": "2026-10-02",
+          "dte": 11,
+          "delta": "+0.36",
+          "ann": "44.9%",
+          "premium": "$301",
+          "collateral": "$22,227",
+          "risk": "balanced",
+          "note": "Second only to Intel for yield in this window."
+        },
+        {
+          "ticker": "QCOM",
+          "type": "put",
+          "strike": "$170P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.33",
+          "ann": "43.8%",
+          "premium": "$510",
+          "collateral": "$17,000",
+          "risk": "balanced",
+          "note": "Largest premium in this window."
+        },
+        {
+          "ticker": "HPE",
+          "type": "put",
+          "strike": "$55P",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "-0.24",
+          "ann": "42.5%",
+          "premium": "$160",
+          "collateral": "$5,500",
+          "risk": "balanced",
+          "note": "Widest cushion on the slate, 9.5% below the share price."
+        },
+        {
+          "ticker": "MCHP",
+          "type": "call",
+          "strike": "$77.5C",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "+0.35",
+          "ann": "39.4%",
+          "premium": "$198",
+          "collateral": "$7,327",
+          "risk": "balanced",
+          "note": "Smallest collateral among this window's calls."
+        },
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$205C",
+          "expiry": "2026-10-16",
+          "dte": 25,
+          "delta": "+0.36",
+          "ann": "29.6%",
+          "premium": "$403",
+          "collateral": "$19,820",
+          "risk": "balanced",
+          "note": "Second-largest premium in this window."
+        },
+        {
+          "ticker": "AAPL",
+          "type": "call",
+          "strike": "$345C",
+          "expiry": "2026-10-09",
+          "dte": 18,
+          "delta": "+0.33",
+          "ann": "21.9%",
+          "premium": "$363",
+          "collateral": "$33,613",
+          "risk": "conservative",
+          "note": "The only Conservative-tier call on the slate."
+        }
+      ]
+    }
+  ]
+}
