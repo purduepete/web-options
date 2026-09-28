@@ -1,0 +1,283 @@
+{
+  "publishDate": "2026-09-28",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 14.87",
+      "text": "S&P 500 at 7,743.41. The VIX closed a touch above the prior Friday's 14.81 after reaching 15.67 Thursday as bond yields climbed. With little paid for fear, take the strikes shown rather than moving closer to the share price for more premium."
+    },
+    {
+      "label": "10-Year Treasury Yield: 5.17%",
+      "text": "Crossed 5% Wednesday after two business surveys showed the strongest output in about five years alongside rising costs, and stayed above 5% through Friday. The equal-weight S&P 500, a better read on the market outside big tech, closed Thursday at a three-month low."
+    },
+    {
+      "label": "Two reports decide this week",
+      "text": "Wednesday's inflation report and Friday's jobs report both land at 5:30 AM Pacific. Don't open a new trade in the hour before either; open it after the number is out."
+    },
+    {
+      "label": "Micron reports Wednesday night",
+      "text": "Its numbers move chipmakers and server makers that depend on the same AI-related spending, so the chip calls below wait for Thursday morning."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Sep 28",
+      "rule": "None of these seven is a chipmaker or an IT-services name, so Micron's and Accenture's reports have little to grab onto. Give the first half hour to the weekend's news, then these are fair to place.",
+      "event": null,
+      "trades": [
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$195C",
+          "expiry": "2026-10-09",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "79.2%",
+          "premium": "$453",
+          "collateral": "$18,967",
+          "risk": "aggressive",
+          "note": "Highest annualized yield in this window, on a 2.8% cushion above the share price."
+        },
+        {
+          "ticker": "CAVA",
+          "type": "call",
+          "strike": "$55C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.34",
+          "ann": "53.7%",
+          "premium": "$137",
+          "collateral": "$5,158",
+          "risk": "aggressive",
+          "note": "Smallest collateral among this window's calls."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$73C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.39",
+          "ann": "38.9%",
+          "premium": "$137",
+          "collateral": "$7,115",
+          "risk": "balanced",
+          "note": "Netflix reports earnings four days after this contract expires."
+        },
+        {
+          "ticker": "BBY",
+          "type": "call",
+          "strike": "$95C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.31",
+          "ann": "34.7%",
+          "premium": "$155",
+          "collateral": "$9,051",
+          "risk": "balanced",
+          "note": "5.0% above the share price, on under $10,000 of collateral."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$72.5C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.32",
+          "ann": "30.6%",
+          "premium": "$105",
+          "collateral": "$6,962",
+          "risk": "balanced",
+          "note": "4.1% above the share price, with 3,885 contracts of open interest."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$260C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.30",
+          "ann": "25.6%",
+          "premium": "$315",
+          "collateral": "$24,967",
+          "risk": "conservative",
+          "note": "Deepest market on the slate, with 36,321 contracts of open interest."
+        },
+        {
+          "ticker": "AAPL",
+          "type": "call",
+          "strike": "$350C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.32",
+          "ann": "20.4%",
+          "premium": "$343",
+          "collateral": "$34,107",
+          "risk": "conservative",
+          "note": "Second-largest premium in this window."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Sep 29",
+      "rule": "No new positions from this slate. Give the hour before today's 7:00 AM Pacific economic data room to settle before Wednesday's inflation report.",
+      "event": "Scheduled economic data at 7:00 AM Pacific.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Sep 30",
+      "rule": "No new positions from this slate. The inflation report lands at 5:30 AM Pacific, and Micron reports after tonight's close, setting up Thursday's chip window.",
+      "event": "Inflation report at 5:30 AM Pacific. Micron earnings after the close.",
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Oct 1",
+      "rule": "By 7:00 AM Pacific the first half hour has priced Micron's reaction and the factory survey is out. These five chip-linked calls are ready then; Friday's jobs report is still ahead, so puts wait.",
+      "event": "Factory survey and Micron's earnings reaction at 7:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "QCOM",
+          "type": "call",
+          "strike": "$210C",
+          "expiry": "2026-10-09",
+          "dte": 11,
+          "delta": "+0.36",
+          "ann": "76.4%",
+          "premium": "$465",
+          "collateral": "$20,197",
+          "risk": "aggressive",
+          "note": "Highest annualized yield in this window, 4.0% above the share price."
+        },
+        {
+          "ticker": "AMAT",
+          "type": "call",
+          "strike": "$510C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.38",
+          "ann": "65.2%",
+          "premium": "$1,560",
+          "collateral": "$48,500",
+          "risk": "aggressive",
+          "note": "Largest premium on the slate."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$230C",
+          "expiry": "2026-10-09",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "45.7%",
+          "premium": "$310",
+          "collateral": "$22,507",
+          "risk": "balanced",
+          "note": "2.2% above the share price, with 11,590 contracts of open interest."
+        },
+        {
+          "ticker": "NXPI",
+          "type": "call",
+          "strike": "$250C",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "+0.34",
+          "ann": "45.6%",
+          "premium": "$535",
+          "collateral": "$23,808",
+          "risk": "balanced",
+          "note": "Second-largest premium in this window."
+        },
+        {
+          "ticker": "HPE",
+          "type": "call",
+          "strike": "$70C",
+          "expiry": "2026-11-20",
+          "dte": 53,
+          "delta": "+0.39",
+          "ann": "40.5%",
+          "premium": "$370",
+          "collateral": "$6,294",
+          "risk": "balanced",
+          "note": "Widest cushion on the slate, 11.2% above the share price."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Oct 2",
+      "rule": "The jobs report is out at 5:30 AM Pacific, and by 7:00 AM Pacific the first hour has priced it. These five go on then; four are puts, and one call sits in this window because Accenture reports Thursday.",
+      "event": "Jobs report at 5:30 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "MRNA",
+          "type": "put",
+          "strike": "$185P",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "-0.31",
+          "ann": "91.0%",
+          "premium": "$830",
+          "collateral": "$18,500",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate, 7.0% below the share price."
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$140C",
+          "expiry": "2026-10-09",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "89.3%",
+          "premium": "$365",
+          "collateral": "$13,562",
+          "risk": "aggressive",
+          "note": "The one call in this window, placed here because Accenture reports Thursday."
+        },
+        {
+          "ticker": "ZS",
+          "type": "put",
+          "strike": "$180P",
+          "expiry": "2026-11-20",
+          "dte": 53,
+          "delta": "-0.32",
+          "ann": "37.0%",
+          "premium": "$968",
+          "collateral": "$18,000",
+          "risk": "balanced",
+          "note": "Largest premium in this window."
+        },
+        {
+          "ticker": "CRM",
+          "type": "put",
+          "strike": "$222.5P",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "-0.27",
+          "ann": "33.0%",
+          "premium": "$363",
+          "collateral": "$22,250",
+          "risk": "balanced",
+          "note": "4.9% below the share price, the day after Accenture reports."
+        },
+        {
+          "ticker": "IBM",
+          "type": "put",
+          "strike": "$215P",
+          "expiry": "2026-10-16",
+          "dte": 18,
+          "delta": "-0.25",
+          "ann": "24.7%",
+          "premium": "$262",
+          "collateral": "$21,500",
+          "risk": "conservative",
+          "note": "The only Conservative-tier line in this window."
+        }
+      ]
+    }
+  ]
+}
