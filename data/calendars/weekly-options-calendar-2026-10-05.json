@@ -1,0 +1,309 @@
+{
+  "publishDate": "2026-10-05",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 15.31",
+      "text": "S&P 500 at 7,722.72. The VIX held between 16.04 and 16.39 from Monday to Thursday, then fell 6.6% Friday; the S&P 500 ended the week 0.27% lower. With premium a little thinner than midweek, pick the strike first and the dollar amount second."
+    },
+    {
+      "label": "10-Year Treasury Yield: 5.28%",
+      "text": "Rose about 0.12 percentage points last week. Utilities and smaller companies tend to move hardest when this rate climbs."
+    },
+    {
+      "label": "Wednesday: 10-year auction and Fed minutes",
+      "text": "The 10-year Treasury auction lands at 10:00 AM Pacific and the September Fed meeting minutes follow at 11:00 AM Pacific. Don't open a new trade in the hour before either; open it after both are out."
+    },
+    {
+      "label": "Earnings read-throughs: McDonald's, Nike, Lululemon",
+      "text": "Lamb Weston and Levi's report ahead of Friday, clearing the read-through risk for McDonald's and Lululemon before their calls go on."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Oct 5",
+      "rule": "The services survey is out at 7:00 AM Pacific. Calls go first today: a covered call still pays its premium even if Wednesday's minutes knock stocks lower, since the shares were already held either way.",
+      "event": "ISM Services survey at 7:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "MRNA",
+          "type": "call",
+          "strike": "$200C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "127.0%",
+          "premium": "$728",
+          "collateral": "$19,001",
+          "risk": "aggressive",
+          "note": "Highest annualized yield on the slate, 5.3% above the share price."
+        },
+        {
+          "ticker": "GLW",
+          "type": "call",
+          "strike": "$170C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "93.5%",
+          "premium": "$463",
+          "collateral": "$16,419",
+          "risk": "aggressive",
+          "note": "3.5% above the share price, with 3,756 contracts of open interest."
+        },
+        {
+          "ticker": "CRM",
+          "type": "call",
+          "strike": "$240C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "60.8%",
+          "premium": "$430",
+          "collateral": "$23,469",
+          "risk": "aggressive",
+          "note": "2.3% above the share price."
+        },
+        {
+          "ticker": "AVGO",
+          "type": "call",
+          "strike": "$362.5C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "59.8%",
+          "premium": "$640",
+          "collateral": "$35,514",
+          "risk": "aggressive",
+          "note": "Second-largest premium in this window."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$195C",
+          "expiry": "2026-10-23",
+          "dte": 18,
+          "delta": "+0.40",
+          "ann": "52.1%",
+          "premium": "$485",
+          "collateral": "$18,875",
+          "risk": "aggressive",
+          "note": "3.3% above the share price, with Palantir's earnings due November 2."
+        },
+        {
+          "ticker": "IBM",
+          "type": "call",
+          "strike": "$227.5C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "50.3%",
+          "premium": "$338",
+          "collateral": "$22,264",
+          "risk": "balanced",
+          "note": "2.2% above the share price; IBM reports October 21, after this contract expires."
+        },
+        {
+          "ticker": "QCOM",
+          "type": "call",
+          "strike": "$195C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.29",
+          "ann": "49.2%",
+          "premium": "$274",
+          "collateral": "$18,487",
+          "risk": "balanced",
+          "note": "Widest cushion in this window, 5.5% above the share price."
+        },
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$200C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.32",
+          "ann": "42.4%",
+          "premium": "$248",
+          "collateral": "$19,356",
+          "risk": "balanced",
+          "note": "3.3% above the share price; Boeing reports October 27, after this contract expires."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$70C",
+          "expiry": "2026-10-23",
+          "dte": 18,
+          "delta": "+0.38",
+          "ann": "39.6%",
+          "premium": "$133",
+          "collateral": "$6,811",
+          "risk": "balanced",
+          "note": "Smallest collateral among this window's calls."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$240C",
+          "expiry": "2026-10-16",
+          "dte": 11,
+          "delta": "+0.34",
+          "ann": "38.6%",
+          "premium": "$272",
+          "collateral": "$23,395",
+          "risk": "balanced",
+          "note": "Deepest market on the slate, with 64,174 contracts of open interest."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Oct 6",
+      "rule": "No new positions from this slate. Nothing scheduled sits between Monday's window and Wednesday's Fed minutes.",
+      "event": null,
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Oct 7",
+      "rule": "No new positions today. The 10-year auction and the Fed minutes both need to be out before Thursday's puts go on.",
+      "event": "10-year Treasury auction at 10:00 AM Pacific. Fed meeting minutes at 11:00 AM Pacific.",
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Oct 8",
+      "rule": "By 7:00 AM Pacific the minutes and Wednesday's 10-year auction are already priced in, and jobless claims land at 5:30 AM Pacific. These five puts go on from 7:00 AM Pacific; if the 10-year closed above 5.34% Wednesday, consider waiting for the 10:00 AM Pacific 30-year bond auction instead.",
+      "event": "Weekly jobless claims at 5:30 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "HPE",
+          "type": "put",
+          "strike": "$65P",
+          "expiry": "2026-10-23",
+          "dte": 18,
+          "delta": "-0.30",
+          "ann": "62.5%",
+          "premium": "$201",
+          "collateral": "$6,500",
+          "risk": "aggressive",
+          "note": "Highest annualized yield in this window, 6.2% below the share price."
+        },
+        {
+          "ticker": "NOW",
+          "type": "put",
+          "strike": "$125P",
+          "expiry": "2026-10-30",
+          "dte": 25,
+          "delta": "-0.29",
+          "ann": "51.4%",
+          "premium": "$440",
+          "collateral": "$12,500",
+          "risk": "aggressive",
+          "note": "Widest cushion on the slate, 7.0% below the share price."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "put",
+          "strike": "$330P",
+          "expiry": "2026-10-30",
+          "dte": 25,
+          "delta": "-0.35",
+          "ann": "35.8%",
+          "premium": "$810",
+          "collateral": "$33,000",
+          "risk": "balanced",
+          "note": "Largest premium on the slate."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "put",
+          "strike": "$245P",
+          "expiry": "2026-10-23",
+          "dte": 18,
+          "delta": "-0.32",
+          "ann": "30.4%",
+          "premium": "$368",
+          "collateral": "$24,500",
+          "risk": "balanced",
+          "note": "2.6% below the share price, with 2,438 contracts of open interest."
+        },
+        {
+          "ticker": "NKE",
+          "type": "put",
+          "strike": "$32.5P",
+          "expiry": "2026-11-20",
+          "dte": 46,
+          "delta": "-0.35",
+          "ann": "26.4%",
+          "premium": "$108",
+          "collateral": "$3,250",
+          "risk": "conservative",
+          "note": "4.0% below the share price; Nike already reported earnings October 1."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Oct 9",
+      "rule": "Delta reports before today's open, and the consumer sentiment survey lands at 7:00 AM Pacific. By 7:30 AM Pacific, Lamb Weston's and Levi's reports have also cleared, so these four consumer-sector calls are free of the read-throughs that could move McDonald's and Lululemon.",
+      "event": "University of Michigan consumer sentiment survey at 7:00 AM Pacific. Delta reports before the open.",
+      "trades": [
+        {
+          "ticker": "HD",
+          "type": "call",
+          "strike": "$290C",
+          "expiry": "2026-10-23",
+          "dte": 18,
+          "delta": "+0.37",
+          "ann": "32.4%",
+          "premium": "$453",
+          "collateral": "$28,285",
+          "risk": "balanced",
+          "note": "Highest annualized yield in this window."
+        },
+        {
+          "ticker": "LULU",
+          "type": "call",
+          "strike": "$100C",
+          "expiry": "2026-11-20",
+          "dte": 46,
+          "delta": "+0.40",
+          "ann": "31.9%",
+          "premium": "$380",
+          "collateral": "$9,446",
+          "risk": "balanced",
+          "note": "Widest cushion in this window, 5.9% above the share price."
+        },
+        {
+          "ticker": "WMT",
+          "type": "call",
+          "strike": "$107C",
+          "expiry": "2026-10-30",
+          "dte": 25,
+          "delta": "+0.36",
+          "ann": "21.4%",
+          "premium": "$153",
+          "collateral": "$10,426",
+          "risk": "conservative",
+          "note": "2.6% above the share price; Walmart's report isn't due until November 19."
+        },
+        {
+          "ticker": "MCD",
+          "type": "call",
+          "strike": "$240C",
+          "expiry": "2026-10-30",
+          "dte": 25,
+          "delta": "+0.30",
+          "ann": "16.5%",
+          "premium": "$262",
+          "collateral": "$23,189",
+          "risk": "conservative",
+          "note": "3.5% above the share price; McDonald's reports November 4, after this contract expires."
+        }
+      ]
+    }
+  ]
+}
