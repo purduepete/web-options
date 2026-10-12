@@ -1,0 +1,309 @@
+{
+  "publishDate": "2026-10-12",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 14.84",
+      "text": "The S&P 500 closed at 7,811.54, 0.09% below its record. The VIX ended Friday at its weekly low, keeping option premiums relatively lean."
+    },
+    {
+      "label": "10-Year Treasury Yield: 5.24%",
+      "text": "The yield is near a 24-year high. Rate-sensitive shares remain exposed to changes in borrowing costs."
+    },
+    {
+      "label": "Fed rate outlook",
+      "text": "Recent meeting notes point to one more rate increase as a likely outcome this year. Wednesday's inflation report brings new evidence."
+    },
+    {
+      "label": "Gulf tensions",
+      "text": "Recent strikes around Riyadh and the Strait of Hormuz add oil-related headline risk through the week."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Oct 12",
+      "rule": "No new positions from this slate. The bond market is closed, and Gulf headlines can still move oil and related shares. Wait for Wednesday's CPI before opening new risk.",
+      "event": "Columbus Day. Stocks and options trade; the bond market is closed, with no major U.S. data.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Oct 13",
+      "rule": "No trades from this slate today. Wait for Wednesday's CPI release, then let the opening reaction settle before using the first window.",
+      "event": "Existing home sales at 7:00 AM Pacific.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Oct 14",
+      "rule": "The 11 setups open from 7:00 AM Pacific, after CPI. If inflation runs hotter than forecast, let the first selling settle before opening puts. These positions also carry Thursday's PPI risk.",
+      "event": "September CPI at 5:30 AM Pacific. Fed Beige Book at 11:00 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "LEN",
+          "type": "put",
+          "strike": "$70P",
+          "expiry": "2026-11-20",
+          "dte": 39,
+          "delta": "-0.23",
+          "ann": "20.1%",
+          "premium": "$150",
+          "collateral": "$7,000",
+          "risk": "conservative",
+          "note": "Homebuilder put strike sits 8.7% below spot."
+        },
+        {
+          "ticker": "XBI",
+          "type": "call",
+          "strike": "$160C",
+          "expiry": "2026-11-20",
+          "dte": 39,
+          "delta": "+0.39",
+          "ann": "25.0%",
+          "premium": "$410",
+          "collateral": "$15,377",
+          "risk": "conservative",
+          "note": "Broad biotech exposure spreads company-specific earnings risk."
+        },
+        {
+          "ticker": "AAPL",
+          "type": "call",
+          "strike": "$345C",
+          "expiry": "2026-10-30",
+          "dte": 18,
+          "delta": "+0.34",
+          "ann": "24.1%",
+          "premium": "$400",
+          "collateral": "$33,664",
+          "risk": "conservative",
+          "note": "The November 2 report comes after this contract expires."
+        },
+        {
+          "ticker": "GLW",
+          "type": "put",
+          "strike": "$145P",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "-0.20",
+          "ann": "43.6%",
+          "premium": "$191",
+          "collateral": "$14,500",
+          "risk": "balanced",
+          "note": "Strike is 7.5% below spot."
+        },
+        {
+          "ticker": "GOOG",
+          "type": "call",
+          "strike": "$355C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "45.3%",
+          "premium": "$475",
+          "collateral": "$34,786",
+          "risk": "balanced",
+          "note": "Open interest at this strike is 1,529 contracts."
+        },
+        {
+          "ticker": "SLV",
+          "type": "call",
+          "strike": "$56.5C",
+          "expiry": "2026-10-30",
+          "dte": 18,
+          "delta": "+0.37",
+          "ann": "38.7%",
+          "premium": "$105",
+          "collateral": "$5,478",
+          "risk": "balanced",
+          "note": "Lowest collateral among the Wednesday calls."
+        },
+        {
+          "ticker": "ORCL",
+          "type": "put",
+          "strike": "$135P",
+          "expiry": "2026-11-06",
+          "dte": 25,
+          "delta": "-0.34",
+          "ann": "56.0%",
+          "premium": "$518",
+          "collateral": "$13,500",
+          "risk": "aggressive",
+          "note": "This candidate has the largest premium in the slate."
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$145C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "81.9%",
+          "premium": "$348",
+          "collateral": "$14,086",
+          "risk": "aggressive",
+          "note": "Top annualized yield in the Wednesday batch."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "call",
+          "strike": "$215C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "71.0%",
+          "premium": "$448",
+          "collateral": "$20,905",
+          "risk": "aggressive",
+          "note": "Strike is 2.8% above spot."
+        },
+        {
+          "ticker": "CRM",
+          "type": "call",
+          "strike": "$235C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "60.5%",
+          "premium": "$418",
+          "collateral": "$22,913",
+          "risk": "aggressive",
+          "note": "The next scheduled report is December 2, beyond this expiry."
+        },
+        {
+          "ticker": "HPE",
+          "type": "call",
+          "strike": "$80C",
+          "expiry": "2026-11-20",
+          "dte": 39,
+          "delta": "+0.38",
+          "ann": "45.9%",
+          "premium": "$360",
+          "collateral": "$7,346",
+          "risk": "aggressive",
+          "note": "This candidate has the widest strike cushion in the batch."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Oct 15",
+      "rule": "The five consumer-linked setups open from 7:00 AM Pacific, after retail sales. Strong spending can lift shares and raise call assignment odds; weak data favors a smaller premium at the listed strikes.",
+      "event": "Producer prices and retail sales at 5:30 AM Pacific. Fed Chair remarks at 8:30 PM Pacific.",
+      "trades": [
+        {
+          "ticker": "WMT",
+          "type": "call",
+          "strike": "$115C",
+          "expiry": "2026-11-06",
+          "dte": 25,
+          "delta": "+0.32",
+          "ann": "17.8%",
+          "premium": "$136",
+          "collateral": "$11,135",
+          "risk": "conservative",
+          "note": "The November 19 report follows this contract's expiration."
+        },
+        {
+          "ticker": "PEP",
+          "type": "call",
+          "strike": "$130C",
+          "expiry": "2026-11-06",
+          "dte": 25,
+          "delta": "+0.31",
+          "ann": "16.7%",
+          "premium": "$144",
+          "collateral": "$12,597",
+          "risk": "conservative",
+          "note": "The recent report is past; no report falls within this contract."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "call",
+          "strike": "$270C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.32",
+          "ann": "35.7%",
+          "premium": "$283",
+          "collateral": "$26,243",
+          "risk": "balanced",
+          "note": "This candidate has the deepest options market in the batch."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$74C",
+          "expiry": "2026-10-30",
+          "dte": 18,
+          "delta": "+0.35",
+          "ann": "35.2%",
+          "premium": "$124",
+          "collateral": "$7,151",
+          "risk": "balanced",
+          "note": "Strike is 3.5% above spot."
+        },
+        {
+          "ticker": "LULU",
+          "type": "call",
+          "strike": "$100C",
+          "expiry": "2026-11-20",
+          "dte": 39,
+          "delta": "+0.38",
+          "ann": "31.4%",
+          "premium": "$318",
+          "collateral": "$9,450",
+          "risk": "balanced",
+          "note": "This candidate has the widest strike cushion in the batch."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Oct 16",
+      "rule": "The three chip setups open from 7:00 AM Pacific, after TSMC reports. Consider closing before noon Pacific to avoid the final hour of monthly expiration.",
+      "event": "Industrial production at 6:15 AM Pacific. Monthly options expire at 1:00 PM Pacific.",
+      "trades": [
+        {
+          "ticker": "NVDA",
+          "type": "put",
+          "strike": "$225P",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "47.2%",
+          "premium": "$320",
+          "collateral": "$22,500",
+          "risk": "balanced",
+          "note": "Open interest at this strike is 7,024 contracts."
+        },
+        {
+          "ticker": "INTC",
+          "type": "call",
+          "strike": "$109C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "87.9%",
+          "premium": "$278",
+          "collateral": "$10,470",
+          "risk": "aggressive",
+          "note": "Top annualized yield among all 19 candidates."
+        },
+        {
+          "ticker": "QCOM",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-10-23",
+          "dte": 11,
+          "delta": "+0.40",
+          "ann": "73.7%",
+          "premium": "$390",
+          "collateral": "$17,550",
+          "risk": "aggressive",
+          "note": "Strike is 2.6% above spot."
+        }
+      ]
+    }
+  ]
+}
