@@ -46,7 +46,7 @@ describe('serving the built front end', () => {
             const response = await request(app).get(url);
             expect(response.headers['x-frame-options']).toBeUndefined();
             expect(response.headers['content-security-policy']).toBe(
-                "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net https://jimbrownlaptop.tail8ad282.ts.net",
+                "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net",
             );
             expect(response.headers['x-content-type-options']).toBe('nosniff');
         },
