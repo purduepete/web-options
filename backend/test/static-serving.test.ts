@@ -40,6 +40,18 @@ describe('serving the built front end', () => {
         expect(response.text).toContain('Web Options');
     });
 
+    it.each(['/', '/calendars/2026-08-10', '/assets/app.js', '/api/nope', '/healthz'])(
+        'allows only itself and the HTTPS SiteDock origin to frame %s',
+        async (url) => {
+            const response = await request(app).get(url);
+            expect(response.headers['x-frame-options']).toBeUndefined();
+            expect(response.headers['content-security-policy']).toBe(
+                "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net",
+            );
+            expect(response.headers['x-content-type-options']).toBe('nosniff');
+        },
+    );
+
     it('serves a built asset', async () => {
         const response = await request(app).get('/assets/app.js');
         expect(response.status).toBe(200);

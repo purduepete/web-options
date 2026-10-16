@@ -11,7 +11,18 @@ export function createApp(config: AppConfig): Express {
     const app = express();
 
     app.disable('x-powered-by');
-    app.use(helmet({ contentSecurityPolicy: false }));
+    app.use(
+        helmet({
+            xFrameOptions: false,
+            contentSecurityPolicy: {
+                useDefaults: false,
+                directives: {
+                    defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
+                    frameAncestors: ["'self'", 'https://jimbrownlaptop.tail8ad282.ts.net'],
+                },
+            },
+        }),
+    );
     app.use(cors({ origin: true, allowedHeaders: ['X-API-Key', 'Content-Type'] }));
     // Only the caution list has a body, and it is a few hundred tickers at most.
     app.use(express.json({ limit: '32kb' }));
