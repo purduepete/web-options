@@ -19,6 +19,19 @@ The trading data is read-only. The one thing this app writes is its own caution
 list, and it writes it to its own schema. See
 [Security notes](#security-notes).
 
+## Embedding in SiteDock
+
+Web Options allows framing by itself and the exact SiteDock HTTPS origin,
+`https://jimbrownlaptop.tail8ad282.ts.net`. The backend sets
+`Content-Security-Policy: frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net`
+instead of `X-Frame-Options: SAMEORIGIN`. Other parent origins, including local
+HTTP SiteDock, remain blocked. This policy does not change API authentication,
+CORS, or database permissions. Standalone access continues to work.
+
+If SiteDock moves to another host, update the explicit allowlist in
+`backend/src/app.ts`, update its tests, build, and restart the deployed backend.
+Changing only the local checkout does not update the running home-server instance.
+
 ## Layout
 
 npm workspaces, no TypeScript project references.
