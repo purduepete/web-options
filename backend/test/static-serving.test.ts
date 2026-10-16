@@ -41,12 +41,12 @@ describe('serving the built front end', () => {
     });
 
     it.each(['/', '/calendars/2026-08-10', '/assets/app.js', '/api/nope', '/healthz'])(
-        'allows only itself and the HTTPS SiteDock origin to frame %s',
+        'allows only itself and the HTTPS SiteDock origins to frame %s',
         async (url) => {
             const response = await request(app).get(url);
             expect(response.headers['x-frame-options']).toBeUndefined();
             expect(response.headers['content-security-policy']).toBe(
-                "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net",
+                "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net https://jimbrownlaptop.tail8ad282.ts.net",
             );
             expect(response.headers['x-content-type-options']).toBe('nosniff');
         },

@@ -18,7 +18,7 @@ export function createApp(config: AppConfig): Express {
                 useDefaults: false,
                 directives: {
                     defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
-                    frameAncestors: ["'self'", 'https://jimbrownlaptop.tail8ad282.ts.net'],
+                    frameAncestors: ["'self'", 'https://jimbrownhome.tail8ad282.ts.net', 'https://jimbrownlaptop.tail8ad282.ts.net'],
                 },
             },
         }),
