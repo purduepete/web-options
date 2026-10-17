@@ -10,6 +10,8 @@ const webRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-web-'));
 fs.writeFileSync(path.join(webRoot, 'index.html'), '<!doctype html><title>Web Options</title>');
 fs.mkdirSync(path.join(webRoot, 'assets'));
 fs.writeFileSync(path.join(webRoot, 'assets', 'app.js'), 'console.log(1);');
+fs.writeFileSync(path.join(webRoot, 'favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+fs.writeFileSync(path.join(webRoot, 'apple-touch-icon.png'), 'png');
 
 afterAll(() => {
     fs.rmSync(webRoot, { recursive: true, force: true });
@@ -56,6 +58,19 @@ describe('serving the built front end', () => {
         const response = await request(app).get('/assets/app.js');
         expect(response.status).toBe(200);
         expect(response.text).toContain('console.log');
+        expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
+    });
+
+    it.each(['/favicon.svg', '/apple-touch-icon.png'])('lets SiteDock load and cache %s from another origin', async (url) => {
+        const response = await request(app).get(url);
+        expect(response.status).toBe(200);
+        expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
+        expect(response.headers['cache-control']).toBe('public, max-age=86400');
+    });
+
+    it.each(['/', '/api/nope', '/favicon.ico', '/favicon.svg/child', '/apple-touch-icon.png/child'])('keeps %s same-origin', async (url) => {
+        const response = await request(app).get(url);
+        expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
     });
 
     it('answers a client-side deep link with the app shell', async () => {
@@ -75,6 +90,18 @@ describe('serving the built front end', () => {
     it('leaves the probes alone', async () => {
         const response = await request(app).get('/healthz');
         expect(response.body).toEqual({ status: 'ok' });
+    });
+});
+
+describe('a web root without icons', () => {
+    const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-bare-'));
+    fs.writeFileSync(path.join(bare, 'index.html'), '<!doctype html><title>Web Options</title>');
+    afterAll(() => fs.rmSync(bare, { recursive: true, force: true }));
+
+    it('answers a missing icon with the same-origin app shell', async () => {
+        const response = await request(createApp({ ...base, webRoot: bare })).get('/favicon.svg');
+        expect(response.headers['content-type']).toContain('text/html');
+        expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
     });
 });
 

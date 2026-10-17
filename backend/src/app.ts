@@ -56,7 +56,20 @@ export function createApp(config: AppConfig): Express {
 
     if (config.webRoot) {
         const webRoot = config.webRoot;
-        app.use(express.static(webRoot, { index: false }));
+        // SiteDock runs on another origin and shows these as the site's icon, so the two
+        // root-level icon files opt out of helmet's same-origin resource policy. Nothing else does.
+        const icons = new Set(['favicon.svg', 'apple-touch-icon.png'].map((name) => path.join(webRoot, name)));
+        app.use(
+            express.static(webRoot, {
+                index: false,
+                setHeaders: (res, file) => {
+                    if (icons.has(path.resolve(file))) {
+                        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+                        res.setHeader('Cache-Control', 'public, max-age=86400');
+                    }
+                },
+            }),
+        );
         // Deep links like /calendars/2026-08-10 are client-side routes, so no file
         // matches them and the app shell has to answer instead of a 404.
         app.use((req, res, next) => {
