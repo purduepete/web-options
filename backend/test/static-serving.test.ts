@@ -1,12 +1,13 @@
 import { describe, expect, it, afterAll } from 'vitest';
 import request from 'supertest';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { createApp } from '../src/app';
 import { loadConfig, type AppConfig } from '../src/config';
 
-const webRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-web-'));
+const scratch = path.resolve('data');
+fs.mkdirSync(scratch, { recursive: true });
+const webRoot = fs.mkdtempSync(path.join(scratch, 'weboptions-web-'));
 fs.writeFileSync(path.join(webRoot, 'index.html'), '<!doctype html><title>Web Options</title>');
 fs.mkdirSync(path.join(webRoot, 'assets'));
 fs.writeFileSync(path.join(webRoot, 'assets', 'app.js'), 'console.log(1);');
@@ -48,7 +49,7 @@ describe('serving the built front end', () => {
             const response = await request(app).get(url);
             expect(response.headers['x-frame-options']).toBeUndefined();
             expect(response.headers['content-security-policy']).toBe(
-                "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com",
+                "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
             );
             expect(response.headers['x-content-type-options']).toBe('nosniff');
         },
@@ -94,7 +95,7 @@ describe('serving the built front end', () => {
 });
 
 describe('a web root without icons', () => {
-    const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-bare-'));
+    const bare = fs.mkdtempSync(path.join(scratch, 'weboptions-bare-'));
     fs.writeFileSync(path.join(bare, 'index.html'), '<!doctype html><title>Web Options</title>');
     afterAll(() => fs.rmSync(bare, { recursive: true, force: true }));
 
@@ -124,7 +125,7 @@ describe('resolving the web root', () => {
     });
 
     it('refuses a directory with no index.html, rather than serving nothing', () => {
-        const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-empty-'));
+        const empty = fs.mkdtempSync(path.join(scratch, 'weboptions-empty-'));
         try {
             expect(() => loadConfig({ ...env, WEBOPTIONS_WEB_ROOT: empty })).toThrow(/no index\.html/);
         } finally {
@@ -141,7 +142,7 @@ describe('resolving the web root', () => {
 
 describe('resolving WebPortfolio integration settings', () => {
     it('reads the URL and service key from .secrets files', () => {
-        const secrets = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-secrets-'));
+        const secrets = fs.mkdtempSync(path.join(scratch, 'weboptions-secrets-'));
         try {
             fs.writeFileSync(path.join(secrets, 'webportfolio_api_url'), 'https://portfolio.example.test\n');
             fs.writeFileSync(path.join(secrets, 'webportfolio_service.key'), 'service-key\n');
@@ -156,7 +157,7 @@ describe('resolving WebPortfolio integration settings', () => {
     });
 
     it('lets env vars override .secrets files for one-off runs', () => {
-        const secrets = fs.mkdtempSync(path.join(os.tmpdir(), 'weboptions-secrets-'));
+        const secrets = fs.mkdtempSync(path.join(scratch, 'weboptions-secrets-'));
         try {
             fs.writeFileSync(path.join(secrets, 'webportfolio_api_url'), 'https://from-file.example.test\n');
             fs.writeFileSync(path.join(secrets, 'webportfolio_service.key'), 'file-key\n');

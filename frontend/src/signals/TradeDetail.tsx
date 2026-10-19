@@ -131,7 +131,7 @@ function barchartUrl(trade: Trade): string | null {
     return `https://www.barchart.com/options/price-history?${params.toString()}`;
 }
 
-const WEB_PORTFOLIO_TRADE_URL = 'https://jimbrownhome.tail8ad282.ts.net/trading/option-trade';
+const WEB_PORTFOLIO_TRADE_URL = 'https://web-portfolio.jimlertech.com/trading/option-trade';
 
 function webPortfolioTradeUrl(trade: Trade, numberSource: NumberSource): string {
     const premium = numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium;

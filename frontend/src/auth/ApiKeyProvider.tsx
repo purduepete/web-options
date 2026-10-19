@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { MeResponse } from '@weboptions/shared';
 import { fetchMe, UnauthorizedError } from '../api';
 import { clearKey, isRemembered, readKey, saveKey } from './keyStore';
+import { isAccessMode } from './mode';
 
 /** Roughly three seconds of patience, which covers an API restarting underneath us. */
 const VERIFY_ATTEMPTS = 5;
@@ -21,11 +22,18 @@ interface ApiKeyState {
 const ApiKeyContext = createContext<ApiKeyState | null>(null);
 
 export function ApiKeyProvider({ children }: { children: ReactNode }) {
-    const [status, setStatus] = useState<Status>(() => (readKey() ? 'unlocked' : 'locked'));
+    const [status, setStatus] = useState<Status>(() => (isAccessMode() || readKey() ? 'unlocked' : 'locked'));
     const [identity, setIdentity] = useState<MeResponse | null>(null);
-    const [remembered, setRemembered] = useState(isRemembered);
+    const [remembered, setRemembered] = useState(() => !isAccessMode() && isRemembered());
 
     useEffect(() => {
+        if (isAccessMode()) {
+            let cancelled = false;
+            void fetchMe().then((me) => {
+                if (!cancelled) setIdentity(me);
+            }).catch(() => {});
+            return () => { cancelled = true; };
+        }
         const stored = readKey();
         if (!stored) return;
         let cancelled = false;
@@ -64,6 +72,7 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const submit = useCallback(async (key: string, remember: boolean) => {
+        if (isAccessMode()) return;
         const me = await fetchMe(key);
         saveKey(key, remember);
         setRemembered(remember);
@@ -74,6 +83,7 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
     const forget = useCallback(() => {
         clearKey();
         setRemembered(false);
+        if (isAccessMode()) return;
         setIdentity(null);
         setStatus('locked');
     }, []);

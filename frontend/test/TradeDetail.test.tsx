@@ -382,7 +382,7 @@ describe('TradeDetail', () => {
             const link = screen.getByRole<HTMLAnchorElement>('link', { name: 'Trade in Web Portfolio' });
             const url = new URL(link.href);
 
-            expect(url.origin).toBe('https://jimbrownhome.tail8ad282.ts.net');
+            expect(url.origin).toBe('https://web-portfolio.jimlertech.com');
             expect(url.pathname).toBe('/trading/option-trade');
             expect(url.searchParams.get('action')).toBe('sell_to_open');
             expect(url.searchParams.get('symbol')).toBe('VST');

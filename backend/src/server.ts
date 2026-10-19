@@ -15,10 +15,9 @@ function lanAddress(): string {
 const config = loadConfig();
 const app = createApp(config);
 
-// Binds every interface so the Vite dev proxy on 127.0.0.1 and the phone on the
-// LAN both reach it; the LAN address below is only for the printed hint.
 const server = app.listen(config.port, config.host, () => {
-    console.log(`weboptions api listening on http://${lanAddress()}:${config.port}`);
+    const address = config.host === '0.0.0.0' ? lanAddress() : config.host;
+    console.log(`weboptions api listening on http://${address.includes(':') ? `[${address}]` : address}:${config.port}`);
     console.log(`timezone ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
 });
 

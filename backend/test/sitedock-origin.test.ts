@@ -20,7 +20,7 @@ describe('SiteDock frame allowlist', () => {
         const response = await request(app).get(path);
         expect(response.headers['x-frame-options']).toBeUndefined();
         expect(response.headers['content-security-policy']).toBe(
-            "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com",
+            "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
         );
     });
 });

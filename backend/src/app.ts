@@ -3,12 +3,15 @@ import path from 'node:path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import type { AppConfig } from './config';
+import { validateAccessConfig, type AppConfig } from './config';
 import { classifyDbError, pingDatabase } from './db';
 import { createApiRouter } from './routes/api';
 
 export function createApp(config: AppConfig): Express {
+    validateAccessConfig(config);
     const app = express();
+    const accessMode = config.auth?.mode === 'access';
+    const allowedOrigins = config.auth?.allowedOrigins ?? [];
 
     app.disable('x-powered-by');
     app.use(
@@ -18,12 +21,23 @@ export function createApp(config: AppConfig): Express {
                 useDefaults: false,
                 directives: {
                     defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
-                    frameAncestors: ["'self'", 'https://jimbrownhome.tail8ad282.ts.net:9443', 'https://jimbrownlaptop.tail8ad282.ts.net', 'https://site-dock.jimlertech.com'],
+                    frameAncestors: ["'self'", 'https://jimbrownhome.tail8ad282.ts.net:9443', 'https://jimbrownlaptop.tail8ad282.ts.net', 'https://site-dock.jimlertech.com', 'https://jimbrownhome1.tail8ad282.ts.net:8790'],
                 },
             },
         }),
     );
-    app.use(cors({ origin: true, allowedHeaders: ['X-API-Key', 'Content-Type'] }));
+    app.use((req, res, next) => {
+        if (accessMode && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+            !allowedOrigins.includes(req.get('origin') ?? '')) {
+            res.status(403).json({ error: 'allowed origin required' });
+            return;
+        }
+        next();
+    });
+    app.use(cors({
+        origin: accessMode ? allowedOrigins : true,
+        allowedHeaders: ['X-API-Key', 'Content-Type'],
+    }));
     // Only the caution list has a body, and it is a few hundred tickers at most.
     app.use(express.json({ limit: '32kb' }));
     if (config.nodeEnv !== 'test') {

@@ -35,7 +35,7 @@ $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $PSScriptRoot
 $RunDir = Join-Path $Root '.run'
-$OperatorConfig = 'C:\Files\Dev\main\webportfolio\config\config.ini'
+$OperatorConfig = Join-Path (Split-Path -Parent $Root) 'web-portfolio\config\config.ini'
 
 $Services = [ordered]@{
     api = @{

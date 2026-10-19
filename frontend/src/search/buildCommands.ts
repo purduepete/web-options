@@ -1,6 +1,7 @@
 import { THEME_PREFERENCES, type ThemePreference } from '@weboptions/shared';
 import { navigableItems, type NavItem } from '../navigation/navModel';
 import type { Command } from './commandModel';
+import { isAccessMode } from '../auth/mode';
 
 /** Favorites beat recents, recents beat everything else, at equal match quality. */
 const FAVORITE_BOOST = 40;
@@ -68,7 +69,7 @@ export function buildCommands({
         });
     }
 
-    commands.push({
+    if (!isAccessMode()) commands.push({
         id: 'action:forget-key',
         label: 'Forget the API key on this browser',
         hint: 'Locks the app and asks for the key again',

@@ -3,7 +3,7 @@
 ## Upstream repo: webportfolio
 
 The signal data this app renders is produced by a separate app, **webportfolio**,
-checked out at `C:\Files\Dev\main\webportfolio`. That repo owns the ingest jobs,
+checked out at `C:\Files\Dev\main\web-portfolio`. That repo owns the ingest jobs,
 the Azure SQL database, and every `opt.telegram_*` table. WebOptions is a reader.
 
 It is the upstream for style and behaviour as well. Where a screen, a URL shape, a
@@ -44,7 +44,7 @@ the details that matter.
 
 ### Parity sources
 
-Paths are relative to `C:\Files\Dev\main\webportfolio`.
+Paths are relative to `C:\Files\Dev\main\web-portfolio`.
 
 - `frontend/src/utils/optionResearchLinks.ts` owns the research link set and the
   `#trade_*` context hash the Tampermonkey overlays read, including the key order

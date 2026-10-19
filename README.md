@@ -1,7 +1,7 @@
 # weboptions
 
 Personal, single-user dashboards for options-trading data. React front end, Express
-API, Azure SQL. It runs on the home LAN only and has no cloud hosting.
+API, Azure SQL. Deployment can use Cloudflare Access and a private Tailscale fallback.
 
 Three things to look at:
 
@@ -24,10 +24,11 @@ list, and it writes it to its own schema. See
 Web Options allows framing by itself and the exact SiteDock HTTPS origins:
 `https://jimbrownhome.tail8ad282.ts.net:9443`,
 `https://jimbrownlaptop.tail8ad282.ts.net` (kept until the laptop instance is retired),
-and `https://site-dock.jimlertech.com` (SolutionDeploy).
+`https://site-dock.jimlertech.com` (SolutionDeploy), and
+`https://jimbrownhome1.tail8ad282.ts.net:8790`.
 The port is part of the origin, so it must match exactly.
 The backend sets
-`Content-Security-Policy: frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com`
+`Content-Security-Policy: frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790`
 instead of `X-Frame-Options: SAMEORIGIN`. Other parent origins, including local
 HTTP SiteDock, remain blocked. This policy does not change API authentication,
 CORS, or database permissions. Standalone access continues to work.
@@ -103,6 +104,65 @@ Remove-Item Env:DB_SERVER,Env:DB_NAME,Env:DB_USER,Env:DB_PASSWORD -ErrorAction S
 ```
 
 ## Running it for real
+
+### Protected deployment settings
+
+API-key authentication remains the default. Set `WEBOPTIONS_AUTH_MODE=access`
+on the backend and build the frontend with `VITE_AUTH_MODE=access` only for the
+approved host deployment. Access mode skips `opt.api_key` lookups and reports
+`{"authMode":"access","label":"Deployment platform access"}` from `/api/me`.
+It does not claim a database user or an authenticated person's identity.
+The browser sends no API key in this mode. The outbound Portfolio service key
+is still required and remains server-side.
+
+Access mode requires a literal loopback bind and an explicit comma-separated list
+of exact HTTPS origins. Every mutating request requires an allowed `Origin`,
+including non-browser callers. Missing, `null`, wildcard and lookalike origins are
+rejected before routing. CORS permits only that list. Embedding permission is a
+separate allowlist and doesn't grant API write access.
+
+The parent deployment must verify Cloudflare Access on
+`https://web-options.jimlertech.com`, including intended API policy exceptions,
+and Tailscale access controls on
+`https://jimbrownhome1.tail8ad282.ts.net:8797`. Both proxies must point to
+`http://127.0.0.1:18797`; never expose the origin publicly. Access mode trusts these
+external boundaries and does not validate Cloudflare JWTs or identity headers.
+Trade links use `https://web-portfolio.jimlertech.com`.
+
+Build with `$env:VITE_AUTH_MODE='access'; npm run build`, then clear the variable.
+Keep protected settings JSON outside the repo and release, readable only by
+administrators and `NT AUTHORITY\LOCAL SERVICE`:
+
+```json
+{
+  "Environment": {
+    "DB_SERVER": "sqlgkhw25ijhyzzy.database.windows.net",
+    "DB_NAME": "webportfolio",
+    "DB_USER": "weboptions_ro",
+    "DB_PASSWORD": "<existing password>",
+    "WEBOPTIONS_AUTH_MODE": "access",
+    "WEBOPTIONS_ALLOWED_ORIGINS": "https://web-options.jimlertech.com,https://jimbrownhome1.tail8ad282.ts.net:8797",
+    "WEBPORTFOLIO_API_URL": "<existing Portfolio API URL>",
+    "WEBPORTFOLIO_SERVICE_KEY": "<existing outbound service key>"
+  }
+}
+```
+
+`scripts\Start-Deployment.ps1 -ReleasePath <release> -SettingsPath <protected-json>
+-NodePath "C:\Program Files\nodejs\node.exe"` runs the built
+`backend\dist\server.js` in the foreground and serves `frontend\dist`. It pins
+loopback port 18797 and Pacific time, restores its process environment on exit,
+and makes no SQL, credential, user or schema changes. The settings dictionary
+accepts only the keys above. Use a machine-wide Node install.
+
+The parent creates the boot-triggered task as `NT AUTHORITY\LOCAL SERVICE` with
+`pwsh.exe -NoProfile -NonInteractive -File <release>\scripts\Start-Deployment.ps1`
+and the arguments above. Grant that account read/execute on the release and Node,
+read on the protected JSON, and configure restart on failure. This launcher
+creates no scheduled task, proxy, route or database objects. Verify `/healthz`,
+`/readyz`, both external access paths and SiteDock embedding during deployment.
+
+### Existing local deployment
 
 In development, Vite serves the app and proxies `/api`. In production there is no
 Vite, so the API serves the built front end itself. One process, one port.

@@ -17,6 +17,7 @@ import type {
     WeekSignalsResponse,
 } from '@weboptions/shared';
 import { readKey } from './auth/keyStore';
+import { isAccessMode } from './auth/mode';
 
 /** Thrown when the server has no calendar for a date, so the page can say so. */
 export class NotFoundError extends Error {
@@ -71,7 +72,7 @@ export function describeFailure(error: unknown): string {
 }
 
 async function send<T>(path: string, init: RequestInit, key?: string): Promise<T> {
-    const apiKey = key ?? readKey();
+    const apiKey = isAccessMode() ? null : key ?? readKey();
     const headers: Record<string, string> = { Accept: 'application/json', ...(init.headers as Record<string, string>) };
     if (apiKey) headers['X-API-Key'] = apiKey;
 
@@ -114,7 +115,7 @@ function getJson<T>(path: string, key?: string): Promise<T> {
 }
 
 /** Takes the key explicitly so a candidate can be checked before it is stored. */
-export function fetchMe(key: string): Promise<MeResponse> {
+export function fetchMe(key?: string): Promise<MeResponse> {
     return getJson<MeResponse>('/api/me', key);
 }
 

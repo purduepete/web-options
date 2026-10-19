@@ -10,6 +10,7 @@ export interface DbConfig {
 }
 
 export interface AppConfig {
+    auth?: { mode: 'api-key' | 'access'; allowedOrigins: string[] };
     db: DbConfig;
     webportfolio: {
         apiUrl: string | null;
@@ -74,6 +75,14 @@ function resolveWebRoot(value: string | undefined): string | null {
  * dev-laptop convenience only, and is never how the deployed service is configured.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+    const mode = env.WEBOPTIONS_AUTH_MODE ?? 'api-key';
+    if (mode !== 'api-key' && mode !== 'access') {
+        throw new Error('WEBOPTIONS_AUTH_MODE must be api-key or access');
+    }
+    const auth: NonNullable<AppConfig['auth']> = {
+        mode,
+        allowedOrigins: (env.WEBOPTIONS_ALLOWED_ORIGINS ?? '').split(',').map((origin) => origin.trim()).filter(Boolean),
+    };
     const iniPath = env.WEBPORTFOLIO_CONFIG_PATH;
     const fallback = iniPath ? readIniFallback(path.resolve(iniPath)) : {};
     const secretsDir = env.WEBOPTIONS_SECRETS_DIR ? path.resolve(env.WEBOPTIONS_SECRETS_DIR) : DEFAULT_SECRETS_DIR;
@@ -94,15 +103,36 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         );
     }
 
-    return {
+    const config: AppConfig = {
+        auth,
         db: db as DbConfig,
         webportfolio: {
             apiUrl: clean(env.WEBPORTFOLIO_API_URL) ?? readSecretFile('webportfolio_api_url', secretsDir),
             serviceKey: clean(env.WEBPORTFOLIO_SERVICE_KEY) ?? readSecretFile('webportfolio_service.key', secretsDir),
         },
         port: Number(env.PORT ?? 5057),
-        host: env.HOST ?? '0.0.0.0',
+        host: env.HOST ?? (mode === 'access' ? '127.0.0.1' : '0.0.0.0'),
         nodeEnv: env.NODE_ENV ?? 'development',
         webRoot: resolveWebRoot(env.WEBOPTIONS_WEB_ROOT),
     };
+    validateAccessConfig(config);
+    return config;
+}
+
+export function validateAccessConfig(config: AppConfig): void {
+    if (config.auth?.mode !== 'access') return;
+    // Literal addresses avoid DNS resolving a loopback-looking name elsewhere.
+    if (!['127.0.0.1', '::1'].includes(config.host)) {
+        throw new Error('Access mode requires a literal loopback HOST (127.0.0.1 or ::1)');
+    }
+    if (!config.auth.allowedOrigins.length || config.auth.allowedOrigins.some((origin) => {
+        try {
+            const url = new URL(origin);
+            return url.protocol !== 'https:' || url.origin !== origin;
+        } catch {
+            return true;
+        }
+    })) {
+        throw new Error('Access mode requires exact HTTPS WEBOPTIONS_ALLOWED_ORIGINS without paths or trailing slashes');
+    }
 }

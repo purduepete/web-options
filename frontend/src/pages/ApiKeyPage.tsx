@@ -1,8 +1,18 @@
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { KeyIcon } from '../components/icons';
+import { isAccessMode } from '../auth/mode';
 
 export function ApiKeyPage() {
     const { identity, forget } = useApiKey();
+    if (isAccessMode()) {
+        return (
+            <main>
+                <h1>Platform access</h1>
+                <p>Public access uses Cloudflare Access. Private access uses Tailscale access controls.</p>
+                <p>This deployment doesn't require a browser API key.</p>
+            </main>
+        );
+    }
 
     return (
         <main>

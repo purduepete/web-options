@@ -74,9 +74,8 @@ async function liveUnderlyings(positions: OwnedOptionPosition[]): Promise<Record
 export function createApiRouter(config: AppConfig): Router {
     const router = Router();
 
-    // Everything below needs a key. The unauthenticated liveness probe is /healthz,
-    // which lives outside this router precisely so it can stay open.
-    router.use(requireApiKey(config));
+    // Access mode trusts the external Cloudflare Access / Tailscale boundary.
+    if (config.auth?.mode !== 'access') router.use(requireApiKey(config));
 
     router.get('/health', (_req, res) => {
         const body: HealthResponse = { status: 'ok' };
@@ -84,6 +83,11 @@ export function createApiRouter(config: AppConfig): Router {
     });
 
     router.get('/me', (req, res) => {
+        if (config.auth?.mode === 'access') {
+            const body: MeResponse = { authMode: 'access', label: 'Deployment platform access' };
+            res.json(body);
+            return;
+        }
         const key = req.apiKey!;
         const body: MeResponse = {
             label: key.label,
