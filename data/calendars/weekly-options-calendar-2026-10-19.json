@@ -1,0 +1,270 @@
+{
+  "publishDate": "2026-10-19",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 19.99",
+      "text": "The VIX rose from 14.84 last week. The S&P 500 fell 1.95% to 7,659, just below its 50-day average. Higher premiums accompany wider daily price swings."
+    },
+    {
+      "label": "10-year Treasury yield: 5.10%",
+      "text": "Chip, software and AI shares remain sensitive to rates. Thursday's jobless claims and Friday's business surveys can change yields before new positions open."
+    },
+    {
+      "label": "Wednesday earnings",
+      "text": "META, TSLA, IBM, TXN and LRCX report after Wednesday's close. Most setups wait until Thursday so their strikes can be assessed against the post-report prices."
+    },
+    {
+      "label": "Dates beyond this week",
+      "text": "Contracts carry the Oct 28 Fed decision at 11:00 AM Pacific, Microsoft and expected Alphabet earnings that evening, plus Oct 29 GDP, inflation and Intel earnings. Longer expiries also span Nov 3 elections, Nov 6 jobs, Nov 10 CPI, Nov 13 PPI and, for Nov 20 contracts, Nov 17 retail sales and Nov 18 Nvidia earnings. The source suggests a GTC buyback at 50% of entry credit and sizing for assignment."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Oct 19",
+      "rule": "SLV and JPM open from 7:00 AM Pacific. SLV has no company earnings; JPM already reported. If silver or bank shares fall sharply at the open, let the first hour settle. These positions still carry Thursday's claims and Friday's survey risk.",
+      "event": "NAHB homebuilder confidence at 7:00 AM Pacific. FITB, STLD, CLF and WRB earnings do not directly affect this slate.",
+      "trades": [
+        {
+          "ticker": "JPM",
+          "type": "call",
+          "strike": "$350C",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "+0.35",
+          "ann": "17.1%",
+          "premium": "$510",
+          "collateral": "$33,972",
+          "risk": "conservative",
+          "note": "JPM reported last week. Covered call requires shares available for sale at $350."
+        },
+        {
+          "ticker": "SLV",
+          "type": "put",
+          "strike": "$50P",
+          "expiry": "2026-11-06",
+          "dte": 18,
+          "delta": "-0.34",
+          "ann": "43.4%",
+          "premium": "$107",
+          "collateral": "$5,000",
+          "risk": "balanced",
+          "note": "Silver ETF has no company earnings date. A sharp decline brings the put strike closer to spot."
+        }
+      ]
+    },
+    {
+      "name": "Tuesday",
+      "date": "Oct 20",
+      "rule": "No new setups scheduled from this slate. Keep the chip, AI and software positions for Thursday. DAL waits until Friday after the week's airline reports.",
+      "event": "Housing starts and permits at 5:30 AM Pacific; pending home sales at 7:00 AM Pacific. NFLX, COF, UAL, ALK, GM, GE, RTX and ISRG report; UAL and ALK can affect DAL.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Oct 21",
+      "rule": "No new setups scheduled. Wait for the evening chip and AI reports before the Thursday batch. UNH also waits for ELV's morning report; DAL remains on hold through Thursday's AAL report.",
+      "event": "Crude inventories at 7:30 AM Pacific; 20-year Treasury auction at 10:00 AM Pacific. ELV reports in the morning. META, TSLA, IBM, TXN and LRCX report after the close; SAP and LUV also report today.",
+      "trades": []
+    },
+    {
+      "name": "Thursday",
+      "date": "Oct 22",
+      "rule": "The 6 puts and 6 covered calls open from 7:00 AM Pacific, after Wednesday's earnings and the morning claims release. Puts must wait for this window. Use post-gap prices and allow more time after a sharp fall. For NVDA, the source suggests waiting for 3-5 steady sessions before selling a call. Friday's surveys remain ahead; NTAP and DAL wait until Friday.",
+      "event": "Initial jobless claims at 5:30 AM Pacific; leading economic index at 7:00 AM Pacific. AAL reports in the morning and WDC after the close, affecting DAL and NTAP respectively. PG, LMT, HON and BX also report.",
+      "trades": [
+        {
+          "ticker": "UNH",
+          "type": "call",
+          "strike": "$420C",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "+0.34",
+          "ann": "23.4%",
+          "premium": "$823",
+          "collateral": "$40,145",
+          "risk": "conservative",
+          "note": "Wait for Wednesday morning's ELV results before assessing this covered call."
+        },
+        {
+          "ticker": "PLTR",
+          "type": "put",
+          "strike": "$180P",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "83.4%",
+          "premium": "$453",
+          "collateral": "$18,000",
+          "risk": "aggressive",
+          "note": "Expires before the expected Nov 2 earnings report."
+        },
+        {
+          "ticker": "ANET",
+          "type": "put",
+          "strike": "$170P",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "-0.32",
+          "ann": "76.6%",
+          "premium": "$393",
+          "collateral": "$17,000",
+          "risk": "aggressive",
+          "note": "Source spot cushion is 3.9%. Contract expires before company earnings."
+        },
+        {
+          "ticker": "QCOM",
+          "type": "put",
+          "strike": "$165P",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "-0.31",
+          "ann": "67.4%",
+          "premium": "$335",
+          "collateral": "$16,500",
+          "risk": "aggressive",
+          "note": "Source spot cushion is 4.1%. Contract expires before company earnings."
+        },
+        {
+          "ticker": "AVGO",
+          "type": "put",
+          "strike": "$320P",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "65.3%",
+          "premium": "$630",
+          "collateral": "$32,000",
+          "risk": "aggressive",
+          "note": "Assignment commits $32,000 to 100 shares at $320."
+        },
+        {
+          "ticker": "OKTA",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "-0.32",
+          "ann": "53.8%",
+          "premium": "$825",
+          "collateral": "$17,500",
+          "risk": "aggressive",
+          "note": "November expiry carries the later macro dates listed above."
+        },
+        {
+          "ticker": "MRVL",
+          "type": "put",
+          "strike": "$210P",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "-0.30",
+          "ann": "52.8%",
+          "premium": "$973",
+          "collateral": "$21,000",
+          "risk": "aggressive",
+          "note": "Reassess the $210 assignment price after Wednesday's chip reports."
+        },
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$135C",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "103.5%",
+          "premium": "$400",
+          "collateral": "$12,823",
+          "risk": "aggressive",
+          "note": "Assess the covered-call strike against Thursday's post-report share price."
+        },
+        {
+          "ticker": "HPE",
+          "type": "call",
+          "strike": "$60C",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "+0.39",
+          "ann": "58.0%",
+          "premium": "$281",
+          "collateral": "$5,513",
+          "risk": "aggressive",
+          "note": "Source strike is 8.8% above spot."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "call",
+          "strike": "$220C",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "56.9%",
+          "premium": "$368",
+          "collateral": "$21,413",
+          "risk": "aggressive",
+          "note": "Source suggests 3-5 steady sessions before entry. Strike is 2.7% above source spot; expiry precedes Nvidia earnings."
+        },
+        {
+          "ticker": "UBER",
+          "type": "call",
+          "strike": "$72C",
+          "expiry": "2026-10-30",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "52.4%",
+          "premium": "$111",
+          "collateral": "$7,035",
+          "risk": "aggressive",
+          "note": "Expiry precedes Uber earnings. Shares must be available for delivery at $72."
+        },
+        {
+          "ticker": "CRWD",
+          "type": "call",
+          "strike": "$245C",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "+0.37",
+          "ann": "44.1%",
+          "premium": "$880",
+          "collateral": "$22,739",
+          "risk": "aggressive",
+          "note": "A rebound brings the call strike closer to spot and reduces room before assignment."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Oct 23",
+      "rule": "NTAP and DAL open from 7:00 AM Pacific, after WDC, AAL and the business surveys. The consumer sentiment revision arrives at the window's start. Higher-than-expected surveys can raise yields and move put strikes closer to spot. DAL also carries oil-price risk.",
+      "event": "Flash manufacturing and services PMIs at 6:45 AM Pacific; final October consumer sentiment at 7:00 AM Pacific. AXP, BAH and FCNCA earnings have no direct slate exposure.",
+      "trades": [
+        {
+          "ticker": "DAL",
+          "type": "put",
+          "strike": "$70P",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "-0.24",
+          "ann": "22.5%",
+          "premium": "$138",
+          "collateral": "$7,000",
+          "risk": "conservative",
+          "note": "Source spot cushion is 7.1%. Wait for AAL; source oil close was $101.41. Half-credit buyback is $0.69 per share."
+        },
+        {
+          "ticker": "NTAP",
+          "type": "put",
+          "strike": "$190P",
+          "expiry": "2026-11-20",
+          "dte": 32,
+          "delta": "-0.29",
+          "ann": "38.4%",
+          "premium": "$640",
+          "collateral": "$19,000",
+          "risk": "balanced",
+          "note": "Wait for Thursday evening's WDC report. Source spot cushion is 6.8%; expiry precedes NetApp earnings."
+        }
+      ]
+    }
+  ]
+}
