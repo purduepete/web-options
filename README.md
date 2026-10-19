@@ -22,13 +22,12 @@ list, and it writes it to its own schema. See
 ## Embedding in SiteDock
 
 Web Options allows framing by itself and the exact SiteDock HTTPS origins:
-`https://jimbrownhome.tail8ad282.ts.net:9443`,
 `https://jimbrownlaptop.tail8ad282.ts.net` (kept until the laptop instance is retired),
 `https://site-dock.jimlertech.com` (SolutionDeploy), and
 `https://jimbrownhome1.tail8ad282.ts.net:8790`.
 The port is part of the origin, so it must match exactly.
 The backend sets
-`Content-Security-Policy: frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790`
+`Content-Security-Policy: frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790`
 instead of `X-Frame-Options: SAMEORIGIN`. Other parent origins, including local
 HTTP SiteDock, remain blocked. This policy does not change API authentication,
 CORS, or database permissions. Standalone access continues to work.
