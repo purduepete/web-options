@@ -16,11 +16,11 @@ const app = createApp({
 } satisfies AppConfig);
 
 describe('SiteDock frame allowlist', () => {
-    it.each(['/healthz', '/api/nope'])('keeps exact old and new origins on %s', async (path) => {
+    it.each(['/healthz', '/api/nope'])('keeps current SiteDock origins on %s', async (path) => {
         const response = await request(app).get(path);
         expect(response.headers['x-frame-options']).toBeUndefined();
         expect(response.headers['content-security-policy']).toBe(
-            "frame-ancestors 'self' https://jimbrownhome.tail8ad282.ts.net:9443 https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
+            "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
         );
     });
 });
