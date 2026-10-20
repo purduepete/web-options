@@ -41,7 +41,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             if (result.changed) setIds(result.list);
             return result.changed;
         },
-        [ids],
+        [ids]
     );
 
     const reorderFavorites = useCallback((startIndex: number, endIndex: number) => {

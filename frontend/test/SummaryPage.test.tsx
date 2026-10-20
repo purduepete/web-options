@@ -53,7 +53,7 @@ function cells(overrides: Partial<Record<SummaryColumn, SummaryCell>> = {}): Rec
 function row(
     weekStart: string,
     weekEnd: string,
-    overrides: Partial<Record<SummaryColumn, SummaryCell>> = {},
+    overrides: Partial<Record<SummaryColumn, SummaryCell>> = {}
 ): WeekSummaryRow {
     return { weekStart, weekEnd, cells: cells(overrides) };
 }
@@ -119,7 +119,7 @@ function renderPage(entry = '/summary') {
     const rendered = render(
         <MemoryRouter initialEntries={[entry]}>
             <SummaryPage />
-        </MemoryRouter>,
+        </MemoryRouter>
     );
     openFilters();
     return rendered;
@@ -405,7 +405,7 @@ describe('SummaryPage', () => {
             expect(fetchSignalSummary).toHaveBeenLastCalledWith('2026-08', {
                 ...DEFAULT_FILTERS,
                 expiry: 'expired',
-            }),
+            })
         );
     });
 
@@ -428,7 +428,7 @@ describe('SummaryPage', () => {
                 symbols: ['AMD'],
                 moneyness: 'itm',
                 half: 'yes',
-            }),
+            })
         );
         expect(screen.queryByRole('button', { name: 'Remove Expiry: expired filter' })).toBeNull();
         expect(screen.getByRole('button', { name: 'Remove Symbols: AMD filter' })).toBeTruthy();
@@ -473,12 +473,12 @@ describe('SummaryPage', () => {
 
         await user.keyboard('j');
         await waitFor(() =>
-            expect(screen.getByRole('button', { name: /August 2026/ }).getAttribute('aria-expanded')).toBe('false'),
+            expect(screen.getByRole('button', { name: /August 2026/ }).getAttribute('aria-expanded')).toBe('false')
         );
 
         await user.keyboard('j');
         await waitFor(() =>
-            expect(screen.getByRole('button', { name: /July 2026/ }).getAttribute('aria-expanded')).toBe('true'),
+            expect(screen.getByRole('button', { name: /July 2026/ }).getAttribute('aria-expanded')).toBe('true')
         );
     });
 
@@ -493,7 +493,7 @@ describe('SummaryPage', () => {
                 ...DEFAULT_FILTERS,
                 moneyness: 'itm',
                 half: 'yes',
-            }),
+            })
         );
 
         await user.click(screen.getByRole('button', { name: /^Numbers:/ }));
@@ -504,7 +504,7 @@ describe('SummaryPage', () => {
                 moneyness: 'itm',
                 half: 'yes',
                 numberSource: 'quoted',
-            }),
+            })
         );
     });
 

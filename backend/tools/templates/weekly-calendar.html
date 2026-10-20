@@ -1,205 +1,464 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weekly Options Calendar - __PAGE_DATE__</title>
-<meta name="theme-color" content="#0b0e16">
-<script>
-  (function () {
-    var saved = localStorage.getItem('theme');
-    document.documentElement.setAttribute('data-theme', saved || 'dark');
-  })();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0b0e16; --surface: #141a28; --surface-2: #1d2538; --surface-3: #28324a;
-    --text: #e7ecf5; --muted: #9aa6bd; --border: #28324a; --border-strong: #3a465f;
-    --accent-2: #8b5cf6; --glass: rgba(20,26,40,0.88);
-    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.28);
-    --conservative: #34d399; --balanced: #60a5fa; --aggressive: #f87171;
-    --put: #f59e0b; --call: #34d399;
-  }
-  :root[data-theme='light'] {
-    --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --surface-3: #e5e9f2;
-    --text: #1a2233; --muted: #5b6678; --border: #e5e9f2; --border-strong: #cdd5e4;
-    --glass: rgba(255,255,255,0.9);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: 'Inter', sans-serif; letter-spacing: 0;
-    transition: background 0.18s ease, color 0.18s ease;
-  }
-  a { color: var(--accent-2); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .topbar {
-    position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap;
-    align-items: center; justify-content: space-between; gap: 12px;
-    padding: 14px max(24px, env(safe-area-inset-right)) 14px max(24px, env(safe-area-inset-left));
-    background: var(--glass); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
-  }
-  .topbar-title { font-weight: 700; font-size: 1.05rem; }
-  .topbar-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 0.9rem; }
-  .icon-btn {
-    display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
-    color: var(--text); background: var(--surface); border: 1px solid var(--border);
-    border-radius: 0; cursor: pointer;
-  }
-  .icon-btn:hover { border-color: var(--border-strong); }
-  main {
-    width: min(100%, 1448px); margin: 0 auto;
-    padding: 24px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left));
-  }
-  .meta-block { margin-bottom: 20px; }
-  .meta-block h1 { margin: 0 0 6px; font-size: 1.5rem; }
-  .meta-line { margin: 2px 0; color: var(--muted); font-size: 0.88rem; }
-  .macro-banner {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
-    gap: 12px; margin-bottom: 24px;
-  }
-  .macro-card {
-    padding: 14px 16px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 0; box-shadow: var(--shadow);
-  }
-  .macro-label { margin-bottom: 6px; font-weight: 700; font-size: 0.92rem; }
-  .macro-text { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
-  .week-grid {
-    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
-    grid-template-rows: auto auto auto 1fr; gap: 14px;
-  }
-  .day-card {
-    display: grid; grid-template-rows: subgrid; grid-row: span 4;
-    min-width: 0; overflow: hidden; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 0; box-shadow: var(--shadow);
-  }
-  .day-head { grid-row: 1; padding: 12px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
-  .day-name { font-weight: 700; font-size: 1rem; }
-  .day-date { color: var(--muted); font-size: 0.82rem; }
-  .day-event { grid-row: 2; padding: 10px 14px; font-size: 0.8rem; background: var(--surface-3); border-bottom: 1px solid var(--border); }
-  .day-rule { grid-row: 3; padding: 12px 14px; color: var(--muted); font-size: 0.82rem; line-height: 1.45; border-bottom: 1px solid var(--border); }
-  .day-tickets { grid-row: 4; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
-  .risk-group { display: flex; flex-direction: column; gap: 8px; }
-  .risk-heading { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
-  .risk-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .risk-dot.conservative { background: var(--conservative); }
-  .risk-dot.balanced { background: var(--balanced); }
-  .risk-dot.aggressive { background: var(--aggressive); }
-  .ticket { padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 0; }
-  .ticket-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-  .ticket-ticker { font-weight: 700; font-size: 0.95rem; }
-  .ticket-strike { font-weight: 600; font-size: 0.85rem; }
-  .ticket-strike.put { color: var(--put); }
-  .ticket-strike.call { color: var(--call); }
-  .ticket-row { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; color: var(--muted); font-size: 0.76rem; }
-  .ticket-note { margin-top: 6px; color: var(--text); font-size: 0.78rem; line-height: 1.4; overflow-wrap: anywhere; }
-  .empty-day { color: var(--muted); font-size: 0.82rem; font-style: italic; }
-  @media (max-width: 1100px) {
-    .week-grid { display: flex; flex-direction: column; }
-    .day-card { display: grid; grid-template-rows: auto auto auto auto; }
-  }
-  @media (max-width: 640px) {
-    .topbar { padding-inline: max(14px, env(safe-area-inset-left)); }
-    .topbar-nav { width: 100%; }
-    main { padding-inline: max(14px, env(safe-area-inset-left)); }
-  }
-  @media (pointer: coarse) { .icon-btn { width: 44px; height: 44px; } }
-  @media (prefers-reduced-motion: reduce) { body { transition: none; } }
-</style>
-</head>
-<body>
-<header class="topbar">
-  <div class="topbar-title">Weekly Options Calendar</div>
-  <nav class="topbar-nav">
-    <a href="http://192.168.50.101:5057/">Live Telegram signals</a>
-    <a href="http://192.168.50.101:5057/calendars">All weeks</a>
-    <button class="icon-btn" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme"></button>
-  </nav>
-</header>
-<main>
-  <div class="meta-block">
-    <h1>Week of __WEEK_RANGE__</h1>
-    <div class="meta-line">Published __PUBLISHED__</div>
-    <div class="meta-line">Calendar generated __GENERATED__ local time</div>
-  </div>
-  <div class="macro-banner" id="macro-banner"></div>
-  <div class="week-grid" id="week-grid"></div>
-</main>
-<script>
-  var DATA = __CALENDAR_DATA__;
-  var RISK_ORDER = ['conservative', 'balanced', 'aggressive'];
-  var RISK_LABEL = { conservative: 'Conservative', balanced: 'Balanced', aggressive: 'Aggressive' };
-  function html(value) {
-    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-  function annualized(value) { return parseFloat(String(value).replace('%', '')) || 0; }
-  function renderTicket(trade) {
-    var ticket = document.createElement('article');
-    ticket.className = 'ticket';
-    ticket.innerHTML =
-      '<div class="ticket-head"><span class="ticket-ticker">' + html(trade.ticker) + '</span>' +
-      '<span class="ticket-strike ' + html(trade.type) + '">' + html(trade.strike) + '</span></div>' +
-      '<div class="ticket-row"><span>' + html(trade.expiry) + '</span><span>' + html(trade.dte) + ' DTE</span>' +
-      '<span>&Delta;' + html(trade.delta) + '</span><span>' + html(trade.ann) + ' ann.</span>' +
-      '<span>' + html(trade.premium) + '</span><span>' + html(trade.collateral) + ' collateral</span></div>' +
-      '<div class="ticket-note">' + html(trade.note || '') + '</div>';
-    return ticket;
-  }
-  function renderDay(day) {
-    var card = document.createElement('section');
-    card.className = 'day-card';
-    card.setAttribute('aria-label', day.name + ' ' + day.date);
-    card.innerHTML =
-      '<div class="day-head"><div class="day-name">' + html(day.name) + '</div><div class="day-date">' + html(day.date) + '</div></div>' +
-      '<div class="day-event">' + html(day.event || '') + '</div><div class="day-rule">' + html(day.rule || '') + '</div>';
-    var tickets = document.createElement('div');
-    tickets.className = 'day-tickets';
-    if (!day.trades.length) {
-      tickets.innerHTML = '<div class="empty-day">No new trades this day.</div>';
-    } else {
-      RISK_ORDER.forEach(function (risk) {
-        var trades = day.trades.filter(function (trade) { return trade.risk.toLowerCase() === risk; });
-        if (!trades.length) return;
-        trades.sort(function (left, right) {
-          if (left.type !== right.type) return left.type === 'put' ? -1 : 1;
-          return annualized(right.ann) - annualized(left.ann);
-        });
-        var group = document.createElement('div');
-        group.className = 'risk-group';
-        group.innerHTML = '<div class="risk-heading"><span class="risk-dot ' + risk + '"></span>' + RISK_LABEL[risk] + '</div>';
-        trades.forEach(function (trade) { group.appendChild(renderTicket(trade)); });
-        tickets.appendChild(group);
-      });
-    }
-    card.appendChild(tickets);
-    return card;
-  }
-  DATA.macro.forEach(function (note) {
-    var card = document.createElement('div');
-    card.className = 'macro-card';
-    card.innerHTML = '<div class="macro-label">' + html(note.label) + '</div><div class="macro-text">' + html(note.text) + '</div>';
-    document.getElementById('macro-banner').appendChild(card);
-  });
-  DATA.days.forEach(function (day) { document.getElementById('week-grid').appendChild(renderDay(day)); });
-  var SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
-  var MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>';
-  var toggle = document.getElementById('theme-toggle');
-  function paintTheme() {
-    var light = document.documentElement.getAttribute('data-theme') === 'light';
-    toggle.innerHTML = light ? MOON : SUN;
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', light ? '#f5f7fb' : '#0b0e16');
-  }
-  toggle.addEventListener('click', function () {
-    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    paintTheme();
-  });
-  paintTheme();
-</script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Weekly Options Calendar - __PAGE_DATE__</title>
+        <meta name="theme-color" content="#0b0e16" />
+        <script>
+            (function () {
+                var saved = localStorage.getItem('theme');
+                document.documentElement.setAttribute('data-theme', saved || 'dark');
+            })();
+        </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg: #0b0e16;
+                --surface: #141a28;
+                --surface-2: #1d2538;
+                --surface-3: #28324a;
+                --text: #e7ecf5;
+                --muted: #9aa6bd;
+                --border: #28324a;
+                --border-strong: #3a465f;
+                --accent-2: #8b5cf6;
+                --glass: rgba(20, 26, 40, 0.88);
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+                --conservative: #34d399;
+                --balanced: #60a5fa;
+                --aggressive: #f87171;
+                --put: #f59e0b;
+                --call: #34d399;
+            }
+            :root[data-theme='light'] {
+                --bg: #f5f7fb;
+                --surface: #ffffff;
+                --surface-2: #f1f3f9;
+                --surface-3: #e5e9f2;
+                --text: #1a2233;
+                --muted: #5b6678;
+                --border: #e5e9f2;
+                --border-strong: #cdd5e4;
+                --glass: rgba(255, 255, 255, 0.9);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font-family: 'Inter', sans-serif;
+                letter-spacing: 0;
+                transition:
+                    background 0.18s ease,
+                    color 0.18s ease;
+            }
+            a {
+                color: var(--accent-2);
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            .topbar {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 14px max(24px, env(safe-area-inset-right)) 14px max(24px, env(safe-area-inset-left));
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
+            }
+            .topbar-title {
+                font-weight: 700;
+                font-size: 1.05rem;
+            }
+            .topbar-nav {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 14px;
+                font-size: 0.9rem;
+            }
+            .icon-btn {
+                display: grid;
+                place-items: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                color: var(--text);
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                cursor: pointer;
+            }
+            .icon-btn:hover {
+                border-color: var(--border-strong);
+            }
+            main {
+                width: min(100%, 1448px);
+                margin: 0 auto;
+                padding: 24px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left));
+            }
+            .meta-block {
+                margin-bottom: 20px;
+            }
+            .meta-block h1 {
+                margin: 0 0 6px;
+                font-size: 1.5rem;
+            }
+            .meta-line {
+                margin: 2px 0;
+                color: var(--muted);
+                font-size: 0.88rem;
+            }
+            .macro-banner {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+            .macro-card {
+                padding: 14px 16px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                box-shadow: var(--shadow);
+            }
+            .macro-label {
+                margin-bottom: 6px;
+                font-weight: 700;
+                font-size: 0.92rem;
+            }
+            .macro-text {
+                color: var(--muted);
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+            .week-grid {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-rows: auto auto auto 1fr;
+                gap: 14px;
+            }
+            .day-card {
+                display: grid;
+                grid-template-rows: subgrid;
+                grid-row: span 4;
+                min-width: 0;
+                overflow: hidden;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 0;
+                box-shadow: var(--shadow);
+            }
+            .day-head {
+                grid-row: 1;
+                padding: 12px 14px;
+                background: var(--surface-2);
+                border-bottom: 1px solid var(--border);
+            }
+            .day-name {
+                font-weight: 700;
+                font-size: 1rem;
+            }
+            .day-date {
+                color: var(--muted);
+                font-size: 0.82rem;
+            }
+            .day-event {
+                grid-row: 2;
+                padding: 10px 14px;
+                font-size: 0.8rem;
+                background: var(--surface-3);
+                border-bottom: 1px solid var(--border);
+            }
+            .day-rule {
+                grid-row: 3;
+                padding: 12px 14px;
+                color: var(--muted);
+                font-size: 0.82rem;
+                line-height: 1.45;
+                border-bottom: 1px solid var(--border);
+            }
+            .day-tickets {
+                grid-row: 4;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px 14px;
+            }
+            .risk-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .risk-heading {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+            .risk-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+            }
+            .risk-dot.conservative {
+                background: var(--conservative);
+            }
+            .risk-dot.balanced {
+                background: var(--balanced);
+            }
+            .risk-dot.aggressive {
+                background: var(--aggressive);
+            }
+            .ticket {
+                padding: 10px 12px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: 0;
+            }
+            .ticket-head {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .ticket-ticker {
+                font-weight: 700;
+                font-size: 0.95rem;
+            }
+            .ticket-strike {
+                font-weight: 600;
+                font-size: 0.85rem;
+            }
+            .ticket-strike.put {
+                color: var(--put);
+            }
+            .ticket-strike.call {
+                color: var(--call);
+            }
+            .ticket-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 10px;
+                margin-top: 6px;
+                color: var(--muted);
+                font-size: 0.76rem;
+            }
+            .ticket-note {
+                margin-top: 6px;
+                color: var(--text);
+                font-size: 0.78rem;
+                line-height: 1.4;
+                overflow-wrap: anywhere;
+            }
+            .empty-day {
+                color: var(--muted);
+                font-size: 0.82rem;
+                font-style: italic;
+            }
+            @media (max-width: 1100px) {
+                .week-grid {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .day-card {
+                    display: grid;
+                    grid-template-rows: auto auto auto auto;
+                }
+            }
+            @media (max-width: 640px) {
+                .topbar {
+                    padding-inline: max(14px, env(safe-area-inset-left));
+                }
+                .topbar-nav {
+                    width: 100%;
+                }
+                main {
+                    padding-inline: max(14px, env(safe-area-inset-left));
+                }
+            }
+            @media (pointer: coarse) {
+                .icon-btn {
+                    width: 44px;
+                    height: 44px;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                body {
+                    transition: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="topbar-title">Weekly Options Calendar</div>
+            <nav class="topbar-nav">
+                <a href="http://192.168.50.101:5057/">Live Telegram signals</a>
+                <a href="http://192.168.50.101:5057/calendars">All weeks</a>
+                <button
+                    class="icon-btn"
+                    id="theme-toggle"
+                    type="button"
+                    title="Toggle theme"
+                    aria-label="Toggle theme"
+                ></button>
+            </nav>
+        </header>
+        <main>
+            <div class="meta-block">
+                <h1>Week of __WEEK_RANGE__</h1>
+                <div class="meta-line">Published __PUBLISHED__</div>
+                <div class="meta-line">Calendar generated __GENERATED__ local time</div>
+            </div>
+            <div class="macro-banner" id="macro-banner"></div>
+            <div class="week-grid" id="week-grid"></div>
+        </main>
+        <script>
+            var DATA = __CALENDAR_DATA__;
+            var RISK_ORDER = ['conservative', 'balanced', 'aggressive'];
+            var RISK_LABEL = { conservative: 'Conservative', balanced: 'Balanced', aggressive: 'Aggressive' };
+            function html(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+            function annualized(value) {
+                return parseFloat(String(value).replace('%', '')) || 0;
+            }
+            function renderTicket(trade) {
+                var ticket = document.createElement('article');
+                ticket.className = 'ticket';
+                ticket.innerHTML =
+                    '<div class="ticket-head"><span class="ticket-ticker">' +
+                    html(trade.ticker) +
+                    '</span>' +
+                    '<span class="ticket-strike ' +
+                    html(trade.type) +
+                    '">' +
+                    html(trade.strike) +
+                    '</span></div>' +
+                    '<div class="ticket-row"><span>' +
+                    html(trade.expiry) +
+                    '</span><span>' +
+                    html(trade.dte) +
+                    ' DTE</span>' +
+                    '<span>&Delta;' +
+                    html(trade.delta) +
+                    '</span><span>' +
+                    html(trade.ann) +
+                    ' ann.</span>' +
+                    '<span>' +
+                    html(trade.premium) +
+                    '</span><span>' +
+                    html(trade.collateral) +
+                    ' collateral</span></div>' +
+                    '<div class="ticket-note">' +
+                    html(trade.note || '') +
+                    '</div>';
+                return ticket;
+            }
+            function renderDay(day) {
+                var card = document.createElement('section');
+                card.className = 'day-card';
+                card.setAttribute('aria-label', day.name + ' ' + day.date);
+                card.innerHTML =
+                    '<div class="day-head"><div class="day-name">' +
+                    html(day.name) +
+                    '</div><div class="day-date">' +
+                    html(day.date) +
+                    '</div></div>' +
+                    '<div class="day-event">' +
+                    html(day.event || '') +
+                    '</div><div class="day-rule">' +
+                    html(day.rule || '') +
+                    '</div>';
+                var tickets = document.createElement('div');
+                tickets.className = 'day-tickets';
+                if (!day.trades.length) {
+                    tickets.innerHTML = '<div class="empty-day">No new trades this day.</div>';
+                } else {
+                    RISK_ORDER.forEach(function (risk) {
+                        var trades = day.trades.filter(function (trade) {
+                            return trade.risk.toLowerCase() === risk;
+                        });
+                        if (!trades.length) return;
+                        trades.sort(function (left, right) {
+                            if (left.type !== right.type) return left.type === 'put' ? -1 : 1;
+                            return annualized(right.ann) - annualized(left.ann);
+                        });
+                        var group = document.createElement('div');
+                        group.className = 'risk-group';
+                        group.innerHTML =
+                            '<div class="risk-heading"><span class="risk-dot ' +
+                            risk +
+                            '"></span>' +
+                            RISK_LABEL[risk] +
+                            '</div>';
+                        trades.forEach(function (trade) {
+                            group.appendChild(renderTicket(trade));
+                        });
+                        tickets.appendChild(group);
+                    });
+                }
+                card.appendChild(tickets);
+                return card;
+            }
+            DATA.macro.forEach(function (note) {
+                var card = document.createElement('div');
+                card.className = 'macro-card';
+                card.innerHTML =
+                    '<div class="macro-label">' +
+                    html(note.label) +
+                    '</div><div class="macro-text">' +
+                    html(note.text) +
+                    '</div>';
+                document.getElementById('macro-banner').appendChild(card);
+            });
+            DATA.days.forEach(function (day) {
+                document.getElementById('week-grid').appendChild(renderDay(day));
+            });
+            var SUN =
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+            var MOON =
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>';
+            var toggle = document.getElementById('theme-toggle');
+            function paintTheme() {
+                var light = document.documentElement.getAttribute('data-theme') === 'light';
+                toggle.innerHTML = light ? MOON : SUN;
+                document
+                    .querySelector('meta[name="theme-color"]')
+                    .setAttribute('content', light ? '#f5f7fb' : '#0b0e16');
+            }
+            toggle.addEventListener('click', function () {
+                var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                paintTheme();
+            });
+            paintTheme();
+        </script>
+    </body>
 </html>

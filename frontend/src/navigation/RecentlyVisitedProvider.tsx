@@ -18,7 +18,7 @@ function isNavigable(id: string): boolean {
 export function RecentlyVisitedProvider({ children }: { children: ReactNode }) {
     const { pathname } = useLocation();
     const [ids, setIds] = useState<string[]>(() =>
-        pruneUnknown(readStringList(STORAGE_KEYS.recentlyVisited), isNavigable),
+        pruneUnknown(readStringList(STORAGE_KEYS.recentlyVisited), isNavigable)
     );
 
     useEffect(() => {
@@ -34,7 +34,7 @@ export function RecentlyVisitedProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo<RecentlyVisitedValue>(
         () => ({ recent: ids.map(findNavItem).filter((item): item is NavItem => Boolean(item)) }),
-        [ids],
+        [ids]
     );
 
     return <RecentlyVisitedContext.Provider value={value}>{children}</RecentlyVisitedContext.Provider>;

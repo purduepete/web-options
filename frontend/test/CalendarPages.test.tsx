@@ -68,7 +68,7 @@ function renderWeek(publishDate = '2026-08-10') {
             <Routes>
                 <Route path="/calendars/:publishDate" element={<CalendarWeekPage />} />
             </Routes>
-        </MemoryRouter>,
+        </MemoryRouter>
     );
 }
 
@@ -146,7 +146,7 @@ describe('CalendarWeekPage', () => {
         expect(
             within(monday)
                 .getAllByRole('heading', { level: 3 })
-                .map((h) => h.textContent),
+                .map((h) => h.textContent)
         ).toEqual(['Conservative', 'Balanced']);
         expect(within(monday).getByText('PM $175P')).toBeTruthy();
         expect(within(monday).getByText('9.7%')).toBeTruthy();
@@ -166,7 +166,7 @@ describe('CalendarWeekPage', () => {
         fetchCalendar.mockResolvedValue(
             calendar({
                 days: [day('Monday', '2026-08-10', { trades: [trade('PM', { note: '7.7% cushion.' })] })],
-            }),
+            })
         );
         renderWeek();
         expect(await screen.findByText('7.7% cushion.')).toBeTruthy();
@@ -276,7 +276,7 @@ describe('LatestCalendarPage', () => {
                     <Route path="/calendars/latest" element={<LatestCalendarPage />} />
                     <Route path="/calendars/:publishDate" element={<p>the week itself</p>} />
                 </Routes>
-            </MemoryRouter>,
+            </MemoryRouter>
         );
     }
 

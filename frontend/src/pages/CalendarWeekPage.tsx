@@ -66,7 +66,7 @@ export function CalendarWeekPage() {
                     return;
                 }
                 setError(
-                    cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : describeFailure(cause),
+                    cause instanceof NotFoundError ? 'No calendar was ingested for that date.' : describeFailure(cause)
                 );
             });
         return () => {

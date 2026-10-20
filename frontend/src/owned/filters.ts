@@ -99,7 +99,7 @@ export function capturedPercent(position: OwnedOptionPosition): number | null {
 export function filterOwnedPositions(
     positions: readonly OwnedOptionPosition[],
     signals: SignalMap,
-    { symbol, moneyness, captured = 'all' }: OwnedFilterState,
+    { symbol, moneyness, captured = 'all' }: OwnedFilterState
 ): OwnedOptionPosition[] {
     const matchesSymbol = symbolMatcher(symbol);
     const floor = CAPTURED_FLOORS[captured];

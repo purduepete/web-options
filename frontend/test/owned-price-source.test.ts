@@ -72,7 +72,7 @@ describe('applyPriceSource', () => {
                 }),
             ],
             'live',
-            { UAL: { price: 114.18, changePct: 0.9 } },
+            { UAL: { price: 114.18, changePct: 0.9 } }
         );
 
         expect(row?.underlyingPrice).toBe(114.18);
@@ -83,7 +83,7 @@ describe('applyPriceSource', () => {
     it('keeps stored underlying fields when a live underlying quote is unavailable', () => {
         const [row] = applyPriceSource(
             [position({ underlyingPrice: 172.5, percentFromStrike: 15, moneyness: 'otm' })],
-            'live',
+            'live'
         );
 
         expect(row?.underlyingPrice).toBe(172.5);
@@ -94,7 +94,7 @@ describe('applyPriceSource', () => {
     it('prefers a real close over the stored mark', () => {
         const [row] = applyPriceSource(
             [position({ cachedPrice: { ...position().cachedPrice, closePrice: 0.8 } })],
-            'eod',
+            'eod'
         );
 
         expect(row?.quote.midPrice).toBe(0.8);

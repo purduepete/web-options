@@ -80,7 +80,7 @@ describe('ownedMoneyness', () => {
         const own = position({ moneyness: 'otm' });
         expect(ownedMoneyness(own, { trade: { moneyness: 'itm' } as Trade, reportDate: '2026-08-11' })).toBe('otm');
         expect(ownedMoneyness(position(), { trade: { moneyness: 'itm' } as Trade, reportDate: '2026-08-11' })).toBe(
-            'itm',
+            'itm'
         );
         expect(ownedMoneyness(position(), undefined)).toBeNull();
     });
@@ -106,10 +106,10 @@ describe('filterOwnedPositions', () => {
 
     it('takes comma-separated terms and a bang to exclude', () => {
         expect(
-            filterOwnedPositions(rows, empty, { symbol: 'PLTR, UAL', moneyness: 'all' }).map((row) => row.symbol),
+            filterOwnedPositions(rows, empty, { symbol: 'PLTR, UAL', moneyness: 'all' }).map((row) => row.symbol)
         ).toEqual(['PLTR', 'UAL']);
         expect(filterOwnedPositions(rows, empty, { symbol: '!PL', moneyness: 'all' }).map((row) => row.symbol)).toEqual(
-            ['UAL', 'CNC'],
+            ['UAL', 'CNC']
         );
     });
 

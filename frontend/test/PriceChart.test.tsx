@@ -148,7 +148,7 @@ describe('PriceChart', () => {
                     { date: '2026-03-31', close: 100 },
                     { date: '2026-04-01', close: 110 },
                 ]}
-            />,
+            />
         );
 
         expect([...container.querySelectorAll('.chart-axis span')].map((tick) => tick.textContent)).toEqual([

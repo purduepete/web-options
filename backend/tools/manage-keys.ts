@@ -43,7 +43,7 @@ async function list(pool: sql.ConnectionPool): Promise<void> {
         is_revoked: boolean;
     }>(
         `SELECT id, prefix, label, created_at, expires_at, is_revoked
-         FROM opt.api_key ORDER BY id`,
+         FROM opt.api_key ORDER BY id`
     );
 
     if (result.recordset.length === 0) {
@@ -60,7 +60,7 @@ async function list(pool: sql.ConnectionPool): Promise<void> {
         const expires = row.expires_at ? row.expires_at.toISOString().slice(0, 10) : 'never';
         console.log(
             `${String(row.id).padStart(3)}  ${row.prefix.padEnd(14)} ${state.padEnd(8)} ` +
-                `expires ${expires.padEnd(11)} ${row.label}`,
+                `expires ${expires.padEnd(11)} ${row.label}`
         );
     }
 }
@@ -91,7 +91,7 @@ async function mint(pool: sql.ConnectionPool, argv: string[], confirmed: boolean
         .input('expiresAt', sql.VarChar(10), expires)
         .query(
             `INSERT INTO opt.api_key (key_hash, prefix, label, expires_at)
-             VALUES (@keyHash, @prefix, @label, CAST(@expiresAt AS DATETIME2(0)))`,
+             VALUES (@keyHash, @prefix, @label, CAST(@expiresAt AS DATETIME2(0)))`
         );
 
     // The key is unrecoverable after this, and printing it would put a live
@@ -109,14 +109,11 @@ async function revoke(pool: sql.ConnectionPool, argv: string[], confirmed: boole
     const prefix = flag(argv, 'prefix');
     if (!prefix) throw new Error('revoke requires --prefix (see: manage-keys.ts list)');
 
-    const found = await pool
-        .request()
-        .input('prefix', sql.VarChar(16), prefix)
-        .query<{
-            id: number;
-            label: string;
-            is_revoked: boolean;
-        }>('SELECT id, label, is_revoked FROM opt.api_key WHERE prefix = @prefix');
+    const found = await pool.request().input('prefix', sql.VarChar(16), prefix).query<{
+        id: number;
+        label: string;
+        is_revoked: boolean;
+    }>('SELECT id, label, is_revoked FROM opt.api_key WHERE prefix = @prefix');
 
     if (found.recordset.length === 0) throw new Error(`No key with prefix ${prefix}`);
     for (const row of found.recordset) {

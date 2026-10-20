@@ -52,7 +52,7 @@ const week: CalendarWeek = {
 
 function stubKeyring(): void {
     vi.spyOn(authRepository, 'findActiveKey').mockImplementation(async (_db, keyHash) =>
-        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
+        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null
     );
 }
 

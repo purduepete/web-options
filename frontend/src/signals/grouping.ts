@@ -184,7 +184,7 @@ export function ticketGradeBand(
     numberSource: NumberSource,
     settings: GradeSettings,
     cautionSymbols: readonly string[],
-    vix: number | null,
+    vix: number | null
 ): GradeBand | null {
     if (!isRecentSignalDay(dayDate)) return null;
 
@@ -201,7 +201,7 @@ export function ticketGradeBand(
             cautionSymbols,
             vix,
         },
-        settings,
+        settings
     );
     return result.band === 'ungraded' ? null : result.band;
 }
@@ -213,7 +213,7 @@ export function filterDaysByGrade(
     numberSource: NumberSource,
     settings: GradeSettings,
     cautionSymbols: readonly string[],
-    vix: number | null,
+    vix: number | null
 ): DaySignals[] {
     if (selected.length === 0 || selected.length === GRADE_FILTERS.length) return days;
     return days.map((day) => ({

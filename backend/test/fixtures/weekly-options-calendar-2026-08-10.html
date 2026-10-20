@@ -1,321 +1,891 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0b0e16" id="theme-color-meta" />
-<title>Weekly Options Calendar</title>
-<script>
-  (function () {
-    var saved = localStorage.getItem('theme');
-    var theme = saved || 'dark';
-    document.documentElement.setAttribute('data-theme', theme);
-  })();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --radius: 0; --radius-lg: 0;
-    --bg: #0b0e16; --surface: #141a28; --surface-2: #1d2538; --surface-3: #28324a;
-    --text: #e7ecf5; --muted: #9aa6bd; --border: #28324a; --border-strong: #3a465f;
-    --accent: #6366f1; --accent-2: #8b5cf6;
-    --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    --on-accent: #fff;
-    --glass: rgba(20,26,40,0.72); --glass-strong: rgba(20,26,40,0.9);
-    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.28);
-    --shadow-accent: 0 8px 20px rgba(99,102,241,0.35);
-    --put: #f87171; --call: #34d399;
-    --conservative: #34d399; --balanced: #fbbf24; --aggressive: #f87171;
-  }
-  :root[data-theme='light'] {
-    --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --surface-3: #e5e9f2;
-    --text: #1a2233; --muted: #5b6678; --border: #e5e9f2; --border-strong: #cdd5e4;
-    --glass: rgba(255,255,255,0.72); --glass-strong: rgba(255,255,255,0.9);
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) {
-      --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --surface-3: #e5e9f2;
-      --text: #1a2233; --muted: #5b6678; --border: #e5e9f2; --border-strong: #cdd5e4;
-      --glass: rgba(255,255,255,0.72); --glass-strong: rgba(255,255,255,0.9);
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: 'Inter', system-ui, sans-serif;
-    transition: background 0.18s ease, color 0.18s ease;
-  }
-  a.link { color: var(--accent-2); text-decoration: none; }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#0b0e16" id="theme-color-meta" />
+        <title>Weekly Options Calendar</title>
+        <script>
+            (function () {
+                var saved = localStorage.getItem('theme');
+                var theme = saved || 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            })();
+        </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --radius: 0;
+                --radius-lg: 0;
+                --bg: #0b0e16;
+                --surface: #141a28;
+                --surface-2: #1d2538;
+                --surface-3: #28324a;
+                --text: #e7ecf5;
+                --muted: #9aa6bd;
+                --border: #28324a;
+                --border-strong: #3a465f;
+                --accent: #6366f1;
+                --accent-2: #8b5cf6;
+                --accent-grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                --on-accent: #fff;
+                --glass: rgba(20, 26, 40, 0.72);
+                --glass-strong: rgba(20, 26, 40, 0.9);
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.28);
+                --shadow-accent: 0 8px 20px rgba(99, 102, 241, 0.35);
+                --put: #f87171;
+                --call: #34d399;
+                --conservative: #34d399;
+                --balanced: #fbbf24;
+                --aggressive: #f87171;
+            }
+            :root[data-theme='light'] {
+                --bg: #f5f7fb;
+                --surface: #ffffff;
+                --surface-2: #f1f3f9;
+                --surface-3: #e5e9f2;
+                --text: #1a2233;
+                --muted: #5b6678;
+                --border: #e5e9f2;
+                --border-strong: #cdd5e4;
+                --glass: rgba(255, 255, 255, 0.72);
+                --glass-strong: rgba(255, 255, 255, 0.9);
+            }
+            @media (prefers-color-scheme: light) {
+                :root:not([data-theme='dark']) {
+                    --bg: #f5f7fb;
+                    --surface: #ffffff;
+                    --surface-2: #f1f3f9;
+                    --surface-3: #e5e9f2;
+                    --text: #1a2233;
+                    --muted: #5b6678;
+                    --border: #e5e9f2;
+                    --border-strong: #cdd5e4;
+                    --glass: rgba(255, 255, 255, 0.72);
+                    --glass-strong: rgba(255, 255, 255, 0.9);
+                }
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font-family: 'Inter', system-ui, sans-serif;
+                transition:
+                    background 0.18s ease,
+                    color 0.18s ease;
+            }
+            a.link {
+                color: var(--accent-2);
+                text-decoration: none;
+            }
 
-  header.topbar {
-    position: sticky; top: 0; z-index: 10;
-    background: var(--glass); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
-    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
-  }
-  header.topbar .title { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; font-size: 1.05rem; }
-  .icon-btn {
-    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; border-radius: var(--radius); transition: all 0.15s ease;
-  }
-  .icon-btn:hover { border-color: var(--border-strong); }
-  .icon-btn:active { transform: translateY(1px) scale(0.97); }
+            header.topbar {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                padding: 14px 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            header.topbar .title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+                font-size: 1.05rem;
+            }
+            .icon-btn {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                color: var(--text);
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                border-radius: var(--radius);
+                transition: all 0.15s ease;
+            }
+            .icon-btn:hover {
+                border-color: var(--border-strong);
+            }
+            .icon-btn:active {
+                transform: translateY(1px) scale(0.97);
+            }
 
-  main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+            main {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 24px;
+            }
 
-  .macro-banner {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow); padding: 18px 22px; margin-bottom: 10px;
-  }
-  .macro-banner h1 { margin: 0 0 4px; font-size: 1.2rem; letter-spacing: -0.01em; }
-  .macro-banner .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
-  .macro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-  .macro-item {
-    background: var(--surface-2); border: 1px solid var(--border); padding: 12px 14px; border-radius: var(--radius);
-    display: flex; gap: 10px; align-items: flex-start;
-  }
-  .macro-item .icon { color: var(--accent-2); flex-shrink: 0; margin-top: 2px; }
-  .macro-item b { display: block; font-size: 0.85rem; margin-bottom: 2px; }
-  .macro-item span { color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
+            .macro-banner {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow);
+                padding: 18px 22px;
+                margin-bottom: 10px;
+            }
+            .macro-banner h1 {
+                margin: 0 0 4px;
+                font-size: 1.2rem;
+                letter-spacing: -0.01em;
+            }
+            .macro-banner .meta {
+                color: var(--muted);
+                font-size: 0.85rem;
+                margin-bottom: 14px;
+            }
+            .macro-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 12px;
+            }
+            .macro-item {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                padding: 12px 14px;
+                border-radius: var(--radius);
+                display: flex;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .macro-item .icon {
+                color: var(--accent-2);
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+            .macro-item b {
+                display: block;
+                font-size: 0.85rem;
+                margin-bottom: 2px;
+            }
+            .macro-item span {
+                color: var(--muted);
+                font-size: 0.8rem;
+                line-height: 1.4;
+            }
 
-  .week-grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 14px; row-gap: 0; margin-top: 18px;
-  }
-  @media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 640px) { .week-grid { grid-template-columns: 1fr; } }
+            .week-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                column-gap: 14px;
+                row-gap: 0;
+                margin-top: 18px;
+            }
+            @media (max-width: 1100px) {
+                .week-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            @media (max-width: 640px) {
+                .week-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
 
-  .day-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow); display: grid; grid-template-rows: subgrid; overflow: hidden;
-  }
-  .day-head {
-    background: var(--accent-grad); color: var(--on-accent); padding: 12px 14px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .day-head .name { font-weight: 700; letter-spacing: -0.01em; }
-  .day-head .date { font-size: 0.75rem; opacity: 0.9; }
+            .day-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow);
+                display: grid;
+                grid-template-rows: subgrid;
+                overflow: hidden;
+            }
+            .day-head {
+                background: var(--accent-grad);
+                color: var(--on-accent);
+                padding: 12px 14px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .day-head .name {
+                font-weight: 700;
+                letter-spacing: -0.01em;
+            }
+            .day-head .date {
+                font-size: 0.75rem;
+                opacity: 0.9;
+            }
 
-  .event-banner {
-    background: var(--surface-3); border-bottom: 1px solid var(--border);
-    padding: 10px 14px; display: flex; gap: 8px; align-items: flex-start; font-size: 0.78rem; color: var(--text);
-  }
-  .event-banner .icon { color: var(--balanced); flex-shrink: 0; margin-top: 1px; }
+            .event-banner {
+                background: var(--surface-3);
+                border-bottom: 1px solid var(--border);
+                padding: 10px 14px;
+                display: flex;
+                gap: 8px;
+                align-items: flex-start;
+                font-size: 0.78rem;
+                color: var(--text);
+            }
+            .event-banner .icon {
+                color: var(--balanced);
+                flex-shrink: 0;
+                margin-top: 1px;
+            }
 
-  .rule-box {
-    padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.82rem; color: var(--muted); line-height: 1.5;
-  }
-  .rule-box .icon { color: var(--accent); vertical-align: -3px; margin-right: 6px; }
+            .rule-box {
+                padding: 12px 14px;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.82rem;
+                color: var(--muted);
+                line-height: 1.5;
+            }
+            .rule-box .icon {
+                color: var(--accent);
+                vertical-align: -3px;
+                margin-right: 6px;
+            }
 
-  .no-trades { color: var(--muted); font-size: 0.8rem; padding: 10px 14px; font-style: italic; align-self: start; }
+            .no-trades {
+                color: var(--muted);
+                font-size: 0.8rem;
+                padding: 10px 14px;
+                font-style: italic;
+                align-self: start;
+            }
 
-  .tickets { display: flex; flex-direction: column; overflow: hidden; }
+            .tickets {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
 
-  .risk-group-heading {
-    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
-    padding: 8px 14px 4px; border-bottom: 1px solid var(--border);
-  }
-  .risk-group-heading.conservative { color: var(--conservative); }
-  .risk-group-heading.balanced { color: var(--balanced); }
-  .risk-group-heading.aggressive { color: var(--aggressive); }
+            .risk-group-heading {
+                font-size: 0.68rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                font-weight: 700;
+                padding: 8px 14px 4px;
+                border-bottom: 1px solid var(--border);
+            }
+            .risk-group-heading.conservative {
+                color: var(--conservative);
+            }
+            .risk-group-heading.balanced {
+                color: var(--balanced);
+            }
+            .risk-group-heading.aggressive {
+                color: var(--aggressive);
+            }
 
-  .ticket {
-    background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
-    border-radius: var(--radius); padding: 10px 12px; margin: 5px 12px;
-  }
-  .ticket.put { border-left-color: var(--put); }
-  .ticket.call { border-left-color: var(--call); }
-  .ticket .row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .ticket .ticker { font-weight: 700; font-size: 0.92rem; }
-  .ticket .risk-tag {
-    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 700;
-    padding: 2px 6px; border-radius: var(--radius); border: 1px solid var(--border-strong);
-  }
-  .risk-tag.conservative { color: var(--conservative); border-color: var(--conservative); }
-  .risk-tag.balanced { color: var(--balanced); border-color: var(--balanced); }
-  .risk-tag.aggressive { color: var(--aggressive); border-color: var(--aggressive); }
-  .ticket .contract { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
-  .ticket .stats { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
-  .ticket .stats b { color: var(--text); }
-  .ticket .note { font-size: 0.75rem; line-height: 1.4; color: var(--muted); }
+            .ticket {
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-left: 3px solid var(--border-strong);
+                border-radius: var(--radius);
+                padding: 10px 12px;
+                margin: 5px 12px;
+            }
+            .ticket.put {
+                border-left-color: var(--put);
+            }
+            .ticket.call {
+                border-left-color: var(--call);
+            }
+            .ticket .row1 {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 4px;
+            }
+            .ticket .ticker {
+                font-weight: 700;
+                font-size: 0.92rem;
+            }
+            .ticket .risk-tag {
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                font-weight: 700;
+                padding: 2px 6px;
+                border-radius: var(--radius);
+                border: 1px solid var(--border-strong);
+            }
+            .risk-tag.conservative {
+                color: var(--conservative);
+                border-color: var(--conservative);
+            }
+            .risk-tag.balanced {
+                color: var(--balanced);
+                border-color: var(--balanced);
+            }
+            .risk-tag.aggressive {
+                color: var(--aggressive);
+                border-color: var(--aggressive);
+            }
+            .ticket .contract {
+                font-size: 0.75rem;
+                color: var(--muted);
+                margin-bottom: 6px;
+            }
+            .ticket .stats {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 12px;
+                font-size: 0.72rem;
+                color: var(--muted);
+                margin-bottom: 6px;
+            }
+            .ticket .stats b {
+                color: var(--text);
+            }
+            .ticket .note {
+                font-size: 0.75rem;
+                line-height: 1.4;
+                color: var(--muted);
+            }
 
-  footer {
-    max-width: 1400px; margin: 24px auto 40px; padding: 0 24px; color: var(--muted); font-size: 0.75rem; line-height: 1.6;
-  }
-</style>
-</head>
-<body>
-<header class="topbar">
-  <div class="title">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="0"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-    Weekly Options Calendar
-  </div>
-  <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
-</header>
+            footer {
+                max-width: 1400px;
+                margin: 24px auto 40px;
+                padding: 0 24px;
+                color: var(--muted);
+                font-size: 0.75rem;
+                line-height: 1.6;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="title">
+                <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <rect x="3" y="4" width="18" height="18" rx="0"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Weekly Options Calendar
+            </div>
+            <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme"></button>
+        </header>
 
-<main>
-  <section class="macro-banner">
-    <h1>Published Aug 10, 2026</h1>
-    <div class="meta">Calendar generated Aug 14, 2026, 5:30 PM local time</div>
-    <div class="macro-grid">
-      <div class="macro-item">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-        <div><b>S&amp;P 500 at a record close</b><span>Best week since April. Calls sold close to the stock price got hit hard last week, so give new calls extra room.</span></div>
-      </div>
-      <div class="macro-item">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        <div><b>VIX at its lowest close</b><span>Option premium is thinner than a week ago. Be selective: only sell where the premium still looks rich.</span></div>
-      </div>
-      <div class="macro-item">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18.7 8l-6.1 6.1-3-3-4.6 4.6"></path></svg>
-        <div><b>10-year yield eased</b><span>Rate-sensitive names (utilities, REITs, telecom) got a breather. Good window to sell covered calls on those while it lasts.</span></div>
-      </div>
-    </div>
-  </section>
+        <main>
+            <section class="macro-banner">
+                <h1>Published Aug 10, 2026</h1>
+                <div class="meta">Calendar generated Aug 14, 2026, 5:30 PM local time</div>
+                <div class="macro-grid">
+                    <div class="macro-item">
+                        <svg
+                            class="icon"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.75"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        <div>
+                            <b>S&amp;P 500 at a record close</b
+                            ><span
+                                >Best week since April. Calls sold close to the stock price got hit hard last week, so
+                                give new calls extra room.</span
+                            >
+                        </div>
+                    </div>
+                    <div class="macro-item">
+                        <svg
+                            class="icon"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.75"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <div>
+                            <b>VIX at its lowest close</b
+                            ><span
+                                >Option premium is thinner than a week ago. Be selective: only sell where the premium
+                                still looks rich.</span
+                            >
+                        </div>
+                    </div>
+                    <div class="macro-item">
+                        <svg
+                            class="icon"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.75"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M3 3v18h18"></path>
+                            <path d="M18.7 8l-6.1 6.1-3-3-4.6 4.6"></path>
+                        </svg>
+                        <div>
+                            <b>10-year yield eased</b
+                            ><span
+                                >Rate-sensitive names (utilities, REITs, telecom) got a breather. Good window to sell
+                                covered calls on those while it lasts.</span
+                            >
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-  <div class="week-grid" id="week-grid"></div>
-</main>
+            <div class="week-grid" id="week-grid"></div>
+        </main>
 
+        <script>
+            var ICONS = {
+                alert: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+                check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+                sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
+                moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
+            };
 
-<script>
-  var ICONS = {
-    alert: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-    check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-    sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
-    moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>'
-  };
+            // Structured trade data extracted from the newsletter (facts only, no source prose).
+            var days = [
+                {
+                    name: 'Monday',
+                    date: 'Aug 10',
+                    rule: 'Monday-Tuesday window: sell puts on steady, non-event-sensitive names while the market catches its breath after last week\u2019s rally. These 4 aren\u2019t tied to a specific day, so place them whenever it suits you across Mon/Tue. Also a good day to review existing positions ahead of Wednesday.',
+                    event: null,
+                    trades: [
+                        {
+                            ticker: 'PM',
+                            type: 'put',
+                            strike: '$175P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.19',
+                            ann: '9.7%',
+                            premium: '$195',
+                            collateral: '$17,500',
+                            risk: 'conservative',
+                            note: '7.7% cushion; defensive consumer name.',
+                        },
+                        {
+                            ticker: 'RTX',
+                            type: 'put',
+                            strike: '$210P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.21',
+                            ann: '9.7%',
+                            premium: '$234',
+                            collateral: '$21,000',
+                            risk: 'conservative',
+                            note: 'Defense contractor, not sensitive to a CPI print.',
+                        },
+                        {
+                            ticker: 'NEM',
+                            type: 'put',
+                            strike: '$105P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.28',
+                            ann: '24.9%',
+                            premium: '$300',
+                            collateral: '$10,500',
+                            risk: 'balanced',
+                            note: 'Gold miner; a hot CPI print tends to help gold.',
+                        },
+                        {
+                            ticker: 'NVO',
+                            type: 'put',
+                            strike: '$45P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.32',
+                            ann: '22.3%',
+                            premium: '$115',
+                            collateral: '$4,500',
+                            risk: 'aggressive',
+                            note: 'Smallest collateral on the list; higher delta, not a shaky business.',
+                        },
+                    ],
+                },
+                {
+                    name: 'Tuesday',
+                    date: 'Aug 11',
+                    rule: 'Monday-Tuesday window (same 4 as Monday, not day-specific): last chance to close any existing winners before Wednesday\u2019s CPI release. Consider buying back anything already at 50%+ of max profit.',
+                    event: null,
+                    trades: [
+                        {
+                            ticker: 'PM',
+                            type: 'put',
+                            strike: '$175P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.19',
+                            ann: '9.7%',
+                            premium: '$195',
+                            collateral: '$17,500',
+                            risk: 'conservative',
+                            note: '7.7% cushion; defensive consumer name.',
+                        },
+                        {
+                            ticker: 'RTX',
+                            type: 'put',
+                            strike: '$210P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.21',
+                            ann: '9.7%',
+                            premium: '$234',
+                            collateral: '$21,000',
+                            risk: 'conservative',
+                            note: 'Defense contractor, not sensitive to a CPI print.',
+                        },
+                        {
+                            ticker: 'NEM',
+                            type: 'put',
+                            strike: '$105P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.28',
+                            ann: '24.9%',
+                            premium: '$300',
+                            collateral: '$10,500',
+                            risk: 'balanced',
+                            note: 'Gold miner; a hot CPI print tends to help gold.',
+                        },
+                        {
+                            ticker: 'NVO',
+                            type: 'put',
+                            strike: '$45P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.32',
+                            ann: '22.3%',
+                            premium: '$115',
+                            collateral: '$4,500',
+                            risk: 'aggressive',
+                            note: 'Smallest collateral on the list; higher delta, not a shaky business.',
+                        },
+                    ],
+                },
+                {
+                    name: 'Wednesday',
+                    date: 'Aug 12',
+                    rule: 'No new risk until the July CPI number is out and digested. If CPI comes in at/below 3.4%, sell this main list that afternoon once the market has picked a direction. If it runs hot, stay defensive or hold cash instead.',
+                    event: 'Key event: July CPI release this morning. This decides the September Fed rate path.',
+                    trades: [
+                        {
+                            ticker: 'NOW',
+                            type: 'put',
+                            strike: '$110P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.21',
+                            ann: '24.5%',
+                            premium: '$310',
+                            collateral: '$11,000',
+                            risk: 'balanced',
+                            note: '11.9% cushion below the stock, the widest of any put this week.',
+                        },
+                        {
+                            ticker: 'PLTR',
+                            type: 'put',
+                            strike: '$160P',
+                            expiry: '2026-09-04',
+                            dte: 28,
+                            delta: '-0.27',
+                            ann: '35.4%',
+                            premium: '$435',
+                            collateral: '$16,000',
+                            risk: 'balanced',
+                            note: 'Placed after its earnings beat; strike sits 7% below the stock.',
+                        },
+                        {
+                            ticker: 'IBM',
+                            type: 'put',
+                            strike: '$220P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.26',
+                            ann: '21.5%',
+                            premium: '$545',
+                            collateral: '$22,000',
+                            risk: 'balanced',
+                            note: '7.3% cushion on a steady enterprise name.',
+                        },
+                        {
+                            ticker: 'ORCL',
+                            type: 'call',
+                            strike: '$165C',
+                            expiry: '2026-09-04',
+                            dte: 28,
+                            delta: '+0.27',
+                            ann: '32.6%',
+                            premium: '$367',
+                            collateral: '$14,694',
+                            risk: 'balanced',
+                            note: 'Strike sits 12.3% above the stock.',
+                        },
+                        {
+                            ticker: 'GLW',
+                            type: 'call',
+                            strike: '$190C',
+                            expiry: '2026-08-28',
+                            dte: 21,
+                            delta: '+0.25',
+                            ann: '41.7%',
+                            premium: '$397',
+                            collateral: '$16,569',
+                            risk: 'balanced',
+                            note: '14.7% cushion above the stock, the widest call cushion this week.',
+                        },
+                        {
+                            ticker: 'DAL',
+                            type: 'put',
+                            strike: '$85P',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '-0.25',
+                            ann: '18.5%',
+                            premium: '$180',
+                            collateral: '$8,500',
+                            risk: 'balanced',
+                            note: 'Cheaper jet fuel from last week\u2019s oil drop supports the name.',
+                        },
+                        {
+                            ticker: 'NOW',
+                            type: 'call',
+                            strike: '$130C',
+                            expiry: '2026-08-21',
+                            dte: 14,
+                            delta: '+0.38',
+                            ann: '68.4%',
+                            premium: '$327',
+                            collateral: '$12,488',
+                            risk: 'aggressive',
+                            note: 'Highest annualized yield this week; short-dated, check daily.',
+                        },
+                        {
+                            ticker: 'PLTR',
+                            type: 'call',
+                            strike: '$180C',
+                            expiry: '2026-08-21',
+                            dte: 14,
+                            delta: '+0.35',
+                            ann: '57.6%',
+                            premium: '$380',
+                            collateral: '$17,201',
+                            risk: 'aggressive',
+                            note: 'Still carrying earnings-week pricing after the report.',
+                        },
+                        {
+                            ticker: 'TEAM',
+                            type: 'call',
+                            strike: '$160C',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '+0.42',
+                            ann: '52.8%',
+                            premium: '$905',
+                            collateral: '$14,907',
+                            risk: 'aggressive',
+                            note: 'Second-largest premium check this week.',
+                        },
+                    ],
+                },
+                {
+                    name: 'Thursday',
+                    date: 'Aug 13',
+                    rule: 'Producer prices and jobless claims either confirm or contradict Wednesday\u2019s CPI signal. If they contradict it, consider pausing new sales for the day. Still no chip-name calls before Applied Materials reports tonight.',
+                    event: 'Key event: Applied Materials earnings after the close (chip-sector ripple risk).',
+                    trades: [],
+                },
+                {
+                    name: 'Friday',
+                    date: 'Aug 14',
+                    rule: 'AMAT and Cisco earnings risk has cleared. Sell the chip/networking calls below.',
+                    event: 'Cisco reported Wed night, AMAT reported Thu night; both risks are now behind these names.',
+                    trades: [
+                        {
+                            ticker: 'ANET',
+                            type: 'call',
+                            strike: '$200C',
+                            expiry: '2026-09-18',
+                            dte: 42,
+                            delta: '+0.42',
+                            ann: '44.6%',
+                            premium: '$967',
+                            collateral: '$18,867',
+                            risk: 'aggressive',
+                            note: 'Biggest premium of the week; waits until Friday due to Cisco\u2019s earnings ripple.',
+                        },
+                        {
+                            ticker: 'NVDA',
+                            type: 'call',
+                            strike: '$230C',
+                            expiry: '2026-08-21',
+                            dte: 14,
+                            delta: '+0.36',
+                            ann: '41.0%',
+                            premium: '$352',
+                            collateral: '$22,396',
+                            risk: 'aggressive',
+                            note: 'Expires before Nvidia\u2019s own late-August report.',
+                        },
+                    ],
+                },
+            ];
 
-  // Structured trade data extracted from the newsletter (facts only, no source prose).
-  var days = [
-    {
-      name: 'Monday', date: 'Aug 10',
-      rule: 'Monday-Tuesday window: sell puts on steady, non-event-sensitive names while the market catches its breath after last week\u2019s rally. These 4 aren\u2019t tied to a specific day, so place them whenever it suits you across Mon/Tue. Also a good day to review existing positions ahead of Wednesday.',
-      event: null,
-      trades: [
-        { ticker: 'PM', type: 'put', strike: '$175P', expiry: '2026-09-18', dte: 42, delta: '-0.19', ann: '9.7%', premium: '$195', collateral: '$17,500', risk: 'conservative', note: '7.7% cushion; defensive consumer name.' },
-        { ticker: 'RTX', type: 'put', strike: '$210P', expiry: '2026-09-18', dte: 42, delta: '-0.21', ann: '9.7%', premium: '$234', collateral: '$21,000', risk: 'conservative', note: 'Defense contractor, not sensitive to a CPI print.' },
-        { ticker: 'NEM', type: 'put', strike: '$105P', expiry: '2026-09-18', dte: 42, delta: '-0.28', ann: '24.9%', premium: '$300', collateral: '$10,500', risk: 'balanced', note: 'Gold miner; a hot CPI print tends to help gold.' },
-        { ticker: 'NVO', type: 'put', strike: '$45P', expiry: '2026-09-18', dte: 42, delta: '-0.32', ann: '22.3%', premium: '$115', collateral: '$4,500', risk: 'aggressive', note: 'Smallest collateral on the list; higher delta, not a shaky business.' }
-      ]
-    },
-    {
-      name: 'Tuesday', date: 'Aug 11',
-      rule: 'Monday-Tuesday window (same 4 as Monday, not day-specific): last chance to close any existing winners before Wednesday\u2019s CPI release. Consider buying back anything already at 50%+ of max profit.',
-      event: null,
-      trades: [
-        { ticker: 'PM', type: 'put', strike: '$175P', expiry: '2026-09-18', dte: 42, delta: '-0.19', ann: '9.7%', premium: '$195', collateral: '$17,500', risk: 'conservative', note: '7.7% cushion; defensive consumer name.' },
-        { ticker: 'RTX', type: 'put', strike: '$210P', expiry: '2026-09-18', dte: 42, delta: '-0.21', ann: '9.7%', premium: '$234', collateral: '$21,000', risk: 'conservative', note: 'Defense contractor, not sensitive to a CPI print.' },
-        { ticker: 'NEM', type: 'put', strike: '$105P', expiry: '2026-09-18', dte: 42, delta: '-0.28', ann: '24.9%', premium: '$300', collateral: '$10,500', risk: 'balanced', note: 'Gold miner; a hot CPI print tends to help gold.' },
-        { ticker: 'NVO', type: 'put', strike: '$45P', expiry: '2026-09-18', dte: 42, delta: '-0.32', ann: '22.3%', premium: '$115', collateral: '$4,500', risk: 'aggressive', note: 'Smallest collateral on the list; higher delta, not a shaky business.' }
-      ]
-    },
-    {
-      name: 'Wednesday', date: 'Aug 12',
-      rule: 'No new risk until the July CPI number is out and digested. If CPI comes in at/below 3.4%, sell this main list that afternoon once the market has picked a direction. If it runs hot, stay defensive or hold cash instead.',
-      event: 'Key event: July CPI release this morning. This decides the September Fed rate path.',
-      trades: [
-        { ticker: 'NOW', type: 'put', strike: '$110P', expiry: '2026-09-18', dte: 42, delta: '-0.21', ann: '24.5%', premium: '$310', collateral: '$11,000', risk: 'balanced', note: '11.9% cushion below the stock, the widest of any put this week.' },
-        { ticker: 'PLTR', type: 'put', strike: '$160P', expiry: '2026-09-04', dte: 28, delta: '-0.27', ann: '35.4%', premium: '$435', collateral: '$16,000', risk: 'balanced', note: 'Placed after its earnings beat; strike sits 7% below the stock.' },
-        { ticker: 'IBM', type: 'put', strike: '$220P', expiry: '2026-09-18', dte: 42, delta: '-0.26', ann: '21.5%', premium: '$545', collateral: '$22,000', risk: 'balanced', note: '7.3% cushion on a steady enterprise name.' },
-        { ticker: 'ORCL', type: 'call', strike: '$165C', expiry: '2026-09-04', dte: 28, delta: '+0.27', ann: '32.6%', premium: '$367', collateral: '$14,694', risk: 'balanced', note: 'Strike sits 12.3% above the stock.' },
-        { ticker: 'GLW', type: 'call', strike: '$190C', expiry: '2026-08-28', dte: 21, delta: '+0.25', ann: '41.7%', premium: '$397', collateral: '$16,569', risk: 'balanced', note: '14.7% cushion above the stock, the widest call cushion this week.' },
-        { ticker: 'DAL', type: 'put', strike: '$85P', expiry: '2026-09-18', dte: 42, delta: '-0.25', ann: '18.5%', premium: '$180', collateral: '$8,500', risk: 'balanced', note: 'Cheaper jet fuel from last week\u2019s oil drop supports the name.' },
-        { ticker: 'NOW', type: 'call', strike: '$130C', expiry: '2026-08-21', dte: 14, delta: '+0.38', ann: '68.4%', premium: '$327', collateral: '$12,488', risk: 'aggressive', note: 'Highest annualized yield this week; short-dated, check daily.' },
-        { ticker: 'PLTR', type: 'call', strike: '$180C', expiry: '2026-08-21', dte: 14, delta: '+0.35', ann: '57.6%', premium: '$380', collateral: '$17,201', risk: 'aggressive', note: 'Still carrying earnings-week pricing after the report.' },
-        { ticker: 'TEAM', type: 'call', strike: '$160C', expiry: '2026-09-18', dte: 42, delta: '+0.42', ann: '52.8%', premium: '$905', collateral: '$14,907', risk: 'aggressive', note: 'Second-largest premium check this week.' }
-      ]
-    },
-    {
-      name: 'Thursday', date: 'Aug 13',
-      rule: 'Producer prices and jobless claims either confirm or contradict Wednesday\u2019s CPI signal. If they contradict it, consider pausing new sales for the day. Still no chip-name calls before Applied Materials reports tonight.',
-      event: 'Key event: Applied Materials earnings after the close (chip-sector ripple risk).',
-      trades: []
-    },
-    {
-      name: 'Friday', date: 'Aug 14',
-      rule: 'AMAT and Cisco earnings risk has cleared. Sell the chip/networking calls below.',
-      event: 'Cisco reported Wed night, AMAT reported Thu night; both risks are now behind these names.',
-      trades: [
-        { ticker: 'ANET', type: 'call', strike: '$200C', expiry: '2026-09-18', dte: 42, delta: '+0.42', ann: '44.6%', premium: '$967', collateral: '$18,867', risk: 'aggressive', note: 'Biggest premium of the week; waits until Friday due to Cisco\u2019s earnings ripple.' },
-        { ticker: 'NVDA', type: 'call', strike: '$230C', expiry: '2026-08-21', dte: 14, delta: '+0.36', ann: '41.0%', premium: '$352', collateral: '$22,396', risk: 'aggressive', note: 'Expires before Nvidia\u2019s own late-August report.' }
-      ]
-    }
-  ];
+            // Rows 1-3 (head/event/rule) are shared grid rows via subgrid, so every
+            // day's trade list starts at the same row (4) regardless of how tall
+            // that day's event/rule text is. Within row 4, groups just stack in
+            // order (conservative, balanced, aggressive) with no reserved gaps for
+            // groups a given day doesn't have.
+            var groupOrder = ['conservative', 'balanced', 'aggressive'];
+            var TOTAL_ROWS = 4;
+            var ROW_HEAD = 1,
+                ROW_EVENT = 2,
+                ROW_RULE = 3,
+                ROW_TICKETS = 4;
 
-  // Rows 1-3 (head/event/rule) are shared grid rows via subgrid, so every
-  // day's trade list starts at the same row (4) regardless of how tall
-  // that day's event/rule text is. Within row 4, groups just stack in
-  // order (conservative, balanced, aggressive) with no reserved gaps for
-  // groups a given day doesn't have.
-  var groupOrder = ['conservative', 'balanced', 'aggressive'];
-  var TOTAL_ROWS = 4;
-  var ROW_HEAD = 1, ROW_EVENT = 2, ROW_RULE = 3, ROW_TICKETS = 4;
+            var grid = document.getElementById('week-grid');
+            grid.style.gridTemplateRows = 'repeat(' + (TOTAL_ROWS - 1) + ', auto) 1fr';
 
-  var grid = document.getElementById('week-grid');
-  grid.style.gridTemplateRows = 'repeat(' + (TOTAL_ROWS - 1) + ', auto) 1fr';
+            days.forEach(function (d) {
+                var card = document.createElement('div');
+                card.className = 'day-card';
+                card.style.gridRow = '1 / span ' + TOTAL_ROWS;
 
-  days.forEach(function (d) {
-    var card = document.createElement('div');
-    card.className = 'day-card';
-    card.style.gridRow = '1 / span ' + TOTAL_ROWS;
+                var html =
+                    '<div class="day-head" style="grid-row:' +
+                    ROW_HEAD +
+                    '"><span class="name">' +
+                    d.name +
+                    '</span><span class="date">' +
+                    d.date +
+                    '</span></div>';
 
-    var html = '<div class="day-head" style="grid-row:' + ROW_HEAD + '"><span class="name">' + d.name + '</span><span class="date">' + d.date + '</span></div>';
+                if (d.event) {
+                    html +=
+                        '<div class="event-banner" style="grid-row:' +
+                        ROW_EVENT +
+                        '"><span class="icon">' +
+                        ICONS.alert +
+                        '</span><span>' +
+                        d.event +
+                        '</span></div>';
+                }
 
-    if (d.event) {
-      html += '<div class="event-banner" style="grid-row:' + ROW_EVENT + '"><span class="icon">' + ICONS.alert + '</span><span>' + d.event + '</span></div>';
-    }
+                html +=
+                    '<div class="rule-box" style="grid-row:' +
+                    ROW_RULE +
+                    '"><span class="icon">' +
+                    ICONS.check +
+                    '</span>' +
+                    d.rule +
+                    '</div>';
 
-    html += '<div class="rule-box" style="grid-row:' + ROW_RULE + '"><span class="icon">' + ICONS.check + '</span>' + d.rule + '</div>';
+                var ticketsHtml = '<div class="tickets" style="grid-row:' + ROW_TICKETS + '">';
+                if (d.trades.length === 0) {
+                    ticketsHtml += '<div class="no-trades">No new positions scheduled. Follow the rule above.</div>';
+                } else {
+                    groupOrder.forEach(function (riskGroup) {
+                        var groupTrades = d.trades.filter(function (t) {
+                            return t.risk === riskGroup;
+                        });
+                        if (groupTrades.length === 0) return;
 
-    var ticketsHtml = '<div class="tickets" style="grid-row:' + ROW_TICKETS + '">';
-    if (d.trades.length === 0) {
-      ticketsHtml += '<div class="no-trades">No new positions scheduled. Follow the rule above.</div>';
-    } else {
-      groupOrder.forEach(function (riskGroup) {
-        var groupTrades = d.trades.filter(function (t) { return t.risk === riskGroup; });
-        if (groupTrades.length === 0) return;
+                        // Puts before calls; within each, sort annualized % high to low.
+                        groupTrades.sort(function (a, b) {
+                            if (a.type !== b.type) return a.type === 'put' ? -1 : 1;
+                            return parseFloat(b.ann) - parseFloat(a.ann);
+                        });
 
-        // Puts before calls; within each, sort annualized % high to low.
-        groupTrades.sort(function (a, b) {
-          if (a.type !== b.type) return a.type === 'put' ? -1 : 1;
-          return parseFloat(b.ann) - parseFloat(a.ann);
-        });
+                        ticketsHtml += '<div class="risk-group-heading ' + riskGroup + '">' + riskGroup + '</div>';
+                        groupTrades.forEach(function (t) {
+                            ticketsHtml +=
+                                '<div class="ticket ' +
+                                t.type +
+                                '">' +
+                                '<div class="row1"><span class="ticker">' +
+                                t.ticker +
+                                ' ' +
+                                t.strike +
+                                '</span></div>' +
+                                '<div class="contract">Exp ' +
+                                t.expiry +
+                                ' (' +
+                                t.dte +
+                                ' DTE) &middot; \u0394' +
+                                t.delta +
+                                '</div>' +
+                                '<div class="stats"><span><b>' +
+                                t.ann +
+                                '</b> ann.</span><span><b>' +
+                                t.premium +
+                                '</b> premium</span><span><b>' +
+                                t.collateral +
+                                '</b> collateral</span></div>' +
+                                '<div class="note">' +
+                                t.note +
+                                '</div>' +
+                                '</div>';
+                        });
+                    });
+                }
+                ticketsHtml += '</div>';
 
-        ticketsHtml += '<div class="risk-group-heading ' + riskGroup + '">' + riskGroup + '</div>';
-        groupTrades.forEach(function (t) {
-          ticketsHtml += '<div class="ticket ' + t.type + '">'
-            + '<div class="row1"><span class="ticker">' + t.ticker + ' ' + t.strike + '</span></div>'
-            + '<div class="contract">Exp ' + t.expiry + ' (' + t.dte + ' DTE) &middot; \u0394' + t.delta + '</div>'
-            + '<div class="stats"><span><b>' + t.ann + '</b> ann.</span><span><b>' + t.premium + '</b> premium</span><span><b>' + t.collateral + '</b> collateral</span></div>'
-            + '<div class="note">' + t.note + '</div>'
-            + '</div>';
-        });
-      });
-    }
-    ticketsHtml += '</div>';
+                card.innerHTML = html + ticketsHtml;
+                grid.appendChild(card);
+            });
 
-    card.innerHTML = html + ticketsHtml;
-    grid.appendChild(card);
-  });
-
-  // Theme toggle
-  var toggle = document.getElementById('theme-toggle');
-  var metaColor = document.getElementById('theme-color-meta');
-  function currentTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; }
-  function applyToggleIcon() {
-    var t = currentTheme();
-    toggle.innerHTML = t === 'dark' ? ICONS.sun : ICONS.moon;
-    metaColor.setAttribute('content', t === 'dark' ? '#0b0e16' : '#f5f7fb');
-  }
-  toggle.addEventListener('click', function () {
-    var next = currentTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    applyToggleIcon();
-  });
-  applyToggleIcon();
-</script>
-</body>
+            // Theme toggle
+            var toggle = document.getElementById('theme-toggle');
+            var metaColor = document.getElementById('theme-color-meta');
+            function currentTheme() {
+                return document.documentElement.getAttribute('data-theme') || 'dark';
+            }
+            function applyToggleIcon() {
+                var t = currentTheme();
+                toggle.innerHTML = t === 'dark' ? ICONS.sun : ICONS.moon;
+                metaColor.setAttribute('content', t === 'dark' ? '#0b0e16' : '#f5f7fb');
+            }
+            toggle.addEventListener('click', function () {
+                var next = currentTheme() === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                applyToggleIcon();
+            });
+            applyToggleIcon();
+        </script>
+    </body>
 </html>

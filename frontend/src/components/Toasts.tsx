@@ -29,7 +29,7 @@ export function useToasts() {
             setToasts((current) => [...current, { id, message }]);
             timers.current.push(window.setTimeout(() => dismiss(id), DISMISS_AFTER));
         },
-        [dismiss],
+        [dismiss]
     );
 
     useEffect(() => () => timers.current.forEach(window.clearTimeout), []);
@@ -50,6 +50,6 @@ export function ToastPortal({ toasts, onDismiss }: { toasts: readonly Toast[]; o
                 </div>
             ))}
         </div>,
-        document.body,
+        document.body
     );
 }

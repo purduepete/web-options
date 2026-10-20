@@ -53,7 +53,7 @@ export function GradeSettingsProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo<GradeSettingsState>(
         () => ({ settings, loaded, error, save }),
-        [settings, loaded, error, save],
+        [settings, loaded, error, save]
     );
 
     return <GradeSettingsContext.Provider value={value}>{children}</GradeSettingsContext.Provider>;

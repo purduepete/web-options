@@ -89,7 +89,7 @@ function total(values: number[]): number | null {
     if (values.length === 0) return null;
     return round(
         values.reduce((sum, value) => sum + value, 0),
-        2,
+        2
     );
 }
 
@@ -133,9 +133,9 @@ function summarizeCell(trades: Trade[], numberSource: NumberSource): SummaryCell
         premium: total(
             nonNull(
                 trades.map((trade) =>
-                    numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium,
-                ),
-            ),
+                    numberSource === 'actual' ? (trade.actualPremium ?? trade.premium) : trade.premium
+                )
+            )
         ),
         collateral: total(nonNull(trades.map((trade) => trade.collateral))),
         annualizedYield: weightedYield(trades, numberSource),
@@ -149,7 +149,7 @@ function cellsFor(trades: Trade[], numberSource: NumberSource): Record<SummaryCo
         // group cells up, so its yield stays weighted across the whole set.
         cells[column] = summarizeCell(
             column === 'all' ? trades : trades.filter((trade) => groupIdForTrade(trade) === column),
-            numberSource,
+            numberSource
         );
     }
     return cells;
@@ -169,7 +169,7 @@ export function summarizeRange(
     rows: SignalRow[],
     weekStarts: IsoDate[],
     requested: SummaryFilters | string[],
-    legacyExpiry: ExpiryFilter = 'all',
+    legacyExpiry: ExpiryFilter = 'all'
 ): { weeks: WeekSummaryRow[]; total: Record<SummaryColumn, SummaryCell> } {
     const filters: SummaryFilters = Array.isArray(requested)
         ? {

@@ -79,7 +79,7 @@ export async function writeCached(
     db: DbConfig,
     symbol: string,
     quote: SymbolQuote,
-    bars: readonly SymbolBar[],
+    bars: readonly SymbolBar[]
 ): Promise<void> {
     const pool = await getPool(db);
     const transaction = new sql.Transaction(pool);
@@ -222,7 +222,7 @@ export async function pastSignalsFor(
     db: DbConfig,
     symbol: string,
     exclude: PastSignalExclusion,
-    otherLimit: number,
+    otherLimit: number
 ): Promise<PastSignalSeed[]> {
     const pool = await getPool(db);
     const result = await pool
@@ -283,11 +283,7 @@ export interface RecentSignalRow {
     expiration: IsoDate | null;
 }
 
-export async function recentSignalsFor(
-    db: DbConfig,
-    symbol: string,
-    tradingDays: number,
-): Promise<RecentSignalRow[]> {
+export async function recentSignalsFor(db: DbConfig, symbol: string, tradingDays: number): Promise<RecentSignalRow[]> {
     const pool = await getPool(db);
     const result = await pool
         .request()
@@ -316,7 +312,7 @@ WHERE symbol = @symbol
 export async function ownedContractsFor(
     db: DbConfig,
     symbol: string,
-    lookup: { strike: number; expiration: IsoDate; reportDate?: IsoDate | null },
+    lookup: { strike: number; expiration: IsoDate; reportDate?: IsoDate | null }
 ): Promise<number> {
     const pool = await getPool(db);
     const result = await pool

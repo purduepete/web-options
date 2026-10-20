@@ -220,7 +220,7 @@ export function gradeTrade(input: GradeInput, settings: GradeSettings = GRADE_DE
 
     const band = reasons.reduce<Exclude<GradeBand, 'ungraded'>>(
         (worst, reason) => (RANK[reason.band] > RANK[worst] ? reason.band : worst),
-        'green',
+        'green'
     );
 
     return { band, reasons };

@@ -124,14 +124,14 @@ describe('resolveOutcome', () => {
 
     it('settles an expiration the cached bars stop short of, using the live close', () => {
         // Bars end 01-02, the put expired 01-03, and the refetched quote has that day.
-        expect(resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-03', close: 9 })).toEqual(
-            { outcome: 'expired_itm', closeAtExpiration: 9 },
-        );
+        expect(
+            resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-03', close: 9 })
+        ).toEqual({ outcome: 'expired_itm', closeAtExpiration: 9 });
     });
 
     it('will not settle an expiration with a close from a different day', () => {
         expect(
-            resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-09', close: 9 }).outcome,
+            resolveOutcome(series([10, 11]), 12, '2026-01-03', '2026-02-01', { date: '2026-01-09', close: 9 }).outcome
         ).toBe('unknown');
     });
 
@@ -157,7 +157,7 @@ describe('resolvePastSignals', () => {
                 },
             ],
             series([10, 11, 12]),
-            '2026-02-01',
+            '2026-02-01'
         );
 
         expect(resolved).toEqual([

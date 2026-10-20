@@ -65,7 +65,7 @@ function emptyDayReason(
     expiryFilter: ExpiryFilter,
     moneynessFilter: MoneynessFilter,
     halfFilter: HalfFilter,
-    gradeFilter: readonly GradeFilter[],
+    gradeFilter: readonly GradeFilter[]
 ): string {
     const typed = symbolFilter.trim();
     const terms = typed

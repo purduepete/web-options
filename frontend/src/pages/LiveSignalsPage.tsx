@@ -166,21 +166,21 @@ export function LiveSignalsPage() {
                         filterDaysByHalf(
                             filterDaysByMoneyness(
                                 filterDaysByExpiry(filterDaysBySymbol(data?.days ?? [], symbol), expiry),
-                                moneyness,
+                                moneyness
                             ),
-                            half,
+                            half
                         ),
                         grades,
                         numberSource,
                         gradeSettings,
                         [...cautionSymbols],
-                        vix,
+                        vix
                     ),
-                    owned,
+                    owned
                 ),
-                tier,
+                tier
             ),
-        [data, symbol, expiry, moneyness, half, owned, tier, grades, numberSource, gradeSettings, cautionSymbols, vix],
+        [data, symbol, expiry, moneyness, half, owned, tier, grades, numberSource, gradeSettings, cautionSymbols, vix]
     );
     const groups = useMemo(() => buildGroups(days), [days]);
 
@@ -190,7 +190,7 @@ export function LiveSignalsPage() {
     // same put signalled on two mornings is two trades.
     const selectedDay = useMemo(
         () => (selectedTrade ? (days.find((entry) => entry.trades.includes(selectedTrade)) ?? null) : null),
-        [selectedTrade, days],
+        [selectedTrade, days]
     );
 
     const daySiblings = useMemo(() => {
@@ -207,13 +207,13 @@ export function LiveSignalsPage() {
                 return daySiblings[daySiblings.indexOf(current) + by] ?? current;
             });
         },
-        [daySiblings],
+        [daySiblings]
     );
 
     const previousTrade = useMemo(() => (siblingIndex > 0 ? () => stepTrade(-1) : null), [siblingIndex, stepTrade]);
     const nextTrade = useMemo(
         () => (siblingIndex >= 0 && siblingIndex < daySiblings.length - 1 ? () => stepTrade(1) : null),
-        [siblingIndex, daySiblings.length, stepTrade],
+        [siblingIndex, daySiblings.length, stepTrade]
     );
 
     const openFromGrid = useCallback((trade: Trade) => {
@@ -253,7 +253,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setSymbolParam = useCallback(
@@ -267,10 +267,10 @@ export function LiveSignalsPage() {
                     else updated.delete('symbol');
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         },
-        [setParams],
+        [setParams]
     );
 
     const setExpiryParam = useCallback(
@@ -282,7 +282,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setOwnedParam = useCallback(
@@ -294,7 +294,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setMoneynessParam = useCallback(
@@ -306,7 +306,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setHalfParam = useCallback(
@@ -318,7 +318,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setGradeParam = useCallback(
@@ -331,7 +331,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setTierParam = useCallback(
@@ -344,7 +344,7 @@ export function LiveSignalsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     // The filters live in the URL, so they clear in one write rather than a
@@ -461,7 +461,7 @@ export function LiveSignalsPage() {
 
     const cycleMoneyness = useCallback(
         () => setMoneynessParam(cycle(MONEYNESS_FILTERS, moneyness)),
-        [moneyness, setMoneynessParam],
+        [moneyness, setMoneynessParam]
     );
 
     const cycleHalf = useCallback(() => setHalfParam(cycle(HALF_FILTERS, half)), [half, setHalfParam]);
@@ -471,7 +471,7 @@ export function LiveSignalsPage() {
     const toggleTier = useCallback(
         (next: TierSelection) =>
             setTierParam(tier.includes(next) ? tier.filter((filter) => filter !== next) : [...tier, next]),
-        [tier, setTierParam],
+        [tier, setTierParam]
     );
 
     const goPrevious = useCallback(() => {

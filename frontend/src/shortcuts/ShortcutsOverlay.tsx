@@ -85,6 +85,6 @@ export function ShortcutsOverlay() {
                 </div>
             </div>
         </div>,
-        document.body,
+        document.body
     );
 }

@@ -29,7 +29,7 @@ function renderHarness(initialPath = '/settings/key') {
             <FavoritesProvider>
                 <Harness />
             </FavoritesProvider>
-        </MemoryRouter>,
+        </MemoryRouter>
     );
 }
 

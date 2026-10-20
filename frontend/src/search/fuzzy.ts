@@ -133,7 +133,7 @@ const DEFAULT_LIMIT = 50;
 export function rankCommands(
     query: string,
     commands: readonly Command[],
-    limit: number = DEFAULT_LIMIT,
+    limit: number = DEFAULT_LIMIT
 ): CommandResult[] {
     const results: CommandResult[] = [];
 

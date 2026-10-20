@@ -148,7 +148,7 @@ describe('normalizePayload', () => {
 
     it('refuses a day whose date cannot be resolved', () => {
         expect(() =>
-            normalizePayload({ ...payload, days: [{ name: 'Monday', date: 'whenever', trades: [] }] }),
+            normalizePayload({ ...payload, days: [{ name: 'Monday', date: 'whenever', trades: [] }] })
         ).toThrow(/Could not resolve a date/);
     });
 

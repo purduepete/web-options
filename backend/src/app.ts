@@ -21,23 +21,33 @@ export function createApp(config: AppConfig): Express {
                 useDefaults: false,
                 directives: {
                     defaultSrc: helmet.contentSecurityPolicy.dangerouslyDisableDefaultSrc,
-                    frameAncestors: ["'self'", 'https://jimbrownlaptop.tail8ad282.ts.net', 'https://site-dock.jimlertech.com', 'https://jimbrownhome1.tail8ad282.ts.net:8790'],
+                    frameAncestors: [
+                        "'self'",
+                        'https://jimbrownlaptop.tail8ad282.ts.net',
+                        'https://site-dock.jimlertech.com',
+                        'https://jimbrownhome1.tail8ad282.ts.net:8790',
+                    ],
                 },
             },
-        }),
+        })
     );
     app.use((req, res, next) => {
-        if (accessMode && !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
-            !allowedOrigins.includes(req.get('origin') ?? '')) {
+        if (
+            accessMode &&
+            !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+            !allowedOrigins.includes(req.get('origin') ?? '')
+        ) {
             res.status(403).json({ error: 'allowed origin required' });
             return;
         }
         next();
     });
-    app.use(cors({
-        origin: accessMode ? allowedOrigins : true,
-        allowedHeaders: ['X-API-Key', 'Content-Type'],
-    }));
+    app.use(
+        cors({
+            origin: accessMode ? allowedOrigins : true,
+            allowedHeaders: ['X-API-Key', 'Content-Type'],
+        })
+    );
     // Only the caution list has a body, and it is a few hundred tickers at most.
     app.use(express.json({ limit: '32kb' }));
     if (config.nodeEnv !== 'test') {
@@ -58,7 +68,7 @@ export function createApp(config: AppConfig): Express {
                 const failure = classifyDbError(error) ?? 'database_unreachable';
                 console.error('[weboptions] not ready:', failure);
                 res.status(503).json({ status: 'degraded', database: failure });
-            },
+            }
         );
     });
 
@@ -82,7 +92,7 @@ export function createApp(config: AppConfig): Express {
                         res.setHeader('Cache-Control', 'public, max-age=86400');
                     }
                 },
-            }),
+            })
         );
         // Deep links like /calendars/2026-08-10 are client-side routes, so no file
         // matches them and the app shell has to answer instead of a 404.

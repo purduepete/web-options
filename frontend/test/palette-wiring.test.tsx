@@ -48,7 +48,7 @@ function renderApp() {
                     </FavoritesProvider>
                 </MemoryRouter>
             </ApiKeyProvider>
-        </ThemeProvider>,
+        </ThemeProvider>
     );
 }
 

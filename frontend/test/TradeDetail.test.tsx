@@ -103,7 +103,7 @@ function renderDetail(props: Partial<Parameters<typeof TradeDetail>[0]> = {}) {
             <GradeSettingsProvider>
                 <TradeDetail trade={trade()} numberSource="quoted" onClose={onClose} {...props} />
             </GradeSettingsProvider>
-        </CautionProvider>,
+        </CautionProvider>
     );
     return { ...result, onClose };
 }
@@ -166,7 +166,7 @@ describe('TradeDetail', () => {
                 strike: 170,
                 expiration: '2026-08-21',
                 reportDate: null,
-            }),
+            })
         );
     });
 
@@ -178,7 +178,7 @@ describe('TradeDetail', () => {
                 strike: 170,
                 expiration: '2026-08-21',
                 reportDate: '2026-08-18',
-            }),
+            })
         );
     });
 
@@ -221,7 +221,7 @@ describe('TradeDetail', () => {
                     worstPremiumKept: -0.451612,
                     worstProfit: -70,
                 }),
-            }),
+            })
         );
         renderDetail({ reportDate: '2026-08-18' });
 
@@ -234,7 +234,7 @@ describe('TradeDetail', () => {
 
     it('freezes once the contract has expired and says where it finished', async () => {
         fetchSymbolDetail.mockResolvedValue(
-            detail({ outcome: outcome({ settled: true, moneynessAtExpiration: 'otm' }) }),
+            detail({ outcome: outcome({ settled: true, moneynessAtExpiration: 'otm' }) })
         );
         renderDetail({ reportDate: '2026-08-18' });
 
@@ -351,7 +351,7 @@ describe('TradeDetail', () => {
             renderDetail({ trade: { ...trade(), expiration: null } });
 
             expect(screen.getByRole<HTMLAnchorElement>('link', { name: 'Seeking Alpha' }).href).toBe(
-                'https://seekingalpha.com/symbol/VST',
+                'https://seekingalpha.com/symbol/VST'
             );
         });
 
@@ -359,7 +359,7 @@ describe('TradeDetail', () => {
             renderDetail();
 
             const url = new URL(
-                screen.getByRole<HTMLAnchorElement>('link', { name: 'Barchart option price history' }).href,
+                screen.getByRole<HTMLAnchorElement>('link', { name: 'Barchart option price history' }).href
             );
 
             expect(url.pathname).toBe('/options/price-history');
@@ -426,9 +426,7 @@ describe('TradeDetail', () => {
         });
 
         it('reports the recent total and how it went, which the trimmed list cannot', async () => {
-            fetchSymbolDetail.mockResolvedValue(
-                detail({ recentSignals: { total: 11, inTheMoney: 4, assigned: 3 } }),
-            );
+            fetchSymbolDetail.mockResolvedValue(detail({ recentSignals: { total: 11, inTheMoney: 4, assigned: 3 } }));
             renderDetail();
 
             expect(await screen.findByText('11 in 20 days')).toBeTruthy();
@@ -473,7 +471,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 
@@ -512,7 +510,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 1,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 
@@ -540,7 +538,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail({ onOpenSignal });
 
@@ -573,7 +571,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 
@@ -646,7 +644,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 
@@ -689,7 +687,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 
@@ -717,7 +715,7 @@ describe('TradeDetail', () => {
                             ownedPaperContracts: 0,
                         },
                     ],
-                }),
+                })
             );
             renderDetail();
 

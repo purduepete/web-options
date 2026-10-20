@@ -20,7 +20,7 @@ const config: AppConfig = {
 
 function agent() {
     vi.spyOn(authRepository, 'findActiveKey').mockImplementation(async (_db, keyHash) =>
-        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
+        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null
     );
     return request(createApp(config));
 }

@@ -5,14 +5,21 @@ import type { AppConfig } from '../src/config';
 
 vi.mock('../src/db', () => ({
     classifyDbError: vi.fn(),
-    pingDatabase: vi.fn(() => { throw new Error('Database access is forbidden in this test'); }),
-    getPool: vi.fn(() => { throw new Error('Database access is forbidden in this test'); }),
+    pingDatabase: vi.fn(() => {
+        throw new Error('Database access is forbidden in this test');
+    }),
+    getPool: vi.fn(() => {
+        throw new Error('Database access is forbidden in this test');
+    }),
 }));
 
 const app = createApp({
     db: { server: 'unused', database: 'unused', user: 'unused', password: 'unused' },
     webportfolio: { apiUrl: null, serviceKey: null },
-    port: 5057, host: '127.0.0.1', nodeEnv: 'test', webRoot: null,
+    port: 5057,
+    host: '127.0.0.1',
+    nodeEnv: 'test',
+    webRoot: null,
 } satisfies AppConfig);
 
 describe('SiteDock frame allowlist', () => {
@@ -20,7 +27,7 @@ describe('SiteDock frame allowlist', () => {
         const response = await request(app).get(path);
         expect(response.headers['x-frame-options']).toBeUndefined();
         expect(response.headers['content-security-policy']).toBe(
-            "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
+            "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790"
         );
     });
 });

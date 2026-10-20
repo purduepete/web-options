@@ -10,7 +10,7 @@ function renderControls() {
     return render(
         <ThemeProvider>
             <ThemeControls />
-        </ThemeProvider>,
+        </ThemeProvider>
     );
 }
 
@@ -90,7 +90,9 @@ describe('ThemeProvider', () => {
         let listener: (event: { matches: boolean }) => void = () => {};
         vi.spyOn(window, 'matchMedia').mockReturnValue({
             matches: false,
-            addEventListener: (_: string, callback: typeof listener) => { listener = callback; },
+            addEventListener: (_: string, callback: typeof listener) => {
+                listener = callback;
+            },
             removeEventListener: () => {},
         } as unknown as MediaQueryList);
         renderControls();
@@ -102,15 +104,28 @@ describe('ThemeProvider', () => {
         vi.restoreAllMocks();
     });
 
-    it.each(['"light"', '"system"', '"dark"', 'midnight', 'invalid'])('matches pre-paint with legacy preference %s', (preference) => {
-        localStorage.setItem(STORAGE_KEYS.themePreference, preference);
-        const html = readFileSync('frontend/index.html', 'utf8');
-        const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]!;
-        new Function(script)();
-        const before = [root().dataset.theme, root().style.colorScheme, root().style.backgroundColor, root().style.getPropertyValue('--highlight')];
-        renderControls();
-        expect([root().dataset.theme, root().style.colorScheme, root().style.backgroundColor, root().style.getPropertyValue('--highlight')]).toEqual(before);
-    });
+    it.each(['"light"', '"system"', '"dark"', 'midnight', 'invalid'])(
+        'matches pre-paint with legacy preference %s',
+        (preference) => {
+            localStorage.setItem(STORAGE_KEYS.themePreference, preference);
+            const html = readFileSync('frontend/index.html', 'utf8');
+            const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]!;
+            new Function(script)();
+            const before = [
+                root().dataset.theme,
+                root().style.colorScheme,
+                root().style.backgroundColor,
+                root().style.getPropertyValue('--highlight'),
+            ];
+            renderControls();
+            expect([
+                root().dataset.theme,
+                root().style.colorScheme,
+                root().style.backgroundColor,
+                root().style.getPropertyValue('--highlight'),
+            ]).toEqual(before);
+        }
+    );
 
     it('resets the highlight to the active theme default when switching themes', async () => {
         renderControls();

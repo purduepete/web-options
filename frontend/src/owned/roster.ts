@@ -46,7 +46,7 @@ function unpriced(position: OwnedOptionPosition): OwnedOptionPosition {
  */
 export function mergeRoster(
     priced: readonly OwnedOptionPosition[],
-    roster: readonly OwnedOptionPosition[],
+    roster: readonly OwnedOptionPosition[]
 ): OwnedOptionPosition[] {
     const known = new Map(priced.map((position) => [key(position), position]));
     return roster.map((position) => known.get(key(position)) ?? unpriced(position));

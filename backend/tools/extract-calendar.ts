@@ -99,14 +99,14 @@ function main(): void {
 
         const destination = path.join(
             outDir ?? path.dirname(file),
-            `weekly-options-calendar-${payload.publishDate}.json`,
+            `weekly-options-calendar-${payload.publishDate}.json`
         );
         fs.mkdirSync(path.dirname(destination), { recursive: true });
         fs.writeFileSync(destination, JSON.stringify(payload, null, 2), 'utf-8');
 
         console.log(
             `${path.basename(file)} -> ${payload.publishDate}  ` +
-                `days ${payload.days.length}  trades ${trades}  macro ${payload.macro?.length ?? 0}`,
+                `days ${payload.days.length}  trades ${trades}  macro ${payload.macro?.length ?? 0}`
         );
         console.log(`  wrote ${destination}`);
     }

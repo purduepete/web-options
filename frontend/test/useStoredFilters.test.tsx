@@ -28,7 +28,7 @@ function renderAt(path: string, guardKeys?: readonly string[]) {
     return render(
         <MemoryRouter initialEntries={[path]}>
             <Harness guardKeys={guardKeys} />
-        </MemoryRouter>,
+        </MemoryRouter>
     );
 }
 

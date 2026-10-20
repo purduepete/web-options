@@ -69,15 +69,16 @@ export function buildCommands({
         });
     }
 
-    if (!isAccessMode()) commands.push({
-        id: 'action:forget-key',
-        label: 'Forget the API key on this browser',
-        hint: 'Locks the app and asks for the key again',
-        keywords: 'sign out log out lock',
-        group: 'Actions',
-        icon: 'key',
-        run: forget,
-    });
+    if (!isAccessMode())
+        commands.push({
+            id: 'action:forget-key',
+            label: 'Forget the API key on this browser',
+            hint: 'Locks the app and asks for the key again',
+            keywords: 'sign out log out lock',
+            group: 'Actions',
+            icon: 'key',
+            run: forget,
+        });
 
     return commands;
 }

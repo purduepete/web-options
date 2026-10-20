@@ -14,7 +14,7 @@ describe('classifyDbError', () => {
         'treats %s as the database being out of reach',
         (code) => {
             expect(classifyDbError({ code })).toBe('database_unreachable');
-        },
+        }
     );
 
     it('leaves an ordinary bug alone rather than blaming the database', () => {

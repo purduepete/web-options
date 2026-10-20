@@ -87,7 +87,7 @@ export function SummaryPage() {
     // up, so each combination has its own answer to cache.
     const cacheKey = useCallback(
         (month: string) => `${month}|${symbols.join(',')}|${expiry}|${moneyness}|${half}|${numberSource}`,
-        [symbols, expiry, moneyness, half, numberSource],
+        [symbols, expiry, moneyness, half, numberSource]
     );
 
     // Typing narrows the whole archive, so it waits for a pause rather than
@@ -102,7 +102,7 @@ export function SummaryPage() {
                     else updated.delete('symbols');
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         }, 300);
         return () => clearTimeout(timer);
@@ -201,10 +201,10 @@ export function SummaryPage() {
                     else updated.set('expiry', next);
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         },
-        [setParams],
+        [setParams]
     );
 
     const setFilterParam = useCallback(
@@ -216,10 +216,10 @@ export function SummaryPage() {
                     else updated.set(name, next);
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         },
-        [setParams],
+        [setParams]
     );
 
     const clearSymbols = useCallback(() => {
@@ -230,7 +230,7 @@ export function SummaryPage() {
                 updated.delete('symbols');
                 return updated;
             },
-            { replace: true },
+            { replace: true }
         );
     }, [setParams]);
 
@@ -248,7 +248,7 @@ export function SummaryPage() {
                 updated.delete('owned');
                 return updated;
             },
-            { replace: true },
+            { replace: true }
         );
     }, [setNumberSource, setParams]);
 

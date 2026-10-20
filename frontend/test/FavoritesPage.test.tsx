@@ -10,7 +10,7 @@ function renderPage() {
     return render(
         <FavoritesProvider>
             <FavoritesPage />
-        </FavoritesProvider>,
+        </FavoritesProvider>
     );
 }
 

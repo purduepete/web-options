@@ -39,7 +39,7 @@ export function assertSafePassword(password: string): void {
     if (!/^[A-Za-z0-9]+$/.test(password)) {
         throw new Error(
             'WEBOPTIONS_RO_PASSWORD must be alphanumeric. Symbols are rejected so the ' +
-                'value cannot break out of the DDL string literal or a connection string.',
+                'value cannot break out of the DDL string literal or a connection string.'
         );
     }
     if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {

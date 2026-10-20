@@ -127,7 +127,7 @@ describe('gradeTrade', () => {
 
             expect(result.band).toBe('red');
             expect(result.reasons[0]?.detail).toBe(
-                'VIX closed at 11.20, below 12.5; premium is thin across the market.',
+                'VIX closed at 11.20, below 12.5; premium is thin across the market.'
             );
         });
 

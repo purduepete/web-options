@@ -21,7 +21,7 @@ function renderPage() {
     return render(
         <CautionProvider>
             <CautionPage />
-        </CautionProvider>,
+        </CautionProvider>
     );
 }
 
@@ -107,7 +107,7 @@ describe('CautionBadge', () => {
             <CautionProvider>
                 <CautionBadge symbol="ktos" />
                 <CautionBadge symbol="PM" />
-            </CautionProvider>,
+            </CautionProvider>
         );
         await waitFor(() => expect(container.querySelectorAll('.caution-flag')).toHaveLength(1));
     });
@@ -117,7 +117,7 @@ describe('CautionBadge', () => {
         const { container } = render(
             <CautionProvider>
                 <CautionBadge symbol="KTOS" />
-            </CautionProvider>,
+            </CautionProvider>
         );
         expect(container.querySelector('.caution-flag')).toBeNull();
     });

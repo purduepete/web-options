@@ -23,7 +23,7 @@ export function loadOperatorConfig(): AppConfig {
         throw new Error(
             `Refusing to run: DB_USER is ${READ_ONLY_LOGIN}, which is the service login and ` +
                 'cannot write by design. Operator tools must run as the operator login from ' +
-                'the laptop, never on the server.',
+                'the laptop, never on the server.'
         );
     }
     return config;

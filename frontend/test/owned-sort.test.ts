@@ -152,7 +152,7 @@ describe('sortOwnedPositions', () => {
                     withSignal.transactionDate,
                     withSignal.symbol,
                     withSignal.strikePrice,
-                    withSignal.expirationDate,
+                    withSignal.expirationDate
                 ),
                 { trade: { percentFromStrike: 30 } as Trade, reportDate: withSignal.transactionDate },
             ],

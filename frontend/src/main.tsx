@@ -9,5 +9,5 @@ if (!container) throw new Error('#root missing from index.html');
 createRoot(container).render(
     <StrictMode>
         <App />
-    </StrictMode>,
+    </StrictMode>
 );

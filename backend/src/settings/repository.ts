@@ -21,7 +21,7 @@ function bindNames(request: sql.Request): sql.Request {
 export async function readGradeSettings(db: DbConfig): Promise<GradeSettings> {
     const pool = await getPool(db);
     const result = await bindNames(pool.request()).query<{ name: string; value: string }>(
-        `SELECT name, value FROM optcfg.app_setting WHERE name IN (${NAME_PARAMS})`,
+        `SELECT name, value FROM optcfg.app_setting WHERE name IN (${NAME_PARAMS})`
     );
 
     const stored: Record<string, string> = {};
@@ -36,7 +36,7 @@ export async function replaceGradeSettings(db: DbConfig, settings: GradeSettings
     await transaction.begin();
     try {
         await bindNames(new sql.Request(transaction)).query(
-            `DELETE FROM optcfg.app_setting WHERE name IN (${NAME_PARAMS})`,
+            `DELETE FROM optcfg.app_setting WHERE name IN (${NAME_PARAMS})`
         );
 
         const request = new sql.Request(transaction);

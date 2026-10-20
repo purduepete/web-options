@@ -178,7 +178,7 @@ describe('groupIntoDays', () => {
                 row({ report_date: new Date(Date.UTC(2026, 7, 10)) }),
                 row({ report_date: new Date(Date.UTC(2026, 7, 14)) }),
             ],
-            monday,
+            monday
         );
         expect(days.map((d) => [d.name, d.date])).toEqual([
             ['Monday', '2026-08-10'],

@@ -453,15 +453,17 @@ export interface HealthResponse {
 }
 
 /** Identifies the key the caller presented. Never includes the key or its hash. */
-export type MeResponse = {
-    authMode?: 'api-key';
-    label: string;
-    prefix: string;
-    expiresAt: IsoDate | null;
-} | {
-    authMode: 'access';
-    label: string;
-};
+export type MeResponse =
+    | {
+          authMode?: 'api-key';
+          label: string;
+          prefix: string;
+          expiresAt: IsoDate | null;
+      }
+    | {
+          authMode: 'access';
+          label: string;
+      };
 
 export interface ApiError {
     error: string;

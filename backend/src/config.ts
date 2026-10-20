@@ -64,7 +64,7 @@ function resolveWebRoot(value: string | undefined): string | null {
         throw new Error(
             `WEBOPTIONS_WEB_ROOT is ${root}${relative}, but there is no index.html there. ` +
                 'Run npm run build first, or point it at frontend/dist. In development ' +
-                'it should not be set at all, since Vite serves the app.',
+                'it should not be set at all, since Vite serves the app.'
         );
     }
     return root;
@@ -81,7 +81,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     }
     const auth: NonNullable<AppConfig['auth']> = {
         mode,
-        allowedOrigins: (env.WEBOPTIONS_ALLOWED_ORIGINS ?? '').split(',').map((origin) => origin.trim()).filter(Boolean),
+        allowedOrigins: (env.WEBOPTIONS_ALLOWED_ORIGINS ?? '')
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter(Boolean),
     };
     const iniPath = env.WEBPORTFOLIO_CONFIG_PATH;
     const fallback = iniPath ? readIniFallback(path.resolve(iniPath)) : {};
@@ -99,7 +102,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         throw new Error(
             `Database configuration incomplete — missing ${missing.join(', ')}. ` +
                 'Set DB_SERVER / DB_NAME / DB_USER / DB_PASSWORD, or point ' +
-                'WEBPORTFOLIO_CONFIG_PATH at a config.ini with a [Database] section.',
+                'WEBPORTFOLIO_CONFIG_PATH at a config.ini with a [Database] section.'
         );
     }
 
@@ -125,14 +128,19 @@ export function validateAccessConfig(config: AppConfig): void {
     if (!['127.0.0.1', '::1'].includes(config.host)) {
         throw new Error('Access mode requires a literal loopback HOST (127.0.0.1 or ::1)');
     }
-    if (!config.auth.allowedOrigins.length || config.auth.allowedOrigins.some((origin) => {
-        try {
-            const url = new URL(origin);
-            return url.protocol !== 'https:' || url.origin !== origin;
-        } catch {
-            return true;
-        }
-    })) {
-        throw new Error('Access mode requires exact HTTPS WEBOPTIONS_ALLOWED_ORIGINS without paths or trailing slashes');
+    if (
+        !config.auth.allowedOrigins.length ||
+        config.auth.allowedOrigins.some((origin) => {
+            try {
+                const url = new URL(origin);
+                return url.protocol !== 'https:' || url.origin !== origin;
+            } catch {
+                return true;
+            }
+        })
+    ) {
+        throw new Error(
+            'Access mode requires exact HTTPS WEBOPTIONS_ALLOWED_ORIGINS without paths or trailing slashes'
+        );
     }
 }

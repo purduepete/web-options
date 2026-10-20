@@ -24,7 +24,7 @@ function driverError(code: string): Error {
 
 function agent() {
     vi.spyOn(authRepository, 'findActiveKey').mockImplementation(async (_db, keyHash) =>
-        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
+        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null
     );
     return request(createApp(config));
 }
@@ -102,7 +102,7 @@ describe('failures on a data route', () => {
 
     it('keeps the driver message to itself', async () => {
         vi.spyOn(calendarRepository, 'listCalendars').mockRejectedValue(
-            driverError('ELOGIN') as Error & { code: string },
+            driverError('ELOGIN') as Error & { code: string }
         );
         const response = await agent().get('/api/calendars').set('x-api-key', VALID_KEY);
 

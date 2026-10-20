@@ -76,7 +76,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
     useEffect(() => {
         if (!open) return;
         setAnnouncement(
-            results.length === 0 ? 'No matches' : `${results.length} result${results.length === 1 ? '' : 's'}`,
+            results.length === 0 ? 'No matches' : `${results.length} result${results.length === 1 ? '' : 's'}`
         );
     }, [open, results.length]);
 
@@ -216,7 +216,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
                 </p>
             </div>
         </div>,
-        document.body,
+        document.body
     );
 }
 

@@ -22,7 +22,7 @@ function renderProvider() {
     return render(
         <ApiKeyProvider>
             <Harness />
-        </ApiKeyProvider>,
+        </ApiKeyProvider>
     );
 }
 

@@ -29,10 +29,14 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (isAccessMode()) {
             let cancelled = false;
-            void fetchMe().then((me) => {
-                if (!cancelled) setIdentity(me);
-            }).catch(() => {});
-            return () => { cancelled = true; };
+            void fetchMe()
+                .then((me) => {
+                    if (!cancelled) setIdentity(me);
+                })
+                .catch(() => {});
+            return () => {
+                cancelled = true;
+            };
         }
         const stored = readKey();
         if (!stored) return;
@@ -90,7 +94,7 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo<ApiKeyState>(
         () => ({ status, identity, remembered, submit, forget, lock: forget }),
-        [status, identity, remembered, submit, forget],
+        [status, identity, remembered, submit, forget]
     );
 
     return <ApiKeyContext.Provider value={value}>{children}</ApiKeyContext.Provider>;

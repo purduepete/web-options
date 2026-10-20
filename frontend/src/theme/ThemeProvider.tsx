@@ -38,7 +38,9 @@ function readPreference(): ThemePreference {
 function readHighlight(): string {
     try {
         const stored = localStorage.getItem(STORAGE_KEYS.highlightColor)?.replace(/^"|"$/g, '');
-        return stored && hexToRgb(stored) ? stored : THEME_DEFAULT_HIGHLIGHT[resolveTheme(readPreference(), prefersDark())];
+        return stored && hexToRgb(stored)
+            ? stored
+            : THEME_DEFAULT_HIGHLIGHT[resolveTheme(readPreference(), prefersDark())];
     } catch {
         return DEFAULT_HIGHLIGHT_COLOR;
     }
@@ -69,7 +71,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const root = document.documentElement;
         root.setAttribute('data-theme', theme);
         root.classList.remove('light', 'dark', 'theme-midnight');
-        root.classList.add(...(theme === 'light' ? ['light'] : theme === 'midnight' ? ['dark', 'theme-midnight'] : ['dark']));
+        root.classList.add(
+            ...(theme === 'light' ? ['light'] : theme === 'midnight' ? ['dark', 'theme-midnight'] : ['dark'])
+        );
         root.style.colorScheme = theme === 'light' ? 'light' : 'dark';
         root.style.backgroundColor = THEME_BACKGROUNDS[theme];
         root.style.setProperty('--highlight', highlightColor);
@@ -83,7 +87,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         previousTheme.current = theme;
         const color = THEME_DEFAULT_HIGHLIGHT[theme];
         setHighlightState(color);
-        try { localStorage.setItem(STORAGE_KEYS.highlightColor, color); } catch { /* This tab still updates. */ }
+        try {
+            localStorage.setItem(STORAGE_KEYS.highlightColor, color);
+        } catch {
+            /* This tab still updates. */
+        }
     }, [theme]);
 
     const setPreference = useCallback((next: ThemePreference) => {
@@ -107,7 +115,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo<ThemeValue>(
         () => ({ preference, theme, highlightColor, setPreference, setHighlightColor }),
-        [preference, theme, highlightColor, setPreference, setHighlightColor],
+        [preference, theme, highlightColor, setPreference, setHighlightColor]
     );
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

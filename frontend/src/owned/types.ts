@@ -14,6 +14,6 @@ export function signalKey(reportDate: string, symbol: string, strike: number, ex
 
 export function signalFor(signals: SignalMap, position: OwnedOptionPosition): SignalMatch | undefined {
     return signals.get(
-        signalKey(position.transactionDate, position.symbol, position.strikePrice, position.expirationDate),
+        signalKey(position.transactionDate, position.symbol, position.strikePrice, position.expirationDate)
     );
 }

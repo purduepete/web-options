@@ -75,10 +75,7 @@ const BUCKETS: Record<Exclude<OwnedGroup, 'none'>, (position: OwnedOptionPositio
 };
 
 /** Buckets the rows client-side, in the same order the sort left them within a bucket. */
-export function groupOwnedPositions(
-    positions: readonly OwnedOptionPosition[],
-    mode: OwnedGroup,
-): OwnedGroupBucket[] {
+export function groupOwnedPositions(positions: readonly OwnedOptionPosition[], mode: OwnedGroup): OwnedGroupBucket[] {
     if (mode === 'none') return positions.length === 0 ? [] : [{ label: '', positions: [...positions] }];
     const bucket = BUCKETS[mode];
     const groups = new Map<string, { label: string; order: number; positions: OwnedOptionPosition[] }>();

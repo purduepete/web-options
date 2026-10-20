@@ -17,7 +17,9 @@ const app = createApp(config);
 
 const server = app.listen(config.port, config.host, () => {
     const address = config.host === '0.0.0.0' ? lanAddress() : config.host;
-    console.log(`weboptions api listening on http://${address.includes(':') ? `[${address}]` : address}:${config.port}`);
+    console.log(
+        `weboptions api listening on http://${address.includes(':') ? `[${address}]` : address}:${config.port}`
+    );
     console.log(`timezone ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
 });
 

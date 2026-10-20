@@ -46,7 +46,7 @@ describe('validateCalendarPayload', () => {
 
     it('rejects a missing weekday', () => {
         expect(() => validateCalendarPayload({ ...payload, days: payload.days.slice(0, 4) }, 1)).toThrow(
-            /Monday through Friday/,
+            /Monday through Friday/
         );
     });
 
@@ -58,14 +58,17 @@ describe('validateCalendarPayload', () => {
         expect(() =>
             validateCalendarPayload(
                 { ...payload, days: [{ ...payload.days[0]!, rule: 'Wait — then trade.' }, ...payload.days.slice(1)] },
-                1,
-            ),
+                1
+            )
         ).toThrow(/em dash/);
         expect(() =>
             validateCalendarPayload(
-                { ...payload, days: [{ ...payload.days[0]!, event: 'Report at 8:30 AM Eastern.' }, ...payload.days.slice(1)] },
-                1,
-            ),
+                {
+                    ...payload,
+                    days: [{ ...payload.days[0]!, event: 'Report at 8:30 AM Eastern.' }, ...payload.days.slice(1)],
+                },
+                1
+            )
         ).toThrow(/Eastern time/);
     });
 });
@@ -99,9 +102,7 @@ describe('renderCalendar', () => {
 
 describe('parseCalendarArgs', () => {
     it('accepts the positional values npm forwards on this machine', () => {
-        expect(
-            parseCalendarArgs(['--check', 'week.json', '14', '2026-08-31T14:57:48Z', 'C:\\temp']),
-        ).toEqual({
+        expect(parseCalendarArgs(['--check', 'week.json', '14', '2026-08-31T14:57:48Z', 'C:\\temp'])).toEqual({
             sourcePath: 'week.json',
             expectedValue: '14',
             publishedValue: '2026-08-31T14:57:48Z',
@@ -119,7 +120,7 @@ describe('parseCalendarArgs', () => {
                 '2026-08-31T14:57:48Z',
                 '--out',
                 'C:\\temp',
-            ]),
+            ])
         ).toEqual({
             sourcePath: 'week.json',
             expectedValue: '14',

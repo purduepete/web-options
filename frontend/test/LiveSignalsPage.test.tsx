@@ -85,7 +85,7 @@ function renderPage(initialEntry = '/') {
     const result = render(
         <MemoryRouter initialEntries={[initialEntry]}>
             <LiveSignalsPage />
-        </MemoryRouter>,
+        </MemoryRouter>
     );
     if (!window.matchMedia('(max-width: 640px)').matches) {
         fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
@@ -196,7 +196,7 @@ describe('LiveSignalsPage', () => {
                         trade('GOOD', { annualizedYield: 50, delta: -0.1, closeUnderlying: 120 }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
 
@@ -223,7 +223,7 @@ describe('LiveSignalsPage', () => {
                         trade('HELD', { annualizedYield: 5, bestPremiumKept: 0.5 }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
 
@@ -252,7 +252,7 @@ describe('LiveSignalsPage', () => {
         fetchWeekSignals.mockResolvedValueOnce(week()).mockReturnValueOnce(
             new Promise<WeekSignalsResponse>((resolve) => {
                 arrive = resolve;
-            }),
+            })
         );
 
         const user = userEvent.setup();
@@ -342,9 +342,7 @@ describe('LiveSignalsPage', () => {
 
         await user.type(screen.getByLabelText('Filter by symbol'), 'amd');
 
-        await waitFor(() =>
-            expect(localStorage.getItem('weboptions.filters.live-signals.v1')).toBe('symbol=AMD'),
-        );
+        await waitFor(() => expect(localStorage.getItem('weboptions.filters.live-signals.v1')).toBe('symbol=AMD'));
     });
 
     it('clears the filter from the button', async () => {
@@ -377,7 +375,7 @@ describe('LiveSignalsPage', () => {
                         trade('GREEN', { annualizedYield: 50, actualAnnualizedYield: 50 }),
                     ]),
                 ],
-            }),
+            })
         );
 
         renderPage('/?grade=yellow,red,invalid,red');
@@ -401,7 +399,7 @@ describe('LiveSignalsPage', () => {
                         trade('HOT', { tier: 'Aggressive' }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByTestId('week-grid');
@@ -427,7 +425,7 @@ describe('LiveSignalsPage', () => {
                         trade('HOT', { tier: 'Aggressive' }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByTestId('week-grid');
@@ -453,7 +451,7 @@ describe('LiveSignalsPage', () => {
                         trade('PICK', { tier: 'Aggressive', isTopPick: true }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByTestId('week-grid');
@@ -469,7 +467,7 @@ describe('LiveSignalsPage', () => {
         fetchWeekSignals.mockResolvedValue(
             week({
                 days: [day('2025-08-11', 'Monday', [trade('REGULAR'), trade('SIGNAL')])],
-            }),
+            })
         );
 
         renderPage('/?tier=weekly-picks');
@@ -507,7 +505,7 @@ describe('LiveSignalsPage', () => {
 
     it('shows the ownership icon before the ticker', async () => {
         fetchWeekSignals.mockResolvedValue(
-            week({ days: [day('2025-08-11', 'Monday', [trade('PAPER', { ownedPaperContracts: 1 })])] }),
+            week({ days: [day('2025-08-11', 'Monday', [trade('PAPER', { ownedPaperContracts: 1 })])] })
         );
 
         renderPage();
@@ -602,7 +600,7 @@ describe('LiveSignalsPage', () => {
                     ]),
                     day('2025-08-12', 'Tuesday', [trade('AMD', { moneyness: 'otm' })]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
@@ -628,7 +626,7 @@ describe('LiveSignalsPage', () => {
                     ]),
                     day('2025-08-12', 'Tuesday', [trade('AMD', { bestPremiumKept: 0.2 })]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
@@ -647,7 +645,7 @@ describe('LiveSignalsPage', () => {
         fetchWeekSignals.mockResolvedValue(
             week({
                 days: [day('2025-08-11', 'Monday', [trade('AAPL')]), day('2025-08-12', 'Tuesday', [trade('AMD')])],
-            }),
+            })
         );
         renderPage();
         await screen.findByRole('region', { name: 'Monday Aug 11' });
@@ -711,7 +709,7 @@ describe('LiveSignalsPage', () => {
                     day('2025-08-11', 'Monday', [trade('AAPL', { tier: 'Conservative' })]),
                     day('2025-08-12', 'Tuesday', [trade('AMD', { tier: 'Aggressive' })]),
                 ],
-            }),
+            })
         );
         renderPage();
 
@@ -726,7 +724,7 @@ describe('LiveSignalsPage', () => {
         expect(
             within(monday)
                 .getAllByRole('heading', { level: 3 })
-                .map((h) => h.textContent),
+                .map((h) => h.textContent)
         ).toEqual(['Top Picks (1)', 'Aggressive (1)']);
     });
 
@@ -1059,7 +1057,7 @@ describe('LiveSignalsPage week score', () => {
                     ]),
                     day('2025-08-12', 'Tuesday', [trade('NVDA', { moneyness: 'otm' })]),
                 ],
-            }),
+            })
         );
         renderPage();
         await screen.findByTestId('week-grid');
@@ -1118,7 +1116,7 @@ describe('LiveSignalsPage week score', () => {
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
         expect(within(monday).getByTitle('$20,000 to secure every contract on this day.').textContent).toContain(
-            'C: $20K',
+            'C: $20K'
         );
 
         const tuesday = screen.getByRole('region', { name: 'Tuesday Aug 12' });
@@ -1134,7 +1132,7 @@ describe('LiveSignalsPage week score', () => {
                         trade('MSFT', { premium: 22000, actualPremium: 19500 }),
                     ]),
                 ],
-            }),
+            })
         );
         renderPage();
 
@@ -1144,7 +1142,7 @@ describe('LiveSignalsPage week score', () => {
 
     it('keeps a day premium below one thousand in dollars', async () => {
         fetchWeekSignals.mockResolvedValue(
-            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { premium: 500, actualPremium: 500 })])] }),
+            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { premium: 500, actualPremium: 500 })])] })
         );
         renderPage();
 
@@ -1155,7 +1153,7 @@ describe('LiveSignalsPage week score', () => {
 
     it('leaves the total off a day with no collateral to report', async () => {
         fetchWeekSignals.mockResolvedValue(
-            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { collateral: null })])] }),
+            week({ days: [day('2025-08-11', 'Monday', [trade('AAPL', { collateral: null })])] })
         );
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday Aug 11' });
@@ -1340,7 +1338,7 @@ describe('LiveSignalsPage moneyness', () => {
 
     it('reads a close below the strike as in the money, signed negative', async () => {
         fetchWeekSignals.mockResolvedValue(
-            closedWeek({ closeUnderlying: 94.5, moneyness: 'itm', percentFromStrike: -5.5 }),
+            closedWeek({ closeUnderlying: 94.5, moneyness: 'itm', percentFromStrike: -5.5 })
         );
         renderPage();
         const found = badge(await tuesday());
@@ -1352,7 +1350,7 @@ describe('LiveSignalsPage moneyness', () => {
 
     it('renders nothing at all for a contract with no close', async () => {
         fetchWeekSignals.mockResolvedValue(
-            closedWeek({ closeDate: null, closeUnderlying: null, moneyness: null, percentFromStrike: null }),
+            closedWeek({ closeDate: null, closeUnderlying: null, moneyness: null, percentFromStrike: null })
         );
         renderPage();
         expect(badge(await tuesday())).toBeNull();

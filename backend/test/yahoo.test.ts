@@ -74,7 +74,7 @@ describe('fetchQuote', () => {
                 Promise.resolve(
                     chartBody({
                         meta: { regularMarketPrice: 182.35, chartPreviousClose: 179.5 },
-                    }),
+                    })
                 ),
         });
 
@@ -159,7 +159,7 @@ describe('fetchDailyBars', () => {
                     chartBody({
                         timestamp: [1_786_996_800, 1_787_083_200],
                         indicators: { quote: [{ close: [180.1, null] }] },
-                    }),
+                    })
                 ),
         });
         const daily = await fetchDailyBars('VST');
@@ -174,7 +174,7 @@ describe('fetchDailyBars', () => {
                     chartBody({
                         timestamp: [1_787_083_200, 1_786_996_800],
                         indicators: { quote: [{ close: [182.35, 180.1] }] },
-                    }),
+                    })
                 ),
         });
         const daily = await fetchDailyBars('VST');

@@ -169,7 +169,7 @@ interface UnderlyingSnapshot {
 function underlyingSnapshot(
     position: OwnedOptionPosition,
     signal: SignalMatch | undefined,
-    quote: UnderlyingQuote | undefined,
+    quote: UnderlyingQuote | undefined
 ): UnderlyingSnapshot | null {
     if (quote) {
         const change = quote.changePct;
@@ -322,7 +322,7 @@ export function OwnedContractsPage() {
                     else if (mode !== 'roster') setRefreshing(false);
                 });
         },
-        [cached, forget],
+        [cached, forget]
     );
 
     useEffect(() => {
@@ -345,7 +345,7 @@ export function OwnedContractsPage() {
             writeOwnedGroup(next);
             setSortState(OWNED_GROUP_SORTS[next] ?? chosenSort);
         },
-        [chosenSort],
+        [chosenSort]
     );
 
     // Each source has its own upstream: live re-pulls the option quotes, stored
@@ -358,7 +358,7 @@ export function OwnedContractsPage() {
             writePriceSource(next);
             load(next === 'live' ? 'refresh' : 'reload');
         },
-        [priceSource, load],
+        [priceSource, load]
     );
 
     const setSymbolParam = useCallback(
@@ -372,10 +372,10 @@ export function OwnedContractsPage() {
                     else updated.delete('symbol');
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         },
-        [setParams],
+        [setParams]
     );
 
     const setMoneynessParam = useCallback(
@@ -387,7 +387,7 @@ export function OwnedContractsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     const setCapturedParam = useCallback(
@@ -399,7 +399,7 @@ export function OwnedContractsPage() {
                 return updated;
             });
         },
-        [setParams],
+        [setParams]
     );
 
     // Both filters live in the URL, so they clear in one write rather than two
@@ -512,7 +512,7 @@ export function OwnedContractsPage() {
     // reads one projection, so none of them has to know which source is on.
     const sourced = useMemo(
         () => applyPriceSource(positions ?? [], priceSource, underlyings),
-        [positions, priceSource, underlyings],
+        [positions, priceSource, underlyings]
     );
 
     // Stored prices are cached by definition, whether they were read back from the
@@ -531,13 +531,11 @@ export function OwnedContractsPage() {
                 const date = position.cachedPrice.priceDate;
                 return date !== null && (newest === null || date > newest) ? date : newest;
             }, null),
-        [positions],
+        [positions]
     );
 
     const updatedText =
-        priceSource === 'eod'
-            ? storedThrough && dateText(storedThrough)
-            : generatedAt && timestampText(generatedAt);
+        priceSource === 'eod' ? storedThrough && dateText(storedThrough) : generatedAt && timestampText(generatedAt);
 
     const visible = useMemo(
         () =>
@@ -548,9 +546,9 @@ export function OwnedContractsPage() {
                     captured: capturedFilter,
                 }),
                 signals,
-                sort,
+                sort
             ),
-        [capturedFilter, moneynessFilter, signals, sort, sourced, symbol],
+        [capturedFilter, moneynessFilter, signals, sort, sourced, symbol]
     );
 
     // Grouping runs after the sort, so a bucket keeps the order the sort gave it.

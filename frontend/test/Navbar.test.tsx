@@ -37,7 +37,7 @@ function renderNavbar(initialPath = '/') {
                     </RecentlyVisitedProvider>
                 </FavoritesProvider>
             </ThemeProvider>
-        </MemoryRouter>,
+        </MemoryRouter>
     );
 }
 

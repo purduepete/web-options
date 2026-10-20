@@ -22,7 +22,7 @@ import './FavoritesPage.css';
 export function favoriteMoveIndices(
     favorites: readonly NavItem[],
     activeId: string | number,
-    overId: string | number,
+    overId: string | number
 ): readonly [number, number] | null {
     if (activeId === overId) return null;
     const startIndex = favorites.findIndex((item) => item.id === activeId);
@@ -34,7 +34,7 @@ export function FavoritesPage() {
     const { favorites, reorderFavorites, toggleFavorite } = useFavorites();
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     function onDragEnd({ active, over }: DragEndEvent) {

@@ -91,7 +91,7 @@ export function readOwnedSortKey(value: unknown): OwnedSort {
 export function sortOwnedPositions(
     positions: readonly OwnedOptionPosition[],
     signals: SignalMap,
-    { key, direction }: OwnedSortState,
+    { key, direction }: OwnedSortState
 ): OwnedOptionPosition[] {
     const read = VALUES[key];
     const sign = direction === 'asc' ? 1 : -1;

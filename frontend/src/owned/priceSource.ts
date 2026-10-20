@@ -57,7 +57,7 @@ function priceOf(position: OwnedOptionPosition, source: PriceSource): number | n
 
 function liveUnderlyingFields(
     position: OwnedOptionPosition,
-    quote: UnderlyingQuote | undefined,
+    quote: UnderlyingQuote | undefined
 ): Pick<OwnedOptionPosition, 'underlyingPrice' | 'percentFromStrike' | 'moneyness'> | null {
     if (!quote || !Number.isFinite(quote.price) || position.strikePrice <= 0) return null;
     const distance = quote.price - position.strikePrice;
@@ -83,7 +83,7 @@ function liveUnderlyingFields(
 export function applyPriceSource(
     positions: readonly OwnedOptionPosition[],
     source: PriceSource,
-    underlyings: Readonly<Record<string, UnderlyingQuote>> = {},
+    underlyings: Readonly<Record<string, UnderlyingQuote>> = {}
 ): OwnedOptionPosition[] {
     return positions.map((position) => {
         const price = priceOf(position, source);

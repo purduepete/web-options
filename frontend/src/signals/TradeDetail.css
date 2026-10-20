@@ -154,8 +154,8 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
-            "research research"
-            "purchase navigation";
+            'research research'
+            'purchase navigation';
         justify-content: stretch;
     }
 

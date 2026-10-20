@@ -19,7 +19,7 @@ const config: AppConfig = {
 
 function agent(overrides: Partial<AppConfig> = {}) {
     vi.spyOn(authRepository, 'findActiveKey').mockImplementation(async (_db, keyHash) =>
-        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
+        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null
     );
     return request(createApp({ ...config, ...overrides }));
 }
@@ -65,8 +65,8 @@ describe('GET /api/owned-contracts', () => {
                         },
                     ],
                 }),
-                { status: 200, headers: { 'content-type': 'application/json' } },
-            ),
+                { status: 200, headers: { 'content-type': 'application/json' } }
+            )
         );
 
         const response = await agent().get('/api/owned-contracts').set('x-api-key', VALID_KEY);
@@ -81,7 +81,7 @@ describe('GET /api/owned-contracts', () => {
             {
                 headers: { Accept: 'application/json', 'X-API-Key': 'service-key' },
                 signal: expect.any(AbortSignal),
-            },
+            }
         );
     });
 
@@ -90,7 +90,7 @@ describe('GET /api/owned-contracts', () => {
             new Response(JSON.stringify({ success: true, data: [] }), {
                 status: 200,
                 headers: { 'content-type': 'application/json' },
-            }),
+            })
         );
 
         const response = await agent().get('/api/owned-contracts?refresh=true').set('x-api-key', VALID_KEY);
@@ -101,7 +101,7 @@ describe('GET /api/owned-contracts', () => {
             {
                 headers: { Accept: 'application/json', 'X-API-Key': 'service-key' },
                 signal: expect.any(AbortSignal),
-            },
+            }
         );
     });
 
@@ -120,7 +120,7 @@ describe('GET /api/owned-contracts', () => {
             new Response(JSON.stringify({ success: false, error: 'forbidden' }), {
                 status: 403,
                 headers: { 'content-type': 'application/json' },
-            }),
+            })
         );
 
         const response = await agent().get('/api/owned-contracts').set('x-api-key', VALID_KEY);

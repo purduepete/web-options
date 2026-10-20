@@ -49,10 +49,10 @@ describe('serving the built front end', () => {
             const response = await request(app).get(url);
             expect(response.headers['x-frame-options']).toBeUndefined();
             expect(response.headers['content-security-policy']).toBe(
-                "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790",
+                "frame-ancestors 'self' https://jimbrownlaptop.tail8ad282.ts.net https://site-dock.jimlertech.com https://jimbrownhome1.tail8ad282.ts.net:8790"
             );
             expect(response.headers['x-content-type-options']).toBe('nosniff');
-        },
+        }
     );
 
     it('serves a built asset', async () => {
@@ -62,17 +62,23 @@ describe('serving the built front end', () => {
         expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
     });
 
-    it.each(['/favicon.svg', '/apple-touch-icon.png'])('lets SiteDock load and cache %s from another origin', async (url) => {
-        const response = await request(app).get(url);
-        expect(response.status).toBe(200);
-        expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
-        expect(response.headers['cache-control']).toBe('public, max-age=86400');
-    });
+    it.each(['/favicon.svg', '/apple-touch-icon.png'])(
+        'lets SiteDock load and cache %s from another origin',
+        async (url) => {
+            const response = await request(app).get(url);
+            expect(response.status).toBe(200);
+            expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
+            expect(response.headers['cache-control']).toBe('public, max-age=86400');
+        }
+    );
 
-    it.each(['/', '/api/nope', '/favicon.ico', '/favicon.svg/child', '/apple-touch-icon.png/child'])('keeps %s same-origin', async (url) => {
-        const response = await request(app).get(url);
-        expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
-    });
+    it.each(['/', '/api/nope', '/favicon.ico', '/favicon.svg/child', '/apple-touch-icon.png/child'])(
+        'keeps %s same-origin',
+        async (url) => {
+            const response = await request(app).get(url);
+            expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
+        }
+    );
 
     it('answers a client-side deep link with the app shell', async () => {
         const response = await request(app).get('/calendars/2026-08-10');
@@ -168,7 +174,7 @@ describe('resolving WebPortfolio integration settings', () => {
                     WEBOPTIONS_SECRETS_DIR: secrets,
                     WEBPORTFOLIO_API_URL: 'https://from-env.example.test',
                     WEBPORTFOLIO_SERVICE_KEY: 'env-key',
-                }).webportfolio,
+                }).webportfolio
             ).toEqual({ apiUrl: 'https://from-env.example.test', serviceKey: 'env-key' });
         } finally {
             fs.rmSync(secrets, { recursive: true, force: true });

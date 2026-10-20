@@ -108,7 +108,7 @@ describe('summarizeWeek', () => {
     it('totals the collateral required across the displayed week', () => {
         const summary = summarizeWeek(
             [day('2025-08-11', [trade({ collateral: 10000 })]), day('2025-08-12', [trade({ collateral: 2500 })])],
-            'actual',
+            'actual'
         );
 
         expect(summary.totalCollateral).toBe(12500);

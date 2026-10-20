@@ -21,12 +21,9 @@ function hashOf(text: string): string {
 }
 
 async function existingHash(pool: sql.ConnectionPool, publishDate: string): Promise<string | null> {
-    const result = await pool
-        .request()
-        .input('publishDate', sql.VarChar(10), publishDate)
-        .query<{
-            source_hash: string;
-        }>('SELECT source_hash FROM opt.calendar_week WHERE publish_date = CAST(@publishDate AS DATE)');
+    const result = await pool.request().input('publishDate', sql.VarChar(10), publishDate).query<{
+        source_hash: string;
+    }>('SELECT source_hash FROM opt.calendar_week WHERE publish_date = CAST(@publishDate AS DATE)');
     return result.recordset[0]?.source_hash ?? null;
 }
 
@@ -50,7 +47,7 @@ async function writeWeek(pool: sql.ConnectionPool, week: CalendarWeek, sourceHas
                 `INSERT INTO opt.calendar_week (publish_date, week_start, week_end, title, macro, source_hash)
                  OUTPUT INSERTED.id
                  VALUES (CAST(@publishDate AS DATE), CAST(@weekStart AS DATE), CAST(@weekEnd AS DATE),
-                         @title, @macro, @sourceHash)`,
+                         @title, @macro, @sourceHash)`
             );
 
         const weekId = inserted.recordset[0]!.id;
@@ -66,7 +63,7 @@ async function writeWeek(pool: sql.ConnectionPool, week: CalendarWeek, sourceHas
                 .query<{ id: number }>(
                     `INSERT INTO opt.calendar_day (week_id, day_name, day_date, [rule], [event], sort_order)
                      OUTPUT INSERTED.id
-                     VALUES (@weekId, @dayName, CAST(@dayDate AS DATE), @rule, @event, @sortOrder)`,
+                     VALUES (@weekId, @dayName, CAST(@dayDate AS DATE), @rule, @event, @sortOrder)`
                 );
 
             const dayId = dayRow.recordset[0]!.id;
@@ -91,7 +88,7 @@ async function writeWeek(pool: sql.ConnectionPool, week: CalendarWeek, sourceHas
                              (day_id, ticker, option_right, strike, expiry, dte, delta, ann_yield,
                               premium, collateral, risk, note, sort_order)
                          VALUES (@dayId, @ticker, @optionRight, @strike, CAST(@expiry AS DATE), @dte,
-                                 @delta, @annYield, @premium, @collateral, @risk, @note, @sortOrder)`,
+                                 @delta, @annYield, @premium, @collateral, @risk, @note, @sortOrder)`
                     );
             }
         }
@@ -148,7 +145,7 @@ async function main(): Promise<void> {
             console.log(
                 `${week.publishDate}  ${week.weekStart}..${week.weekEnd}  ` +
                     `days ${week.days.length}  trades ${trades}  ` +
-                    `${current === null ? 'new' : unchanged ? 'unchanged' : 'changed'}`,
+                    `${current === null ? 'new' : unchanged ? 'unchanged' : 'changed'}`
             );
 
             if (unchanged && !force) {

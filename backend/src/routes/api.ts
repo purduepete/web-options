@@ -38,7 +38,14 @@ import { readVix } from '../market/vix';
 import { fetchQuote } from '../market/yahoo';
 import { requireApiKey } from '../middleware/apiKey';
 import { readGradeSettings, replaceGradeSettings } from '../settings/repository';
-import { earliestWeekMonday, fetchRange, fetchSignal, fetchWeek, signalDates, weekHasData } from '../signals/repository';
+import {
+    earliestWeekMonday,
+    fetchRange,
+    fetchSignal,
+    fetchWeek,
+    signalDates,
+    weekHasData,
+} from '../signals/repository';
 import { sqlDateToIso } from '../signals/shape';
 import { monthsFrom, spanOf, summarizeRange } from '../signals/summary';
 import { addDays, currentWeekMonday, fromIsoDate, parseWeekParam, toIsoDate } from '../weeks';

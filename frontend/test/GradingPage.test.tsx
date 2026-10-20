@@ -21,7 +21,7 @@ function renderPage() {
     return render(
         <GradeSettingsProvider>
             <GradingPage />
-        </GradeSettingsProvider>,
+        </GradeSettingsProvider>
     );
 }
 
@@ -73,7 +73,7 @@ describe('GradingPage', () => {
         fireEvent.click(saveButton());
 
         await waitFor(() =>
-            expect(saveGradeSettings).toHaveBeenCalledWith({ ...GRADE_DEFAULTS, deltaThreshold: -0.3 }),
+            expect(saveGradeSettings).toHaveBeenCalledWith({ ...GRADE_DEFAULTS, deltaThreshold: -0.3 })
         );
     });
 

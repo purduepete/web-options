@@ -73,7 +73,7 @@ export function useStoredFilters({ storageKey, keys, guardKeys = [] }: StoredFil
                     for (const [key, value] of stored) updated.set(key, value);
                     return updated;
                 },
-                { replace: true },
+                { replace: true }
             );
         }
         setHydrated(true);

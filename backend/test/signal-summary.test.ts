@@ -56,7 +56,7 @@ function row(overrides: Partial<SignalRow> = {}): SignalRow {
 
 function get(path: string) {
     vi.spyOn(authRepository, 'findActiveKey').mockImplementation(async (_db, keyHash) =>
-        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null,
+        keyHash === VALID_HASH ? { label: 'Test key', prefix: 'woak_aaaaaaa', expiresAt: null } : null
     );
     return request(createApp(config)).get(path).set('X-API-Key', VALID_KEY);
 }
@@ -154,7 +154,7 @@ describe('summarizeRange', () => {
                 row({ symbol: 'INTC' }),
             ],
             ['2026-08-10'],
-            [],
+            []
         );
         const all = weeks[0]!.cells.all;
 
@@ -171,7 +171,7 @@ describe('summarizeRange', () => {
                 row({ symbol: 'INTC', best_premium_kept: null }),
             ],
             ['2026-08-10'],
-            [],
+            []
         );
         const all = weeks[0]!.cells.all;
 
@@ -204,7 +204,7 @@ describe('summarizeRange', () => {
         const { weeks } = summarizeRange(
             [row({ annualized_yield: 30 }), row({ symbol: 'NVDA', annualized_yield: 50 })],
             ['2026-08-10'],
-            [],
+            []
         );
 
         expect(weeks[0]!.cells.all.annualizedYield).toBe(40);
@@ -217,7 +217,7 @@ describe('summarizeRange', () => {
                 row({ symbol: 'NVDA', annualized_yield: 20, collateral: 9000 }),
             ],
             ['2026-08-10'],
-            [],
+            []
         );
         const all = weeks[0]!.cells.all;
 
@@ -233,7 +233,7 @@ describe('summarizeRange', () => {
                 row({ symbol: 'NVDA', annualized_yield: 50, collateral: null }),
             ],
             ['2026-08-10'],
-            [],
+            []
         );
         const all = weeks[0]!.cells.all;
 
@@ -245,7 +245,7 @@ describe('summarizeRange', () => {
         const { weeks } = summarizeRange(
             [row({ report_date: '2026-08-10' }), row({ report_date: '2026-08-03', symbol: 'NVDA' })],
             ['2026-08-10', '2026-08-03'],
-            ['AMD'],
+            ['AMD']
         );
 
         expect(weeks.map((week) => week.weekStart)).toEqual(['2026-08-10', '2026-08-03']);
@@ -257,7 +257,7 @@ describe('summarizeRange', () => {
         const { weeks } = summarizeRange(
             [row({ report_date: '2026-08-31' }), row({ report_date: '2026-09-01', symbol: 'NVDA' })],
             ['2026-08-31'],
-            [],
+            []
         );
 
         expect(weeks[0]!.weekEnd).toBe('2026-09-04');
@@ -272,7 +272,7 @@ describe('summarizeRange', () => {
                 row({ report_date: '2026-08-03', symbol: 'INTC', annualized_yield: 70 }),
             ],
             ['2026-08-10', '2026-08-03'],
-            [],
+            []
         );
 
         expect(total.all.signals).toBe(3);
@@ -446,7 +446,7 @@ describe('GET /api/signal-summary', () => {
         ]);
 
         const response = await get(
-            '/api/signal-summary?month=2026-08&moneyness=otm&half=yes&owned=owned&numberSource=quoted',
+            '/api/signal-summary?month=2026-08&moneyness=otm&half=yes&owned=owned&numberSource=quoted'
         );
 
         expect(response.status).toBe(200);

@@ -57,7 +57,7 @@ export function resolveOutcome(
     strike: number | null,
     expiration: IsoDate | null,
     today: IsoDate,
-    latest: { date: IsoDate; close: number } | null = null,
+    latest: { date: IsoDate; close: number } | null = null
 ): { outcome: SymbolOutcome; closeAtExpiration: number | null } {
     if (strike === null || expiration === null) return { outcome: 'unknown', closeAtExpiration: null };
     if (expiration >= today) return { outcome: 'open', closeAtExpiration: null };
@@ -78,7 +78,7 @@ export function resolvePastSignals(
     signals: readonly Omit<PastSignal, 'outcome' | 'closeAtExpiration'>[],
     bars: readonly SymbolBar[],
     today: IsoDate,
-    latest: { date: IsoDate; close: number } | null = null,
+    latest: { date: IsoDate; close: number } | null = null
 ): PastSignal[] {
     return signals.map((signal) => ({
         ...signal,
@@ -99,7 +99,7 @@ export function recentSignalStats(
     bars: readonly SymbolBar[],
     today: IsoDate,
     latest: { date: IsoDate; close: number } | null,
-    price: number | null,
+    price: number | null
 ): RecentSignalStats {
     let inTheMoney = 0;
     let assigned = 0;

@@ -75,7 +75,7 @@ describe('week grid stylesheets', () => {
 
     it('reserves a desktop track for the trade detail tier pill', () => {
         expect(tradeDetailCss).toMatch(
-            /\.past-signals li \.past-row\s*\{[^}]*grid-template-columns:\s*6rem\s+1\.75rem\s+2rem\s+minmax\(0,\s*1fr\)\s+3\.5rem\s+8rem/,
+            /\.past-signals li \.past-row\s*\{[^}]*grid-template-columns:\s*6rem\s+1\.75rem\s+2rem\s+minmax\(0,\s*1fr\)\s+3\.5rem\s+8rem/
         );
     });
 

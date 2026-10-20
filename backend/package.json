@@ -1,35 +1,35 @@
 {
-    "name": "@weboptions/backend",
-    "version": "0.1.0",
-    "private": true,
-    "main": "dist/server.js",
-    "scripts": {
-        "build": "tsc -p tsconfig.json",
-        "dev": "tsx watch src/server.ts",
-        "start": "node dist/server.js",
-        "migrate": "tsx tools/migrate.ts",
-        "create-readonly-user": "tsx tools/create-readonly-user.ts"
-    },
-    "dependencies": {
-        "@weboptions/shared": "*",
-        "cors": "^2.8.5",
-        "express": "^5.1.0",
-        "helmet": "^8.0.0",
-        "ini": "^5.0.0",
-        "morgan": "^1.10.0",
-        "mssql": "^12.0.0"
-    },
-    "devDependencies": {
-        "@types/cors": "^2.8.17",
-        "@types/express": "^5.0.0",
-        "@types/ini": "^4.1.1",
-        "@types/morgan": "^1.9.9",
-        "@types/mssql": "^12.3.0",
-        "@types/node": "^22.10.2",
-        "@types/supertest": "^6.0.2",
-        "cheerio": "^1.2.0",
-        "json5": "^2.2.3",
-        "supertest": "^7.0.0",
-        "tsx": "^4.19.2"
-    }
+  "name": "@weboptions/backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "migrate": "tsx tools/migrate.ts",
+    "create-readonly-user": "tsx tools/create-readonly-user.ts"
+  },
+  "dependencies": {
+    "@weboptions/shared": "*",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.0.0",
+    "ini": "^5.0.0",
+    "morgan": "^1.10.0",
+    "mssql": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/ini": "^4.1.1",
+    "@types/morgan": "^1.9.9",
+    "@types/mssql": "^12.3.0",
+    "@types/node": "^22.10.2",
+    "@types/supertest": "^6.0.2",
+    "cheerio": "^1.2.0",
+    "json5": "^2.2.3",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2"
+  }
 }

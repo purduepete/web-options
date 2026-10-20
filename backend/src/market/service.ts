@@ -65,7 +65,7 @@ export interface SymbolDetailOptions {
 export async function getSymbolDetail(
     db: DbConfig,
     rawSymbol: string,
-    options: SymbolDetailOptions = {},
+    options: SymbolDetailOptions = {}
 ): Promise<SymbolDetail | null> {
     const symbol = normalizeSymbol(rawSymbol);
     if (!symbol) return null;
@@ -116,7 +116,7 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
             expiration: options.exclude?.expiration ?? null,
             reportDate: options.reportDate ?? null,
         },
-        OTHER_SIGNAL_LIMIT,
+        OTHER_SIGNAL_LIMIT
     ).catch(() => []);
 
     const recentRows = await recentSignalsFor(db, symbol, RECENT_SIGNAL_WINDOW_DAYS).catch(() => null);
@@ -150,7 +150,8 @@ async function build(db: DbConfig, symbol: string, options: SymbolDetailOptions)
         bars: sixMonthSlice(bars),
         pastSignals: resolvePastSignals(seeds, bars, today, latest),
         recentSignals,
-        ownedContracts,        outcome,
+        ownedContracts,
+        outcome,
     };
 }
 

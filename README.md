@@ -137,16 +137,16 @@ administrators and `NT AUTHORITY\LOCAL SERVICE`:
 
 ```json
 {
-  "Environment": {
-    "DB_SERVER": "sqlgkhw25ijhyzzy.database.windows.net",
-    "DB_NAME": "webportfolio",
-    "DB_USER": "weboptions_ro",
-    "DB_PASSWORD": "<existing password>",
-    "WEBOPTIONS_AUTH_MODE": "access",
-    "WEBOPTIONS_ALLOWED_ORIGINS": "https://web-options.jimlertech.com,https://jimbrownhome1.tail8ad282.ts.net:8797",
-    "WEBPORTFOLIO_API_URL": "<existing Portfolio API URL>",
-    "WEBPORTFOLIO_SERVICE_KEY": "<existing outbound service key>"
-  }
+    "Environment": {
+        "DB_SERVER": "sqlgkhw25ijhyzzy.database.windows.net",
+        "DB_NAME": "webportfolio",
+        "DB_USER": "weboptions_ro",
+        "DB_PASSWORD": "<existing password>",
+        "WEBOPTIONS_AUTH_MODE": "access",
+        "WEBOPTIONS_ALLOWED_ORIGINS": "https://web-options.jimlertech.com,https://jimbrownhome1.tail8ad282.ts.net:8797",
+        "WEBPORTFOLIO_API_URL": "<existing Portfolio API URL>",
+        "WEBPORTFOLIO_SERVICE_KEY": "<existing outbound service key>"
+    }
 }
 ```
 
@@ -360,6 +360,7 @@ straight out of OneDrive. It was deleted once the parity gate passed against it.
 then it could not open a database connection at all: its ODBC string named the host
 with no protocol prefix and no port, so the driver settled on Named Pipes and Azure
 SQL refused it.
+
 # Appearance
 
 System follows the OS live; Light, Midnight and optional gray Dark remain selectable.

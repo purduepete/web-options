@@ -58,7 +58,7 @@ describe('mergeRoster', () => {
     it('tells the paper book from the live one, since an id is only unique within each', () => {
         const merged = mergeRoster(
             [position({ id: 7, isPaper: false, unrealizedCreditCaptured: 160 })],
-            [position({ id: 7, isPaper: true, unrealizedCreditCaptured: 999 })],
+            [position({ id: 7, isPaper: true, unrealizedCreditCaptured: 999 })]
         );
 
         expect(merged[0]?.unrealizedCreditCaptured).toBeNull();

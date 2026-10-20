@@ -277,7 +277,7 @@ describe('filterDaysByGrade', () => {
             'RED',
         ]);
         expect(
-            filterDaysByGrade(days, ['red', 'yellow'], 'actual', settings, [], null)[0]?.trades.map((t) => t.symbol),
+            filterDaysByGrade(days, ['red', 'yellow'], 'actual', settings, [], null)[0]?.trades.map((t) => t.symbol)
         ).toEqual(['RED', 'YELLOW']);
     });
 

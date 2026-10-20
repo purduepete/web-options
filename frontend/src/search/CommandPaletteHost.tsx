@@ -33,7 +33,7 @@ export function CommandPaletteHost({ open, onOpenChange }: CommandPaletteHostPro
 
     const commands = useMemo(
         () => buildCommands({ navigate, favorites, recent, preference, setPreference, forget }),
-        [navigate, favorites, recent, preference, setPreference, forget],
+        [navigate, favorites, recent, preference, setPreference, forget]
     );
 
     return <CommandPalette open={open} commands={commands} onClose={() => onOpenChange(false)} />;

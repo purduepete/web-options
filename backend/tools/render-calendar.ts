@@ -150,10 +150,11 @@ export interface CalendarCliArgs {
 export function parseCalendarArgs(argv: string[]): CalendarCliArgs {
     const valueOptions = new Set(['--expected-trades', '--published-at', '--out']);
     const sourceIndex = argv.findIndex(
-        (argument, index) => !argument.startsWith('--') && (index === 0 || !valueOptions.has(argv[index - 1]!)),
+        (argument, index) => !argument.startsWith('--') && (index === 0 || !valueOptions.has(argv[index - 1]!))
     );
     const sourcePath = sourceIndex === -1 ? undefined : argv[sourceIndex];
-    const positional = sourceIndex === -1 ? [] : argv.slice(sourceIndex + 1).filter((argument) => !argument.startsWith('--'));
+    const positional =
+        sourceIndex === -1 ? [] : argv.slice(sourceIndex + 1).filter((argument) => !argument.startsWith('--'));
     return {
         sourcePath,
         expectedValue: optionValue(argv, '--expected-trades') ?? positional[0],
@@ -166,9 +167,7 @@ function main(): void {
     const argv = process.argv.slice(2);
     const { sourcePath, expectedValue, publishedValue, outputValue } = parseCalendarArgs(argv);
     if (!sourcePath || !expectedValue) {
-        console.log(
-            'usage: render-calendar.ts <file.json> <expected-trades> [published-at] [output] [--check]',
-        );
+        console.log('usage: render-calendar.ts <file.json> <expected-trades> [published-at] [output] [--check]');
         process.exitCode = 1;
         return;
     }

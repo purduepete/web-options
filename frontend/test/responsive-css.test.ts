@@ -140,7 +140,7 @@ describe('the page can always be as narrow as the phone', () => {
     it.each(sheets)('$name collapses its fixed-count grids on a narrow screen', ({ css }) => {
         // A counted grid a phone never reaches has already answered for itself.
         const fixedCount = declarations(phoneReachable(css), 'grid-template-columns').some(({ value }) =>
-            /repeat\(\s*\d/.test(value),
+            /repeat\(\s*\d/.test(value)
         );
         if (!fixedCount) return;
 

@@ -16,7 +16,7 @@ describe('production update command', () => {
     it('pulls without merging and refuses migration changes', () => {
         expect(updateScript).toContain('git pull --ff-only');
         expect(updateScript).toContain("$changed -match '^database/migrations/'");
-        expect(updateScript).toContain("Set-Content -Path $PendingMigrationFile");
+        expect(updateScript).toContain('Set-Content -Path $PendingMigrationFile');
         expect(updateScript).toContain('-not $MigrationsApplied');
     });
 
@@ -28,7 +28,7 @@ describe('production update command', () => {
     it('checks database readiness after starting the task', () => {
         expect(updateScript).toContain("$result.database -eq 'ok'");
         expect(updateScript.indexOf('Start-ScheduledTask')).toBeLessThan(
-            updateScript.indexOf('if (-not (Wait-Ready))'),
+            updateScript.indexOf('if (-not (Wait-Ready))')
         );
     });
 });

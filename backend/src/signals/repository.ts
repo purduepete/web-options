@@ -51,14 +51,14 @@ export async function fetchRange(db: DbConfig, from: IsoDate, to: IsoDate): Prom
  */
 export async function fetchSignal(
     db: DbConfig,
-    target: { symbol: string; reportDate: IsoDate; strike: number; expiration: IsoDate },
+    target: { symbol: string; reportDate: IsoDate; strike: number; expiration: IsoDate }
 ): Promise<Trade | null> {
     const rows = await fetchRange(db, target.reportDate, target.reportDate);
     const match = rows.find(
         (row) =>
             row.symbol === target.symbol &&
             Number(row.strike) === target.strike &&
-            sqlDateToIso(row.expiration) === target.expiration,
+            sqlDateToIso(row.expiration) === target.expiration
     );
     return match ? toTrade(match) : null;
 }

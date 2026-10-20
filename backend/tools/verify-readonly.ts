@@ -31,7 +31,7 @@ const PROBES: Probe[] = [
                 `BEGIN TRAN;
          INSERT INTO opt.api_key (key_hash, prefix, label)
          VALUES (REPLICATE('0', 64), 'probe', 'permission probe');
-         ROLLBACK;`,
+         ROLLBACK;`
             ),
     },
     {
@@ -108,7 +108,7 @@ const PROBES: Probe[] = [
             pool
                 .request()
                 .batch(
-                    `BEGIN TRAN; INSERT INTO optcfg.symbol_profile (symbol, long_name) VALUES ('PROBE', 'probe'); ROLLBACK;`,
+                    `BEGIN TRAN; INSERT INTO optcfg.symbol_profile (symbol, long_name) VALUES ('PROBE', 'probe'); ROLLBACK;`
                 ),
     },
     {
@@ -134,7 +134,7 @@ const PROBES: Probe[] = [
             pool
                 .request()
                 .batch(
-                    `BEGIN TRAN; INSERT INTO optcfg.price_bar (symbol, bar_date, [close]) VALUES ('PROBE', '2000-01-03', 1); ROLLBACK;`,
+                    `BEGIN TRAN; INSERT INTO optcfg.price_bar (symbol, bar_date, [close]) VALUES ('PROBE', '2000-01-03', 1); ROLLBACK;`
                 ),
     },
     {
@@ -219,7 +219,7 @@ async function main(): Promise<void> {
             if (!pass) failures += 1;
             console.log(
                 `${pass ? 'PASS' : 'FAIL'}  ${probe.expect.padEnd(5)}  ${probe.label}` +
-                    (!allowed && detail ? `\n            ${detail}` : ''),
+                    (!allowed && detail ? `\n            ${detail}` : '')
             );
         }
     } finally {

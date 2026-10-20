@@ -118,6 +118,6 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
                 <div className="modal-body">{children}</div>
             </div>
         </div>,
-        document.body,
+        document.body
     );
 }
