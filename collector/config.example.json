@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "postgres": "host=127.0.0.1 port=5432 dbname=web_options user=sd_web_options_runtime passfile=C:\\ProgramData\\SolutionDeploy\\apps\\web-options\\shared\\secrets\\collector.pgpass",
+  "azure": {
+    "server": "sqlgkhw25ijhyzzy.database.windows.net",
+    "database": "webportfolio",
+    "user": "weboptions_ro",
+    "password": "REPLACE_IN_PROTECTED_HOST_FILE"
+  },
+  "client_secret": "REPLACE_IN_PROTECTED_HOST_FILE",
+  "refresh_token": "REPLACE_IN_PROTECTED_HOST_FILE",
+  "notification": {
+    "user": "REPLACE_IN_PROTECTED_HOST_FILE",
+    "token": "REPLACE_IN_PROTECTED_HOST_FILE"
+  }
+}

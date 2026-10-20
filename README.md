@@ -19,6 +19,18 @@ The trading data is read-only. The one thing this app writes is its own caution
 list, and it writes it to its own schema. See
 [Security notes](#security-notes).
 
+## Local intraday history
+
+The separate [Python collector](collector/README.md) captures Tastytrade prices,
+delta and implied volatility for every locally known unexpired VADER Telegram put.
+New processing runs locally and stores history in PostgreSQL `web_options`.
+Azure SQL remains a SELECT-only discovery source until a later migration.
+The existing dashboard connection and pages are unchanged.
+
+The collector has its own reviewed schema and disabled-by-default activation gate.
+Broker compatibility and database isolation must pass before its tasks are enabled.
+See the collector guide for schedules, partial-data handling, credentials and status.
+
 ## Embedding in SiteDock
 
 Web Options allows framing by itself and the exact SiteDock HTTPS origins:
