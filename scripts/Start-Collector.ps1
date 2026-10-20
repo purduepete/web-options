@@ -14,7 +14,10 @@ if ($config.StartsWith($root.TrimEnd('\') + '\', [StringComparison]::OrdinalIgno
 if (-not [IO.Path]::IsPathFullyQualified($PythonPath) -or -not (Test-Path -LiteralPath $PythonPath)) {
     throw 'An absolute collector virtual-environment PythonPath is required.'
 }
-$logDirectory = Join-Path (Split-Path -Parent (Split-Path -Parent $config)) 'logs'
+$logDirectory = Join-Path (Split-Path -Parent (Split-Path -Parent $root)) 'shared\logs'
+if (-not (Test-Path -LiteralPath $logDirectory -PathType Container)) {
+    throw 'The release must live under the app releases directory with an existing shared logs directory.'
+}
 $log = Join-Path $logDirectory "collector-$Action.log"
 $env:PYTHONUNBUFFERED = '1'
 Push-Location $root

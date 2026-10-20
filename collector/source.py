@@ -8,8 +8,12 @@ from .model import Contract
 QUERY = """
 SELECT s.signal_key AS source_id, s.contract_key, s.symbol, s.expiration, s.strike,
        s.report_date, COALESCE(s.tier, s.profile) AS tier, s.premium,
+       s.annualized_yield, s.collateral, s.dte,
        s.delta AS advertised_delta, q.mark AS entry_mark_per_share,
-       q.delta AS entry_delta, q.implied_volatility AS entry_iv
+       q.delta AS entry_delta, q.implied_volatility AS entry_iv,
+       q.bid AS entry_bid_per_share, q.ask AS entry_ask_per_share,
+       q.underlying_price AS entry_underlying_price,
+       q.is_illiquid_quote AS entry_illiquid, q.captured_at_utc AS entry_captured_at
 FROM opt.telegram_signal s
 LEFT JOIN opt.telegram_entry_quote q
   ON q.contract_key = s.contract_key AND q.report_date = s.report_date
@@ -39,6 +43,9 @@ def discover(config: dict[str, str], day: date) -> list[dict]:
         columns = [column[0] for column in cursor.description]
         result = [dict(zip(columns, row, strict=True)) for row in cursor.fetchall()]
     for row in result:
+        row["source_id"] = str(row["source_id"]).strip()
+        if row["contract_key"] is not None:
+            row["contract_key"] = str(row["contract_key"]).strip()
         if not row["contract_key"] or not row["symbol"] or row["strike"] is None:
             raise ValueError("source contains an invalid contract identity")
         contract = Contract(

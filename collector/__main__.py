@@ -139,7 +139,7 @@ def watchdog(config, at) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Local VADER prices, delta and IV history")
-    parser.add_argument("command", choices=("dryrun", "tick", "status", "watchdog"))
+    parser.add_argument("command", choices=("dryrun", "sync", "tick", "status", "watchdog"))
     parser.add_argument("--config", required=True)
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -170,6 +170,16 @@ def main() -> int:
         return watchdog(config, at)
     repo = Repository(config.postgres)
     try:
+        if arguments.command == "sync":
+            if not repo.lock():
+                raise RuntimeError("collector is busy; source sync not started")
+            day = at.astimezone(EASTERN).date()
+            rows = discover(config.azure, day)
+            repo.sync(rows, day)
+            print(
+                json.dumps({"source_rows": len(rows), "local_contracts": len(repo.contracts(day)), "broker_calls": 0})
+            )
+            return 0
         print(
             json.dumps(
                 {

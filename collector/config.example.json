@@ -1,6 +1,6 @@
 {
   "enabled": false,
-  "postgres": "host=127.0.0.1 port=5432 dbname=web_options user=sd_web_options_runtime passfile=C:\\ProgramData\\SolutionDeploy\\apps\\web-options\\shared\\secrets\\collector.pgpass",
+  "postgres": "host=127.0.0.1 port=5432 dbname=web_options user=sd_web_options_runtime passfile='C:\\\\ProgramData\\\\SolutionDeploy\\\\apps\\\\web-options\\\\shared\\\\secrets\\\\collector\\\\sd_web_options_runtime.pgpass'",
   "azure": {
     "server": "sqlgkhw25ijhyzzy.database.windows.net",
     "database": "webportfolio",

@@ -1,5 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -11,6 +13,7 @@ from collector.model import Contract, choose_slot, event_time, number, slots
 from collector.provider import price_values, quality
 from collector.repository import Repository
 from collector.source import QUERY
+from psycopg.conninfo import conninfo_to_dict
 
 
 def test_regular_session_slots():
@@ -76,6 +79,14 @@ def test_source_uses_signal_hash_not_nonexistent_numeric_id():
     assert "s.id" not in QUERY
     assert "s.report_date >=" not in QUERY
     assert "s.option_right = 'P'" in QUERY
+
+
+def test_windows_passfile_escapes_survive_libpq_parsing():
+    example = json.loads((Path(__file__).resolve().parents[1] / "config.example.json").read_text())
+    path = conninfo_to_dict(example["postgres"])["passfile"]
+    assert (
+        path == r"C:\ProgramData\SolutionDeploy\apps\web-options\shared\secrets\collector\sd_web_options_runtime.pgpass"
+    )
 
 
 def test_quote_validation_and_units():

@@ -74,6 +74,7 @@ Run from the release root with the worker's virtual-environment interpreter:
 
 ```powershell
 python -m collector dryrun --config <protected-config>
+python -m collector sync --config <protected-config>
 python -m collector tick --config <protected-config>
 python -m collector status --config <protected-config>
 python -m collector watchdog --config <protected-config>
@@ -84,6 +85,10 @@ It never opens a broker connection or writes either database. `tick` performs
 only a due capture or recovery; it refuses activation when `enabled` is false.
 `status` is read-only. The watchdog checks heartbeat and unresolved capture errors
 and sends operational notifications, not trading alerts.
+
+`sync` refreshes the local contract/signal mirror without a broker connection.
+It writes only PostgreSQL and uses the same process lock as capture. This allows
+source validation before broker activation.
 
 Logs from the task launcher are in `shared\logs\collector-<action>.log`.
 SDK exception messages are not logged because they may include credentials.

@@ -90,6 +90,7 @@ class Repository:
                      advertised_delta,entry_mark_per_share,entry_delta,entry_iv_fraction,source_payload)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     ON CONFLICT (source_id) DO UPDATE SET
+                        contract_key=EXCLUDED.contract_key,report_date=EXCLUDED.report_date,
                         tier=EXCLUDED.tier,advertised_premium_per_contract=EXCLUDED.advertised_premium_per_contract,
                         advertised_delta=EXCLUDED.advertised_delta,entry_mark_per_share=EXCLUDED.entry_mark_per_share,
                         entry_delta=EXCLUDED.entry_delta,entry_iv_fraction=EXCLUDED.entry_iv_fraction,
