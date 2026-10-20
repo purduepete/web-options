@@ -128,7 +128,10 @@ and Tailscale access controls on
 external boundaries and does not validate Cloudflare JWTs or identity headers.
 Trade links use `https://web-portfolio.jimlertech.com`.
 
-Build with `$env:VITE_AUTH_MODE='access'; npm run build`, then clear the variable.
+For deployed frontend updates, run `npm run build:frontend:access` from the repository
+root. This selects the checked-in `frontend/.env.access` profile, so a rebuild cannot
+accidentally restore the API-key prompt by omitting a shell environment variable.
+The ordinary frontend build keeps API-key mode for other installations.
 Keep protected settings JSON outside the repo and release, readable only by
 administrators and `NT AUTHORITY\LOCAL SERVICE`:
 

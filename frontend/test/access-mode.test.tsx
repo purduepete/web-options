@@ -3,6 +3,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ApiKeyProvider, useApiKey } from '../src/auth/ApiKeyProvider';
 import { ApiKeyPage } from '../src/pages/ApiKeyPage';
 import { fetchMe } from '../src/api';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+function read(relative: string): string {
+    return readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+}
 
 function Harness() {
     const { status, identity, forget } = useApiKey();
@@ -12,6 +18,13 @@ function Harness() {
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe('access frontend build', () => {
+    it('provides an explicit Access deployment build profile', () => {
+        const profile = read('../.env.access');
+        const manifest = JSON.parse(read('../../package.json'));
+        expect(profile.trim()).toBe('VITE_AUTH_MODE=access');
+        expect(manifest.scripts['build:frontend:access']).toBe('npm run build --workspace @weboptions/frontend -- --mode access');
+    });
+
     it('opens without a key, reports platform identity and stays open after forget', async () => {
         vi.stubEnv('VITE_AUTH_MODE', 'access');
         const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ authMode: 'access', label: 'Deployment platform access' })));
