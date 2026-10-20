@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
 import userEvent from '@testing-library/user-event';
 import { STORAGE_KEYS } from '@weboptions/shared';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
@@ -79,8 +80,45 @@ describe('ThemeProvider', () => {
         expect(meta.getAttribute('content')).toBe('#020617');
 
         await user.click(screen.getByRole('radio', { name: 'Light' }));
-        expect(meta.getAttribute('content')).toBe('#f9fafb');
+        expect(meta.getAttribute('content')).toBe('#ffffff');
 
         meta.remove();
+    });
+
+    it.each(['system', 'light', 'midnight', 'dark'])('tracks OS changes only in System: %s', (preference) => {
+        localStorage.setItem(STORAGE_KEYS.themePreference, preference);
+        let listener: (event: { matches: boolean }) => void = () => {};
+        vi.spyOn(window, 'matchMedia').mockReturnValue({
+            matches: false,
+            addEventListener: (_: string, callback: typeof listener) => { listener = callback; },
+            removeEventListener: () => {},
+        } as unknown as MediaQueryList);
+        renderControls();
+        act(() => listener({ matches: true }));
+        expect(root().dataset.theme).toBe(preference === 'system' ? 'midnight' : preference);
+        expect(root().style.colorScheme).toBe(preference === 'light' ? 'light' : 'dark');
+        act(() => listener({ matches: false }));
+        expect(root().dataset.theme).toBe(preference === 'system' ? 'light' : preference);
+        vi.restoreAllMocks();
+    });
+
+    it.each(['"light"', '"system"', '"dark"', 'midnight', 'invalid'])('matches pre-paint with legacy preference %s', (preference) => {
+        localStorage.setItem(STORAGE_KEYS.themePreference, preference);
+        const html = readFileSync('frontend/index.html', 'utf8');
+        const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]!;
+        new Function(script)();
+        const before = [root().dataset.theme, root().style.colorScheme, root().style.backgroundColor, root().style.getPropertyValue('--highlight')];
+        renderControls();
+        expect([root().dataset.theme, root().style.colorScheme, root().style.backgroundColor, root().style.getPropertyValue('--highlight')]).toEqual(before);
+    });
+
+    it('resets the highlight to the active theme default when switching themes', async () => {
+        renderControls();
+        const user = userEvent.setup();
+        await user.click(screen.getByRole('radio', { name: 'Sage Green' }));
+        await user.click(screen.getByRole('radio', { name: 'Light' }));
+        expect(root().style.getPropertyValue('--highlight')).toBe('#2f477b');
+        await user.click(screen.getByRole('radio', { name: 'Midnight' }));
+        expect(root().style.getPropertyValue('--highlight')).toBe('#6b8cae');
     });
 });

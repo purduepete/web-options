@@ -1,9 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
     DEFAULT_HIGHLIGHT_COLOR,
     DEFAULT_THEME_PREFERENCE,
     STORAGE_KEYS,
     THEME_BACKGROUNDS,
+    THEME_DEFAULT_HIGHLIGHT,
     hexToRgb,
     isDarkTheme,
     isThemePreference,
@@ -27,7 +28,7 @@ const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 function readPreference(): ThemePreference {
     try {
-        const stored = localStorage.getItem(STORAGE_KEYS.themePreference);
+        const stored = localStorage.getItem(STORAGE_KEYS.themePreference)?.replace(/^"|"$/g, '');
         return isThemePreference(stored) ? stored : DEFAULT_THEME_PREFERENCE;
     } catch {
         return DEFAULT_THEME_PREFERENCE;
@@ -36,8 +37,8 @@ function readPreference(): ThemePreference {
 
 function readHighlight(): string {
     try {
-        const stored = localStorage.getItem(STORAGE_KEYS.highlightColor);
-        return stored && hexToRgb(stored) ? stored : DEFAULT_HIGHLIGHT_COLOR;
+        const stored = localStorage.getItem(STORAGE_KEYS.highlightColor)?.replace(/^"|"$/g, '');
+        return stored && hexToRgb(stored) ? stored : THEME_DEFAULT_HIGHLIGHT[resolveTheme(readPreference(), prefersDark())];
     } catch {
         return DEFAULT_HIGHLIGHT_COLOR;
     }
@@ -62,15 +63,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const theme = resolveTheme(preference, systemDark);
+    const previousTheme = useRef(theme);
 
     useEffect(() => {
         const root = document.documentElement;
         root.setAttribute('data-theme', theme);
+        root.classList.remove('light', 'dark', 'theme-midnight');
+        root.classList.add(...(theme === 'light' ? ['light'] : theme === 'midnight' ? ['dark', 'theme-midnight'] : ['dark']));
+        root.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+        root.style.backgroundColor = THEME_BACKGROUNDS[theme];
         root.style.setProperty('--highlight', highlightColor);
         root.style.setProperty('--highlight-rgb', hexToRgb(highlightColor) ?? '107, 140, 174');
         root.style.setProperty('--highlight-contrast', isDarkTheme(theme) ? '#0f172a' : '#f8fafc');
         document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_BACKGROUNDS[theme]);
     }, [theme, highlightColor]);
+
+    useEffect(() => {
+        if (previousTheme.current === theme) return;
+        previousTheme.current = theme;
+        const color = THEME_DEFAULT_HIGHLIGHT[theme];
+        setHighlightState(color);
+        try { localStorage.setItem(STORAGE_KEYS.highlightColor, color); } catch { /* This tab still updates. */ }
+    }, [theme]);
 
     const setPreference = useCallback((next: ThemePreference) => {
         setPreferenceState(next);

@@ -46,7 +46,7 @@ export const THEME_DEFAULT_HIGHLIGHT: Record<ResolvedTheme, string> = {
  * literal value rather than a CSS variable reference.
  */
 export const THEME_BACKGROUNDS: Record<ResolvedTheme, string> = {
-    light: '#f9fafb',
+    light: '#ffffff',
     dark: '#111827',
     midnight: '#020617',
 };

@@ -357,3 +357,12 @@ straight out of OneDrive. It was deleted once the parity gate passed against it.
 then it could not open a database connection at all: its ODBC string named the host
 with no protocol prefix and no port, so the driver settled on Named Pipes and Azure
 SQL refused it.
+# Appearance
+
+System follows the OS live; Light, Midnight and optional gray Dark remain selectable.
+Midnight is the default. Preferences use plain strings in `config_theme_preference`;
+legacy JSON-quoted preferences are accepted. Switching resolved themes restores
+Midnight Blue in Light and Steel Blue in either dark theme. A custom color can still
+be selected within each theme. The pre-paint script and provider set matching classes,
+color scheme, browser chrome and backgrounds. Deploy the complete `frontend/dist`.
+Installed iOS status-bar rendering still needs device verification.

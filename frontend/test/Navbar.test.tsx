@@ -117,7 +117,7 @@ describe('Navbar on desktop', () => {
         renderNavbar();
 
         expect(document.documentElement.getAttribute('data-theme')).toBe('midnight');
-        for (const expected of ['light', 'dark', 'midnight']) {
+        for (const expected of ['dark', 'light', 'midnight']) {
             // Re-queried each time: the label names the theme it is showing.
             await user.click(screen.getByRole('button', { name: /^Theme:/ }));
             expect(document.documentElement.getAttribute('data-theme')).toBe(expected);

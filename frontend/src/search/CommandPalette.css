@@ -19,8 +19,7 @@
     max-height: calc(100dvh - 15vh - 1rem);
     background: var(--surface);
     border: var(--border-width) solid var(--palette-border);
-    /* The one place the squared-corner house rule is waived, to match webportfolio. */
-    border-radius: 6px;
+    border-radius: 0;
     overflow: hidden;
     box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }

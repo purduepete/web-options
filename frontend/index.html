@@ -19,7 +19,7 @@
             (function () {
                 var root = document.documentElement;
                 var theme = 'midnight';
-                var highlight = '#6b8cae';
+                var highlight;
                 function unquote(value) {
                     return value.replace(/^"|"$/g, '');
                 }
@@ -42,7 +42,12 @@
                 } catch (error) {
                     // Private mode or blocked storage: the defaults above are fine.
                 }
+                highlight = highlight || (theme === 'light' ? '#2f477b' : '#6b8cae');
                 root.setAttribute('data-theme', theme);
+                root.classList.add(...(theme === 'light' ? ['light'] : theme === 'midnight' ? ['dark', 'theme-midnight'] : ['dark']));
+                root.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+                var backgrounds = { light: '#ffffff', dark: '#111827', midnight: '#020617' };
+                root.style.backgroundColor = backgrounds[theme];
                 root.style.setProperty('--highlight', highlight);
                 var value = parseInt(highlight.slice(1), 16);
                 root.style.setProperty(
@@ -50,7 +55,6 @@
                     ((value >> 16) & 255) + ', ' + ((value >> 8) & 255) + ', ' + (value & 255),
                 );
                 root.style.setProperty('--highlight-contrast', theme === 'light' ? '#f8fafc' : '#0f172a');
-                var backgrounds = { light: '#ffffff', dark: '#111827', midnight: '#020617' };
                 var meta = document.querySelector('meta[name="theme-color"]');
                 if (meta) meta.setAttribute('content', backgrounds[theme]);
             })();

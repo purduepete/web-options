@@ -31,7 +31,7 @@
 }
 
 :root {
-    --font-sans: 'Roboto Flex', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-sans: 'Roboto Flex', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
     --font-mono: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
 
     --radius: 0;
@@ -73,8 +73,8 @@
     --c-gray-800: #1f2937;
     --c-gray-900: #111827;
 
-    --bg: var(--c-gray-50);
-    --bg-rgb: 249 250 251;
+    --bg: var(--white);
+    --bg-rgb: 255 255 255;
     --surface: var(--white);
     --surface-rgb: 255 255 255;
     --surface-2: var(--gray-100);
@@ -220,6 +220,8 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
     font-optical-sizing: auto;
     line-height: 1.5;
     /* An OCC symbol or a pasted link has no space to break at, and one of them

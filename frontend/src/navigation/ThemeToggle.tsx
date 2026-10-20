@@ -3,9 +3,9 @@ import { MoonIcon, MoonStarIcon, SunIcon } from '../components/icons';
 import { useTheme } from '../theme/ThemeProvider';
 
 const CYCLE: Record<ResolvedTheme, { icon: typeof SunIcon; label: string; next: ResolvedTheme }> = {
-    light: { icon: SunIcon, label: 'Light', next: 'dark' },
-    dark: { icon: MoonIcon, label: 'Dark', next: 'midnight' },
-    midnight: { icon: MoonStarIcon, label: 'Midnight', next: 'light' },
+    light: { icon: SunIcon, label: 'Light', next: 'midnight' },
+    dark: { icon: MoonIcon, label: 'Dark', next: 'light' },
+    midnight: { icon: MoonStarIcon, label: 'Midnight', next: 'dark' },
 };
 
 /**
