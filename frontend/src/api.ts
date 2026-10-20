@@ -3,7 +3,6 @@ import type {
     CalendarsIndexResponse,
     CautionSymbolsResponse,
     EarliestWeekResponse,
-    ExpiryFilter,
     GradeSettings,
     GradeSettingsResponse,
     MeResponse,
@@ -72,7 +71,7 @@ export function describeFailure(error: unknown): string {
 }
 
 async function send<T>(path: string, init: RequestInit, key?: string): Promise<T> {
-    const apiKey = isAccessMode() ? null : key ?? readKey();
+    const apiKey = isAccessMode() ? null : (key ?? readKey());
     const headers: Record<string, string> = { Accept: 'application/json', ...(init.headers as Record<string, string>) };
     if (apiKey) headers['X-API-Key'] = apiKey;
 
@@ -194,7 +193,7 @@ export function fetchSymbolDetail(
     contract: { strike: number | null; expiration: string | null; reportDate?: string | null } = {
         strike: null,
         expiration: null,
-    },
+    }
 ): Promise<SymbolDetail> {
     const query = new URLSearchParams();
     if (contract.strike !== null) query.set('strike', String(contract.strike));

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import type { IsoDate, Moneyness, NumberSource, SymbolDetail, Trade } from '@weboptions/shared';
+import type { IsoDate, Moneyness, NumberSource, Trade } from '@weboptions/shared';
 import { gradeTrade, RECENT_SIGNAL_WINDOW_DAYS } from '@weboptions/shared';
 import { Modal } from '../components/Modal';
 import {
@@ -234,7 +234,7 @@ export function TradeDetail({
                 cautionSymbols: [...cautionSymbols],
                 vix,
             },
-            settings,
+            settings
         );
     }, [trade, shownYield, shownDelta, detail?.price, cautionSymbols, settings, vix]);
 
@@ -283,48 +283,48 @@ export function TradeDetail({
                 <div className="detail-links">
                     <div className="research-links">
                         {/* The anchor carries the name, so the mark is decorative. */}
-                    <a
-                        className="pill link-icon"
-                        href={withContext(seekingAlphaUrl(trade.symbol), context)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Seeking Alpha"
-                        title="Seeking Alpha"
-                    >
-                        <span className="site-mark site-seekingalpha" aria-hidden="true" />
-                    </a>
-                    <a
-                        className="pill link-icon"
-                        href={fidelityUrl(trade.symbol, context)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Fidelity"
-                        title="Fidelity option chain"
-                    >
-                        <span className="site-mark site-fidelity" aria-hidden="true" />
-                    </a>
-                    {barchart && (
                         <a
                             className="pill link-icon"
-                            href={withContext(barchart, context)}
+                            href={withContext(seekingAlphaUrl(trade.symbol), context)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label="Barchart option price history"
-                            title="Barchart option price history"
+                            aria-label="Seeking Alpha"
+                            title="Seeking Alpha"
                         >
-                            <span className="site-mark site-barchart" aria-hidden="true" />
+                            <span className="site-mark site-seekingalpha" aria-hidden="true" />
                         </a>
-                    )}
-                    <a
-                        className="pill link-icon"
-                        href={withContext(tradingViewUrl(trade.symbol), context)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="TradingView"
-                        title="TradingView chart"
-                    >
-                        <span className="site-mark site-tradingview" aria-hidden="true" />
-                    </a>
+                        <a
+                            className="pill link-icon"
+                            href={fidelityUrl(trade.symbol, context)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Fidelity"
+                            title="Fidelity option chain"
+                        >
+                            <span className="site-mark site-fidelity" aria-hidden="true" />
+                        </a>
+                        {barchart && (
+                            <a
+                                className="pill link-icon"
+                                href={withContext(barchart, context)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Barchart option price history"
+                                title="Barchart option price history"
+                            >
+                                <span className="site-mark site-barchart" aria-hidden="true" />
+                            </a>
+                        )}
+                        <a
+                            className="pill link-icon"
+                            href={withContext(tradingViewUrl(trade.symbol), context)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="TradingView"
+                            title="TradingView chart"
+                        >
+                            <span className="site-mark site-tradingview" aria-hidden="true" />
+                        </a>
                     </div>
                     <a
                         className="pill link-icon purchase-link"
@@ -602,8 +602,13 @@ export function TradeDetail({
                                         <span>
                                             {detail.recentSignals.total} in {RECENT_SIGNAL_WINDOW_DAYS} days
                                         </span>
-                                        <span>{shareOf(detail.recentSignals.inTheMoney, detail.recentSignals.total)} ITM</span>
-                                        <span>{shareOf(detail.recentSignals.assigned, detail.recentSignals.total)} assigned</span>
+                                        <span>
+                                            {shareOf(detail.recentSignals.inTheMoney, detail.recentSignals.total)} ITM
+                                        </span>
+                                        <span>
+                                            {shareOf(detail.recentSignals.assigned, detail.recentSignals.total)}{' '}
+                                            assigned
+                                        </span>
                                     </span>
                                 )}
                             </h3>
@@ -615,7 +620,7 @@ export function TradeDetail({
                                         .sort(
                                             (a, b) =>
                                                 Number(b.ownedLiveContracts > 0 || b.ownedPaperContracts > 0) -
-                                                Number(a.ownedLiveContracts > 0 || a.ownedPaperContracts > 0),
+                                                Number(a.ownedLiveContracts > 0 || a.ownedPaperContracts > 0)
                                         )
                                         .map((signal) => {
                                             const settled = signal.closeAtExpiration !== null;

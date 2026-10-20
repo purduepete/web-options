@@ -63,8 +63,6 @@ const TIER_PILL_LABELS = {
     aggressive: 'Aggressive',
 } as const;
 
-type TierPillTier = keyof typeof TIER_PILL_LABELS;
-
 export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: boolean }) {
     if (isTopPick) {
         return (

@@ -15,7 +15,7 @@ function renderChip() {
     return render(
         <VixProvider>
             <VixChip />
-        </VixProvider>,
+        </VixProvider>
     );
 }
 
@@ -41,7 +41,7 @@ describe('VixChip', () => {
 
     it('shows the day change against the close before it', async () => {
         mockFetchVix.mockResolvedValue({ vix: { value: 14.89, asOf: '2026-08-19', previousValue: 15.84 } });
-        const { container } = renderChip();
+        renderChip();
 
         await waitFor(() => expect(screen.getByText('-6.00%')).toBeTruthy());
     });

@@ -1,48 +1,72 @@
 {
-    "name": "weboptions",
-    "private": true,
-    "version": "0.1.0",
-    "description": "Personal options dashboards — Node/React rewrite of the Flask prototype.",
-    "workspaces": [
-        "shared",
-        "backend",
-        "frontend"
+  "name": "weboptions",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Personal options dashboards — Node/React rewrite of the Flask prototype.",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build:shared": "npm run build --workspace @weboptions/shared",
+    "build:backend": "npm run build --workspace @weboptions/backend",
+    "build:frontend": "npm run build --workspace @weboptions/frontend",
+    "build:frontend:access": "npm run build --workspace @weboptions/frontend -- --mode access",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "preview": "npm run preview --workspace @weboptions/frontend",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:backend": "npm run build:shared && npm run dev --workspace @weboptions/backend",
+    "dev:frontend": "npm run dev --workspace @weboptions/frontend",
+    "serve": "pwsh -NoProfile -File scripts/weboptions.ps1 start",
+    "serve:stop": "pwsh -NoProfile -File scripts/weboptions.ps1 stop",
+    "serve:status": "pwsh -NoProfile -File scripts/weboptions.ps1 status",
+    "start": "pwsh -NoProfile -File scripts/serve.ps1",
+    "update": "pwsh -NoProfile -File scripts/update.ps1",
+    "install-task": "pwsh -NoProfile -File scripts/install-task.ps1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "tsx backend/tools/migrate.ts",
+    "create-readonly-user": "tsx backend/tools/create-readonly-user.ts",
+    "verify-readonly": "tsx backend/tools/verify-readonly.ts",
+    "keys": "tsx backend/tools/manage-keys.ts",
+    "extract-calendar": "tsx backend/tools/extract-calendar.ts",
+    "render-calendar": "tsx backend/tools/render-calendar.ts",
+    "validate-calendar": "tsx backend/tools/render-calendar.ts --check",
+    "ingest-calendar": "tsx backend/tools/ingest-calendar.ts",
+    "test:calendar": "vitest run backend/test/calendar-normalize.test.ts backend/test/calendar-extract.test.ts backend/test/calendar-render.test.ts backend/test/calendar-routes.test.ts frontend/test/calendar-groups.test.ts frontend/test/CalendarPages.test.tsx",
+    "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p backend/tsconfig.tools.json && tsc -p frontend --noEmit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.4",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "jsdom": "^30.0.1",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^3.0.5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "prettier --write",
+      "eslint --max-warnings 0 --no-warn-ignored"
     ],
-    "engines": {
-        "node": ">=20.11"
-    },
-    "scripts": {
-        "build:shared": "npm run build --workspace @weboptions/shared",
-        "build:backend": "npm run build --workspace @weboptions/backend",
-        "build:frontend": "npm run build --workspace @weboptions/frontend",
-        "build:frontend:access": "npm run build --workspace @weboptions/frontend -- --mode access",
-        "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
-        "dev:backend": "npm run build:shared && npm run dev --workspace @weboptions/backend",
-        "dev:frontend": "npm run dev --workspace @weboptions/frontend",
-        "serve": "pwsh -NoProfile -File scripts/weboptions.ps1 start",
-        "serve:stop": "pwsh -NoProfile -File scripts/weboptions.ps1 stop",
-        "serve:status": "pwsh -NoProfile -File scripts/weboptions.ps1 status",
-        "start": "pwsh -NoProfile -File scripts/serve.ps1",
-        "update": "pwsh -NoProfile -File scripts/update.ps1",
-        "install-task": "pwsh -NoProfile -File scripts/install-task.ps1",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "migrate": "tsx backend/tools/migrate.ts",
-        "create-readonly-user": "tsx backend/tools/create-readonly-user.ts",
-        "verify-readonly": "tsx backend/tools/verify-readonly.ts",
-        "keys": "tsx backend/tools/manage-keys.ts",
-        "extract-calendar": "tsx backend/tools/extract-calendar.ts",
-        "render-calendar": "tsx backend/tools/render-calendar.ts",
-        "validate-calendar": "tsx backend/tools/render-calendar.ts --check",
-        "ingest-calendar": "tsx backend/tools/ingest-calendar.ts",
-        "test:calendar": "vitest run backend/test/calendar-normalize.test.ts backend/test/calendar-extract.test.ts backend/test/calendar-render.test.ts backend/test/calendar-routes.test.ts frontend/test/calendar-groups.test.ts frontend/test/CalendarPages.test.tsx",
-        "typecheck": "npm run build:shared && tsc -p backend --noEmit && tsc -p backend/tsconfig.tools.json && tsc -p frontend --noEmit"
-    },
-    "devDependencies": {
-        "@testing-library/react": "^16.3.2",
-        "@testing-library/user-event": "^14.6.4",
-        "jsdom": "^30.0.1",
-        "typescript": "^5.7.2",
-        "vitest": "^3.0.5"
-    }
+    "*.{json,css,md,html}": [
+      "prettier --write"
+    ]
+  }
 }

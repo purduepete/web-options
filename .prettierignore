@@ -1,0 +1,9 @@
+node_modules/
+**/dist/
+data/
+.run/
+.secrets/
+coverage/
+package-lock.json
+*.min.*
+docs/

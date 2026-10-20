@@ -15,6 +15,7 @@ describe('launcher scripts', () => {
 
     it.each(scripts)('%s is pure ASCII', (name) => {
         const text = fs.readFileSync(path.join(scriptsDir, name), 'utf8');
+        // eslint-disable-next-line no-control-regex -- the range starts at NUL to match every non-ASCII byte
         const offenders = [...text.matchAll(/[^\x00-\x7F]/g)].map((match) => {
             const line = text.slice(0, match.index).split('\n').length;
             return `line ${line}: ${JSON.stringify(match[0])}`;
