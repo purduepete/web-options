@@ -57,7 +57,7 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                 if not wanted:
                     break
                 underlying = {}
-                symbols = sorted({contract.symbol for contract in wanted})
+                symbols = sorted({contract.broker_underlying for contract in wanted})
                 for offset in range(0, len(symbols), 100):
                     try:
                         quotes = await asyncio.wait_for(
@@ -71,7 +71,7 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                         LOG.error("underlying batch failed: %s", type(error).__name__)
                 for offset in range(0, len(wanted), 100):
                     batch = wanted[offset : offset + 100]
-                    mapping = {contract.occ: contract for contract in batch}
+                    mapping = {contract.broker_occ: contract for contract in batch}
                     try:
                         quotes = await asyncio.wait_for(
                             get_market_data_by_type(session, options=list(mapping)), timeout=25
@@ -86,7 +86,7 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                                 run_id,
                                 contract.key,
                                 "price",
-                                price_values(quote, received, underlying.get(contract.symbol)),
+                                price_values(quote, received, underlying.get(contract.broker_underlying)),
                                 deadline,
                             )
                         LOG.info(

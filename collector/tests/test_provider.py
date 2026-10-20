@@ -5,14 +5,17 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from collector.config import Config
 from collector.model import Contract
 from collector.provider import collect
 
 
-def test_greeks_wait_for_independent_valid_fields_without_overwriting():
+@pytest.mark.parametrize("symbol", ["TEST", "BRK-B", "BRK.B", "BRKB"])
+def test_greeks_wait_for_independent_valid_fields_without_overwriting(symbol):
     at = datetime.now(UTC)
-    contract = Contract("test", "TEST", date(2026, 11, 20), Decimal("100"))
+    contract = Contract("test", symbol, date(2026, 11, 20), Decimal("100"))
     components = {"price", "delta", "iv"}
     stored = {}
     repo = MagicMock()
@@ -24,10 +27,13 @@ def test_greeks_wait_for_independent_valid_fields_without_overwriting():
             components.remove(component)
 
     repo.save.side_effect = save
-    option = SimpleNamespace(symbol=contract.occ, bid=1, ask=1.1, mark=1.05, last=1.02, updated_at=at)
-    equity = SimpleNamespace(symbol="TEST", last_mkt=100, mark=100)
+    option = SimpleNamespace(symbol=contract.broker_occ, bid=1, ask=1.1, mark=1.05, last=1.02, updated_at=at)
+    equity = SimpleNamespace(symbol=contract.broker_underlying, last_mkt=100, mark=100)
 
     async def quotes(_session, **kwargs):
+        assert kwargs == (
+            {"options": [contract.broker_occ]} if "options" in kwargs else {"equities": [contract.broker_underlying]}
+        )
         return [option] if "options" in kwargs else [equity]
 
     stream = MagicMock()

@@ -5,6 +5,10 @@ Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplie
 delta and IV. Azure SQL is a temporary, SELECT-only signal discovery source.
 Known local contracts continue to be priced if discovery fails.
 
+Berkshire class B aliases (`BRK-B`, `BRK.B`, `BRKB`) retain their original
+VADER identity in storage. Tastytrade requests use the verified option root
+`BRKB` (including DXLink) and underlying equity symbol `BRK/B`.
+
 ## Setup and activation
 
 Use Python 3.13 in an isolated virtual environment:

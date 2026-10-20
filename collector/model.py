@@ -57,8 +57,17 @@ class Contract:
         return f"{self.symbol:<6}{self.expiration:%y%m%d}P{int(scaled):08d}"
 
     @property
+    def broker_underlying(self) -> str:
+        return "BRK/B" if self.symbol in ("BRK-B", "BRK.B", "BRKB") else self.symbol
+
+    @property
+    def broker_occ(self) -> str:
+        root = "BRKB" if self.broker_underlying == "BRK/B" else self.symbol
+        return f"{root:<6}{self.occ[6:]}"
+
+    @property
     def streamer_symbol(self) -> str:
-        return f".{self.symbol}{self.expiration:%y%m%d}P{self.strike.normalize():f}"
+        return f".{self.broker_occ[:6].strip()}{self.expiration:%y%m%d}P{self.strike.normalize():f}"
 
 
 @dataclass(frozen=True)

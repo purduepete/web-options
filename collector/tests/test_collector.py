@@ -69,9 +69,21 @@ def test_greeks_units_and_zero():
 def test_occ_and_streamer_mapping():
     contract = Contract("key", "BRK.B", date(2026, 11, 20), Decimal("412.5"))
     assert contract.occ == "BRK.B 261120P00412500"
-    assert contract.streamer_symbol == ".BRK.B261120P412.5"
+    assert contract.broker_occ == "BRKB  261120P00412500"
+    assert contract.streamer_symbol == ".BRKB261120P412.5"
     with pytest.raises(ValueError):
         _ = Contract("key", "TOOLONG", date(2026, 11, 20), Decimal("1")).occ
+
+
+@pytest.mark.parametrize("symbol", ["BRK-B", "BRK.B", "BRKB"])
+def test_berkshire_broker_alias_preserves_source_identity(symbol):
+    contract = Contract("source-key", symbol, date(2026, 11, 20), Decimal("500"))
+    assert contract.symbol == symbol
+    assert contract.key == "source-key"
+    assert contract.occ == f"{symbol:<6}261120P00500000"
+    assert contract.broker_occ == "BRKB  261120P00500000"
+    assert contract.broker_underlying == "BRK/B"
+    assert contract.streamer_symbol == ".BRKB261120P500"
 
 
 def test_source_uses_signal_hash_not_nonexistent_numeric_id():
