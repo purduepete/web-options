@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from collector.__main__ import tick
+from collector.__main__ import notify_database_outage, tick
 from collector.config import Config
 from collector.model import Contract, choose_slot, event_time, number, slots
 from collector.provider import price_values, quality
@@ -137,6 +137,14 @@ def test_busy_lock_opens_no_provider():
 def test_activation_fail_closed():
     with pytest.raises(ValueError, match="disabled"):
         tick(Config("", {}, "", "", False, {}), datetime.now(UTC))
+
+
+def test_database_outage_notification_is_deduplicated_without_postgres(tmp_path):
+    config = Config("", {}, "", "", True, {}, str(tmp_path / "outage"))
+    with patch("collector.__main__.notify", return_value=True) as push:
+        notify_database_outage(config, datetime.now(UTC), RuntimeError())
+        notify_database_outage(config, datetime.now(UTC), RuntimeError())
+        push.assert_called_once()
 
 
 @pytest.mark.parametrize("has_contracts", [True, False])

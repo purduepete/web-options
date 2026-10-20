@@ -13,6 +13,7 @@ class Config:
     refresh_token: str
     enabled: bool
     notification: dict[str, str]
+    notification_state_file: str | None = None
 
 
 def load_config(path: str) -> Config:
@@ -29,4 +30,6 @@ def load_config(path: str) -> Config:
         document["refresh_token"],
         document.get("enabled") is True,
         document.get("notification", {}),
+        document.get("notification_state_file")
+        or str(Path(path).resolve().parents[2] / "logs" / "collector-outage-notice"),
     )

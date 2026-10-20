@@ -85,6 +85,8 @@ It never opens a broker connection or writes either database. `tick` performs
 only a due capture or recovery; it refuses activation when `enabled` is false.
 `status` is read-only. The watchdog checks heartbeat and unresolved capture errors
 and sends operational notifications, not trading alerts.
+During a PostgreSQL outage, a small diagnostic marker in `shared\logs` prevents
+repeated outage notifications. It contains no credentials or market records.
 
 `sync` refreshes the local contract/signal mirror without a broker connection.
 It writes only PostgreSQL and uses the same process lock as capture. This allows

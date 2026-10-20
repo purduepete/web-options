@@ -77,3 +77,4 @@ def test_installer_requires_successful_isolation_before_activation():
     assert probe < source.index("Register-ScheduledTask")
     assert "if ($LASTEXITCODE -ne 0) { throw" in source[probe:]
     assert source.index("Broker compatibility must be approved") < probe
+    assert "Get-Command pwsh.exe -CommandType Application | Select-Object -First 1" in source

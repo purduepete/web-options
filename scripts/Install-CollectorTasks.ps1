@@ -34,7 +34,7 @@ if ($EnableCollection) {
     }
     finally { Pop-Location }
 }
-$pwsh = (Get-Command pwsh.exe -CommandType Application).Source
+$pwsh = (Get-Command pwsh.exe -CommandType Application | Select-Object -First 1).Source
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LOCAL SERVICE' -LogonType ServiceAccount
 foreach ($kind in @('tick', 'watchdog')) {
     $taskName = if ($kind -eq 'tick') { 'SolutionDeploy-web-options-collector' } else { 'SolutionDeploy-web-options-collector-watchdog' }
