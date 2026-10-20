@@ -48,6 +48,9 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
     from tastytrade.dxfeed import Greeks
     from tastytrade.market_data import get_market_data_by_type
 
+    # The SDK enables debug logging when its lazy import first runs.
+    logging.getLogger("tastytrade").setLevel(logging.CRITICAL)
+
     async def work() -> None:
         async with Session(config.client_secret, config.refresh_token) as session:
             # One REST retry inside the same snapshot window, then one bounded Greeks stream.
