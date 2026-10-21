@@ -36,6 +36,9 @@ def price_values(quote, received, underlying=None) -> dict:
         "last": number(quote.last),
         "underlying": underlying,
         "event_time": event_time(quote.updated_at),
+        "summary_date": getattr(quote, "summary_date", None),
+        "prev_close_date": getattr(quote, "prev_close_date", None),
+        "last_trade_time": event_time(getattr(quote, "last_trade_time", None)),
         "received_at": received,
         "flags": flags,
         "status": "ok" if valid else "invalid",
@@ -50,13 +53,28 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
 
     # The SDK enables debug logging when its lazy import first runs.
     logging.getLogger("tastytrade").setLevel(logging.CRITICAL)
+    groups = {}
+    for contract in contracts:
+        groups.setdefault(contract.broker_occ, {})[contract.key] = contract
+
+    def wanted_contracts(missing, components):
+        return [
+            next(iter(owners.values())) for owners in groups.values()
+            if any(components & missing.get(key, set()) for key in owners)
+        ]
+
+    def save(contract, component, values):
+        missing = repo.missing(run_id)
+        for key in groups[contract.broker_occ]:
+            if component in missing.get(key, set()):
+                repo.save(run_id, key, component, values, deadline)
 
     async def work() -> None:
         async with Session(config.client_secret, config.refresh_token) as session:
             # One REST retry inside the same snapshot window, then one bounded Greeks stream.
             for attempt in range(2):
                 missing = repo.missing(run_id)
-                wanted = [contract for contract in contracts if "price" in missing[contract.key]]
+                wanted = wanted_contracts(missing, {"price"})
                 if not wanted:
                     break
                 underlying = {}
@@ -85,13 +103,16 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                                 continue
                             contract = mapping[quote.symbol]
                             received = now()
-                            repo.save(
-                                run_id,
-                                contract.key,
+                            save(
+                                contract,
                                 "price",
                                 price_values(quote, received, underlying.get(contract.broker_underlying)),
-                                deadline,
                             )
+                        returned = {quote.symbol for quote in quotes}
+                        for symbol, contract in mapping.items():
+                            if symbol not in returned:
+                                for key in groups[contract.broker_occ]:
+                                    repo.price_unavailable(run_id, key, now())
                         LOG.info(
                             "price batch %d/%d attempt=%d elapsed coverage=%d",
                             offset + len(batch),
@@ -106,7 +127,7 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                     await asyncio.sleep(1)
 
             missing = repo.missing(run_id)
-            wanted = [contract for contract in contracts if {"delta", "iv"} & missing[contract.key]]
+            wanted = wanted_contracts(missing, {"delta", "iv"})
             if not wanted:
                 return
             mapping = {contract.streamer_symbol: contract for contract in wanted}
@@ -124,7 +145,8 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                             received = now()
                             at = event_time(event.time)
                             for component, raw in (("delta", event.delta), ("iv", event.volatility)):
-                                if component not in missing[contract.key]:
+                                if not any(component in missing.get(key, set())
+                                           for key in groups[contract.broker_occ]):
                                     continue
                                 value = number(raw, delta=component == "delta")
                                 if value is None:
@@ -132,9 +154,8 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                                 flags = quality(at, received)
                                 if value == 0:
                                     flags.append("zero_boundary")
-                                repo.save(
-                                    run_id,
-                                    contract.key,
+                                save(
+                                    contract,
                                     component,
                                     {
                                         "value": value,
@@ -142,10 +163,10 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                                         "received_at": received,
                                         "flags": flags,
                                     },
-                                    deadline,
                                 )
                                 if received <= deadline:
-                                    missing[contract.key].discard(component)
+                                    for key in groups[contract.broker_occ]:
+                                        missing.get(key, set()).discard(component)
                             if not any({"delta", "iv"} & fields for fields in missing.values()):
                                 break
                 except TimeoutError:

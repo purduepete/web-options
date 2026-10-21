@@ -84,3 +84,65 @@ def test_installer_requires_successful_isolation_before_activation():
     assert "if ($LASTEXITCODE -ne 0) { throw" in source[probe:]
     assert source.index("Broker compatibility must be approved") < probe
     assert "Get-Command pwsh.exe -CommandType Application | Select-Object -First 1" in source
+
+
+def test_union_deduplicates_price_retries_and_greeks_with_owner_fanout():
+    at = datetime.now(UTC)
+    contracts = [
+        Contract("live", "BRK.B", date(2026, 11, 20), Decimal(400)),
+        Contract("paper", "BRK-B", date(2026, 11, 20), Decimal(400)),
+        Contract("signal", "BRKB", date(2026, 11, 20), Decimal(400)),
+        Contract("other", "TEST", date(2026, 11, 20), Decimal(100)),
+    ]
+    components = {c.key: {"price", "delta", "iv"} for c in contracts}
+    components["paper"].remove("delta")
+    stored = {}
+    repo = MagicMock()
+    repo.missing.side_effect = lambda _: {key: set(value) for key, value in components.items()}
+
+    def save(_run, key, component, values, _deadline):
+        assert component in components[key]
+        stored[key, component] = values
+        components[key].remove(component)
+
+    repo.save.side_effect = save
+    price_requests = []
+
+    async def quotes(_session, **kwargs):
+        if "equities" in kwargs:
+            assert len(kwargs["equities"]) == len(set(kwargs["equities"]))
+            return []
+        requested = kwargs["options"]
+        price_requests.append(requested)
+        assert len(requested) == len(set(requested))
+        returned = [contracts[0].broker_occ] if len(price_requests) == 1 else [contracts[-1].broker_occ]
+        return [SimpleNamespace(symbol=s, bid=1, ask=1.1, mark=1.05, last=1, updated_at=at) for s in returned]
+
+    stream = MagicMock()
+    stream.subscribe = AsyncMock()
+    stream.unsubscribe = AsyncMock()
+
+    async def events(_kind):
+        for c in (contracts[0], contracts[-1]):
+            yield SimpleNamespace(event_symbol=c.streamer_symbol, time=int(at.timestamp() * 1000),
+                                  delta=Decimal("-0.25"), volatility=Decimal("0.4"))
+
+    stream.listen.side_effect = events
+    session = MagicMock()
+    session.__aenter__ = AsyncMock(return_value=MagicMock())
+    session.__aexit__ = AsyncMock(return_value=None)
+    streaming = MagicMock()
+    streaming.__aenter__ = AsyncMock(return_value=stream)
+    streaming.__aexit__ = AsyncMock(return_value=None)
+    with (patch("tastytrade.Session", return_value=session) as factory,
+          patch("tastytrade.DXLinkStreamer", return_value=streaming),
+          patch("tastytrade.market_data.get_market_data_by_type", side_effect=quotes),
+          patch("collector.provider.asyncio.sleep", new_callable=AsyncMock)):
+        asyncio.run(collect(Config("", {}, "", "", True, {}), repo, 1,
+                            contracts + [contracts[0]], at + timedelta(seconds=15)))
+    assert price_requests == [[contracts[0].broker_occ, contracts[-1].broker_occ], [contracts[-1].broker_occ]]
+    symbols = stream.subscribe.call_args.args[1]
+    assert symbols == [contracts[0].streamer_symbol, contracts[-1].streamer_symbol]
+    assert len(stored) == 11
+    assert not any(components.values())
+    factory.assert_called_once()

@@ -55,6 +55,8 @@ class Repository:
                 (day,),
             )
             for row in rows:
+                if row["source_kind"] != "signal":
+                    continue
                 contract = row["contract"]
                 self.execute(
                     """
@@ -73,6 +75,38 @@ class Repository:
                         row["report_date"],
                     ),
                 )
+            self.execute("UPDATE public.option_owner SET source_current=false")
+            for row in rows:
+                contract = row["contract"]
+                payload = {key: value for key, value in row.items() if key != "contract"}
+                serialized = Jsonb(json.loads(json.dumps(payload, default=str)))
+                self.execute(
+                    """
+                    INSERT INTO public.broker_contract(contract_key,symbol,expiration,strike)
+                    VALUES (%s,%s,%s,%s) ON CONFLICT (contract_key) DO UPDATE
+                    SET synced_at=CURRENT_TIMESTAMP
+                    """,
+                    (contract.broker_occ, contract.broker_occ[:6].strip(), contract.expiration, contract.strike),
+                )
+                self.execute(
+                    """
+                    INSERT INTO public.option_owner
+                    (source_kind,source_id,contract_key,original_contract_key,authenticated_user_id,
+                     account_id,is_paper,report_date,source_payload)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    ON CONFLICT (source_kind,source_id) DO UPDATE SET
+                      contract_key=EXCLUDED.contract_key,original_contract_key=EXCLUDED.original_contract_key,
+                      authenticated_user_id=EXCLUDED.authenticated_user_id,account_id=EXCLUDED.account_id,
+                      is_paper=EXCLUDED.is_paper,report_date=EXCLUDED.report_date,
+                      source_payload=EXCLUDED.source_payload,source_current=true,synced_at=CURRENT_TIMESTAMP
+                    """,
+                    (row["source_kind"], row["source_id"], contract.broker_occ, contract.key,
+                     row.get("authenticated_user_id"), row.get("account_id"),
+                     bool(row["is_paper"]) if row.get("is_paper") is not None else None,
+                     row.get("report_date"), serialized),
+                )
+                if row["source_kind"] != "signal":
+                    continue
                 payload = {key: value for key, value in row.items() if key != "contract"}
                 serialized = Jsonb(json.loads(json.dumps(payload, default=str)))
                 self.execute(
@@ -113,8 +147,11 @@ class Repository:
     def contracts(self, day: date) -> list[Contract]:
         rows = self.execute(
             """
-            SELECT contract_key,symbol,expiration,strike FROM public.vader_contract
-            WHERE expiration >= %s ORDER BY occ_symbol
+            SELECT c.contract_key,c.symbol,c.expiration,c.strike FROM public.broker_contract c
+            WHERE c.expiration >= %s AND EXISTS (
+                SELECT 1 FROM public.option_owner o
+                WHERE o.contract_key=c.contract_key AND o.source_current
+            ) ORDER BY c.contract_key
         """,
             (day,),
         ).fetchall()
@@ -129,8 +166,9 @@ class Repository:
                         (session_date,capture_kind,scheduled_at,deadline,status,finished_at)
                     VALUES (%s,%s,%s,%s,'missed',%s)
                     ON CONFLICT (session_date,capture_kind,scheduled_at) DO UPDATE
-                    SET status=CASE WHEN option_collection_run.status IN ('running','pending')
-                                    THEN 'partial' ELSE option_collection_run.status END,
+                    SET status=CASE WHEN option_collection_run.status='pending' THEN 'missed'
+                                    WHEN option_collection_run.status='running' THEN 'partial'
+                                    ELSE option_collection_run.status END,
                         finished_at=COALESCE(option_collection_run.finished_at,EXCLUDED.finished_at)
                 """,
                     (slot.session, slot.kind, slot.instant, slot.deadline, at),
@@ -169,11 +207,22 @@ class Repository:
             for contract in contracts:
                 self.execute(
                     """
-                    INSERT INTO public.option_quote (run_id,contract_key) VALUES (%s,%s)
+                    INSERT INTO public.broker_option_quote (run_id,contract_key) VALUES (%s,%s)
                     ON CONFLICT DO NOTHING
                 """,
                     (run_id, contract.key),
                 )
+            self.execute(
+                """
+                INSERT INTO public.option_capture_owner(run_id,contract_key,source_kind,source_id,owner_payload)
+                SELECT q.run_id,o.contract_key,o.source_kind,o.source_id,
+                       to_jsonb(o) - 'synced_at'
+                FROM public.option_owner o JOIN public.broker_option_quote q
+                  ON q.contract_key=o.contract_key AND q.run_id=%s
+                WHERE o.source_current ON CONFLICT DO NOTHING
+                """,
+                (run_id,),
+            )
             self.execute(
                 """
                 UPDATE public.option_collection_run SET expected_count=%s,discovery_status=%s,discovery_error=%s
@@ -187,7 +236,7 @@ class Repository:
             row["contract_key"]: {
                 component for component in ("price", "delta", "iv") if row[f"{component}_status"] != "ok"
             }
-            for row in self.execute("SELECT * FROM public.option_quote WHERE run_id=%s", (run_id,)).fetchall()
+            for row in self.execute("SELECT * FROM public.broker_option_quote WHERE run_id=%s", (run_id,)).fetchall()
         }
 
     def save(self, run_id: int, key: str, component: str, values: dict, deadline: datetime) -> None:
@@ -195,7 +244,7 @@ class Repository:
         if received > deadline:
             self.execute(
                 """
-                INSERT INTO public.option_quote_diagnostic (run_id,contract_key,component,received_at,reason)
+                INSERT INTO public.broker_quote_diagnostic (run_id,contract_key,component,received_at,reason)
                 VALUES (%s,%s,%s,%s,'late')
             """,
                 (run_id, key, component, received),
@@ -204,10 +253,11 @@ class Repository:
         if component == "price":
             self.execute(
                 """
-                UPDATE public.option_quote SET
+                UPDATE public.broker_option_quote SET
                   bid_per_share=%s,ask_per_share=%s,mark_per_share=%s,mid_per_share=%s,last_per_share=%s,
                   underlying_price=%s,provider_quote_time=%s,price_received_at=%s,
-                  price_flags=%s,price_status=%s,price_error=%s
+                  price_flags=%s,price_status=%s,price_error=%s,
+                  provider_summary_date=%s,provider_prev_close_date=%s,provider_last_trade_time=%s
                 WHERE run_id=%s AND contract_key=%s AND price_status <> 'ok'
             """,
                 (
@@ -222,6 +272,9 @@ class Repository:
                     values["flags"],
                     values["status"],
                     values.get("error"),
+                    values.get("summary_date"),
+                    values.get("prev_close_date"),
+                    values.get("last_trade_time"),
                     run_id,
                     key,
                 ),
@@ -230,7 +283,7 @@ class Repository:
             column = "delta" if component == "delta" else "implied_volatility_fraction"
             # Component and column names are restricted constants, never provider input.
             query = sql.SQL("""
-                UPDATE public.option_quote SET {value}=%s,{event}=%s,
+                UPDATE public.broker_option_quote SET {value}=%s,{event}=%s,
                   {received}=%s,{status}='ok',{flags}=%s,{error}=NULL
                 WHERE run_id=%s AND contract_key=%s AND {value} IS NULL AND {status}='missing'
             """).format(
@@ -245,15 +298,50 @@ class Repository:
         else:
             raise ValueError("unknown quote component")
 
+    def price_unavailable(self, run_id: int, key: str, received: datetime) -> None:
+        self.execute(
+            """
+            UPDATE public.broker_option_quote SET price_error='provider_no_quote'
+            WHERE run_id=%s AND contract_key=%s AND price_status <> 'ok'
+            """, (run_id, key),
+        )
+        self.execute(
+            """
+            INSERT INTO public.broker_quote_diagnostic(run_id,contract_key,component,received_at,reason)
+            VALUES (%s,%s,'price',%s,'successful_response_without_contract')
+            """, (run_id, key, received),
+        )
+
     def component_error(self, run_id: int, component: str, reason: str) -> None:
         if component not in ("price", "delta", "iv"):
             raise ValueError("unknown quote component")
         self.execute(
             sql.SQL("""
-            UPDATE public.option_quote SET {error}=%s WHERE run_id=%s AND {status} <> 'ok'
+            UPDATE public.broker_option_quote SET {error}=%s WHERE run_id=%s AND {status} <> 'ok'
         """).format(error=sql.Identifier(f"{component}_error"), status=sql.Identifier(f"{component}_status")),
             (reason, run_id),
         )
+
+    def share_capture(self, source: int, target: int, deadline: datetime) -> None:
+        rows = self.execute(
+            "SELECT * FROM public.broker_option_quote WHERE run_id=%s", (source,)
+        ).fetchall()
+        for row in rows:
+            if row["price_status"] == "ok":
+                self.save(target, row["contract_key"], "price", {
+                    **{name: row[f"{name}_per_share"] for name in ("bid", "ask", "mark", "mid", "last")},
+                    "underlying": row["underlying_price"], "event_time": row["provider_quote_time"],
+                    "received_at": row["price_received_at"], "flags": row["price_flags"], "status": "ok",
+                    "summary_date": row.get("provider_summary_date"),
+                    "prev_close_date": row.get("provider_prev_close_date"),
+                    "last_trade_time": row.get("provider_last_trade_time"),
+                }, deadline)
+            for component, column in (("delta", "delta"), ("iv", "implied_volatility_fraction")):
+                if row[f"{component}_status"] == "ok":
+                    self.save(target, row["contract_key"], component, {
+                        "value": row[column], "event_time": row[f"{component}_event_time"],
+                        "received_at": row[f"{component}_received_at"], "flags": row[f"{component}_flags"],
+                    }, deadline)
 
     def finish(self, run_id: int, at: datetime, failed: bool = False) -> dict:
         counts = self.execute(
@@ -262,13 +350,15 @@ class Repository:
                    count(*) FILTER (WHERE price_status='ok') AS price,
                    count(*) FILTER (WHERE delta_status='ok') AS delta,
                    count(*) FILTER (WHERE iv_status='ok') AS iv
-            FROM public.option_quote WHERE run_id=%s
+            FROM public.broker_option_quote WHERE run_id=%s
         """,
             (run_id,),
         ).fetchone()
         status = (
             "failed"
-            if failed
+            if failed or self.execute(
+                "SELECT discovery_status FROM public.option_collection_run WHERE id=%s", (run_id,)
+            ).fetchone()["discovery_status"] != "ok"
             else (
                 "no_work"
                 if counts["expected"] == 0

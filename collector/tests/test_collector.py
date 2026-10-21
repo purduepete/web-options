@@ -18,19 +18,23 @@ from psycopg.conninfo import conninfo_to_dict
 
 def test_regular_session_slots():
     result = slots(date(2026, 10, 20))
-    assert len(result) == 14
+    assert len(result) == 15
     assert result[0].instant == datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
-    assert result[-1].kind == "close"
-    assert result[-1].instant == datetime(2026, 10, 20, 20, tzinfo=UTC)
-    assert all(b.instant - a.instant == timedelta(minutes=30) for a, b in zip(result, result[1:]))
+    assert result[-2].kind == "close"
+    assert result[-2].instant == datetime(2026, 10, 20, 20, tzinfo=UTC)
+    assert result[-1].kind == "closing_1315"
+    assert all(b.instant - a.instant == timedelta(minutes=30) for a, b in zip(result, result[1:-1]))
 
 
 def test_calendar_holiday_weekend_early_close_and_dst():
-    assert slots(date(2026, 12, 25)) == []
+    holiday = slots(date(2026, 12, 25))
+    assert len(holiday) == 1 and holiday[0].kind == "closing_1315"
     assert slots(date(2026, 10, 24)) == []
     early = slots(date(2026, 11, 27))
-    assert len(early) == 8
-    assert early[-1].instant == datetime(2026, 11, 27, 18, tzinfo=UTC)
+    assert len(early) == 9
+    assert early[-2].instant == datetime(2026, 11, 27, 18, tzinfo=UTC)
+    assert early[-1].instant == datetime(2026, 11, 27, 21, 15, tzinfo=UTC)
+    assert choose_slot(early[-2].deadline + timedelta(minutes=1), early, set()) is None
     assert slots(date(2026, 11, 2))[0].instant.hour == 14
     assert slots(date(2026, 10, 30))[0].instant.hour == 13
 
@@ -133,8 +137,8 @@ def test_persistence_immutable_component_guard_and_late_isolation():
     assert '"delta" IS NULL' in text and "\"delta_status\"='missing'" in text
     repo.execute.reset_mock()
     repo.save(1, "key", "delta", values, at - timedelta(seconds=1))
-    assert "option_quote_diagnostic" in repo.execute.call_args.args[0]
-    assert "UPDATE public.option_quote" not in repo.execute.call_args.args[0]
+    assert "broker_quote_diagnostic" in repo.execute.call_args.args[0]
+    assert "UPDATE public.broker_option_quote" not in repo.execute.call_args.args[0]
 
 
 def test_busy_lock_opens_no_provider():
@@ -160,7 +164,7 @@ def test_database_outage_notification_is_deduplicated_without_postgres(tmp_path)
 
 
 @pytest.mark.parametrize("has_contracts", [True, False])
-def test_azure_outage_known_contracts_or_expired_only_failure(has_contracts):
+def test_azure_outage_blocks_stale_ownership_capture(has_contracts):
     config = Config("", {}, "", "", True, {})
     at = datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
     with (
@@ -174,10 +178,6 @@ def test_azure_outage_known_contracts_or_expired_only_failure(has_contracts):
         repo.run.return_value = 1
         repo.contracts.return_value = [MagicMock()] if has_contracts else []
         repo.finish.return_value = {"status": "complete", "expected": 1}
-        if has_contracts:
-            assert tick(config, at) == 1
-            capture.assert_called_once()
-        else:
-            with pytest.raises(RuntimeError, match="no known unexpired"):
-                tick(config, at)
-            capture.assert_not_called()
+        with pytest.raises(RuntimeError, match="current eligible universe is unknown"):
+            tick(config, at)
+        capture.assert_not_called()

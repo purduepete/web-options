@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 import re
 from zoneinfo import ZoneInfo
@@ -94,15 +94,17 @@ def session_bounds(day: date) -> tuple[datetime, datetime] | None:
 
 def slots(day: date) -> list[Slot]:
     bounds = session_bounds(day)
-    if bounds is None:
-        return []
-    opened, closed = bounds
     result = []
-    instant = opened
-    while instant < closed:
-        result.append(Slot("open_session", instant, min(instant + WINDOW, closed), day))
-        instant += timedelta(minutes=30)
-    result.append(Slot("close", closed, closed + WINDOW, day))
+    if bounds is not None:
+        opened, closed = bounds
+        instant = opened
+        while instant < closed:
+            result.append(Slot("open_session", instant, min(instant + WINDOW, closed), day))
+            instant += timedelta(minutes=30)
+        result.append(Slot("close", closed, closed + WINDOW, day))
+    if day.weekday() < 5:
+        closing = datetime.combine(day, time(13, 15), PACIFIC).astimezone(UTC)
+        result.append(Slot("closing_1315", closing, closing + WINDOW, day))
     return result
 
 
@@ -118,7 +120,8 @@ def choose_slot(
     for slot in scheduled:
         if slot.instant <= at <= slot.deadline and (slot.kind, slot.instant) not in completed:
             return slot
-    if not scheduled or not scheduled[0].instant <= at < scheduled[-1].instant:
+    bounds = session_bounds(at.astimezone(PACIFIC).date())
+    if not bounds or not bounds[0] <= at < bounds[1]:
         return None
     latest = max(slot.instant for slot in scheduled if slot.instant <= at)
     # A completed recovery after this scheduled slot already covers the interval.
@@ -129,5 +132,5 @@ def choose_slot(
     if heartbeat is not None and at - heartbeat < timedelta(minutes=2):
         return None
     return Slot(
-        "recovery", at.replace(second=0, microsecond=0), min(at + WINDOW, scheduled[-1].instant), scheduled[0].session
+        "recovery", at.replace(second=0, microsecond=0), min(at + WINDOW, bounds[1]), scheduled[0].session
     )

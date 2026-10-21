@@ -57,9 +57,48 @@ def verify(admin_passfile: str, secret_directory: str) -> None:
                             """).fetchone()
                             if row != (False, False, False, False, True):
                                 raise ValueError("runtime privileges do not match the approved policy")
-                            version = connection.execute("SELECT version FROM public.collector_schema").fetchone()
-                            if version != (1,):
+                            versions = {
+                                row[0] for row in connection.execute(
+                                    "SELECT version FROM public.collector_schema"
+                                ).fetchall()
+                            }
+                            if versions != {1, 2}:
                                 raise ValueError("unexpected schema version")
+                            if 2 in versions:
+                                invalid = connection.execute("""
+                                    SELECT count(*) FROM (
+                                      VALUES ('broker_contract',false),('option_owner',true),
+                                             ('broker_option_quote',true),('option_capture_owner',false),
+                                             ('broker_quote_diagnostic',false),('azure_option_observation',false)
+                                    ) AS expected(name,can_update)
+                                    WHERE NOT has_table_privilege(current_user,'public.' || name,'SELECT')
+                                       OR NOT has_table_privilege(current_user,'public.' || name,'INSERT')
+                                       OR has_table_privilege(current_user,'public.' || name,'UPDATE') <> can_update
+                                       OR has_table_privilege(current_user,'public.' || name,'DELETE')
+                                       OR has_table_privilege(current_user,'public.' || name,'TRUNCATE')
+                                       OR EXISTS (
+                                           SELECT 1 FROM pg_tables t WHERE t.schemaname='public'
+                                           AND t.tablename=name AND t.tableowner=current_user
+                                       )
+                                """).fetchone()[0]
+                                if invalid:
+                                    raise ValueError("combined collector runtime privileges are incorrect")
+                                columns = connection.execute("""
+                                    SELECT count(*) FROM information_schema.columns
+                                    WHERE table_schema='public' AND table_name='broker_contract'
+                                      AND has_column_privilege(current_user,
+                                          'public.broker_contract',column_name,'UPDATE')
+                                          <> (column_name='synced_at')
+                                """).fetchone()[0]
+                                if columns:
+                                    raise ValueError("broker contract UPDATE must be limited to synced_at")
+                                validated = connection.execute("""
+                                    SELECT convalidated FROM pg_constraint
+                                    WHERE conrelid='public.option_collection_run'::regclass
+                                      AND conname='option_collection_run_capture_kind_check'
+                                """).fetchone()
+                                if validated != (True,):
+                                    raise ValueError("capture-kind constraint validation must finish before activation")
                 except psycopg.OperationalError as error:
                     # Check reason without printing the authentication exception or credentials.
                     if database == "web_options" or "pg_hba.conf rejects connection" not in str(error):

@@ -56,7 +56,7 @@ def tick(config, at) -> int:
         if not repo.lock():
             LOG.warning("collector lock busy; no broker connection opened")
             return 0
-        day = at.astimezone(EASTERN).date()
+        day = at.astimezone(PACIFIC).date()
         scheduled = slots(day)
         # Reconcile yesterday's missed close as well as today's preexisting slots.
         repo.reconcile(slots(day - timedelta(days=1)), at)
@@ -87,25 +87,38 @@ def tick(config, at) -> int:
             LOG.info("no eligible capture slot; market closed or interval already covered")
             return 0
         run_id = repo.run(slot, at)
+        shared_runs = [
+            (other, repo.run(other, at)) for other in scheduled
+            if other.instant == slot.instant and other.kind != slot.kind
+            and at <= other.deadline and (other.kind, other.instant) not in finished
+        ]
         discovery, error = "ok", None
         try:
             rows = discover(config.azure, day)
             repo.sync(rows, day)
         except Exception as failure:
             discovery, error = "failed", type(failure).__name__
-            LOG.error("signal discovery failed: %s; pricing local contracts", error)
-        contracts = repo.contracts(day)
+            LOG.error("universe discovery failed: %s; capture blocked to avoid stale ownership", error)
+        contracts = repo.contracts(day) if discovery == "ok" else []
         repo.prepare(run_id, contracts, discovery, error)
-        if not contracts and discovery == "failed":
-            raise RuntimeError("source unavailable and no known unexpired contracts")
+        for _, shared_id in shared_runs:
+            repo.prepare(shared_id, contracts, discovery, error)
+        if discovery == "failed":
+            raise RuntimeError("source unavailable; current eligible universe is unknown")
         if contracts:
             asyncio.run(collect(config, repo, run_id, contracts, slot.deadline))
+        for other, shared_id in shared_runs:
+            repo.share_capture(run_id, shared_id, other.deadline)
+            repo.finish(shared_id, now())
         outcome = repo.finish(run_id, now())
         LOG.info("run=%d kind=%s %s", run_id, slot.kind, json.dumps(outcome))
         if outcome["status"] in ("partial", "failed") or discovery == "failed":
             repo.heartbeat("capture_partial" if discovery == "ok" else "discovery_failed")
             return 1
-        repo.heartbeat(clear=True)
+        unresolved = any(
+            row["status"] in ("failed", "partial", "missed") for row in repo.runs(day)
+        )
+        repo.heartbeat("unresolved_capture" if unresolved else None, clear=not unresolved)
         return 0
     except Exception as error:
         if run_id is not None:
@@ -120,7 +133,7 @@ def watchdog(config, at) -> int:
     if not config.enabled:
         LOG.info("collector disabled; watchdog not active")
         return 0
-    eligible = slots(at.astimezone(EASTERN).date())
+    eligible = slots(at.astimezone(PACIFIC).date())
     if not eligible or not eligible[0].instant <= at <= eligible[-1].deadline + timedelta(minutes=5):
         return 0
     try:
@@ -156,8 +169,9 @@ def watchdog(config, at) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Local VADER prices, delta and IV history")
-    parser.add_argument("command", choices=("dryrun", "sync", "tick", "status", "watchdog"))
+    parser.add_argument("command", choices=("dryrun", "sync", "tick", "status", "watchdog", "compare"))
     parser.add_argument("--config", required=True)
+    parser.add_argument("--run-id", type=int)
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     # Provider debug logging may include authorization headers.
@@ -167,15 +181,15 @@ def main() -> int:
     at = now()
     LOG.info("local time %s", at.astimezone(PACIFIC).isoformat())
     if arguments.command == "dryrun":
-        rows = discover(config.azure, at.astimezone(EASTERN).date())
+        rows = discover(config.azure, at.astimezone(PACIFIC).date())
         print(
             json.dumps(
                 {
                     "source_rows": len(rows),
-                    "contracts": len({row["contract"].key for row in rows}),
+                    "contracts": len({row["contract"].broker_occ for row in rows}),
                     "slots": [
                         {"kind": slot.kind, "at_local": slot.instant.astimezone(PACIFIC).isoformat()}
-                        for slot in slots(at.astimezone(EASTERN).date())
+                        for slot in slots(at.astimezone(PACIFIC).date())
                     ],
                 }
             )
@@ -187,10 +201,17 @@ def main() -> int:
         return watchdog(config, at)
     repo = Repository(config.postgres)
     try:
+        if arguments.command == "compare":
+            from .compare import compare
+
+            if arguments.run_id is None:
+                raise ValueError("compare requires --run-id")
+            print(json.dumps(compare(config, repo, arguments.run_id), default=str))
+            return 0
         if arguments.command == "sync":
             if not repo.lock():
                 raise RuntimeError("collector is busy; source sync not started")
-            day = at.astimezone(EASTERN).date()
+            day = at.astimezone(PACIFIC).date()
             rows = discover(config.azure, day)
             repo.sync(rows, day)
             print(
@@ -200,7 +221,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "runs": repo.runs(at.astimezone(EASTERN).date()),
+                    "runs": repo.runs(at.astimezone(PACIFIC).date()),
                     "health": repo.execute("SELECT * FROM public.collector_health").fetchall(),
                 },
                 default=lambda value: value.astimezone(PACIFIC).isoformat()
