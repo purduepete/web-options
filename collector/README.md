@@ -1,5 +1,83 @@
 # Local combined option collector
 
+## Nightly audit
+
+Tracked by web-options#5. `python -m collector.audit --config <protected-config>
+[--date YYYY-MM-DD]` reads Azure and local PostgreSQL without database writes or
+a capture lock. Date defaults to the current Pacific date. It writes
+`<release grandparent>\shared\logs\audit\options-YYYY-MM-DD.json` and sends one
+Pushover through the existing notifier. Exit 0 means all sections passed (or
+were `not_run`) and notification was sent; exit 1 means a failed check, source
+read or notification.
+
+VADER compares each currently active tracked put's actual-close and 13:15 local
+quotes to the nearest Azure captured timestamp within 20 minutes. Tolerances:
+mid/mark $0.01 per share, signed delta 0.01, fractional IV 0.02 (2 percentage
+points). These account for differently timed observations; this nightly value
+check does not replace the stricter sustained-parity gates. Missing fields,
+including both-missing, do not pass numeric checks.
+
+Portfolio compares each currently open live/paper sell-to-open owner's 13:15
+mid/mark and delta to its Azure daily row using the same price/delta tolerances.
+That section reports value agreement only: `created_at` cannot establish the
+time of an updated daily row. Current discovery cannot reconstruct past
+eligibility for historical `--date` runs or positions closed earlier that day.
+Coverage compares the current distinct discovered universe against complete
+price/delta/IV components in every expected slot, and reports missing/degraded
+runs. Examples are capped at 20 per section. Weekends and full-day exchange
+holidays are `not_run`/overall pass, even though weekday-holiday quote collection
+still has its separate 13:15 purpose.
+
+The installer adds `\JimlerTech\SolutionDeploy-web-options-daily-audit`, daily
+at 23:30 host-local time, under LOCAL SERVICE, with a 15-minute limit. It uses
+the same protected config and enabled/disabled installation switch as the
+existing collector tasks. No schema, grants, new config keys or broker calls
+are required. LOCAL SERVICE needs write permission to the existing logs tree.
+
+### Exact audit reads
+
+Azure SQL uses the configured SELECT-only reader. Each `?` is the requested
+Pacific date, passed as a parameter. No signal/entry-quote query is needed:
+
+```sql
+SELECT contract_key AS source_id, contract_key, symbol, expiration, strike,
+       first_seen_date AS report_date
+FROM opt.telegram_tracked_contract
+WHERE is_active = 1 AND option_right = 'P'
+  AND expiration >= CAST(? AS date)
+ORDER BY contract_key;
+
+SELECT id AS source_id, authenticated_user_id, account_id, is_paper,
+       symbol, expiration_date AS expiration, strike_price AS strike,
+       transaction_date, contracts
+FROM dbo.option_transactions
+WHERE status = 'open' AND action = 'sell_to_open' AND is_paper IN (0, 1)
+  AND expiration_date >= CAST(? AS date)
+ORDER BY id;
+
+SELECT contract_key, price_date, captured_at_utc, market_session,
+       bid, ask, mark, mid, last_price, underlying_price, delta, implied_volatility
+FROM opt.telegram_contract_price WHERE price_date = CAST(? AS date);
+
+SELECT COALESCE(option_transactions_id_live, option_transactions_id) AS transaction_id,
+       CASE WHEN option_transactions_id_live IS NOT NULL THEN 0 ELSE 1 END AS is_paper,
+       price_date, created_at, bid, ask, mark, mid, last_price, delta
+FROM dbo.option_daily_price
+WHERE price_date = CAST(? AS date)
+  AND (option_transactions_id_live IS NOT NULL OR option_transactions_id IS NOT NULL);
+```
+
+Local PostgreSQL uses `default_transaction_read_only=on`, with a 20-second
+statement timeout. Each `%s` is the requested Pacific date:
+
+```sql
+SELECT * FROM public.option_collection_run
+WHERE session_date=%s ORDER BY scheduled_at;
+
+SELECT q.* FROM public.broker_option_quote q
+JOIN public.option_collection_run r ON r.id=q.run_id WHERE r.session_date=%s;
+```
+
 This worker runs on `jimbrownhome1`, separate from the existing dashboard.
 Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplies
 delta and IV. Azure SQL is a temporary, SELECT-only discovery source for active

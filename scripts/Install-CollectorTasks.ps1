@@ -36,16 +36,26 @@ if ($EnableCollection) {
 }
 $pwsh = (Get-Command pwsh.exe -CommandType Application | Select-Object -First 1).Source
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LOCAL SERVICE' -LogonType ServiceAccount
-foreach ($kind in @('tick', 'watchdog')) {
-    $taskName = if ($kind -eq 'tick') { 'SolutionDeploy-web-options-collector' } else { 'SolutionDeploy-web-options-collector-watchdog' }
+foreach ($kind in @('tick', 'watchdog', 'audit')) {
+    $taskName = switch ($kind) {
+        'tick' { 'SolutionDeploy-web-options-collector' }
+        'watchdog' { 'SolutionDeploy-web-options-collector-watchdog' }
+        'audit' { 'SolutionDeploy-web-options-daily-audit' }
+    }
     $arguments = "-NoProfile -File `"$launcher`" -ReleasePath `"$ReleasePath`" -PythonPath `"$PythonPath`" -ConfigPath `"$ConfigPath`" -Action $kind"
     $action = New-ScheduledTaskAction -Execute $pwsh -Argument $arguments -WorkingDirectory $ReleasePath
     $boot = New-ScheduledTaskTrigger -AtStartup
     $repeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)
     $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable `
         -ExecutionTimeLimit (New-TimeSpan -Minutes 4) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+    $triggers = @($boot, $repeat)
+    if ($kind -eq 'audit') {
+        $triggers = @(New-ScheduledTaskTrigger -Daily -At '23:30')
+        $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable `
+            -ExecutionTimeLimit (New-TimeSpan -Minutes 15) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+    }
     Register-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $taskName -Action $action `
-        -Trigger @($boot, $repeat) -Settings $settings -Principal $principal -Force | Out-Null
+        -Trigger $triggers -Settings $settings -Principal $principal -Force | Out-Null
     if ($EnableCollection) {
         Enable-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $taskName | Out-Null
     }
