@@ -18,12 +18,15 @@ from psycopg.conninfo import conninfo_to_dict
 
 def test_regular_session_slots():
     result = slots(date(2026, 10, 20))
-    assert len(result) == 15
-    assert result[0].instant == datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
+    assert len(result) == 41
+    assert result[0].instant == datetime(2026, 10, 20, 13, 35, tzinfo=UTC)
     assert result[-2].kind == "close"
     assert result[-2].instant == datetime(2026, 10, 20, 20, tzinfo=UTC)
     assert result[-1].kind == "closing_1315"
-    assert all(b.instant - a.instant == timedelta(minutes=30) for a, b in zip(result, result[1:-1]))
+    intraday = result[:-2]
+    assert all(s.instant.minute % 10 == 5 for s in intraday)
+    assert all(b.instant - a.instant == timedelta(minutes=10) for a, b in zip(intraday, intraday[1:]))
+    assert intraday[-1].deadline == result[-2].instant
 
 
 def test_calendar_holiday_weekend_early_close_and_dst():
@@ -31,7 +34,7 @@ def test_calendar_holiday_weekend_early_close_and_dst():
     assert len(holiday) == 1 and holiday[0].kind == "closing_1315"
     assert slots(date(2026, 10, 24)) == []
     early = slots(date(2026, 11, 27))
-    assert len(early) == 9
+    assert len(early) == 23
     assert early[-2].instant == datetime(2026, 11, 27, 18, tzinfo=UTC)
     assert early[-1].instant == datetime(2026, 11, 27, 21, 15, tzinfo=UTC)
     assert choose_slot(early[-2].deadline + timedelta(minutes=1), early, set()) is None
@@ -48,12 +51,20 @@ def test_close_window_inclusive_and_no_after_hours_recovery():
 
 def test_recovery_once_per_uncovered_interval_and_retry_identity():
     scheduled = slots(date(2026, 10, 20))
-    at = scheduled[0].instant + timedelta(minutes=12)
+    at = scheduled[0].instant + timedelta(minutes=7)
     recovery = choose_slot(at, scheduled, set())
     assert recovery.kind == "recovery"
     assert choose_slot(at + timedelta(minutes=1), scheduled, set(), recovery) == recovery
-    assert choose_slot(at + timedelta(minutes=10), scheduled, {("recovery", recovery.instant)}) is None
+    assert choose_slot(at + timedelta(minutes=2), scheduled, {("recovery", recovery.instant)}) is None
     assert choose_slot(scheduled[1].instant, scheduled, {("recovery", recovery.instant)}) == scheduled[1]
+
+
+def test_no_slot_or_recovery_between_open_and_first_offset_slot():
+    scheduled = slots(date(2026, 10, 20))
+    opened = datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
+    assert choose_slot(opened, scheduled, set()) is None
+    assert choose_slot(opened + timedelta(minutes=4, seconds=59), scheduled, set()) is None
+    assert choose_slot(opened + timedelta(minutes=5), scheduled, set()) == scheduled[0]
 
 
 @pytest.mark.parametrize("value", [None, "NaN", "Infinity", "-Infinity", -0.1, True])
@@ -166,7 +177,7 @@ def test_database_outage_notification_is_deduplicated_without_postgres(tmp_path)
 @pytest.mark.parametrize("has_contracts", [True, False])
 def test_azure_outage_blocks_stale_ownership_capture(has_contracts):
     config = Config("", {}, "", "", True, {})
-    at = datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
+    at = datetime(2026, 10, 20, 13, 35, tzinfo=UTC)
     with (
         patch("collector.__main__.Repository") as factory,
         patch("collector.__main__.discover", side_effect=RuntimeError("sensitive")),

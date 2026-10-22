@@ -24,11 +24,12 @@ def test_close_purposes_have_full_windows(day):
 
 def test_only_preclose_windows_clip():
     opened = datetime(2026, 10, 20, 13, 30, tzinfo=UTC)
-    closed = opened + timedelta(minutes=32)
+    closed = opened + timedelta(minutes=27)
     with patch("collector.model.session_bounds", return_value=(opened, closed)):
         scheduled = slots(date(2026, 10, 20))
-    assert scheduled[1].deadline == closed
-    assert scheduled[2].deadline == closed + timedelta(minutes=5)
+    assert scheduled[1].deadline == opened + timedelta(minutes=20)
+    assert scheduled[2].deadline == closed
+    assert scheduled[3].deadline == closed + timedelta(minutes=5)
 
 
 def test_source_filters_and_owner_identity():

@@ -118,7 +118,8 @@ def compare(config, repo, run_id: int) -> dict:
                             **assess(run, local, observation["source_payload"], observation["observed_at"])})
     portfolio_results = []
     local_time = run["scheduled_at"].astimezone(PACIFIC)
-    overlap = run["capture_kind"] == "open_session" and (7, 30) <= (local_time.hour, local_time.minute) <= (12, 30)
+    # Azure writes the daily row at 7:30-12:50; each offset slot reads the write 5 minutes before it.
+    overlap = run["capture_kind"] == "open_session" and (7, 35) <= (local_time.hour, local_time.minute) <= (12, 55)
     if overlap:
         evidence = repo.execute(
             "SELECT * FROM public.azure_option_observation WHERE run_id=%s AND dataset='portfolio_halfhour'",

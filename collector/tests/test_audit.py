@@ -44,7 +44,7 @@ def test_all_sections_pass_with_canonical_multiple_owner_coverage():
     assert report["sections"]["vader"]["matched"] == 2
     assert report["sections"]["portfolio"]["matched"] == 2
     assert report["sections"]["coverage"]["distinct_contracts_expected"] == 1
-    assert len(report["sections"]["coverage"]["slots"]) == 15
+    assert len(report["sections"]["coverage"]["slots"]) == 41
 
 
 def test_nearest_same_time_row_selected_not_last_row():
@@ -93,7 +93,7 @@ def test_early_close_and_time_distance_missing_azure():
     data = fixtures(day)
     data[3].pop(0)
     report = audit_day(day, *data)
-    assert len(report["sections"]["coverage"]["slots"]) == 9
+    assert len(report["sections"]["coverage"]["slots"]) == 23
     assert report["sections"]["vader"]["missing_azure"] == 1
 
 

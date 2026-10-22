@@ -188,12 +188,15 @@ Nonzero exits and explicit status distinguish partial or failed collection.
 ## History and quality
 
 - An exchange calendar defines holidays, early closes and daylight saving.
-  Ordinary sessions have 13 half-hour captures from 6:30 AM Pacific, plus a
-  1:00 PM closing snapshot. A closing snapshot is an observed quote, not an
+  Ordinary sessions have 39 ten-minute captures from 6:35 AM to 12:55 PM
+  Pacific, plus a 1:00 PM closing snapshot. Intraday slots sit 5 minutes off
+  webportfolio's Azure option job (:00, :10, :20...), which uses the same
+  Tastytrade account, so the two broker sessions never run together. Nothing
+  runs between the open and 6:35. A closing snapshot is an observed quote, not an
   official closing print or guaranteed execution.
 - The entire distinct union also has a 13:15 Pacific slot every weekday,
-  including exchange holidays. Regular days have 15 slots; the Friday after
-  Thanksgiving has 9, and weekday full-day holidays have only 13:15.
+  including exchange holidays. Regular days have 41 slots; the Friday after
+  Thanksgiving has 23, and weekday full-day holidays have only 13:15.
   Weekends have none. Actual early close replaces 13:00.
 - Actual-close and 13:15 each retain their full 5-minute windows. Only
   strictly pre-close intraday/recovery windows stop at actual close.
@@ -342,8 +345,8 @@ missing date evidence stays unknown. Same-day terminal quotes remain stored,
 including expiration day after close. Availability counts do not assert date or
 value parity. Off-hours comparison needs matching source purpose/run, receipts
 within 60 seconds and the same completed-session date. Regular-session comparison
-also needs event timestamps within 60 seconds. Compare only overlapping
-half-hour/actual Azure slots, and the tracked subset at 13:15. Portfolio-only
+also needs event timestamps within 60 seconds. Compare only intraday slots that
+follow an Azure write, and the tracked subset at 13:15. Portfolio-only
 13:15 coverage has no Azure parity claim. Keep no-data, missing, unmatched and
 numeric comparison denominators separate.
 
@@ -373,12 +376,14 @@ Read-only live inventory confirms `dbo.option_daily_price` prices `decimal(18,6)
 delta `decimal(10,4)`, separate live/paper transaction foreign keys, a DATE
 `price_date` and DATETIME `created_at`. The source MERGE updates the same daily
 row without a write timestamp or run identity. `compare` snapshots its raw rows
-per immutable local-run owner for overlapping 07:30–12:30 half-hours, rounds
+per immutable local-run owner for intraday slots from 07:35 to 12:55, each 5
+minutes after an Azure write. The stored dataset name stays `portfolio_halfhour`
+so earlier evidence rows still match. It rounds
 portfolio delta to 4 decimals, and reports numeric results separately. Its
-same-run gate is always unverified because `created_at` cannot prove a later
-update's half-hour slot. IV and underlying are absent from that source contract.
+same-run gate is always unverified because `created_at` cannot prove which
+Azure run last updated the row. IV and underlying are absent from that source contract.
 Azure
 tracked closing rows also lack field-specific broker session dates, so their
-off-hours date gate stays unverified. Actual-close and pre-07:30 local history
+off-hours date gate stays unverified. Actual-close and pre-07:35 local history
 have no Azure portfolio slot. Additional portfolio-only 13:15 contracts have
 no Azure tracked counterpart.

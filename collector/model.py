@@ -9,6 +9,10 @@ from zoneinfo import ZoneInfo
 PACIFIC = ZoneInfo("America/Los_Angeles")
 EASTERN = ZoneInfo("America/New_York")
 WINDOW = timedelta(minutes=5)
+INTERVAL = timedelta(minutes=10)
+# webportfolio's Azure option job shares the Tastytrade account on :00/:10/:20...,
+# so intraday slots sit 5 minutes off it and the two broker sessions never overlap.
+OFFSET = timedelta(minutes=5)
 
 
 def now() -> datetime:
@@ -97,10 +101,10 @@ def slots(day: date) -> list[Slot]:
     result = []
     if bounds is not None:
         opened, closed = bounds
-        instant = opened
+        instant = opened + OFFSET
         while instant < closed:
             result.append(Slot("open_session", instant, min(instant + WINDOW, closed), day))
-            instant += timedelta(minutes=30)
+            instant += INTERVAL
         result.append(Slot("close", closed, closed + WINDOW, day))
     if day.weekday() < 5:
         closing = datetime.combine(day, time(13, 15), PACIFIC).astimezone(UTC)
@@ -123,7 +127,10 @@ def choose_slot(
     bounds = session_bounds(at.astimezone(PACIFIC).date())
     if not bounds or not bounds[0] <= at < bounds[1]:
         return None
-    latest = max(slot.instant for slot in scheduled if slot.instant <= at)
+    earlier = [slot.instant for slot in scheduled if slot.instant <= at]
+    if not earlier:
+        return None
+    latest = max(earlier)
     # A completed recovery after this scheduled slot already covers the interval.
     if any(kind == "recovery" and instant >= latest for kind, instant in completed):
         return None
