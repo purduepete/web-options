@@ -360,12 +360,6 @@ export function ContractHistoryPage() {
                             {history.coverage.observations} observations.
                         </p>
                     )}
-                    <details>
-                        <summary>Coverage and quality notes</summary>
-                        {history.warnings.map((warning) => (
-                            <p key={warning}>{warning}</p>
-                        ))}
-                    </details>
                 </section>
             )}
         </main>
