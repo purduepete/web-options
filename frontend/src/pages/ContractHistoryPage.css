@@ -160,6 +160,9 @@
     .history-refresh {
         min-height: 44px;
     }
+    .history-day-nav .week-steps {
+        min-height: 44px;
+    }
     .history-tools .symbol-filter input {
         padding-block: 0;
         line-height: calc(44px - 2 * var(--border-width));
