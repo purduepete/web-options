@@ -218,12 +218,17 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
         excused = {row["contract_key"] for row in rows if unquoted(row)} & expected
         for key in sorted(excused):
             exception(coverage, {"contract": key, "purpose": slot.kind, "at": slot.instant.isoformat()})
-        missing = expected - captured - excused
-        coverage["expected"] += len(expected)
+        # A successful discovery lists every contract the source had then; later additions are not misses.
+        later = (expected - {row["contract_key"] for row in rows}
+                 if run and run.get("discovery_status") == "ok" else set())
+        if later:
+            coverage["not_yet_discovered"] = coverage.get("not_yet_discovered", 0) + len(later)
+        missing = expected - captured - excused - later
+        coverage["expected"] += len(expected - later)
         coverage["matched"] += len(expected & captured)
         coverage["slots"].append({
             "kind": slot.kind, "at_local": slot.instant.astimezone(PACIFIC).isoformat(),
-            "expected": len(expected), "captured": len(expected & captured),
+            "expected": len(expected - later), "captured": len(expected & captured),
             "run_status": run["status"] if run else "missing",
         })
         if missing:

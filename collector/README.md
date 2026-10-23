@@ -30,7 +30,9 @@ price/delta/IV components in every expected slot, and reports missing/degraded
 runs. A quote whose price failed with `invalid_or_missing_bid_ask` (the broker
 had no bid/ask) is counted under `broker_unquoted` with examples in every
 section and does not fail the day. A partial run passes only when every failed
-quote in it is broker-unquoted. Examples are capped at 20 per section. Weekends and full-day exchange
+quote in it is broker-unquoted. When a run's discovery succeeded, a contract the
+source had not yet published at that slot (VADER posts new signals around 07:30)
+is counted under `not_yet_discovered` instead of `missing_local`. Examples are capped at 20 per section. Weekends and full-day exchange
 holidays are `not_run`/overall pass, even though weekday-holiday quote collection
 still has its separate 13:15 purpose.
 

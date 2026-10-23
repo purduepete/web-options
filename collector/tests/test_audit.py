@@ -97,6 +97,23 @@ def test_portfolio_uses_last_open_session_capture_not_1315():
     assert report["sections"]["portfolio"]["missing_local"] == 2
 
 
+def test_contracts_added_after_a_successful_discovery_are_not_misses():
+    owners, runs, quotes, vader, portfolio = fixtures()
+    late = normalize(dict(source_id="late", contract_key="late", symbol="LATE", expiration=DAY, strike=50),
+                     "vader_contract")
+    owners.append(late)
+    for run in runs:
+        run["discovery_status"] = "ok"
+    for quote in [q for q in quotes if q["run_id"] > 6]:
+        quotes.append({**quote, "contract_key": late["contract"].broker_occ})
+    report = audit_day(DAY, owners, runs, quotes, vader + [dict(vader[-1], contract_key="late")], portfolio)
+    assert report["sections"]["coverage"]["status"] == "pass"
+    assert report["sections"]["coverage"]["not_yet_discovered"] == 6
+    runs[0]["discovery_status"] = "failed"
+    report = audit_day(DAY, owners, runs, quotes, vader + [dict(vader[-1], contract_key="late")], portfolio)
+    assert report["sections"]["coverage"]["missing_local"] == 1
+
+
 def test_broker_unquoted_is_exception_not_failure():
     owners, runs, quotes, vader, portfolio = fixtures()
     for quote in quotes:
