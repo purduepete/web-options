@@ -11,6 +11,7 @@ import {
     axisTime,
     changeSummary,
     deltaText,
+    fitDomain,
     money,
     pacificTime,
     sessionLabel,
@@ -142,6 +143,16 @@ export function ContractHistoryPage() {
     const shown = history?.points.filter((point) => point.kind !== 'session_boundary') ?? [];
     const price = changeSummary(history?.points ?? [], 'mark');
     const delta = changeSummary(history?.points ?? [], 'delta');
+    const priceDomain = fitDomain(
+        (history?.points ?? []).map((point) => point.mark),
+        0.1,
+        [0, Number.POSITIVE_INFINITY]
+    );
+    const deltaDomain = fitDomain(
+        (history?.points ?? []).map((point) => point.delta),
+        0.02,
+        [-1, 1]
+    );
     const stale = !!history && (history.contract.key !== key || history.from !== from || history.to !== to);
     const label = history
         ? `${history.contract.symbol} $${history.contract.strike} put, expires ${sessionLabel(history.contract.expiration)}`
@@ -271,7 +282,7 @@ export function ContractHistoryPage() {
                             {stale ? ' (previous selection)' : ''}
                             {dates.length > 0 &&
                                 `. Collected ${sessionLabel(dates.at(-1) ?? '')} to ${sessionLabel(dates[0] ?? '')}`}
-                            . All times Pacific.
+                            .
                         </p>
                     </div>
                     <div className="history-stats">
@@ -319,17 +330,17 @@ export function ContractHistoryPage() {
                                 <YAxis
                                     yAxisId="price"
                                     width={48}
-                                    domain={[0, 'auto']}
+                                    domain={priceDomain}
                                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                                     tickFormatter={(value: number) => `$${value.toFixed(2)}`}
                                 />
                                 <YAxis
                                     yAxisId="delta"
                                     orientation="right"
-                                    width={44}
-                                    domain={[-1, 0]}
+                                    width={48}
+                                    domain={deltaDomain}
                                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                    tickFormatter={(value: number) => value.toFixed(2)}
+                                    tickFormatter={(value: number) => value.toFixed(3)}
                                 />
                                 <Tooltip
                                     content={({ active, payload }) => {

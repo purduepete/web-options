@@ -8,7 +8,6 @@ const PACIFIC_PARTS = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-    timeZoneName: 'short',
 });
 
 function pacificParts(value: number | string) {
@@ -19,15 +18,37 @@ function pacificParts(value: number | string) {
         date: `${parts.month}/${parts.day}`,
         year: parts.year,
         time: `${parts.hour}:${parts.minute}`,
-        zone: parts.timeZoneName,
     };
 }
 
-/** `10/23/2026 06:35 PDT`. */
+/** `10/23/2026 06:35`. Times here are always Pacific, so the zone is left off. */
 export const pacificTime = (value: number | string) => {
     const parts = pacificParts(value);
-    return `${parts.date}/${parts.year} ${parts.time} ${parts.zone}`;
+    return `${parts.date}/${parts.year} ${parts.time}`;
 };
+
+/**
+ * An axis range that fits the data, padded 10% each side, so a 40-cent move on
+ * a $2 mark fills the chart. `minSpan` keeps a near-flat series from being
+ * stretched until rounding noise looks like a trend.
+ */
+export function fitDomain(
+    values: readonly (number | null)[],
+    minSpan: number,
+    [floor, ceiling]: readonly [number, number]
+): [number, number] {
+    const valid = values.filter((value): value is number => value !== null && Number.isFinite(value));
+    if (valid.length === 0) return [floor, ceiling];
+    let low = Math.min(...valid);
+    let high = Math.max(...valid);
+    if (high - low < minSpan) {
+        const middle = (low + high) / 2;
+        low = middle - minSpan / 2;
+        high = middle + minSpan / 2;
+    }
+    const pad = (high - low) * 0.1;
+    return [Math.max(floor, low - pad), Math.min(ceiling, high + pad)];
+}
 /** `06:35` for one session, `10/23 06:35` across several. */
 export const axisTime = (value: number, withDate: boolean) => {
     const parts = pacificParts(value);
