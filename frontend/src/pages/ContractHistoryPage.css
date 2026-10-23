@@ -88,8 +88,7 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
     gap: 0.5rem;
 }
-.history-stats > div,
-.history-readout {
+.history-stats > div {
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
@@ -137,27 +136,6 @@
 }
 .history-tooltip small {
     color: var(--text-muted);
-}
-.history-readout label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.8rem;
-}
-.history-readout input {
-    width: 100%;
-    min-width: 0px;
-    padding: 0;
-}
-.history-observation {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    font-size: 0.75rem;
-    overflow-wrap: anywhere;
-}
-.history-observation span {
-    color: var(--text-secondary);
 }
 @media (max-width: 640px) {
     .history-tools,

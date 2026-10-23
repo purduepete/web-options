@@ -26,30 +26,8 @@ function TooltipBody({ point }: { point: HistoryPoint }) {
             <strong>{pacificTime(point.time)}</strong>
             <span>Mark {money(point.mark)}</span>
             <span>Delta {deltaText(point.delta)}</span>
-            {point.reason && <small>{point.reason}</small>}
-        </div>
-    );
-}
-
-function Observation({ point }: { point: HistoryPoint }) {
-    return (
-        <div className="history-observation">
-            <strong>
-                {pacificTime(point.time)} ({point.kind})
-            </strong>
-            <span>
-                Mark: {money(point.mark)} / share. Delta: {deltaText(point.delta)}
-            </span>
-            <span>
-                Price event: {point.priceTime ? pacificTime(point.priceTime) : 'unknown'}. Received:{' '}
-                {point.priceReceivedAt ? pacificTime(point.priceReceivedAt) : 'unknown'}.
-            </span>
-            <span>
-                Delta event: {point.deltaTime ? pacificTime(point.deltaTime) : 'unknown'}. Received:{' '}
-                {point.deltaReceivedAt ? pacificTime(point.deltaReceivedAt) : 'unknown'}.
-            </span>
             {(point.reason || point.flags.length > 0) && (
-                <span>{[point.reason, ...point.flags].filter(Boolean).join('; ')}</span>
+                <small>{[point.reason, ...point.flags].filter(Boolean).join('; ').replaceAll('_', ' ')}</small>
             )}
         </div>
     );
@@ -70,7 +48,6 @@ export function ContractHistoryPage() {
     const [searchError, setSearchError] = useState('');
     const [pending, setPending] = useState(false);
     const [revision, setRevision] = useState(0);
-    const [index, setIndex] = useState(0);
     const { lock } = useApiKey();
     const currentParams = useRef(params);
     currentParams.current = params;
@@ -127,7 +104,6 @@ export function ContractHistoryPage() {
                 return getContractHistory(key, selectedFrom, to || selectedFrom, controller.signal).then((result) => {
                     if (controller.signal.aborted) return;
                     setHistory(result);
-                    setIndex(0);
                     setPending(false);
                 });
             })
@@ -140,7 +116,8 @@ export function ContractHistoryPage() {
         return () => controller.abort();
     }, [key, from, to, revision, lock, setParams]);
 
-    const shown = history?.points.filter((point) => point.kind !== 'session_boundary') ?? [];
+    const coverage = history?.coverage;
+    const hasGaps = !!coverage && coverage.knownPriceGaps + coverage.knownDeltaGaps + coverage.unknownSlots > 0;
     const price = changeSummary(history?.points ?? [], 'mark');
     const delta = changeSummary(history?.points ?? [], 'delta');
     const priceDomain = fitDomain(
@@ -376,41 +353,19 @@ export function ContractHistoryPage() {
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
-                    <p className="history-coverage">
-                        {history.coverage.observations} observations. {history.coverage.validPrices} valid prices,{' '}
-                        {history.coverage.validDeltas} valid deltas. {history.coverage.knownPriceGaps} known price gaps,{' '}
-                        {history.coverage.knownDeltaGaps} known delta gaps. {history.coverage.unknownSlots} slots with
-                        unknown coverage.
-                    </p>
+                    {hasGaps && (
+                        <p className="history-coverage">
+                            {history.coverage.knownPriceGaps} price gaps, {history.coverage.knownDeltaGaps} delta gaps
+                            and {history.coverage.unknownSlots} slots with unknown coverage across{' '}
+                            {history.coverage.observations} observations.
+                        </p>
+                    )}
                     <details>
                         <summary>Coverage and quality notes</summary>
                         {history.warnings.map((warning) => (
                             <p key={warning}>{warning}</p>
                         ))}
                     </details>
-                    {shown.length > 0 && (
-                        <section className="history-readout" aria-label="Accessible observation details">
-                            <label>
-                                Observation {index + 1} of {shown.length}
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={shown.length - 1}
-                                    value={index}
-                                    onChange={(event) => setIndex(Number(event.target.value))}
-                                />
-                            </label>
-                            <div className="history-pagination">
-                                <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
-                                    Previous observation
-                                </button>
-                                <button disabled={index === shown.length - 1} onClick={() => setIndex(index + 1)}>
-                                    Next observation
-                                </button>
-                            </div>
-                            {shown[index] && <Observation point={shown[index]} />}
-                        </section>
-                    )}
                 </section>
             )}
         </main>

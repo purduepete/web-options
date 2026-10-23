@@ -87,7 +87,7 @@ describe('contract history page', () => {
         expect(screen.getByText('Axis delta')).toBeDefined();
         expect(screen.getByText(/2 slots with unknown coverage/)).toBeDefined();
         expect(container.querySelector('select,datalist')).toBeNull();
-        expect(screen.getByText(/Price event: unknown/)).toBeDefined();
+        expect(screen.queryByText(/Observation 1 of/)).toBeNull();
     });
     it('supports a multi-day deep link without replacing its requested dates', async () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&mode=multi&from=2026-10-21&to=2026-10-23`);
