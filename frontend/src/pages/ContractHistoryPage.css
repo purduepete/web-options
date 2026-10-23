@@ -83,6 +83,10 @@
     color: inherit;
     font-size: inherit;
 }
+/* An auto margin keeps the chip on the right edge even when it wraps under the name. */
+.history-contract-name .moneyness-chip {
+    margin-left: auto;
+}
 /* The same hatch Live Signals lays over an expired ticket. */
 .history-contract-list button.is-expired {
     background-image: repeating-linear-gradient(

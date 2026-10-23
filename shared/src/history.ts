@@ -13,6 +13,8 @@ export interface HistoryContract {
     topPick: boolean;
     /** Underlying price on the latest captured quote, up to expiration; null before any capture. */
     underlyingPrice: number | null;
+    /** ISO time of that quote. */
+    underlyingAt: string | null;
 }
 
 export interface ContractSearchResponse {
