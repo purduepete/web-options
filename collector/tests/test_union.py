@@ -179,3 +179,30 @@ def test_activation_probe_checks_new_schema_and_immutable_evidence_rights():
     assert "<> (column_name='synced_at')" in source
     assert "SELECT convalidated FROM pg_constraint" in source
     assert "validated != (True,)" in source
+
+
+def test_completed_recovery_clears_unresolved_heartbeat():
+    config = Config("", {}, "", "", True, {})
+    scheduled = slots(date(2026, 10, 20))
+    slot = scheduled[-1]
+    at = slot.instant + timedelta(minutes=3)
+    earlier = scheduled[-3]
+    runs = [dict(capture_kind=earlier.kind, scheduled_at=earlier.instant, deadline=earlier.deadline,
+                 started_at=earlier.instant, finished_at=earlier.instant, status="partial"),
+            dict(capture_kind="recovery", scheduled_at=earlier.instant + timedelta(minutes=5),
+                 deadline=earlier.deadline + timedelta(minutes=5), started_at=earlier.instant,
+                 finished_at=earlier.instant + timedelta(minutes=6), status="complete")]
+    with (patch("collector.__main__.Repository") as factory,
+          patch("collector.__main__.discover", return_value=[]),
+          patch("collector.__main__.collect")):
+        repo = factory.return_value
+        repo.lock.return_value = True
+        repo.runs.return_value = runs
+        repo.run.return_value = 9
+        repo.contracts.return_value = [Contract("x", "TEST", slot.session, Decimal(100))]
+        repo.finish.return_value = {"status": "complete"}
+        assert tick(config, at) == 0
+        repo.heartbeat.assert_called_with(None, clear=True)
+        runs.pop()
+        assert tick(config, at) == 0
+        repo.heartbeat.assert_called_with("unresolved_capture", clear=False)

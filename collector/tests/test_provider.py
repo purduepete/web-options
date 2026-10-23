@@ -146,3 +146,58 @@ def test_union_deduplicates_price_retries_and_greeks_with_owner_fanout():
     assert len(stored) == 11
     assert not any(components.values())
     factory.assert_called_once()
+
+
+def test_stream_quote_replaces_a_crossed_rest_price():
+    at = datetime.now(UTC)
+    contract = Contract("baba", "BABA", date(2026, 10, 23), Decimal("100"))
+    components = {"price"}
+    stored = {}
+    repo = MagicMock()
+    repo.missing.side_effect = lambda _: {contract.key: set(components)}
+
+    def save(_run, _key, component, values, _deadline):
+        stored.setdefault(component, []).append(values)
+        if values["status"] == "ok":
+            components.discard(component)
+
+    repo.save.side_effect = save
+    crossed = SimpleNamespace(symbol=contract.broker_occ, bid=0.18, ask=0.15, mark=0.18, last=0.13, updated_at=at)
+    equity = SimpleNamespace(symbol=contract.broker_underlying, last_mkt=150, mark=150)
+
+    async def quotes(_session, **kwargs):
+        return [crossed] if "options" in kwargs else [equity]
+
+    stream = MagicMock()
+    stream.subscribe = AsyncMock()
+    stream.unsubscribe = AsyncMock()
+    stamp = int(at.timestamp() * 1000)
+
+    async def events(kind):
+        assert kind.__name__ == "Quote"
+        yield SimpleNamespace(event_symbol=contract.streamer_symbol, bid_price=Decimal("0.18"),
+                              ask_price=Decimal("0.15"), bid_time=stamp, ask_time=stamp)
+        yield SimpleNamespace(event_symbol=contract.streamer_symbol, bid_price=Decimal("0.11"),
+                              ask_price=Decimal("0.12"), bid_time=0, ask_time=stamp)
+
+    stream.listen.side_effect = events
+    streaming = MagicMock()
+    streaming.__aenter__ = AsyncMock(return_value=stream)
+    streaming.__aexit__ = AsyncMock(return_value=None)
+    session = MagicMock()
+    session.__aenter__ = AsyncMock(return_value=MagicMock())
+    session.__aexit__ = AsyncMock(return_value=None)
+    with (patch("tastytrade.Session", return_value=session),
+          patch("tastytrade.DXLinkStreamer", return_value=streaming),
+          patch("tastytrade.market_data.get_market_data_by_type", side_effect=quotes),
+          patch("collector.provider.asyncio.sleep", new_callable=AsyncMock)):
+        asyncio.run(collect(Config("", {}, "", "", True, {}), repo, 1, [contract], at + timedelta(seconds=30)))
+    rest, live = stored["price"][:2], stored["price"][-1]
+    assert [values["status"] for values in rest] == ["invalid", "invalid"]
+    assert live["status"] == "ok" and "stream_quote" in live["flags"]
+    assert (live["bid"], live["ask"], live["mark"], live["underlying"]) == (
+        Decimal("0.11"), Decimal("0.12"), Decimal("0.115"), 150)
+    assert len(stored["price"]) == 3
+    assert stream.subscribe.call_args.args[0].__name__ == "Quote"
+    stream.unsubscribe.assert_awaited_once()
+    repo.component_error.assert_not_called()

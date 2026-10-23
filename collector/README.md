@@ -88,7 +88,9 @@ JOIN public.option_collection_run r ON r.id=q.run_id WHERE r.session_date=%s;
 
 This worker runs on `jimbrownhome1`, separate from the existing dashboard.
 Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplies
-delta and IV. Azure SQL is a temporary, SELECT-only discovery source for active
+delta and IV. When both REST attempts leave a price crossed or absent, the same
+DXLink connection subscribes the `Quote` event for those contracts and stores the
+first valid bid/ask, flagged `stream_quote`, with mark set to the midpoint. Azure SQL is a temporary, SELECT-only discovery source for active
 tracked VADER puts and eligible open live/paper sell-to-open CSP positions.
 Discovery failure blocks collection because current ownership/closure is unknown.
 Implementation is tracked by [#4](https://github.com/purduepete/web-options/issues/4),
@@ -181,7 +183,8 @@ python -m collector compare --run-id <local-run-id> --config <protected-config>
 It never opens a broker connection or writes either database. `tick` performs
 only a due capture or existing in-session recovery; it refuses activation when `enabled` is false.
 `status` is read-only. The watchdog checks heartbeat and unresolved capture errors
-and sends operational notifications, not trading alerts.
+and sends operational notifications, not trading alerts. A partial, failed or
+missed slot stops counting as unresolved once a later recovery run completes.
 During a PostgreSQL outage, a small diagnostic marker in `shared\logs` prevents
 repeated outage notifications. It contains no credentials or market records.
 

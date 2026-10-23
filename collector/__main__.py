@@ -115,8 +115,13 @@ def tick(config, at) -> int:
         if outcome["status"] in ("partial", "failed") or discovery == "failed":
             repo.heartbeat("capture_partial" if discovery == "ok" else "discovery_failed")
             return 1
+        runs = repo.runs(day)
+        # A later completed recovery covers the interval of an earlier partial or missed slot.
+        recovered = [row["scheduled_at"] for row in runs if row["capture_kind"] == "recovery" and row["status"] == "complete"]
         unresolved = any(
-            row["status"] in ("failed", "partial", "missed") for row in repo.runs(day)
+            row["status"] in ("failed", "partial", "missed")
+            and not any(instant >= row["scheduled_at"] for instant in recovered)
+            for row in runs
         )
         repo.heartbeat("unresolved_capture" if unresolved else None, clear=not unresolved)
         return 0
