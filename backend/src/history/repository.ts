@@ -39,9 +39,11 @@ interface ContractRow {
     underlying_at: Date | null;
 }
 
-const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers,s.top_pick,
- u.underlying_price,u.underlying_at FROM eligible e
- LEFT JOIN LATERAL (
+const VADER_MATCH = `(CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
+               THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=e.contract_key`;
+
+// One row per contract: its first signal date, with that day's tier and top-pick flag.
+const FIRST_SIGNAL = `
    SELECT COALESCE(min(g.report_date), min(v.first_seen))::text AS added,
           (array_agg(lower(g.tier) ORDER BY g.report_date, lower(g.tier))
              FILTER (WHERE g.tier IS NOT NULL))[1] AS tier,
@@ -49,8 +51,28 @@ const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.
           (array_agg(g.is_top_pick ORDER BY g.report_date, g.is_top_pick DESC)
              FILTER (WHERE g.report_date IS NOT NULL))[1] AS top_pick
    FROM public.vader_contract v LEFT JOIN public.vader_signal g ON g.contract_key=v.contract_key
-   WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
-               THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=e.contract_key
+   WHERE ${VADER_MATCH}`;
+
+// One row per contract per signal date, as Live Signals lists them. A contract never
+// signaled falls back to a single row on the date it was first seen.
+const EACH_SIGNAL = `
+   SELECT g.report_date::text AS added,
+          (array_agg(lower(g.tier) ORDER BY lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL))[1] AS tier,
+          array_agg(DISTINCT lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL) AS tiers,
+          bool_or(g.is_top_pick) AS top_pick
+   FROM public.vader_contract v JOIN public.vader_signal g ON g.contract_key=v.contract_key
+   WHERE ${VADER_MATCH} AND g.report_date IS NOT NULL
+   GROUP BY g.report_date
+   UNION ALL
+   SELECT min(v.first_seen)::text, NULL, NULL, false
+   FROM public.vader_contract v
+   WHERE ${VADER_MATCH}
+   HAVING count(*) > 0 AND NOT bool_or(EXISTS (SELECT 1 FROM public.vader_signal g
+            WHERE g.contract_key=v.contract_key AND g.report_date IS NOT NULL))`;
+
+const contractColumns = (signals: string) => `e.contract_key,e.symbol,e.expiration::text,e.strike,
+ s.added,s.tier,s.tiers,s.top_pick,u.underlying_price,u.underlying_at FROM eligible e
+ LEFT JOIN LATERAL (${signals}
  ) s ON true
  LEFT JOIN LATERAL (
    SELECT q.underlying_price, COALESCE(q.price_received_at, r.scheduled_at) AS underlying_at
@@ -83,7 +105,7 @@ export async function searchContracts(
 ): Promise<ContractSearchResponse> {
     return withHistory(config, async (db) => {
         const rows = await db.query<ContractRow>(
-            `${CONTRACTS} SELECT ${CONTRACT_COLUMNS}
+            `${CONTRACTS} SELECT ${contractColumns(EACH_SIGNAL)}
              WHERE e.symbol ILIKE $1
              ORDER BY s.added DESC NULLS LAST,
                CASE WHEN s.top_pick THEN 0 WHEN s.tier='conservative' THEN 1 WHEN s.tier='balanced' THEN 2
@@ -107,9 +129,10 @@ export async function searchContracts(
 }
 
 async function findContract(db: PoolClient, key: string): Promise<HistoryContract | null> {
-    const result = await db.query<ContractRow>(`${CONTRACTS} SELECT ${CONTRACT_COLUMNS} WHERE e.contract_key=$1`, [
-        key,
-    ]);
+    const result = await db.query<ContractRow>(
+        `${CONTRACTS} SELECT ${contractColumns(FIRST_SIGNAL)} WHERE e.contract_key=$1`,
+        [key]
+    );
     return result.rows[0] ? contract(result.rows[0]) : null;
 }
 

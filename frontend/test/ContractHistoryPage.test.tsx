@@ -190,4 +190,18 @@ describe('contract history page', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Previous contract' }));
         await waitFor(() => expect(api.dates).toHaveBeenLastCalledWith(itm.key, expect.any(AbortSignal)));
     });
+    it('lists a contract under every date it was signaled and steps within the viewed date', async () => {
+        const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400, tiers: ['balanced'] };
+        const later = { ...contract, added: '2026-10-22', topPick: true, tiers: ['balanced'] };
+        api.search.mockResolvedValue({ items: [later, contract, other], hasMore: false, unmappedContracts: 0 });
+        const { container } = mount();
+        await screen.findByText('Added 10/22/2026');
+        const headings = () => [...container.querySelectorAll('h4')].map((node) => node.textContent);
+        expect(headings()).toEqual(['Top Picks 1']);
+        expect(screen.queryByText('1 of 2')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Earlier date' }));
+        await screen.findByText('Added 10/21/2026');
+        expect(headings()).toEqual(['Balanced 2']);
+        expect(screen.getByText('1 of 2')).toBeDefined();
+    });
 });

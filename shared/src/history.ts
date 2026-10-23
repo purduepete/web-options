@@ -3,13 +3,16 @@ export interface HistoryContract {
     symbol: string;
     expiration: string;
     strike: number;
-    /** First VADER signal date (`yyyy-mm-dd`), or when the contract was first seen. */
+    /**
+     * Signal date (`yyyy-mm-dd`) this row lists the contract under, or when it was first seen.
+     * Search returns one row per signal date; a single-contract lookup gives the first one.
+     */
     added: string | null;
-    /** Lower-case VADER tier on the contract's first signal; its group in the picker. */
+    /** Lower-case VADER tier on that date; its group in the picker. */
     tier: string | null;
-    /** Distinct lower-case VADER tiers across this contract's signals. */
+    /** Distinct lower-case VADER tiers on that date. */
     tiers: string[];
-    /** VADER named it a top pick on its first signal date. */
+    /** VADER named it a top pick on that date. */
     topPick: boolean;
     /** Underlying price on the latest captured quote, up to expiration; null before any capture. */
     underlyingPrice: number | null;

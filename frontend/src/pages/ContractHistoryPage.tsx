@@ -198,11 +198,11 @@ export function ContractHistoryPage() {
         description: date === dates[0] ? 'Latest collected' : '',
     }));
     const days = groupByAdded(contracts?.items ?? []);
-    // Open on the chosen date, else the selected contract's date, else the newest.
+    // Open on the chosen date, else the newest date that lists the selected contract, else the newest.
+    // A contract signaled on several dates is listed under each of them.
     const chosen = days.findIndex((option) => option.added === addedDay);
-    const owning = days.findIndex((option) =>
-        option.tiers.some((group) => group.items.some((item) => item.key === key))
-    );
+    const lists = (index: number) => !!days[index]?.tiers.some((group) => group.items.some((item) => item.key === key));
+    const owning = lists(chosen) ? chosen : days.findIndex((_, index) => lists(index));
     const dayIndex = chosen >= 0 ? chosen : Math.max(owning, 0);
     const day = days[dayIndex];
     const goToDay = (index: number) => setAddedDay(days[index]?.added ?? null);
