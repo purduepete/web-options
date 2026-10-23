@@ -10,6 +10,7 @@ export interface DbConfig {
 }
 
 export interface AppConfig {
+    history?: { passfile: string; python: string; collectorRoot: string };
     auth?: { mode: 'api-key' | 'access'; allowedOrigins: string[] };
     db: DbConfig;
     webportfolio: {
@@ -107,6 +108,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     }
 
     const config: AppConfig = {
+        history: env.PGPASSFILE
+            ? {
+                  passfile: path.resolve(env.PGPASSFILE),
+                  python: env.WEBOPTIONS_HISTORY_PYTHON ?? '',
+                  collectorRoot: env.WEBOPTIONS_HISTORY_COLLECTOR_ROOT ?? REPO_ROOT,
+              }
+            : undefined,
         auth,
         db: db as DbConfig,
         webportfolio: {

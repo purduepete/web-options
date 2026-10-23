@@ -42,6 +42,7 @@ $allowedNames = @(
     'DB_SERVER', 'DB_NAME', 'DB_USER', 'DB_PASSWORD',
     'WEBPORTFOLIO_API_URL', 'WEBPORTFOLIO_SERVICE_KEY',
     'WEBOPTIONS_AUTH_MODE', 'WEBOPTIONS_ALLOWED_ORIGINS'
+    'PGPASSFILE', 'WEBOPTIONS_HISTORY_PYTHON', 'WEBOPTIONS_HISTORY_COLLECTOR_ROOT'
 )
 foreach ($name in $environment.Keys) {
     if ($name -notin $allowedNames -or $environment[$name] -isnot [string]) {

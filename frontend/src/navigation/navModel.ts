@@ -64,6 +64,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Tools',
         items: [
             {
+                id: '/contract-history',
+                label: 'Contract History',
+                description: 'VADER option prices and delta throughout each session',
+                path: '/contract-history',
+            },
+            {
                 id: '/owned-contracts',
                 label: 'Owned Contracts',
                 description: 'Current live and paper option positions',

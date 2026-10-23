@@ -89,6 +89,7 @@ describe('nav model', () => {
             '/',
             '/summary',
             '/calendars/latest',
+            '/contract-history',
             '/owned-contracts',
             '/settings/favorites',
             '/settings/grading',

@@ -2,6 +2,7 @@ import os from 'node:os';
 import { createApp } from './app';
 import { loadConfig } from './config';
 import { closePool } from './db';
+import { closeHistoryPool } from './history/db';
 
 function lanAddress(): string {
     for (const entries of Object.values(os.networkInterfaces())) {
@@ -26,7 +27,7 @@ const server = app.listen(config.port, config.host, () => {
 async function shutdown(signal: string): Promise<void> {
     console.log(`${signal} received, shutting down`);
     server.close(() => {
-        void closePool().finally(() => process.exit(0));
+        void Promise.all([closePool(), closeHistoryPool()]).finally(() => process.exit(0));
     });
 }
 

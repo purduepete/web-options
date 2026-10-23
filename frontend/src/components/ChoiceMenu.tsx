@@ -40,6 +40,7 @@ export function ChoiceMenu<T extends string>({ name, icon, options, value, neutr
 
     useEffect(() => {
         if (!open) return;
+        menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
 
         function onKeyDown(event: globalThis.KeyboardEvent) {
             if (event.key === 'Escape') close(true);
@@ -59,9 +60,17 @@ export function ChoiceMenu<T extends string>({ name, icon, options, value, neutr
 
     // The arrows walk the menu once it is open, the way a native one does.
     function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        if (event.key === 'Tab') {
+            close(false);
+            return;
+        }
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
         event.preventDefault();
         const items = [...(menuRef.current?.querySelectorAll('button') ?? [])];
+        if (event.key === 'Home' || event.key === 'End') {
+            items[event.key === 'Home' ? 0 : items.length - 1]?.focus();
+            return;
+        }
         const here = items.indexOf(document.activeElement as HTMLButtonElement);
         const step = event.key === 'ArrowDown' ? 1 : -1;
         items[(here + step + items.length) % items.length]?.focus();
@@ -82,6 +91,12 @@ export function ChoiceMenu<T extends string>({ name, icon, options, value, neutr
                 aria-expanded={open}
                 aria-label={`${name}: ${chosen?.label ?? ''}`}
                 onClick={() => setOpen((wasOpen) => !wasOpen)}
+                onKeyDown={(event) => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setOpen(true);
+                    }
+                }}
             >
                 {icon}
                 <span>{neutral === undefined || narrowed ? chosen?.label : name}</span>

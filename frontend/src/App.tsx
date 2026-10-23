@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { ApiKeyProvider, useApiKey } from './auth/ApiKeyProvider';
 import { KeyGate } from './auth/KeyGate';
 import { CautionProvider } from './caution/CautionProvider';
@@ -20,6 +21,10 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { OwnedContractsPage } from './pages/OwnedContractsPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ThemeProvider } from './theme/ThemeProvider';
+
+const ContractHistoryPage = lazy(() =>
+    import('./pages/ContractHistoryPage').then((module) => ({ default: module.ContractHistoryPage }))
+);
 
 export default function App() {
     return (
@@ -52,6 +57,14 @@ function Gate() {
                                     <Route element={<Layout />}>
                                         <Route index element={<LiveSignalsPage />} />
                                         <Route path="summary" element={<SummaryPage />} />
+                                        <Route
+                                            path="contract-history"
+                                            element={
+                                                <Suspense fallback={null}>
+                                                    <ContractHistoryPage />
+                                                </Suspense>
+                                            }
+                                        />
                                         <Route path="owned-contracts" element={<OwnedContractsPage />} />
                                         <Route path="calendars/latest" element={<LatestCalendarPage />} />
                                         <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />

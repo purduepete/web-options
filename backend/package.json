@@ -17,7 +17,8 @@
     "helmet": "^8.0.0",
     "ini": "^5.0.0",
     "morgan": "^1.10.0",
-    "mssql": "^12.0.0"
+    "mssql": "^12.0.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -26,6 +27,7 @@
     "@types/morgan": "^1.9.9",
     "@types/mssql": "^12.3.0",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^6.0.2",
     "cheerio": "^1.2.0",
     "json5": "^2.2.3",

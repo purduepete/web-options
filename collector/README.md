@@ -1,5 +1,42 @@
 # Local combined option collector
 
+## Dashboard history reader
+
+The Web Options Contract History page reads retained broker quotes through
+`sd_web_options_reader`. The collector continues writing through its existing
+runtime role. No collector schedules or broker sessions are changed by the page.
+`history_schedule` exports the existing calendar as JSON without broker/database
+access, for example:
+
+```powershell
+python -m collector.history_schedule --from 2026-10-21 --to 2026-10-23
+```
+
+Reader provisioning is a separate operator step. Independently review
+`database\postgres\004_history_reader.sql`, `provision_history_reader.py` and any
+authentication-file changes before running them. Start without `--confirm`.
+The administrator passfile and new reader passfile belong on the host's protected
+disk, never in a release, repo or command-line password. Lock the parent
+directory ACL first. Retained roles, credentials or HBA backup files cause an
+abort and require inspection before retrying.
+
+```powershell
+python -m collector.provision_history_reader --admin-passfile <protected-admin-pgpass> --passfile <protected-reader-pgpass> --migration database\postgres\004_history_reader.sql
+```
+
+The reader has specific SELECT grants, a 3-connection limit, a read-only default,
+and a 10-second statement timeout. Owner payloads and account identifiers are
+excluded. Verify schema CREATE, database TEMP, write privileges and payload reads
+are denied, and that other-database connections are rejected before activation.
+Existing collector grants must remain unchanged.
+
+For application rollback, restore the previous Web Options release and protected
+settings first; leave the collector alone. If removing reader access is necessary,
+review the exact rollback independently: check for active dependencies, remove
+only this reader's HBA lines, validate/reload the file, revoke its grants in
+`web_options`, and remove only `sd_web_options_reader`. Never drop history tables,
+the database, or collector roles. Keep the protected HBA backup for the record.
+
 ## Nightly audit
 
 Tracked by web-options#5. `python -m collector.audit --config <protected-config>

@@ -31,6 +31,7 @@ import {
     parseSymbolList,
 } from '@weboptions/shared';
 import type { AppConfig } from '../config';
+import { createHistoryRouter } from '../history/routes';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
 import { getSymbolDetail } from '../market/service';
@@ -83,6 +84,7 @@ export function createApiRouter(config: AppConfig): Router {
 
     // Access mode trusts the external Cloudflare Access / Tailscale boundary.
     if (config.auth?.mode !== 'access') router.use(requireApiKey(config));
+    router.use('/contract-history', createHistoryRouter(config));
 
     router.get('/health', (_req, res) => {
         const body: HealthResponse = { status: 'ok' };

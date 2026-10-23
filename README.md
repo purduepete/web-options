@@ -27,6 +27,34 @@ New processing runs locally and stores history in PostgreSQL `web_options`.
 Azure SQL remains a SELECT-only discovery source until a later migration.
 The existing dashboard connection and pages are unchanged.
 
+### Contract history page
+
+Open **Tools > Contract History** to search VADER puts, including expired
+contracts with retained quotes. Intraday opens the contract's latest usable
+Pacific session. Multi-day retains every observation across up to 93 calendar
+dates. The dual-axis chart shows mark dollars per share and signed delta.
+The observation readout works with touch and keyboard controls.
+
+This page reads PostgreSQL using the separate `sd_web_options_reader` login.
+It never uses the collector's writable credentials. Production settings require
+`PGPASSFILE` (an absolute protected reader passfile),
+`WEBOPTIONS_HISTORY_PYTHON` (the existing collector virtual environment's absolute
+Python executable), and `WEBOPTIONS_HISTORY_COLLECTOR_ROOT` (the deployed release).
+The Python process exports the collector's exchange-calendar schedule without
+database access or broker calls. PostgreSQL stays on host loopback.
+
+History readiness is `/api/contract-history/readiness` under the existing API
+access boundary. PostgreSQL failure affects history only; `/healthz`, Azure
+`/readyz`, and existing pages retain their previous behavior. The page reports
+missing and invalid components independently. It does not replace them with
+zero or VADER-advertised numbers. Unknown historical discovery or cadence is
+labeled unknown coverage, not an exact missed-observation count.
+
+Ranges above 93 dates or 10,000 timeline points are rejected explicitly.
+Settle and recovery observations are labeled. Each point sits at its scheduled
+capture time; the readout shows separate market-event and receipt timestamps.
+Sampling cannot establish movements between observations.
+
 The collector has its own reviewed schema and disabled-by-default activation gate.
 Broker compatibility and database isolation must pass before its tasks are enabled.
 See the collector guide for schedules, partial-data handling, credentials and status.

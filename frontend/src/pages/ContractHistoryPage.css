@@ -1,0 +1,100 @@
+.history-page {
+    --history-delta: #c084fc;
+}
+[data-theme='light'] .history-page {
+    --history-delta: #7e22ce;
+}
+.history-heading,
+.history-controls,
+.history-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+.history-heading h1 {
+    margin-right: auto;
+}
+.history-heading button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+.history-controls {
+    margin-block: 1rem;
+}
+.history-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 12rem;
+    min-width: 0px;
+}
+.history-controls input,
+.history-readout input {
+    width: 100%;
+    min-width: 0px;
+    box-sizing: border-box;
+}
+.history-contracts,
+.history-stats,
+.history-readout {
+    margin-block: 1rem;
+}
+.history-contract-list,
+.history-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 0.75rem;
+}
+.history-contract-list {
+    margin-block: 1rem;
+}
+.history-contract-list button {
+    text-align: left;
+}
+.history-contract-list button[aria-pressed='true'] {
+    border-color: var(--highlight);
+}
+.history-contract-list span,
+.history-stats span,
+.history-stats small,
+.history-observation span {
+    display: block;
+}
+.history-stats > div,
+.history-readout {
+    padding: 1rem;
+    border: var(--border-width) solid var(--border);
+}
+.history-chart {
+    width: 100%;
+    height: clamp(20rem, 50vh, 32rem);
+    min-width: 0px;
+}
+.history-tooltip {
+    background: var(--nav-bg);
+    color: var(--text);
+    border: var(--border-width) solid var(--border);
+    padding: 0.75rem;
+    max-width: min(80vw, 24rem);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.history-coverage,
+.history-dates {
+    color: var(--text-muted);
+}
+.history-observation {
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+}
+.history-page summary {
+    cursor: pointer;
+    padding-block: 0.75rem;
+}
+@media (max-width: 640px) {
+    .history-contract-list,
+    .history-stats {
+        grid-template-columns: 1fr;
+    }
+}
