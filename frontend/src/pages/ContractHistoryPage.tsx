@@ -16,6 +16,7 @@ import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } 
 import { Loading } from '../components/Loading';
 import { SignalDatePicker } from '../components/SignalDatePicker';
 import { MoneynessChip } from '../grade/GradeBadge';
+import { seekingAlphaUrl, tradeContext, tradingViewUrl, withContext } from '../signals/researchLinks';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
 import {
     axisTime,
@@ -179,6 +180,17 @@ export function ContractHistoryPage() {
     const hasGaps = !!coverage && coverage.knownPriceGaps + coverage.knownDeltaGaps + coverage.unknownSlots > 0;
     const price = changeSummary(history?.points ?? [], 'mark');
     const delta = changeSummary(history?.points ?? [], 'delta');
+    const researchContext = history
+        ? tradeContext({
+              symbol: history.contract.symbol,
+              strike: history.contract.strike,
+              expiration: history.contract.expiration,
+              delta: delta.value,
+              premium: price.value === null ? null : price.value * 100,
+              underlyingPrice: history.contract.underlyingPrice,
+              underlyingChangePct: null,
+          })
+        : [];
     const priceDomain = fitDomain(
         (history?.points ?? []).map((point) => point.mark),
         0.1,
@@ -416,6 +428,24 @@ export function ContractHistoryPage() {
                                     </span>
                                 </div>
                             )}
+                            <nav className="history-research-links" aria-label="Underlying research">
+                                <a
+                                    href={withContext(seekingAlphaUrl(history.contract.symbol), researchContext)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`${history.contract.symbol} Seeking Alpha`}
+                                >
+                                    Seeking Alpha
+                                </a>
+                                <a
+                                    href={withContext(tradingViewUrl(history.contract.symbol), researchContext)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`${history.contract.symbol} TradingView`}
+                                >
+                                    TradingView
+                                </a>
+                            </nav>
                         </div>
                         <p>
                             {history.from === history.to

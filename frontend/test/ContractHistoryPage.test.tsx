@@ -78,6 +78,21 @@ beforeEach(() => {
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('links the selected underlying to research pages with the displayed option context', async () => {
+        mount();
+        const seeking = await screen.findByRole<HTMLAnchorElement>('link', { name: 'AAPL Seeking Alpha' });
+        const trading = screen.getByRole<HTMLAnchorElement>('link', { name: 'AAPL TradingView' });
+        const context =
+            '#trade_ticker=AAPL&trade_strike=150.00&trade_expiration=2026-10-30&trade_delta=-0.2000' +
+            '&trade_optionPrice=1.50&trade_underlyingPrice=160.00&trade_strikePct=6.67';
+        expect(seeking.getAttribute('href')).toBe(`https://seekingalpha.com/symbol/AAPL${context}`);
+        expect(trading.getAttribute('href')).toBe(`https://www.tradingview.com/chart/?symbol=AAPL${context}`);
+        for (const link of [seeking, trading]) {
+            expect(link.target).toBe('_blank');
+            expect(link.rel).toBe('noopener noreferrer');
+        }
+    });
+
     it('supports keyboard view choices and returns focus on Escape', () => {
         mount('');
         const trigger = screen.getByRole('button', { name: 'View: Intraday' });
@@ -189,6 +204,23 @@ describe('contract history page', () => {
         expect(screen.getByRole('button', { name: 'Next contract' }).hasAttribute('disabled')).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Previous contract' }));
         await waitFor(() => expect(api.dates).toHaveBeenLastCalledWith(itm.key, expect.any(AbortSignal)));
+    });
+    it('updates research links when stepping to another underlying', async () => {
+        const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400 };
+        api.search.mockResolvedValue({ items: [contract, other], hasMore: false, unmappedContracts: 0 });
+        api.history.mockImplementation((key: string) =>
+            Promise.resolve({ ...result, contract: key === other.key ? other : contract })
+        );
+        mount();
+        await screen.findByRole('link', { name: 'AAPL Seeking Alpha' });
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Next contract' })).toBeDefined());
+        fireEvent.click(screen.getByRole('button', { name: 'Next contract' }));
+        const link = await screen.findByRole<HTMLAnchorElement>('link', { name: 'MSFT Seeking Alpha' });
+        expect(link.href).toContain('https://seekingalpha.com/symbol/MSFT#trade_ticker=MSFT&trade_strike=400.00');
+        expect(screen.queryByRole('link', { name: 'AAPL Seeking Alpha' })).toBeNull();
+        expect(screen.getByRole<HTMLAnchorElement>('link', { name: 'MSFT TradingView' }).href).toContain(
+            'symbol=MSFT#'
+        );
     });
     it('lists a contract under every date it was signaled and steps within the viewed date', async () => {
         const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400, tiers: ['balanced'] };

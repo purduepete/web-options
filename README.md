@@ -37,6 +37,8 @@ The observation readout works with touch and keyboard controls.
 The contract picker lists each signal date separately, using that day's tiers
 and top picks. Its calendar enables dates with signals and shows the number of
 contracts beneath each day. Arrow buttons step between signal dates.
+Seeking Alpha and TradingView links beside the selected contract open its
+underlying in new tabs, with the option context for the research overlays.
 
 This page reads PostgreSQL using the separate `sd_web_options_reader` login.
 It never uses the collector's writable credentials. Production settings require

@@ -17,6 +17,7 @@ import { useVixValue } from '../grade/VixProvider';
 import { useCautionSymbols } from '../caution/CautionProvider';
 import { PriceChart } from './PriceChart';
 import { useSymbolDetail } from './useSymbolDetail';
+import { seekingAlphaUrl, tradeContext, tradingViewUrl, withContext } from './researchLinks';
 import {
     formatCents,
     formatDayLabel,
@@ -62,61 +63,12 @@ export interface SignalTarget {
     expiration: IsoDate;
 }
 
-/**
- * Trade context for the Tampermonkey research overlays, in the same shape as
- * webportfolio's `buildOptionResearchHash`. Empty when the contract is not fully
- * named, since there is nothing for an overlay to describe.
- */
-function tradeContext(input: {
-    symbol: string;
-    strike: number | null;
-    expiration: IsoDate | null;
-    delta: number | null;
-    premium: number | null;
-    underlyingPrice: number | null;
-    underlyingChangePct: number | null;
-}): string[] {
-    const { strike, expiration, underlyingPrice: underlying } = input;
-    if (strike === null || expiration === null) return [];
-
-    const parts = [
-        `trade_ticker=${encodeURIComponent(input.symbol)}`,
-        `trade_strike=${strike.toFixed(2)}`,
-        `trade_expiration=${expiration}`,
-    ];
-    if (input.delta !== null) parts.push(`trade_delta=${(-Math.abs(input.delta)).toFixed(4)}`);
-    if (input.premium !== null) parts.push(`trade_optionPrice=${(input.premium / 100).toFixed(2)}`);
-    if (underlying !== null) parts.push(`trade_underlyingPrice=${underlying.toFixed(2)}`);
-    if (input.underlyingChangePct !== null) {
-        parts.push(`trade_underlyingChange=${input.underlyingChangePct.toFixed(2)}`);
-    }
-    // Against the STRIKE, which is the denominator the overlays label "% above strike".
-    if (underlying !== null && strike > 0) {
-        parts.push(`trade_strikePct=${(((underlying - strike) / strike) * 100).toFixed(2)}`);
-    }
-    return parts;
-}
-
-/** A fragment never leaves the browser, so the context reaches the overlay and not the site. */
-function withContext(url: string, context: string[]): string {
-    return context.length === 0 ? url : `${url}#${context.join('&')}`;
-}
-
-/** Yahoo has no bearing on these; they are only ever links. */
-function seekingAlphaUrl(symbol: string): string {
-    return `https://seekingalpha.com/symbol/${encodeURIComponent(symbol.toUpperCase())}`;
-}
-
 /** The option chain rather than the stock summary, because that is where the overlay fires. */
 function fidelityUrl(symbol: string, context: string[]): string {
     const base = `https://digital.fidelity.com/ftgw/digital/exp-options-research/?symbol=${encodeURIComponent(symbol.toUpperCase())}`;
     // Fidelity's overlay reads query parameters, and takes the ticker from `symbol`.
     const params = context.filter((part) => !part.startsWith('trade_ticker='));
     return params.length === 0 ? base : `${base}&${params.join('&')}`;
-}
-
-function tradingViewUrl(symbol: string): string {
-    return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(symbol.toUpperCase())}`;
 }
 
 /** Null when the contract is not fully named, since this one is per-contract rather than per-symbol. */
