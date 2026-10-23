@@ -37,7 +37,10 @@
 .history-added-group {
     margin-block: 0.75rem;
 }
+/* The step buttons size from their icons, so they stretch to the date menu's
+   height rather than sitting 3px short of it (16px short on a phone). */
 .history-day-nav {
+    align-items: stretch;
     margin-bottom: 0.25rem;
 }
 .history-tier-group h4 {
