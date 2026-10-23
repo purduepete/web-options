@@ -87,9 +87,13 @@ describe('contract history page', () => {
             '&trade_optionPrice=1.50&trade_underlyingPrice=160.00&trade_strikePct=6.67';
         expect(seeking.getAttribute('href')).toBe(`https://seekingalpha.com/symbol/AAPL${context}`);
         expect(trading.getAttribute('href')).toBe(`https://www.tradingview.com/chart/?symbol=AAPL${context}`);
+        expect(seeking.querySelector('.site-mark.site-seekingalpha')).not.toBeNull();
+        expect(trading.querySelector('.site-mark.site-tradingview')).not.toBeNull();
         for (const link of [seeking, trading]) {
             expect(link.target).toBe('_blank');
             expect(link.rel).toBe('noopener noreferrer');
+            expect(link.textContent).toBe('');
+            expect(link.title).toBe(link.getAttribute('aria-label'));
         }
     });
 

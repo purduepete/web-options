@@ -85,42 +85,6 @@
     height: 1rem;
 }
 
-/* Each site's own favicon reduced to its silhouette and painted in currentColor, so a
-   brand mark picks up the muted and hover colours of the stroke icons beside it. The
-   images carry shape in their alpha only; nothing is drawn from their pixels. */
-.site-mark {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-    background-color: currentColor;
-    -webkit-mask-position: center;
-    mask-position: center;
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-}
-
-.site-seekingalpha {
-    -webkit-mask-image: url('/site-icons/seekingalpha.png');
-    mask-image: url('/site-icons/seekingalpha.png');
-}
-
-.site-fidelity {
-    -webkit-mask-image: url('/site-icons/fidelity.png');
-    mask-image: url('/site-icons/fidelity.png');
-}
-
-.site-barchart {
-    -webkit-mask-image: url('/site-icons/barchart.png');
-    mask-image: url('/site-icons/barchart.png');
-}
-
-.site-tradingview {
-    -webkit-mask-image: url('/site-icons/tradingview.png');
-    mask-image: url('/site-icons/tradingview.png');
-}
-
 /* Kept in place rather than removed at the ends of the day, so the run holds its
    width and the links beside it do not shuffle on every step. */
 .nav-step:disabled {

@@ -31,6 +31,7 @@ import {
     shareOf,
 } from './format';
 import './TradeDetail.css';
+import '../components/SiteMarks.css';
 
 /**
  * The drill-in behind a live signals ticket.

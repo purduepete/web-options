@@ -124,6 +124,8 @@
 .history-research-links a {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    height: calc(1.5em + 0.6rem + 2 * var(--border-width));
     padding: 0.3rem 0.6rem;
     border: var(--border-width) solid var(--border);
 }

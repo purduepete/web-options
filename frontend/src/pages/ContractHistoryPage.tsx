@@ -31,6 +31,7 @@ import {
     signedMoney,
 } from '../history/format';
 import './ContractHistoryPage.css';
+import '../components/SiteMarks.css';
 
 const tierLabel = (tier: string) => GROUP_LABELS[tier as GroupId] ?? 'Other';
 const GROUP_ORDER: readonly string[] = ['top-picks', ...TIER_ORDER, 'other'];
@@ -434,16 +435,18 @@ export function ContractHistoryPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${history.contract.symbol} Seeking Alpha`}
+                                    title={`${history.contract.symbol} Seeking Alpha`}
                                 >
-                                    Seeking Alpha
+                                    <span className="site-mark site-seekingalpha" aria-hidden="true" />
                                 </a>
                                 <a
                                     href={withContext(tradingViewUrl(history.contract.symbol), researchContext)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${history.contract.symbol} TradingView`}
+                                    title={`${history.contract.symbol} TradingView`}
                                 >
-                                    TradingView
+                                    <span className="site-mark site-tradingview" aria-hidden="true" />
                                 </a>
                             </nav>
                         </div>

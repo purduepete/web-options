@@ -1,0 +1,33 @@
+/* Local favicon silhouettes follow the link's theme and hover colors. */
+.site-mark {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    background-color: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.site-seekingalpha {
+    -webkit-mask-image: url('/site-icons/seekingalpha.png');
+    mask-image: url('/site-icons/seekingalpha.png');
+}
+
+.site-fidelity {
+    -webkit-mask-image: url('/site-icons/fidelity.png');
+    mask-image: url('/site-icons/fidelity.png');
+}
+
+.site-barchart {
+    -webkit-mask-image: url('/site-icons/barchart.png');
+    mask-image: url('/site-icons/barchart.png');
+}
+
+.site-tradingview {
+    -webkit-mask-image: url('/site-icons/tradingview.png');
+    mask-image: url('/site-icons/tradingview.png');
+}
