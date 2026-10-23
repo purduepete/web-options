@@ -34,6 +34,9 @@ contracts with retained quotes. Intraday opens the contract's latest usable
 Pacific session. Multi-day retains every observation across up to 93 calendar
 dates. The dual-axis chart shows mark dollars per share and signed delta.
 The observation readout works with touch and keyboard controls.
+The contract picker lists each signal date separately, using that day's tiers
+and top picks. Its calendar enables dates with signals and shows the number of
+contracts beneath each day. Arrow buttons step between signal dates.
 
 This page reads PostgreSQL using the separate `sd_web_options_reader` login.
 It never uses the collector's writable credentials. Production settings require

@@ -199,7 +199,8 @@ describe('contract history page', () => {
         const headings = () => [...container.querySelectorAll('h4')].map((node) => node.textContent);
         expect(headings()).toEqual(['Top Picks 1']);
         expect(screen.queryByText('1 of 2')).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Earlier date' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Signal date: 10/22/2026' }));
+        fireEvent.click(screen.getByRole('button', { name: '10/21/2026, 2 contracts' }));
         await screen.findByText('Added 10/21/2026');
         expect(headings()).toEqual(['Balanced 2']);
         expect(screen.getByText('1 of 2')).toBeDefined();

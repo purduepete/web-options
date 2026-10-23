@@ -1,0 +1,117 @@
+.signal-date-trigger {
+    width: auto;
+    justify-content: space-between;
+}
+
+.signal-date-popup {
+    position: fixed;
+    z-index: 50;
+    width: min(21rem, calc(100vw - 4px));
+    max-height: calc(100dvh - 4px);
+    overflow: auto;
+    background: var(--surface);
+    border: var(--border-width) solid var(--border);
+    box-shadow: var(--shadow-xs);
+    color: var(--text);
+    font-size: 0.8rem;
+}
+
+.signal-date-popup .rdp-month {
+    position: relative;
+}
+
+.signal-date-popup .rdp-month_caption {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.6rem 2.5rem;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.signal-date-popup .rdp-button_previous,
+.signal-date-popup .rdp-button_next {
+    position: absolute;
+    top: 0;
+    padding: 0.4rem 0.6rem;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+}
+
+.signal-date-popup .rdp-button_previous {
+    left: 0;
+}
+
+.signal-date-popup .rdp-button_next {
+    right: 0;
+}
+
+.signal-date-popup .rdp-chevron {
+    display: block;
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.signal-date-popup .rdp-month_grid {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.signal-date-popup .rdp-weekday {
+    padding-block: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.signal-date-popup .rdp-day {
+    padding: 0;
+    text-align: center;
+}
+
+.signal-date-popup .rdp-day_button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0.3rem 0;
+    border: var(--border-width) solid transparent;
+    background: none;
+    color: var(--text-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.signal-date-popup .rdp-day_button small {
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    font-weight: 400;
+}
+
+.signal-date-popup .rdp-selected .rdp-day_button {
+    border-color: var(--highlight);
+    color: var(--highlight);
+    background: var(--surface-hover);
+}
+
+.signal-date-popup .rdp-day_button:disabled {
+    opacity: 0.3;
+}
+
+.signal-date-popup button[aria-disabled='true'] {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.signal-date-popup .rdp-outside:not(.rdp-selected) {
+    opacity: 0.5;
+}
+
+@media (pointer: coarse) {
+    .signal-date-popup .rdp-month_caption {
+        min-height: 44px;
+    }
+}

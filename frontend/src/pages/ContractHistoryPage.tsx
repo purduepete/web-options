@@ -14,6 +14,7 @@ import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
 import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
+import { SignalDatePicker } from '../components/SignalDatePicker';
 import { MoneynessChip } from '../grade/GradeBadge';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
 import {
@@ -318,17 +319,7 @@ export function ContractHistoryPage() {
                                     <ChevronLastIcon />
                                 </button>
                             </div>
-                            <ChoiceMenu
-                                name="Added"
-                                icon={null}
-                                value={day.added}
-                                options={days.map((option) => ({
-                                    value: option.added,
-                                    label: option.added ? sessionLabel(option.added) : 'Unknown',
-                                    description: `${option.count} contract${option.count === 1 ? '' : 's'}`,
-                                }))}
-                                onChange={setAddedDay}
-                            />
+                            <SignalDatePicker value={day.added} dates={days} onChange={setAddedDay} />
                         </div>
                         <h3 className="sr-only">{addedLabel(day.added)}</h3>
                         {day.tiers.map((group) => (
