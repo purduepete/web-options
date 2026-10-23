@@ -10,21 +10,27 @@ Pushover through the existing notifier. Exit 0 means all sections passed (or
 were `not_run`) and notification was sent; exit 1 means a failed check, source
 read or notification.
 
-VADER compares each currently active tracked put's actual-close and 13:15 local
-quotes to the nearest Azure captured timestamp within 20 minutes. Tolerances:
+VADER compares each currently active tracked put's 13:15 local quote to the
+nearest Azure captured timestamp within 20 minutes. Azure has no 13:00 sample,
+so the actual-close quote is not compared (web-options#14). Tolerances:
 mid/mark $0.01 per share, signed delta 0.01, fractional IV 0.02 (2 percentage
 points). These account for differently timed observations; this nightly value
 check does not replace the stricter sustained-parity gates. Missing fields,
 including both-missing, do not pass numeric checks.
 
-Portfolio compares each currently open live/paper sell-to-open owner's 13:15
-mid/mark and delta to its Azure daily row using the same price/delta tolerances.
-That section reports value agreement only: `created_at` cannot establish the
-time of an updated daily row. Current discovery cannot reconstruct past
+Portfolio compares each currently open live/paper sell-to-open owner's quote
+from the last open-session slot (12:55 on a full day) to its Azure daily row,
+using the same price/delta tolerances. Azure's MERGE refreshes that row every
+10 minutes through 12:50, so 12:55 is the closest local capture to its final
+value. That section reports value agreement only: `created_at` cannot establish
+the time of an updated daily row. Current discovery cannot reconstruct past
 eligibility for historical `--date` runs or positions closed earlier that day.
 Coverage compares the current distinct discovered universe against complete
 price/delta/IV components in every expected slot, and reports missing/degraded
-runs. Examples are capped at 20 per section. Weekends and full-day exchange
+runs. A quote whose price failed with `invalid_or_missing_bid_ask` (the broker
+had no bid/ask) is counted under `broker_unquoted` with examples in every
+section and does not fail the day. A partial run passes only when every failed
+quote in it is broker-unquoted. Examples are capped at 20 per section. Weekends and full-day exchange
 holidays are `not_run`/overall pass, even though weekday-holiday quote collection
 still has its separate 13:15 purpose.
 

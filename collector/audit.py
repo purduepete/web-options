@@ -34,6 +34,13 @@ PRICE_TOLERANCE = Decimal(".01")
 DELTA_TOLERANCE = Decimal(".01")
 IV_TOLERANCE = Decimal(".02")
 TIME_TOLERANCE = timedelta(minutes=20)
+BROKER_UNQUOTED = "invalid_or_missing_bid_ask"
+EXCUSED = ("complete", "no_work")
+
+
+def unquoted(row: dict) -> bool:
+    """The broker returned no usable bid/ask. Reported as an exception, not a collector failure."""
+    return row.get("price_status") != "ok" and row.get("price_error") == BROKER_UNQUOTED
 
 
 def timestamp(value):
@@ -82,6 +89,25 @@ def compare_values(local: dict, source: dict, *, portfolio=False) -> list[dict]:
     return differences
 
 
+def exception(result: dict, example: dict) -> None:
+    result["broker_unquoted"] = result.get("broker_unquoted", 0) + 1
+    examples = result.setdefault("broker_unquoted_examples", [])
+    if len(examples) < 20:
+        examples.append(example)
+
+
+def acceptable(run: dict, quotes: list[dict]) -> bool:
+    """Complete runs pass. A partial run passes only when every non-ok quote is broker-unquoted."""
+    if run["status"] in EXCUSED:
+        return True
+    if run["status"] != "partial":
+        return False
+    rows = [row for row in quotes if row["run_id"] == run["id"]]
+    failed = [row for row in rows
+              if not all(row.get(f"{component}_status") == "ok" for component in ("price", "delta", "iv"))]
+    return bool(failed) and all(unquoted(row) for row in failed)
+
+
 def capture(runs: list[dict], kind: str) -> dict | None:
     candidates = [run for run in runs if run["capture_kind"] == kind]
     return max(candidates, key=lambda run: run["scheduled_at"], default=None)
@@ -99,6 +125,9 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             "Portfolio values only: option_daily_price has no update timestamp or run identity.",
             "Discovery is current at audit time, not a reconstruction of historical open positions.",
             "VADER nearest samples within 20 minutes are value checks, not simultaneous quote parity.",
+            "VADER is compared at 13:15 only; Azure has no 13:00 sample.",
+            "Portfolio is compared with the last open-session capture; Azure stops refreshing at 12:50.",
+            "Broker no-quote contracts (no bid/ask) are reported under broker_unquoted and do not fail.",
         ],
     }
     if session_bounds(day) is None:
@@ -112,13 +141,16 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
         source_by_contract[str(row["contract_key"]).strip()].append(row)
     tracked = {row["source_id"]: row for row in discovery if row["source_kind"] == "vader_contract"}
     vader = sections["vader"]
-    vader["purposes"] = ["close", "closing_1315"]
+    vader["purposes"] = ["closing_1315"]
     for kind in vader["purposes"]:
         run = capture(runs, kind)
         for original_key, owner in tracked.items():
             vader["expected"] += 1
             identity = {"contract": original_key, "broker_contract": owner["contract"].broker_occ, "purpose": kind}
             quote = local.get((run["id"], owner["contract"].broker_occ)) if run else None
+            if quote is not None and unquoted(quote):
+                exception(vader, identity)
+                continue
             if quote is None:
                 problem(vader, "missing_local", identity)
             reference = timestamp(quote.get("price_received_at")) if quote else None
@@ -141,8 +173,11 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             else:
                 vader["matched"] += 1
     portfolio = sections["portfolio"]
-    portfolio["note"] = "Value agreement only; Azure daily row has no update timestamp."
-    run = capture(runs, "closing_1315")
+    portfolio["note"] = ("Value agreement only; Azure daily row has no update timestamp. "
+                         "Compared with the last open-session capture, after Azure's 12:50 refresh.")
+    last_open = max((slot.instant for slot in slots(day) if slot.kind == "open_session"), default=None)
+    run = next((r for r in runs if r["capture_kind"] == "open_session" and r["scheduled_at"] == last_open), None)
+    portfolio["local_capture_at"] = last_open.astimezone(PACIFIC).isoformat() if last_open else None
     daily = defaultdict(list)
     for row in portfolio_rows:
         daily[str(row["transaction_id"]), bool(row["is_paper"])].append(row)
@@ -154,6 +189,9 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
                     "broker_contract": owner["contract"].broker_occ}
         quote = local.get((run["id"], owner["contract"].broker_occ)) if run else None
         sources = daily[owner["source_id"], bool(owner["is_paper"])]
+        if quote is not None and unquoted(quote):
+            exception(portfolio, identity)
+            continue
         if quote is None:
             problem(portfolio, "missing_local", identity)
         if not sources:
@@ -174,10 +212,13 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
     for slot in slots(day):
         matches = [r for r in runs if r["capture_kind"] == slot.kind and r["scheduled_at"] == slot.instant]
         run = matches[0] if matches else None
-        captured = {row["contract_key"] for row in quotes
-                    if run and row["run_id"] == run["id"]
-                    and all(row[f"{component}_status"] == "ok" for component in ("price", "delta", "iv"))}
-        missing = expected - captured
+        rows = [row for row in quotes if run and row["run_id"] == run["id"]]
+        captured = {row["contract_key"] for row in rows
+                    if all(row[f"{component}_status"] == "ok" for component in ("price", "delta", "iv"))}
+        excused = {row["contract_key"] for row in rows if unquoted(row)} & expected
+        for key in sorted(excused):
+            exception(coverage, {"contract": key, "purpose": slot.kind, "at": slot.instant.isoformat()})
+        missing = expected - captured - excused
         coverage["expected"] += len(expected)
         coverage["matched"] += len(expected & captured)
         coverage["slots"].append({
@@ -192,16 +233,14 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
                 if len(coverage["examples"]) < 20:
                     coverage["examples"].append({"reason": "missing_local", "contract": key,
                                                 "purpose": slot.kind, "at": slot.instant.isoformat()})
-        if run is None or run["status"] not in ("complete", "no_work"):
+        if run is None or not acceptable(run, quotes):
             problem(coverage, "bad_runs", {"purpose": slot.kind, "at": slot.instant.isoformat(),
                                           "status": run["status"] if run else "missing"})
+    degraded = [run for run in runs if not acceptable(run, quotes)]
     coverage["degraded_runs"] = [
-        {"id": run["id"], "kind": run["capture_kind"], "status": run["status"]}
-        for run in runs if run["status"] not in ("complete", "no_work")
+        {"id": run["id"], "kind": run["capture_kind"], "status": run["status"]} for run in degraded
     ][:20]
-    coverage["degraded_run_count"] = sum(
-        run["status"] not in ("complete", "no_work") for run in runs
-    )
+    coverage["degraded_run_count"] = len(degraded)
     if coverage["degraded_runs"]:
         coverage["status"] = "fail"
     report["status"] = "fail" if any(s["status"] == "fail" for s in sections.values()) else "pass"
@@ -246,6 +285,7 @@ def execute(config, day: date, output_root: Path) -> int:
             f"{name}: {result['status']} matched={result.get('matched', 0)}/{result.get('expected', 0)} "
             f"missing L/A={result.get('missing_local', 0)}/{result.get('missing_azure', 0)} "
             f"mismatch={result.get('mismatches', 0)}"
+            + (f" broker_unquoted={result['broker_unquoted']}" if result.get("broker_unquoted") else "")
         )
     directory = output_root / "shared" / "logs" / "audit"
     directory.mkdir(parents=True, exist_ok=True)
