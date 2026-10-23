@@ -125,7 +125,7 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             "Portfolio values only: option_daily_price has no update timestamp or run identity.",
             "Discovery is current at audit time, not a reconstruction of historical open positions.",
             "VADER nearest samples within 20 minutes are value checks, not simultaneous quote parity.",
-            "VADER is compared at 13:15 only; Azure has no 13:00 sample.",
+            "VADER's 13:15 sample is compared with the 13:10 settle capture only; Azure has no 13:00 sample.",
             "Portfolio is compared with the last open-session capture; Azure stops refreshing at 12:50.",
             "Broker no-quote contracts (no bid/ask) are reported under broker_unquoted and do not fail.",
         ],
@@ -133,7 +133,7 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
     if session_bounds(day) is None:
         for result in sections.values():
             result["status"] = "not_run"
-            result["note"] = "No exchange session; weekday-holiday 13:15 capture is outside this audit."
+            result["note"] = "No exchange session; weekday-holiday settle capture is outside this audit."
         return report
     local = {(row["run_id"], row["contract_key"]): row for row in quotes}
     source_by_contract = defaultdict(list)
@@ -141,7 +141,7 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
         source_by_contract[str(row["contract_key"]).strip()].append(row)
     tracked = {row["source_id"]: row for row in discovery if row["source_kind"] == "vader_contract"}
     vader = sections["vader"]
-    vader["purposes"] = ["closing_1315"]
+    vader["purposes"] = ["settle"]
     for kind in vader["purposes"]:
         run = capture(runs, kind)
         for original_key, owner in tracked.items():

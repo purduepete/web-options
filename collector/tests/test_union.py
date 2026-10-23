@@ -15,10 +15,10 @@ from collector.source import POSITION_QUERY, QUERY, TRACKED_QUERY, normalize
 @pytest.mark.parametrize("day", [date(2026, 10, 20), date(2026, 11, 27), date(2026, 12, 25)])
 def test_close_purposes_have_full_windows(day):
     for slot in slots(day):
-        if slot.kind in ("close", "closing_1315"):
+        if slot.kind in ("close", "settle"):
             assert slot.deadline - slot.instant == timedelta(minutes=5)
             assert choose_slot(slot.instant + timedelta(minutes=4, seconds=59), slots(day), set()) == slot
-    assert all(s.instant.astimezone(PACIFIC).hour != 13 or s.kind == "closing_1315"
+    assert all(s.instant.astimezone(PACIFIC).hour != 13 or s.kind == "settle"
                for s in slots(date(2026, 11, 27)))
 
 
@@ -79,8 +79,8 @@ def test_sync_maps_multiple_owners_without_fabricating_signals():
     assert any("INSERT INTO public.option_capture_owner" in call.args[0] for call in repo.execute.call_args_list)
 
 
-def test_holiday_1315_attempts_discovery_and_provider():
-    at = datetime(2026, 12, 25, 21, 16, tzinfo=UTC)
+def test_holiday_settle_attempts_discovery_and_provider():
+    at = datetime(2026, 12, 25, 21, 11, tzinfo=UTC)
     config = Config("", {}, "", "", True, {})
     with (patch("collector.__main__.Repository") as factory,
           patch("collector.__main__.discover", return_value=[] ) as discovery,
@@ -97,7 +97,7 @@ def test_holiday_1315_attempts_discovery_and_provider():
 
 
 def test_pacific_date_survives_utc_date_rollover():
-    slot = Slot("closing_1315", datetime(2026, 10, 20, 20, 15, tzinfo=UTC),
+    slot = Slot("settle", datetime(2026, 10, 20, 20, 15, tzinfo=UTC),
                 datetime(2026, 10, 20, 20, 20, tzinfo=UTC), date(2026, 10, 20))
     assert slot.session == slot.instant.astimezone(PACIFIC).date()
     assert datetime(2026, 10, 21, 1, tzinfo=UTC).astimezone(PACIFIC).date() == slot.session
@@ -128,7 +128,7 @@ def test_restart_uses_original_run_deadline_and_only_missing_components():
 def test_coincident_purposes_share_one_provider_attempt():
     day = date(2026, 10, 20)
     at = datetime(2026, 10, 20, 20, 15, tzinfo=UTC)
-    scheduled = [Slot(kind, at, at + timedelta(minutes=5), day) for kind in ("close", "closing_1315")]
+    scheduled = [Slot(kind, at, at + timedelta(minutes=5), day) for kind in ("close", "settle")]
     with (patch("collector.__main__.Repository") as factory,
           patch("collector.__main__.slots", return_value=scheduled),
           patch("collector.__main__.discover", return_value=[]),

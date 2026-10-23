@@ -32,7 +32,7 @@ def fixtures(day=DAY):
                            delta=Decimal("-.25"), implied_volatility_fraction=Decimal(".4")))
     vader = [dict(contract_key="vader ", captured_at_utc=r["scheduled_at"].replace(tzinfo=None),
                   mark="1.05", mid="1.05", delta="-.25", implied_volatility=".4")
-             for r in runs if r["capture_kind"] in ("close", "closing_1315")]
+             for r in runs if r["capture_kind"] in ("close", "settle")]
     portfolio = [dict(transaction_id=i, is_paper=paper, mark="1.05", mid="1.05", delta="-.25")
                  for i, paper in ((1, True), (2, False))]
     return owners, runs, quotes, vader, portfolio
@@ -42,7 +42,7 @@ def test_all_sections_pass_with_canonical_multiple_owner_coverage():
     report = audit_day(DAY, *fixtures())
     assert report["status"] == "pass"
     assert report["sections"]["vader"]["matched"] == 1
-    assert report["sections"]["vader"]["purposes"] == ["closing_1315"]
+    assert report["sections"]["vader"]["purposes"] == ["settle"]
     assert report["sections"]["portfolio"]["matched"] == 2
     assert report["sections"]["portfolio"]["local_capture_at"].endswith("12:55:00-07:00")
     assert report["sections"]["coverage"]["distinct_contracts_expected"] == 1
@@ -81,9 +81,9 @@ def test_missing_local_azure_and_partial_runs_fail():
     assert report["sections"]["coverage"]["degraded_runs"][0]["status"] == "partial"
 
 
-def test_portfolio_uses_last_open_session_capture_not_1315():
+def test_portfolio_uses_last_open_session_capture_not_settle():
     owners, runs, quotes, vader, portfolio = fixtures()
-    closing = next(r["id"] for r in runs if r["capture_kind"] == "closing_1315")
+    closing = next(r["id"] for r in runs if r["capture_kind"] == "settle")
     for quote in quotes:
         if quote["run_id"] == closing:
             quote["mark_per_share"] = Decimal("9")

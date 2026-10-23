@@ -107,8 +107,8 @@ def slots(day: date) -> list[Slot]:
             instant += INTERVAL
         result.append(Slot("close", closed, closed + WINDOW, day))
     if day.weekday() < 5:
-        closing = datetime.combine(day, time(13, 15), PACIFIC).astimezone(UTC)
-        result.append(Slot("closing_1315", closing, closing + WINDOW, day))
+        closing = datetime.combine(day, time(13, 10), PACIFIC).astimezone(UTC)
+        result.append(Slot("settle", closing, closing + WINDOW, day))
     return result
 
 

@@ -10,8 +10,8 @@ Pushover through the existing notifier. Exit 0 means all sections passed (or
 were `not_run`) and notification was sent; exit 1 means a failed check, source
 read or notification.
 
-VADER compares each currently active tracked put's 13:15 local quote to the
-nearest Azure captured timestamp within 20 minutes. Azure has no 13:00 sample,
+VADER compares each currently active tracked put's 13:10 settle quote to the
+nearest Azure captured timestamp (VADER samples at 13:15) within 20 minutes. Azure has no 13:00 sample,
 so the actual-close quote is not compared (web-options#14). Tolerances:
 mid/mark $0.01 per share, signed delta 0.01, fractional IV 0.02 (2 percentage
 points). These account for differently timed observations; this nightly value
@@ -34,7 +34,7 @@ quote in it is broker-unquoted. When a run's discovery succeeded, a contract the
 source had not yet published at that slot (VADER posts new signals around 07:30)
 is counted under `not_yet_discovered` instead of `missing_local`. Examples are capped at 20 per section. Weekends and full-day exchange
 holidays are `not_run`/overall pass, even though weekday-holiday quote collection
-still has its separate 13:15 purpose.
+still has its separate 13:10 settle purpose.
 
 The installer adds `\JimlerTech\SolutionDeploy-web-options-daily-audit`, daily
 at 23:30 host-local time, under LOCAL SERVICE, with a 15-minute limit. It uses
@@ -205,11 +205,12 @@ Nonzero exits and explicit status distinguish partial or failed collection.
   Tastytrade account, so the two broker sessions never run together. Nothing
   runs between the open and 6:35. A closing snapshot is an observed quote, not an
   official closing print or guaranteed execution.
-- The entire distinct union also has a 13:15 Pacific slot every weekday,
+- The entire distinct union also has a 13:10 Pacific `settle` slot every weekday,
   including exchange holidays. Regular days have 41 slots; the Friday after
-  Thanksgiving has 23, and weekday full-day holidays have only 13:15.
-  Weekends have none. Actual early close replaces 13:00.
-- Actual-close and 13:15 each retain their full 5-minute windows. Only
+  Thanksgiving has 23, and weekday full-day holidays have only settle.
+  Weekends have none. Actual early close replaces 13:00. The kind was
+  `closing_1315` at 13:15 until migration 003 (web-options#16).
+- Actual-close and settle each retain their full 5-minute windows. Only
   strictly pre-close intraday/recovery windows stop at actual close.
 - Normalize broker OCC before REST batches and Greek subscriptions. Each
   distinct contract is requested once per component attempt, using one broker
@@ -351,14 +352,14 @@ An empty eligible universe after successful discovery is `no_work`.
 Greek timeout alone cannot prove a valid no-data outcome, so the run stays partial.
 
 Stale event flags are evidence, not an off-hours rejection or proof of freshness.
-At close/13:15 require field-specific relevant completed-session date evidence;
+At close/settle require field-specific relevant completed-session date evidence;
 missing date evidence stays unknown. Same-day terminal quotes remain stored,
 including expiration day after close. Availability counts do not assert date or
 value parity. Off-hours comparison needs matching source purpose/run, receipts
 within 60 seconds and the same completed-session date. Regular-session comparison
 also needs event timestamps within 60 seconds. Compare only intraday slots that
-follow an Azure write, and the tracked subset at 13:15. Portfolio-only
-13:15 coverage has no Azure parity claim. Keep no-data, missing, unmatched and
+follow an Azure write, and the tracked subset at settle. Portfolio-only
+settle coverage has no Azure parity claim. Keep no-data, missing, unmatched and
 numeric comparison denominators separate.
 
 Parent read-only DDL inventory confirms Azure closing prices `decimal(18,6)` and
@@ -396,5 +397,5 @@ Azure run last updated the row. IV and underlying are absent from that source co
 Azure
 tracked closing rows also lack field-specific broker session dates, so their
 off-hours date gate stays unverified. Actual-close and pre-07:35 local history
-have no Azure portfolio slot. Additional portfolio-only 13:15 contracts have
+have no Azure portfolio slot. Additional portfolio-only settle contracts have
 no Azure tracked counterpart.

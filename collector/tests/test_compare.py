@@ -8,7 +8,7 @@ from collector.config import Config
 
 def test_offhours_numeric_agreement_keeps_unknown_date_gate_separate():
     scheduled = datetime(2026, 10, 20, 20, 15, tzinfo=UTC)
-    run = dict(capture_kind="closing_1315", scheduled_at=scheduled, deadline=scheduled + timedelta(minutes=5))
+    run = dict(capture_kind="settle", scheduled_at=scheduled, deadline=scheduled + timedelta(minutes=5))
     local = dict(price_received_at=scheduled, mark_per_share=Decimal("1.1200001"), delta=None)
     source = dict(captured_at_utc=scheduled.replace(tzinfo=None), market_session="regular_close",
                   mark="1.12", delta="-.250000")
@@ -34,7 +34,7 @@ def test_wrong_source_run_and_purpose_cannot_prove_parity():
 def test_existing_comparator_is_immutable_and_never_refetched():
     repo = MagicMock()
     at = datetime(2026, 10, 20, 20, 15, tzinfo=UTC)
-    run = dict(capture_kind="closing_1315", scheduled_at=at,
+    run = dict(capture_kind="settle", scheduled_at=at,
                deadline=at + timedelta(minutes=5), session_date=at.date())
     observation = dict(source_key="original", source_payload={"missing": True}, observed_at=at)
     repo.execute.return_value.fetchone.side_effect = [run, {}]

@@ -34,7 +34,7 @@ def assess(run: dict, local: dict, source: dict, observed: datetime, dataset="tr
         reasons.append("azure_missing")
     if dataset == "portfolio_halfhour":
         reasons.append("source_run_write_timestamp_unavailable_daily_row_overwritten")
-    elif run["capture_kind"] != "closing_1315":
+    elif run["capture_kind"] != "settle":
         reasons.append("purpose_not_overlapping_tracked_1315")
     if dataset == "tracked_1315" and source.get("market_session") != "regular_close":
         reasons.append("source_purpose_unverified")
@@ -87,7 +87,7 @@ def compare(config, repo, run_id: int) -> dict:
         "SELECT * FROM public.azure_option_observation WHERE run_id=%s AND dataset='tracked_1315'",
         (run_id,),
     ).fetchall()
-    if not existing and run["capture_kind"] == "closing_1315":
+    if not existing and run["capture_kind"] == "settle":
         source = {str(row["contract_key"]).strip(): row
                   for row in comparator_rows(config.azure, run["session_date"])}
         received = now()

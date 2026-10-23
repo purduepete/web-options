@@ -22,7 +22,7 @@ def test_regular_session_slots():
     assert result[0].instant == datetime(2026, 10, 20, 13, 35, tzinfo=UTC)
     assert result[-2].kind == "close"
     assert result[-2].instant == datetime(2026, 10, 20, 20, tzinfo=UTC)
-    assert result[-1].kind == "closing_1315"
+    assert result[-1].kind == "settle"
     intraday = result[:-2]
     assert all(s.instant.minute % 10 == 5 for s in intraday)
     assert all(b.instant - a.instant == timedelta(minutes=10) for a, b in zip(intraday, intraday[1:]))
@@ -31,12 +31,12 @@ def test_regular_session_slots():
 
 def test_calendar_holiday_weekend_early_close_and_dst():
     holiday = slots(date(2026, 12, 25))
-    assert len(holiday) == 1 and holiday[0].kind == "closing_1315"
+    assert len(holiday) == 1 and holiday[0].kind == "settle"
     assert slots(date(2026, 10, 24)) == []
     early = slots(date(2026, 11, 27))
     assert len(early) == 23
     assert early[-2].instant == datetime(2026, 11, 27, 18, tzinfo=UTC)
-    assert early[-1].instant == datetime(2026, 11, 27, 21, 15, tzinfo=UTC)
+    assert early[-1].instant == datetime(2026, 11, 27, 21, 10, tzinfo=UTC)
     assert choose_slot(early[-2].deadline + timedelta(minutes=1), early, set()) is None
     assert slots(date(2026, 11, 2))[0].instant.hour == 14
     assert slots(date(2026, 10, 30))[0].instant.hour == 13
