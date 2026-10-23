@@ -225,6 +225,10 @@ describe('contract history page', () => {
         expect(screen.getByRole<HTMLAnchorElement>('link', { name: 'MSFT TradingView' }).href).toContain(
             'symbol=MSFT#'
         );
+        expect(api.dates.mock.calls.filter(([key]) => key === contract.key)).toHaveLength(1);
+        expect(api.dates.mock.calls.filter(([key]) => key === other.key)).toHaveLength(1);
+        fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+        await waitFor(() => expect(api.dates.mock.calls.filter(([key]) => key === other.key)).toHaveLength(2));
     });
     it('lists a contract under every date it was signaled and steps within the viewed date', async () => {
         const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400, tiers: ['balanced'] };

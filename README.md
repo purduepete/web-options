@@ -39,6 +39,9 @@ and top picks. Its calendar enables dates with signals and shows the number of
 contracts beneath each day. Arrow buttons step between signal dates.
 Seeking Alpha and TradingView links beside the selected contract open its
 underlying in new tabs, with the option context for the research overlays.
+Quotes are read fresh on every history request. Exchange schedules are reused
+for up to 5 minutes (at most 32 date ranges), avoiding a Python startup on each
+contract switch. Refresh also reloads the selected contract's available dates.
 
 This page reads PostgreSQL using the separate `sd_web_options_reader` login.
 It never uses the collector's writable credentials. Production settings require

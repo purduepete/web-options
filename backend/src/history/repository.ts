@@ -1,11 +1,10 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import type { PoolClient } from 'pg';
 import type { ContractSearchResponse, HistoryContract, HistoryPoint, HistoryResponse } from '@weboptions/shared';
 import type { AppConfig } from '../config';
 import { withHistory } from './db';
+import { readSchedule } from './schedule';
+import type { ScheduleSlot } from './schedule';
 
-const execute = promisify(execFile);
 export const MAX_DATES = 93;
 export const MAX_POINTS = 10000;
 
@@ -148,40 +147,6 @@ export async function historyDates(config: AppConfig, key: string): Promise<stri
         );
         return result.rows.map((row) => row.date);
     });
-}
-
-export interface ScheduleSlot {
-    sessionDate: string;
-    captureKind: string;
-    scheduledAt: string;
-}
-
-async function readSchedule(config: AppConfig, from: string, to: string): Promise<ScheduleSlot[]> {
-    if (!config.history?.python) throw new Error('History schedule executable is not configured');
-    const result = await execute(
-        config.history.python,
-        ['-m', 'collector.history_schedule', '--from', from, '--to', to],
-        { cwd: config.history.collectorRoot, timeout: 15000, maxBuffer: 2 * 1024 * 1024, windowsHide: true }
-    );
-    const value: unknown = JSON.parse(result.stdout);
-    if (
-        !Array.isArray(value) ||
-        value.length > MAX_POINTS ||
-        !value.every(
-            (slot: unknown) =>
-                typeof slot === 'object' &&
-                slot !== null &&
-                'sessionDate' in slot &&
-                typeof slot.sessionDate === 'string' &&
-                'captureKind' in slot &&
-                typeof slot.captureKind === 'string' &&
-                'scheduledAt' in slot &&
-                typeof slot.scheduledAt === 'string' &&
-                Number.isFinite(Date.parse(slot.scheduledAt))
-        )
-    )
-        throw new Error('Invalid history schedule output');
-    return value;
 }
 
 export interface QuoteRow {

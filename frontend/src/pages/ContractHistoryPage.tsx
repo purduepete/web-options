@@ -111,6 +111,7 @@ export function ContractHistoryPage() {
     const [revision, setRevision] = useState(0);
     const { lock } = useApiKey();
     const currentParams = useRef(params);
+    const loadedDates = useRef<{ key: string; revision: number; dates: string[] } | null>(null);
     currentParams.current = params;
 
     function update(changes: Record<string, string>) {
@@ -145,9 +146,15 @@ export function ContractHistoryPage() {
         const controller = new AbortController();
         setPending(true);
         setError('');
-        void getHistoryDates(key, controller.signal)
+        const cachedDates = loadedDates.current;
+        const datesRequest =
+            cachedDates?.key === key && cachedDates.revision === revision
+                ? Promise.resolve({ dates: cachedDates.dates })
+                : getHistoryDates(key, controller.signal);
+        void datesRequest
             .then((result) => {
                 if (controller.signal.aborted) return;
+                loadedDates.current = { key, revision, dates: result.dates };
                 setDates(result.dates);
                 const selectedFrom = from || result.dates[0];
                 if (!selectedFrom) {
