@@ -38,6 +38,12 @@ const byExpiration = (a: HistoryContract, b: HistoryContract) =>
     a.expiration.localeCompare(b.expiration) || a.symbol.localeCompare(b.symbol) || a.strike - b.strike;
 /** Every contract here is a put, so it is in the money once the underlying is below the strike. */
 const inTheMoney = (item: HistoryContract) => item.underlyingPrice !== null && item.underlyingPrice < item.strike;
+/** Measured against the strike, as webportfolio's strikePct is. */
+function strikeDistance(underlying: number, strike: number) {
+    const percent = ((underlying - strike) / strike) * 100;
+    if (Math.abs(percent) < 0.05) return `At the $${strike} strike`;
+    return `${Math.abs(percent).toFixed(1)}% ${percent > 0 ? 'above' : 'below'} the $${strike} strike${percent < 0 ? ' (ITM)' : ''}`;
+}
 
 interface AddedGroup {
     /** `yyyy-mm-dd`, or '' when the date added is unknown. */
@@ -454,6 +460,19 @@ export function ContractHistoryPage() {
                                 </small>
                             )}
                         </div>
+                        {history.contract.underlyingPrice !== null && (
+                            <div>
+                                <small>{history.contract.symbol} stock</small>
+                                <strong>{money(history.contract.underlyingPrice)}</strong>
+                                <span>{strikeDistance(history.contract.underlyingPrice, history.contract.strike)}</span>
+                                {history.contract.underlyingAt && (
+                                    <small>
+                                        {hasExpired(history.contract.expiration) ? 'Last captured ' : 'Captured '}
+                                        {pacificTime(history.contract.underlyingAt)}
+                                    </small>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div
                         className="history-chart"

@@ -32,6 +32,7 @@ const contract = {
     tiers: ['balanced', 'aggressive'],
     topPick: false,
     underlyingPrice: 160,
+    underlyingAt: '2026-10-23T20:10:00Z',
 };
 const result: HistoryResponse = {
     contract,
@@ -177,6 +178,9 @@ describe('contract history page', () => {
         api.search.mockResolvedValue({ items: [contract, itm], hasMore: false, unmappedContracts: 0 });
         const { container } = mount();
         await screen.findByText('-0.200');
+        expect(screen.getByText('AAPL stock')).toBeDefined();
+        expect(screen.getByText('$160.00')).toBeDefined();
+        expect(screen.getByText('6.7% above the $150 strike')).toBeDefined();
         await waitFor(() => expect(container.querySelectorAll('.history-contract-list button')).toHaveLength(2));
         const cards = [...container.querySelectorAll('.history-contract-list button')];
         expect(cards.map((card) => card.classList.contains('is-expired'))).toEqual([true, false]);
