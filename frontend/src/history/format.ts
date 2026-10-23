@@ -49,6 +49,11 @@ export function fitDomain(
     const pad = (high - low) * 0.1;
     return [Math.max(floor, low - pad), Math.min(ceiling, high + pad)];
 }
+/** `count` ticks at equal steps from the bottom of a domain to its top. */
+export function evenTicks([low, high]: readonly [number, number], count = 5): number[] {
+    if (!Number.isFinite(low) || !Number.isFinite(high) || count < 2) return [];
+    return Array.from({ length: count }, (_, index) => low + ((high - low) * index) / (count - 1));
+}
 /** `06:35` for one session, `10/23 06:35` across several. */
 export const axisTime = (value: number, withDate: boolean) => {
     const parts = pacificParts(value);

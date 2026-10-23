@@ -22,7 +22,14 @@ vi.mock('recharts', () => ({
     Line: ({ name }: { name: string }) => <span>{name}</span>,
 }));
 
-const contract = { key: 'AAPL  261030P00150000', symbol: 'AAPL', strike: 150, expiration: '2026-10-30' };
+const contract = {
+    key: 'AAPL  261030P00150000',
+    symbol: 'AAPL',
+    strike: 150,
+    expiration: '2026-10-30',
+    added: '2026-10-21',
+    tiers: ['balanced', 'aggressive'],
+};
 const result: HistoryResponse = {
     contract,
     from: '2026-10-23',
@@ -119,5 +126,6 @@ describe('contract history page', () => {
         fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'aapl' } });
         await waitFor(() => expect(api.search).toHaveBeenCalledWith('AAPL', 0, expect.any(AbortSignal)));
         await screen.findByText('Expires 10/30/2026');
+        expect(screen.getByText('Balanced, Aggressive · Added 10/21/2026')).toBeDefined();
     });
 });

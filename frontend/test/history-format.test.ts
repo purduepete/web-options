@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HistoryPoint } from '@weboptions/shared';
-import { axisTime, changeSummary, fitDomain, pacificTime, sessionLabel } from '../src/history/format';
+import { axisTime, changeSummary, evenTicks, fitDomain, pacificTime, sessionLabel } from '../src/history/format';
 
 function point(time: number, mark: number | null, delta: number | null): HistoryPoint {
     return {
@@ -47,5 +47,13 @@ describe('history summaries', () => {
         expect(flatHigh).toBeCloseTo(-0.188);
         expect(fitDomain([0.01], 0.1, [0, Infinity])[0]).toBe(0);
         expect(fitDomain([null], 0.02, [-1, 1])).toEqual([-1, 1]);
+    });
+    it('spaces axis ticks evenly from bottom to top', () => {
+        const ticks = evenTicks([2.68, 4.91]);
+        expect(ticks).toHaveLength(5);
+        expect(ticks[0]).toBe(2.68);
+        expect(ticks[4]).toBeCloseTo(4.91);
+        const steps = ticks.slice(1).map((tick, index) => tick - ticks[index]!);
+        for (const step of steps) expect(step).toBeCloseTo(0.5575);
     });
 });

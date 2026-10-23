@@ -3,6 +3,10 @@ export interface HistoryContract {
     symbol: string;
     expiration: string;
     strike: number;
+    /** First VADER signal date (`yyyy-mm-dd`), or when the contract was first seen. */
+    added: string | null;
+    /** Distinct lower-case VADER tiers across this contract's signals. */
+    tiers: string[];
 }
 
 export interface ContractSearchResponse {

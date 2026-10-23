@@ -31,10 +31,28 @@ interface ContractRow {
     symbol: string;
     expiration: string;
     strike: string;
+    added: string | null;
+    tiers: string[] | null;
 }
 
+const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tiers FROM eligible e
+ LEFT JOIN LATERAL (
+   SELECT COALESCE(min(g.report_date), min(v.first_seen))::text AS added,
+          array_agg(DISTINCT lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL) AS tiers
+   FROM public.vader_contract v LEFT JOIN public.vader_signal g ON g.contract_key=v.contract_key
+   WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
+               THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=e.contract_key
+ ) s ON true`;
+
 function contract(row: ContractRow): HistoryContract {
-    return { key: row.contract_key, symbol: row.symbol, expiration: row.expiration, strike: Number(row.strike) };
+    return {
+        key: row.contract_key,
+        symbol: row.symbol,
+        expiration: row.expiration,
+        strike: Number(row.strike),
+        added: row.added,
+        tiers: row.tiers ?? [],
+    };
 }
 
 export async function searchContracts(
@@ -45,8 +63,8 @@ export async function searchContracts(
 ): Promise<ContractSearchResponse> {
     return withHistory(config, async (db) => {
         const rows = await db.query<ContractRow>(
-            `${CONTRACTS} SELECT contract_key,symbol,expiration::text,strike FROM eligible
-             WHERE symbol ILIKE $1 ORDER BY symbol,expiration,strike,contract_key OFFSET $2 LIMIT $3`,
+            `${CONTRACTS} SELECT ${CONTRACT_COLUMNS}
+             WHERE e.symbol ILIKE $1 ORDER BY e.symbol,e.expiration,e.strike,e.contract_key OFFSET $2 LIMIT $3`,
             [`${query}%`, offset, limit + 1]
         );
         const unmapped = await db.query<{ count: string }>(
@@ -64,10 +82,9 @@ export async function searchContracts(
 }
 
 async function findContract(db: PoolClient, key: string): Promise<HistoryContract | null> {
-    const result = await db.query<ContractRow>(
-        `${CONTRACTS} SELECT contract_key,symbol,expiration::text,strike FROM eligible WHERE contract_key=$1`,
-        [key]
-    );
+    const result = await db.query<ContractRow>(`${CONTRACTS} SELECT ${CONTRACT_COLUMNS} WHERE e.contract_key=$1`, [
+        key,
+    ]);
     return result.rows[0] ? contract(result.rows[0]) : null;
 }
 

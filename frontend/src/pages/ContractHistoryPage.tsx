@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { ContractSearchResponse, HistoryPoint, HistoryResponse } from '@weboptions/shared';
+import { GROUP_LABELS } from '@weboptions/shared';
+import type {
+    ContractSearchResponse,
+    GroupId,
+    HistoryContract,
+    HistoryPoint,
+    HistoryResponse,
+} from '@weboptions/shared';
 import { UnauthorizedError } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
@@ -11,6 +18,7 @@ import {
     axisTime,
     changeSummary,
     deltaText,
+    evenTicks,
     fitDomain,
     money,
     pacificTime,
@@ -19,6 +27,12 @@ import {
     signedMoney,
 } from '../history/format';
 import './ContractHistoryPage.css';
+
+/** `Balanced · Added 10/21/2026`, or whichever half is known. */
+function contractMeta(item: HistoryContract): string {
+    const tiers = item.tiers.map((tier) => GROUP_LABELS[tier as GroupId] ?? tier).join(', ');
+    return [tiers, item.added && `Added ${sessionLabel(item.added)}`].filter(Boolean).join(' · ');
+}
 
 function TooltipBody({ point }: { point: HistoryPoint }) {
     return (
@@ -216,6 +230,7 @@ export function ContractHistoryPage() {
                                 {item.symbol} ${item.strike} put
                             </strong>
                             <span>Expires {sessionLabel(item.expiration)}</span>
+                            {contractMeta(item) && <small>{contractMeta(item)}</small>}
                         </button>
                     ))}
                 </div>
@@ -308,6 +323,8 @@ export function ContractHistoryPage() {
                                     yAxisId="price"
                                     width={48}
                                     domain={priceDomain}
+                                    ticks={evenTicks(priceDomain)}
+                                    interval={0}
                                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                                     tickFormatter={(value: number) => `$${value.toFixed(2)}`}
                                 />
@@ -316,6 +333,8 @@ export function ContractHistoryPage() {
                                     orientation="right"
                                     width={48}
                                     domain={deltaDomain}
+                                    ticks={evenTicks(deltaDomain)}
+                                    interval={0}
                                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                                     tickFormatter={(value: number) => value.toFixed(3)}
                                 />
