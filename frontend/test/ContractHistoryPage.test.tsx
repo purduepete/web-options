@@ -80,7 +80,8 @@ describe('contract history page', () => {
     });
     it('opens latest collected date with both axes, signed delta and coverage', async () => {
         const { container } = mount();
-        await screen.findByText('Latest delta -0.200');
+        await screen.findByText('-0.200');
+        expect(screen.getByRole('button', { name: 'Date: Fri, Oct 23' })).toBeDefined();
         expect(api.history).toHaveBeenCalledWith(contract.key, '2026-10-23', '2026-10-23', expect.any(AbortSignal));
         expect(screen.getByText('Axis price')).toBeDefined();
         expect(screen.getByText('Axis delta')).toBeDefined();
@@ -93,14 +94,19 @@ describe('contract history page', () => {
         await waitFor(() =>
             expect(api.history).toHaveBeenCalledWith(contract.key, '2026-10-21', '2026-10-23', expect.any(AbortSignal))
         );
-        expect(screen.getByLabelText('To (Pacific)')).toBeDefined();
+        const to = await screen.findByRole('button', { name: /^To: / });
+        fireEvent.click(to);
+        expect(screen.getAllByRole('menuitemradio').map((item) => item.textContent)).toEqual([
+            expect.stringContaining('2026-10-21'),
+            expect.stringContaining('2026-10-23, latest'),
+        ]);
     });
     it('reports history failures with retry', async () => {
         api.history.mockRejectedValueOnce(new Error('Contract history is unavailable.'));
         mount(`?contract=${encodeURIComponent(contract.key)}&from=2026-10-23`);
         await screen.findByRole('alert');
         fireEvent.click(screen.getByText('Retry'));
-        await screen.findByText('Latest mark $1.50');
+        await screen.findByText('$1.50');
     });
     it('shows an empty state for a known contract without observations', async () => {
         api.dates.mockResolvedValue({ dates: [] });

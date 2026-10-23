@@ -9,6 +9,24 @@ export const pacificTime = (value: number | string) =>
         minute: '2-digit',
         timeZoneName: 'short',
     });
+export const axisTime = (value: number, withDate: boolean) =>
+    new Date(value).toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        ...(withDate ? { month: 'short', day: 'numeric' } : {}),
+        hour: 'numeric',
+        minute: '2-digit',
+    });
+export const sessionLabel = (date: string) =>
+    new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
+        timeZone: 'UTC',
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+    });
+export const signedMoney = (value: number | null) =>
+    value === null ? 'Unavailable' : `${value < 0 ? '-' : '+'}$${Math.abs(value).toFixed(2)}`;
+export const signedDelta = (value: number | null) =>
+    value === null ? 'Unavailable' : `${value < 0 ? '' : '+'}${value.toFixed(3)}`;
 export const money = (value: number | null) => (value === null ? 'Unavailable' : `$${value.toFixed(2)}`);
 export const deltaText = (value: number | null) => (value === null ? 'Unavailable' : value.toFixed(3));
 

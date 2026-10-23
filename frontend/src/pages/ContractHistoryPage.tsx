@@ -7,8 +7,28 @@ import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
 import { Loading } from '../components/Loading';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
-import { changeSummary, deltaText, money, pacificTime } from '../history/format';
+import {
+    axisTime,
+    changeSummary,
+    deltaText,
+    money,
+    pacificTime,
+    sessionLabel,
+    signedDelta,
+    signedMoney,
+} from '../history/format';
 import './ContractHistoryPage.css';
+
+function TooltipBody({ point }: { point: HistoryPoint }) {
+    return (
+        <div className="history-tooltip">
+            <strong>{pacificTime(point.time)}</strong>
+            <span>Mark {money(point.mark)}</span>
+            <span>Delta {deltaText(point.delta)}</span>
+            {point.reason && <small>{point.reason}</small>}
+        </div>
+    );
+}
 
 function Observation({ point }: { point: HistoryPoint }) {
     return (
@@ -126,62 +146,74 @@ export function ContractHistoryPage() {
     const label = history
         ? `${history.contract.symbol} $${history.contract.strike} put, expires ${history.contract.expiration}`
         : '';
+    const dateOptions = (from && !dates.includes(from) ? [from, ...dates] : dates).map((date) => ({
+        value: date,
+        label: sessionLabel(date),
+        description: date === dates[0] ? `${date}, latest collected` : date,
+    }));
     return (
         <main className="history-page">
-            <div className="history-heading">
+            <div className="page-head history-head">
                 <h1>Contract History</h1>
-                <button type="button" onClick={() => setRevision((value) => value + 1)}>
-                    Refresh
-                </button>
-            </div>
-            <section className="history-controls" aria-label="Contract history controls">
-                <label>
-                    Find VADER contracts
-                    <input
-                        type="search"
-                        value={search}
-                        placeholder="Symbol, e.g. AAPL"
-                        maxLength={12}
-                        onChange={(event) => {
-                            setSearch(event.target.value.toUpperCase());
-                            setOffset(0);
-                        }}
-                    />
-                </label>
-                <ChoiceMenu
-                    name="View"
-                    icon={null}
-                    value={mode}
-                    options={[
-                        { value: 'day', label: 'Intraday', description: 'Every observation for one Pacific date' },
-                        { value: 'multi', label: 'Multi-day', description: 'Every observation across selected dates' },
-                    ]}
-                    onChange={(value) => update({ mode: value, to: from })}
-                />
-                {key && (
-                    <label>
-                        {mode === 'day' ? 'Pacific date' : 'From (Pacific)'}
-                        <input type="date" value={from} onChange={(event) => update({ from: event.target.value })} />
-                    </label>
-                )}
-                {key && mode === 'multi' && (
-                    <label>
-                        To (Pacific)
+                <div className="history-tools">
+                    <label className="symbol-filter">
+                        <span className="sr-only">Find VADER contracts</span>
                         <input
-                            type="date"
-                            value={to}
-                            min={from}
-                            onChange={(event) => update({ to: event.target.value })}
+                            type="search"
+                            value={search}
+                            placeholder="Find symbol"
+                            maxLength={12}
+                            onChange={(event) => {
+                                setSearch(event.target.value.toUpperCase());
+                                setOffset(0);
+                            }}
                         />
                     </label>
-                )}
-            </section>
+                    <ChoiceMenu
+                        name="View"
+                        icon={null}
+                        value={mode}
+                        options={[
+                            { value: 'day', label: 'Intraday', description: 'Every observation for one Pacific date' },
+                            {
+                                value: 'multi',
+                                label: 'Multi-day',
+                                description: 'Every observation across selected dates',
+                            },
+                        ]}
+                        onChange={(value) => update({ mode: value, to: from })}
+                    />
+                    {key && dateOptions.length > 0 && (
+                        <ChoiceMenu
+                            name={mode === 'day' ? 'Date' : 'From'}
+                            icon={null}
+                            value={from}
+                            options={dateOptions}
+                            onChange={(value) =>
+                                update(mode === 'multi' && value > to ? { from: value, to: value } : { from: value })
+                            }
+                        />
+                    )}
+                    {key && mode === 'multi' && dateOptions.length > 0 && (
+                        <ChoiceMenu
+                            name="To"
+                            icon={null}
+                            value={to}
+                            options={dateOptions.filter((option) => option.value >= from)}
+                            onChange={(value) => update({ to: value })}
+                        />
+                    )}
+                    <button type="button" className="history-refresh" onClick={() => setRevision((value) => value + 1)}>
+                        Refresh
+                    </button>
+                </div>
+            </div>
             {searchError && (
                 <p role="alert">
                     {searchError} <button onClick={() => setRevision((value) => value + 1)}>Retry</button>
                 </p>
             )}
-            <details className="history-contracts" open={!key}>
+            <details className="history-contracts" open={!key || !!search}>
                 <summary>{key ? 'Choose another contract' : 'Choose a contract (expired contracts included)'}</summary>
                 {contracts?.items.length === 0 && <p>No matching VADER contracts.</p>}
                 <div className="history-contract-list">
@@ -192,28 +224,28 @@ export function ContractHistoryPage() {
                             aria-pressed={item.key === key}
                             onClick={() => update({ contract: item.key, from: '', to: '' })}
                         >
-                            {item.symbol} ${item.strike} put <span>Expires {item.expiration}</span>
+                            <strong>
+                                {item.symbol} ${item.strike} put
+                            </strong>
+                            <span>Expires {item.expiration}</span>
                         </button>
                     ))}
                 </div>
-                <div className="history-pagination">
-                    <button disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 50))}>
-                        Previous contracts
-                    </button>
-                    <span>Page {offset / 50 + 1}</span>
-                    <button disabled={!contracts?.hasMore} onClick={() => setOffset(offset + 50)}>
-                        Next contracts
-                    </button>
-                </div>
+                {(offset > 0 || contracts?.hasMore) && (
+                    <div className="history-pagination">
+                        <button disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 50))}>
+                            Previous contracts
+                        </button>
+                        <span>Page {offset / 50 + 1}</span>
+                        <button disabled={!contracts?.hasMore} onClick={() => setOffset(offset + 50)}>
+                            Next contracts
+                        </button>
+                    </div>
+                )}
                 {!!contracts?.unmappedContracts && (
                     <p>{contracts.unmappedContracts} legacy VADER contracts have no verified broker mapping.</p>
                 )}
             </details>
-            {key && dates.length > 0 && (
-                <p className="history-dates">
-                    Collected dates: {dates.at(-1)} through {dates[0]}. All times Pacific.
-                </p>
-            )}
             {error && (
                 <p role="alert">
                     {error} <button onClick={() => setRevision((value) => value + 1)}>Retry</button>
@@ -225,17 +257,29 @@ export function ContractHistoryPage() {
                 <p>No usable observations have been collected for this contract.</p>
             )}
             {history && (
-                <section className="enter" aria-label="Contract price and delta history" aria-busy={pending}>
-                    <h2>{label}</h2>
-                    <p>
-                        {history.from} through {history.to}
-                        {stale ? ' (previous selection)' : ''}
-                    </p>
+                <section
+                    className="enter history-result"
+                    aria-label="Contract price and delta history"
+                    aria-busy={pending}
+                >
+                    <div className="history-title">
+                        <h2>{label}</h2>
+                        <p>
+                            {history.from === history.to
+                                ? sessionLabel(history.from)
+                                : `${sessionLabel(history.from)} to ${sessionLabel(history.to)}`}
+                            {stale ? ' (previous selection)' : ''}
+                            {dates.length > 0 &&
+                                `. Collected ${sessionLabel(dates.at(-1) ?? '')} to ${sessionLabel(dates[0] ?? '')}`}
+                            . All times Pacific.
+                        </p>
+                    </div>
                     <div className="history-stats">
                         <div>
-                            <strong>Latest mark {money(price.value)}</strong>
+                            <small>Mark</small>
+                            <strong>{money(price.value)}</strong>
                             <span>
-                                Change {money(price.change)}
+                                {signedMoney(price.change)}
                                 {price.percent !== null ? ` (${price.percent.toFixed(1)}%)` : ''}
                             </span>
                             {price.first && price.last && (
@@ -245,8 +289,9 @@ export function ContractHistoryPage() {
                             )}
                         </div>
                         <div>
-                            <strong>Latest delta {deltaText(delta.value)}</strong>
-                            <span>Delta change {deltaText(delta.change)}</span>
+                            <small>Delta</small>
+                            <strong>{deltaText(delta.value)}</strong>
+                            <span>{signedDelta(delta.change)}</span>
                             {delta.first && delta.last && (
                                 <small>
                                     {pacificTime(delta.first.time)} to {pacificTime(delta.last.time)}
@@ -268,7 +313,7 @@ export function ContractHistoryPage() {
                                     domain={['dataMin', 'dataMax']}
                                     scale="time"
                                     tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                    tickFormatter={(value: number) => pacificTime(value)}
+                                    tickFormatter={(value: number) => axisTime(value, history.from !== history.to)}
                                     minTickGap={50}
                                 />
                                 <YAxis
@@ -289,14 +334,10 @@ export function ContractHistoryPage() {
                                 <Tooltip
                                     content={({ active, payload }) => {
                                         const point = payload?.[0]?.payload as HistoryPoint | undefined;
-                                        return active && point ? (
-                                            <div className="history-tooltip">
-                                                <Observation point={point} />
-                                            </div>
-                                        ) : null;
+                                        return active && point ? <TooltipBody point={point} /> : null;
                                     }}
                                 />
-                                <Legend />
+                                <Legend wrapperStyle={{ fontSize: '0.72rem' }} />
                                 <Line
                                     yAxisId="price"
                                     name="Mark ($ / share)"
@@ -305,7 +346,7 @@ export function ContractHistoryPage() {
                                     stroke="var(--highlight)"
                                     strokeWidth={2}
                                     dot={{ r: 2 }}
-                                    activeDot={{ r: 4 }}
+                                    activeDot={{ r: 3 }}
                                     connectNulls={false}
                                     isAnimationActive={false}
                                 />

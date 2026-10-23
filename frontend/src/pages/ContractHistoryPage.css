@@ -1,98 +1,180 @@
 .history-page {
-    --history-delta: #c084fc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.85rem;
 }
-[data-theme='light'] .history-page {
-    --history-delta: #7e22ce;
+.history-page p {
+    margin: 0;
 }
-.history-heading,
-.history-controls,
+/* Every head control is built from the head recipe in LiveSignalsPage.css, so
+   the search box, the menus and Refresh come back one height. */
+.history-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0%;
+}
+.history-tools .symbol-filter input {
+    padding-right: 0.6rem;
+}
+.history-refresh {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+/* The date list grows by one per trading day. */
+.history-tools .choice-panel {
+    max-height: min(20rem, 60vh);
+    overflow-y: auto;
+}
+.history-page summary {
+    cursor: pointer;
+    padding-block: 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+.history-contract-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 0.4rem;
+    margin-block: 0.5rem;
+}
+.history-contract-list button {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+.history-contract-list button span {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+.history-contract-list button[aria-pressed='true'] {
+    border-color: var(--highlight);
+    color: var(--highlight);
+}
 .history-pagination {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.4rem;
+    font-size: 0.8rem;
 }
-.history-heading h1 {
-    margin-right: auto;
-}
-.history-heading button {
+.history-pagination button {
     padding: 0.3rem 0.6rem;
     font-size: 0.8rem;
 }
-.history-controls {
-    margin-block: 1rem;
-}
-.history-controls label {
+.history-result {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    flex: 1 1 12rem;
-    min-width: 0px;
-}
-.history-controls input,
-.history-readout input {
-    width: 100%;
-    min-width: 0px;
-    box-sizing: border-box;
-}
-.history-contracts,
-.history-stats,
-.history-readout {
-    margin-block: 1rem;
-}
-.history-contract-list,
-.history-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: 0.75rem;
 }
-.history-contract-list {
-    margin-block: 1rem;
+.history-title h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
 }
-.history-contract-list button {
-    text-align: left;
+.history-title p,
+.history-coverage {
+    color: var(--text-muted);
+    font-size: 0.72rem;
 }
-.history-contract-list button[aria-pressed='true'] {
-    border-color: var(--highlight);
-}
-.history-contract-list span,
-.history-stats span,
-.history-stats small,
-.history-observation span {
-    display: block;
+.history-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 0.5rem;
 }
 .history-stats > div,
 .history-readout {
-    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--surface);
     border: var(--border-width) solid var(--border);
+}
+.history-stats strong {
+    color: var(--text-heading);
+    font-size: 1.05rem;
+}
+.history-stats span {
+    font-size: 0.8rem;
+}
+.history-stats small {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+.history-stats small:first-child {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 .history-chart {
     width: 100%;
-    height: clamp(20rem, 50vh, 32rem);
+    height: clamp(16rem, 45vh, 26rem);
     min-width: 0px;
 }
 .history-tooltip {
-    background: var(--nav-bg);
-    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    max-width: min(80vw, 16rem);
+    padding: 0.4rem 0.6rem;
+    background: var(--surface);
     border: var(--border-width) solid var(--border);
-    padding: 0.75rem;
-    max-width: min(80vw, 24rem);
+    box-shadow: var(--shadow-xs);
+    color: var(--text);
+    font-size: 0.72rem;
     white-space: normal;
     overflow-wrap: anywhere;
 }
-.history-coverage,
-.history-dates {
+.history-tooltip strong {
+    color: var(--text-heading);
+}
+.history-tooltip small {
     color: var(--text-muted);
 }
-.history-observation {
-    overflow-wrap: anywhere;
-    line-height: 1.6;
+.history-readout label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8rem;
 }
-.history-page summary {
-    cursor: pointer;
-    padding-block: 0.75rem;
+.history-readout input {
+    width: 100%;
+    min-width: 0px;
+    padding: 0;
+}
+.history-observation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+.history-observation span {
+    color: var(--text-secondary);
 }
 @media (max-width: 640px) {
+    .history-tools,
+    .history-tools .symbol-filter,
+    .history-refresh {
+        flex: 1 1 100%;
+        max-width: none;
+    }
+    /* ChoiceMenu.css stacks its triggers at 44px here, so the search box and
+       Refresh take the same height, as the signals filters do. */
+    .history-refresh {
+        min-height: 44px;
+    }
+    .history-tools .symbol-filter input {
+        padding-block: 0;
+        line-height: calc(44px - 2 * var(--border-width));
+    }
     .history-contract-list,
     .history-stats {
         grid-template-columns: 1fr;
