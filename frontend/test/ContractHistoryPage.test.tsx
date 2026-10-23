@@ -30,6 +30,7 @@ const contract = {
     added: '2026-10-21',
     tier: 'balanced',
     tiers: ['balanced', 'aggressive'],
+    topPick: false,
 };
 const result: HistoryResponse = {
     contract,
@@ -129,37 +130,45 @@ describe('contract history page', () => {
         await screen.findByText('Expires 10/30/2026');
         expect(screen.getByText('Also Aggressive')).toBeDefined();
     });
-    it('groups contracts by date added, newest first, then by tier', async () => {
-        const make = (strike: number, added: string, tier: string | null) => ({
+    it('shows one date added at a time, top picks first, earliest expiration first', async () => {
+        const make = (strike: number, added: string, tier: string | null, expiration: string, topPick = false) => ({
             ...contract,
-            key: `AAPL  261030P00${strike}000`,
+            key: `AAPL  ${strike}`,
+            symbol: strike === 143 ? 'ZS' : 'AAPL',
             strike,
             added,
             tier,
+            expiration,
+            topPick,
             tiers: tier ? [tier] : [],
         });
         api.search.mockResolvedValue({
             items: [
-                make(140, '2026-10-20', 'aggressive'),
-                make(141, '2026-10-22', 'aggressive'),
-                make(142, '2026-10-22', null),
-                make(143, '2026-10-22', 'conservative'),
+                make(140, '2026-10-20', 'aggressive', '2026-11-20'),
+                make(141, '2026-10-22', 'aggressive', '2026-12-18'),
+                make(142, '2026-10-22', null, '2026-11-20'),
+                make(143, '2026-10-22', 'aggressive', '2026-11-06'),
+                make(144, '2026-10-22', 'balanced', '2026-11-20', true),
+                make(145, '2026-10-22', 'conservative', '2026-11-20'),
             ],
             hasMore: false,
             unmappedContracts: 0,
         });
         const { container } = mount('');
         await screen.findByText('Added 10/22/2026');
-        expect([...container.querySelectorAll('.history-added-group h3')].map((node) => node.textContent)).toEqual([
-            'Added 10/22/2026',
-            'Added 10/20/2026',
+        expect(container.querySelectorAll('.history-added-group')).toHaveLength(1);
+        const headings = () => [...container.querySelectorAll('h4')].map((node) => node.textContent);
+        expect(headings()).toEqual(['Top Picks 1', 'Conservative 1', 'Aggressive 2', 'Other 1']);
+        const aggressive = container.querySelectorAll('.history-tier-group')[2]!;
+        expect([...aggressive.querySelectorAll('strong')].map((node) => node.textContent)).toEqual([
+            'ZS $143 put',
+            'AAPL $141 put',
         ]);
-        const first = container.querySelector('.history-added-group')!;
-        expect([...first.querySelectorAll('h4')].map((node) => node.textContent)).toEqual([
-            'Conservative 1',
-            'Aggressive 1',
-            'Other 1',
-        ]);
-        expect(screen.queryByText(/Next contracts|Page 1/)).toBeNull();
+        expect(screen.getByText('Also Balanced')).toBeDefined();
+        expect(screen.getByRole('button', { name: 'Later date' }).hasAttribute('disabled')).toBe(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Earlier date' }));
+        await screen.findByText('Added 10/20/2026');
+        expect(headings()).toEqual(['Aggressive 1']);
+        expect(screen.getByRole('button', { name: 'Earlier date' }).hasAttribute('disabled')).toBe(true);
     });
 });

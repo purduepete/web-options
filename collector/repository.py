@@ -120,12 +120,13 @@ class Repository:
                 self.execute(
                     """
                     INSERT INTO public.vader_signal
-                    (source_id,contract_key,report_date,tier,advertised_premium_per_contract,
+                    (source_id,contract_key,report_date,tier,is_top_pick,advertised_premium_per_contract,
                      advertised_delta,entry_mark_per_share,entry_delta,entry_iv_fraction,source_payload)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     ON CONFLICT (source_id) DO UPDATE SET
                         contract_key=EXCLUDED.contract_key,report_date=EXCLUDED.report_date,
-                        tier=EXCLUDED.tier,advertised_premium_per_contract=EXCLUDED.advertised_premium_per_contract,
+                        tier=EXCLUDED.tier,is_top_pick=EXCLUDED.is_top_pick,
+                        advertised_premium_per_contract=EXCLUDED.advertised_premium_per_contract,
                         advertised_delta=EXCLUDED.advertised_delta,entry_mark_per_share=EXCLUDED.entry_mark_per_share,
                         entry_delta=EXCLUDED.entry_delta,entry_iv_fraction=EXCLUDED.entry_iv_fraction,
                         source_payload=EXCLUDED.source_payload,source_current=true,synced_at=CURRENT_TIMESTAMP
@@ -135,6 +136,7 @@ class Repository:
                         contract.key,
                         row["report_date"],
                         row["tier"],
+                        bool(row.get("is_top_pick")),
                         row["premium"],
                         row["advertised_delta"],
                         row["entry_mark_per_share"],

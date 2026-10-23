@@ -9,6 +9,8 @@ export interface HistoryContract {
     tier: string | null;
     /** Distinct lower-case VADER tiers across this contract's signals. */
     tiers: string[];
+    /** VADER named it a top pick on its first signal date. */
+    topPick: boolean;
 }
 
 export interface ContractSearchResponse {

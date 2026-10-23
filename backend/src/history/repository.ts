@@ -34,14 +34,17 @@ interface ContractRow {
     added: string | null;
     tier: string | null;
     tiers: string[] | null;
+    top_pick: boolean | null;
 }
 
-const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers FROM eligible e
+const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers,s.top_pick FROM eligible e
  LEFT JOIN LATERAL (
    SELECT COALESCE(min(g.report_date), min(v.first_seen))::text AS added,
           (array_agg(lower(g.tier) ORDER BY g.report_date, lower(g.tier))
              FILTER (WHERE g.tier IS NOT NULL))[1] AS tier,
-          array_agg(DISTINCT lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL) AS tiers
+          array_agg(DISTINCT lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL) AS tiers,
+          (array_agg(g.is_top_pick ORDER BY g.report_date, g.is_top_pick DESC)
+             FILTER (WHERE g.report_date IS NOT NULL))[1] AS top_pick
    FROM public.vader_contract v LEFT JOIN public.vader_signal g ON g.contract_key=v.contract_key
    WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
                THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=e.contract_key
@@ -56,6 +59,7 @@ function contract(row: ContractRow): HistoryContract {
         added: row.added,
         tier: row.tier,
         tiers: row.tiers ?? [],
+        topPick: row.top_pick === true,
     };
 }
 
@@ -70,8 +74,9 @@ export async function searchContracts(
             `${CONTRACTS} SELECT ${CONTRACT_COLUMNS}
              WHERE e.symbol ILIKE $1
              ORDER BY s.added DESC NULLS LAST,
-               CASE s.tier WHEN 'conservative' THEN 1 WHEN 'balanced' THEN 2 WHEN 'aggressive' THEN 3 ELSE 4 END,
-               e.symbol,e.expiration,e.strike,e.contract_key
+               CASE WHEN s.top_pick THEN 0 WHEN s.tier='conservative' THEN 1 WHEN s.tier='balanced' THEN 2
+                    WHEN s.tier='aggressive' THEN 3 ELSE 4 END,
+               e.expiration,e.symbol,e.strike,e.contract_key
              OFFSET $2 LIMIT $3`,
             [`${query}%`, offset, limit + 1]
         );

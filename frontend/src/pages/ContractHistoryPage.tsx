@@ -12,6 +12,7 @@ import type {
 import { UnauthorizedError } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
+import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
 import {
@@ -29,34 +30,44 @@ import {
 import './ContractHistoryPage.css';
 
 const tierLabel = (tier: string) => GROUP_LABELS[tier as GroupId] ?? 'Other';
-const tierRank = (tier: string) => {
-    const rank = (TIER_ORDER as readonly string[]).indexOf(tier);
-    return rank < 0 ? TIER_ORDER.length : rank;
-};
+const GROUP_ORDER: readonly string[] = ['top-picks', ...TIER_ORDER, 'other'];
+const groupOf = (item: HistoryContract) =>
+    item.topPick ? 'top-picks' : item.tier && TIER_ORDER.includes(item.tier as never) ? item.tier : 'other';
+const byExpiration = (a: HistoryContract, b: HistoryContract) =>
+    a.expiration.localeCompare(b.expiration) || a.symbol.localeCompare(b.symbol) || a.strike - b.strike;
 
 interface AddedGroup {
-    added: string | null;
+    /** `yyyy-mm-dd`, or '' when the date added is unknown. */
+    added: string;
+    count: number;
     tiers: { tier: string; items: HistoryContract[] }[];
 }
 
-/** Newest date added first; within a date, conservative to aggressive, then the rest. */
+/**
+ * Newest date added first. Within a date: top picks, conservative to aggressive,
+ * then the rest; within a group, earliest expiration first, then symbol.
+ * A top pick appears only under Top Picks, as on the live signals page.
+ */
 function groupByAdded(items: readonly HistoryContract[]): AddedGroup[] {
     const days = new Map<string, Map<string, HistoryContract[]>>();
     for (const item of items) {
         const day = days.get(item.added ?? '') ?? new Map<string, HistoryContract[]>();
         days.set(item.added ?? '', day);
-        const tier = item.tier && tierRank(item.tier) < TIER_ORDER.length ? item.tier : 'other';
-        day.set(tier, [...(day.get(tier) ?? []), item]);
+        const group = groupOf(item);
+        day.set(group, [...(day.get(group) ?? []), item]);
     }
     return [...days]
         .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : b.localeCompare(a)))
         .map(([added, tiers]) => ({
-            added: added || null,
+            added,
+            count: [...tiers.values()].reduce((total, grouped) => total + grouped.length, 0),
             tiers: [...tiers]
-                .sort(([a], [b]) => tierRank(a) - tierRank(b))
-                .map(([tier, grouped]) => ({ tier, items: grouped })),
+                .sort(([a], [b]) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b))
+                .map(([tier, grouped]) => ({ tier, items: grouped.sort(byExpiration) })),
         }));
 }
+
+const addedLabel = (added: string) => (added ? `Added ${sessionLabel(added)}` : 'Date added unknown');
 
 function TooltipBody({ point }: { point: HistoryPoint }) {
     return (
@@ -78,6 +89,7 @@ export function ContractHistoryPage() {
     const from = params.get('from') ?? '';
     const to = mode === 'day' ? from : (params.get('to') ?? from);
     const [search, setSearch] = useState('');
+    const [addedDay, setAddedDay] = useState<string | null>(null);
     const [contracts, setContracts] = useState<ContractSearchResponse | null>(null);
     const [history, setHistory] = useState<HistoryResponse | null>(null);
     const [dates, setDates] = useState<string[]>([]);
@@ -176,6 +188,15 @@ export function ContractHistoryPage() {
         label: sessionLabel(date),
         description: date === dates[0] ? 'Latest collected' : '',
     }));
+    const days = groupByAdded(contracts?.items ?? []);
+    // Open on the chosen date, else the selected contract's date, else the newest.
+    const chosen = days.findIndex((option) => option.added === addedDay);
+    const owning = days.findIndex((option) =>
+        option.tiers.some((group) => group.items.some((item) => item.key === key))
+    );
+    const dayIndex = chosen >= 0 ? chosen : Math.max(owning, 0);
+    const day = days[dayIndex];
+    const goToDay = (index: number) => setAddedDay(days[index]?.added ?? null);
     return (
         <main className="history-page">
             <div className="page-head history-head">
@@ -188,7 +209,10 @@ export function ContractHistoryPage() {
                             value={search}
                             placeholder="Find symbol"
                             maxLength={12}
-                            onChange={(event) => setSearch(event.target.value.toUpperCase())}
+                            onChange={(event) => {
+                                setSearch(event.target.value.toUpperCase());
+                                setAddedDay(null);
+                            }}
                         />
                     </label>
                     <ChoiceMenu
@@ -238,9 +262,60 @@ export function ContractHistoryPage() {
             <details className="history-contracts" open={!key || !!search}>
                 <summary>{key ? 'Choose another contract' : 'Choose a contract (expired contracts included)'}</summary>
                 {contracts?.items.length === 0 && <p>No matching VADER contracts.</p>}
-                {groupByAdded(contracts?.items ?? []).map((day) => (
-                    <section key={day.added ?? 'unknown'} className="history-added-group">
-                        <h3>{day.added ? `Added ${sessionLabel(day.added)}` : 'Date added unknown'}</h3>
+                {day && (
+                    <section className="history-added-group">
+                        <div className="history-day-nav week-nav">
+                            <div className="week-steps">
+                                <button
+                                    type="button"
+                                    aria-label="Oldest date"
+                                    title="Oldest date"
+                                    disabled={dayIndex === days.length - 1}
+                                    onClick={() => goToDay(days.length - 1)}
+                                >
+                                    <ChevronFirstIcon />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Earlier date"
+                                    title="Earlier date"
+                                    disabled={dayIndex === days.length - 1}
+                                    onClick={() => goToDay(dayIndex + 1)}
+                                >
+                                    <ChevronLeftIcon />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Later date"
+                                    title="Later date"
+                                    disabled={dayIndex === 0}
+                                    onClick={() => goToDay(dayIndex - 1)}
+                                >
+                                    <ChevronRightIcon />
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Newest date"
+                                    title="Newest date"
+                                    disabled={dayIndex === 0}
+                                    onClick={() => goToDay(0)}
+                                >
+                                    <ChevronLastIcon />
+                                </button>
+                            </div>
+                            <ChoiceMenu
+                                name="Added"
+                                icon={null}
+                                value={day.added}
+                                options={days.map((option) => ({
+                                    value: option.added,
+                                    label: option.added ? sessionLabel(option.added) : 'Unknown',
+                                    description: `${option.count} contract${option.count === 1 ? '' : 's'}`,
+                                }))}
+                                onChange={setAddedDay}
+                            />
+                        </div>
+                        <h3 className="sr-only">{addedLabel(day.added)}</h3>
                         {day.tiers.map((group) => (
                             <div key={group.tier} className="history-tier-group">
                                 <h4>
@@ -270,7 +345,7 @@ export function ContractHistoryPage() {
                             </div>
                         ))}
                     </section>
-                ))}
+                )}
                 {contracts?.hasMore && <p>Showing the newest 1,000 contracts. Search a symbol to narrow the list.</p>}
                 {!!contracts?.unmappedContracts && (
                     <p>{contracts.unmappedContracts} legacy VADER contracts have no verified broker mapping.</p>

@@ -206,3 +206,23 @@ def test_completed_recovery_clears_unresolved_heartbeat():
         runs.pop()
         assert tick(config, at) == 0
         repo.heartbeat.assert_called_with("unresolved_capture", clear=False)
+
+
+def test_sync_writes_signal_top_pick():
+    assert "s.is_top_pick" in QUERY
+    repo = Repository.__new__(Repository)
+    repo.connection = MagicMock()
+    repo.execute = MagicMock()
+    rows = [
+        normalize(dict(source_id=f"sig-{top}", contract_key=f"KEY{top}", symbol="GM",
+                       expiration=date(2026, 11, 20), strike=74, report_date=date(2026, 10, 23),
+                       tier="Balanced", is_top_pick=top, premium=Decimal("1"),
+                       advertised_delta=Decimal("-0.2"), entry_mark_per_share=None,
+                       entry_delta=None, entry_iv=None), "signal")
+        for top in (True, False)
+    ]
+    repo.sync(rows, date(2026, 10, 23))
+    inserts = [call.args for call in repo.execute.call_args_list
+               if "INSERT INTO public.vader_signal\n" in call.args[0]]
+    assert all("is_top_pick=EXCLUDED.is_top_pick" in query for query, _ in inserts)
+    assert [args[4] for _, args in inserts] == [True, False]

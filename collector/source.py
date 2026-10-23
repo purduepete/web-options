@@ -7,7 +7,7 @@ from .model import Contract
 
 QUERY = """
 SELECT s.signal_key AS source_id, s.contract_key, s.symbol, s.expiration, s.strike,
-       s.report_date, COALESCE(s.tier, s.profile) AS tier, s.premium,
+       s.report_date, COALESCE(s.tier, s.profile) AS tier, s.is_top_pick, s.premium,
        s.annualized_yield, s.collateral, s.dte,
        s.delta AS advertised_delta, q.mark AS entry_mark_per_share,
        q.delta AS entry_delta, q.implied_volatility AS entry_iv,
