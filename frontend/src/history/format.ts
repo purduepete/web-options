@@ -1,28 +1,43 @@
 import type { HistoryPoint } from '@weboptions/shared';
 
-export const pacificTime = (value: number | string) =>
-    new Date(value).toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZoneName: 'short',
-    });
-export const axisTime = (value: number, withDate: boolean) =>
-    new Date(value).toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        ...(withDate ? { month: 'short', day: 'numeric' } : {}),
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-export const sessionLabel = (date: string) =>
-    new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
-        timeZone: 'UTC',
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-    });
+const PACIFIC_PARTS = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZoneName: 'short',
+});
+
+function pacificParts(value: number | string) {
+    const parts = Object.fromEntries(
+        PACIFIC_PARTS.formatToParts(new Date(value)).map((part) => [part.type, part.value])
+    );
+    return {
+        date: `${parts.month}/${parts.day}`,
+        year: parts.year,
+        time: `${parts.hour}:${parts.minute}`,
+        zone: parts.timeZoneName,
+    };
+}
+
+/** `10/23/2026 06:35 PDT`. */
+export const pacificTime = (value: number | string) => {
+    const parts = pacificParts(value);
+    return `${parts.date}/${parts.year} ${parts.time} ${parts.zone}`;
+};
+/** `06:35` for one session, `10/23 06:35` across several. */
+export const axisTime = (value: number, withDate: boolean) => {
+    const parts = pacificParts(value);
+    return withDate ? `${parts.date} ${parts.time}` : parts.time;
+};
+/** A collected session date, `2026-10-23` in, `10/23/2026` out. */
+export const sessionLabel = (date: string) => {
+    const [year, month, day] = date.split('-');
+    return year && month && day ? `${month}/${day}/${year}` : date;
+};
 export const signedMoney = (value: number | null) =>
     value === null ? 'Unavailable' : `${value < 0 ? '-' : '+'}$${Math.abs(value).toFixed(2)}`;
 export const signedDelta = (value: number | null) =>

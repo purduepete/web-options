@@ -81,7 +81,7 @@ describe('contract history page', () => {
     it('opens latest collected date with both axes, signed delta and coverage', async () => {
         const { container } = mount();
         await screen.findByText('-0.200');
-        expect(screen.getByRole('button', { name: 'Date: Fri, Oct 23' })).toBeDefined();
+        expect(screen.getByRole('button', { name: 'Date: 10/23/2026' })).toBeDefined();
         expect(api.history).toHaveBeenCalledWith(contract.key, '2026-10-23', '2026-10-23', expect.any(AbortSignal));
         expect(screen.getByText('Axis price')).toBeDefined();
         expect(screen.getByText('Axis delta')).toBeDefined();
@@ -97,8 +97,8 @@ describe('contract history page', () => {
         const to = await screen.findByRole('button', { name: /^To: / });
         fireEvent.click(to);
         expect(screen.getAllByRole('menuitemradio').map((item) => item.textContent)).toEqual([
-            expect.stringContaining('2026-10-21'),
-            expect.stringContaining('2026-10-23, latest'),
+            expect.stringContaining('10/21/2026'),
+            expect.stringContaining('10/23/2026Latest collected'),
         ]);
     });
     it('reports history failures with retry', async () => {
@@ -118,6 +118,6 @@ describe('contract history page', () => {
         mount('');
         fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'aapl' } });
         await waitFor(() => expect(api.search).toHaveBeenCalledWith('AAPL', 0, expect.any(AbortSignal)));
-        await screen.findByText('Expires 2026-10-30');
+        await screen.findByText('Expires 10/30/2026');
     });
 });

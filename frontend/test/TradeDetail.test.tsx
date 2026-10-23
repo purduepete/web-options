@@ -205,7 +205,7 @@ describe('TradeDetail', () => {
         expect(screen.getByText(/\+\$35/)).toBeTruthy();
         // The best and the worst are a pair, and read the same way as the running figure.
         expect(screen.getByText('+41.9%')).toBeTruthy();
-        expect(screen.getByText(/\+\$65, Aug 19/)).toBeTruthy();
+        expect(screen.getByText(/\+\$65, 08\/19/)).toBeTruthy();
         expect(screen.getByText('+7.7%')).toBeTruthy();
         expect(screen.getByText(/\+\$12/)).toBeTruthy();
         // Never settled, so no expiration verdict is offered.

@@ -144,12 +144,12 @@ export function ContractHistoryPage() {
     const delta = changeSummary(history?.points ?? [], 'delta');
     const stale = !!history && (history.contract.key !== key || history.from !== from || history.to !== to);
     const label = history
-        ? `${history.contract.symbol} $${history.contract.strike} put, expires ${history.contract.expiration}`
+        ? `${history.contract.symbol} $${history.contract.strike} put, expires ${sessionLabel(history.contract.expiration)}`
         : '';
     const dateOptions = (from && !dates.includes(from) ? [from, ...dates] : dates).map((date) => ({
         value: date,
         label: sessionLabel(date),
-        description: date === dates[0] ? `${date}, latest collected` : date,
+        description: date === dates[0] ? 'Latest collected' : '',
     }));
     return (
         <main className="history-page">
@@ -227,7 +227,7 @@ export function ContractHistoryPage() {
                             <strong>
                                 {item.symbol} ${item.strike} put
                             </strong>
-                            <span>Expires {item.expiration}</span>
+                            <span>Expires {sessionLabel(item.expiration)}</span>
                         </button>
                     ))}
                 </div>

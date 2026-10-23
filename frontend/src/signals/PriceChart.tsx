@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { SymbolBar } from '@weboptions/shared';
+import { formatMDY } from './format';
 import './PriceChart.css';
 
 /**
@@ -167,7 +168,7 @@ export function PriceChart({ bars, sma50, sma200, strike, symbol }: PriceChartPr
                     <tbody>
                         {monthTicks.map(({ bar }) => (
                             <tr key={bar.date}>
-                                <th scope="row">{bar.date}</th>
+                                <th scope="row">{formatMDY(bar.date)}</th>
                                 <td>{formatPrice(bar.close)}</td>
                             </tr>
                         ))}

@@ -70,7 +70,7 @@ describe('groupCalendarTrades', () => {
 
 describe('weekRangeLabel', () => {
     it('reads as a range of days', () => {
-        expect(weekRangeLabel('2026-08-10', '2026-08-14')).toBe('Aug 10 – Aug 14');
+        expect(weekRangeLabel('2026-08-10', '2026-08-14')).toBe('08/10 – 08/14');
     });
 });
 

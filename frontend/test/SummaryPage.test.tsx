@@ -211,7 +211,7 @@ describe('SummaryPage', () => {
     it('links each week straight into the grid', async () => {
         renderPage();
 
-        const link = await screen.findByRole('link', { name: /Week of Aug 10/ });
+        const link = await screen.findByRole('link', { name: /Week of 08\/10/ });
 
         expect(link.getAttribute('href')).toBe('/?week=2026-08-10');
     });

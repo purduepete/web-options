@@ -11,30 +11,25 @@ const MONEY = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const CENTS = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const COMPACT_MONEY = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 });
 const THOUSANDS = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
-const PADDED_DAY = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' });
 
 /** What every figure in the app prints when it has no value. */
 export const EMPTY = '–';
 
-function toLocalDate(iso: string): Date {
-    const [year, month, day] = iso.split('-').map(Number);
-    return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
-}
-
-/** `2025-08-11` becomes `Aug 11`. */
+/** `2025-08-11` becomes `08/11`, for day heads and ranges where the year is already plain. */
 export function formatDayLabel(iso: string): string {
-    return toLocalDate(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const [, month, day] = iso.split('-');
+    return `${month}/${day}`;
 }
 
 /** Zero-padded, so the title keeps one width as the weeks step past. */
 export function formatWeekTitle(weekStart: string, weekEnd: string): string {
-    return `Week of ${PADDED_DAY.format(toLocalDate(weekStart))} – ${PADDED_DAY.format(toLocalDate(weekEnd))}`;
+    return `Week of ${formatDayLabel(weekStart)} – ${formatDayLabel(weekEnd)}`;
 }
 
 /** A whole title's worth of room, held open while the real week is still loading. */
 export const WEEK_TITLE_SPACER = formatWeekTitle('2026-08-17', '2026-08-21');
 
-/** Expiries are read at a glance, so they keep the US month-first shape. */
+/** Every full date in the app reads `mm/dd/yyyy`. */
 export function formatMDY(iso: string | null): string {
     if (!iso) return EMPTY;
     const [year, month, day] = iso.split('-');

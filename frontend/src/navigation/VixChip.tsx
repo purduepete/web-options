@@ -1,7 +1,7 @@
 import { VIX_CALM_BELOW, VIX_DEAD_BELOW } from '@weboptions/shared';
 import { TrendingDownIcon, TrendingUpIcon } from '../components/icons';
 import { useVix } from '../grade/VixProvider';
-import { formatDayLabel } from '../signals/format';
+import { formatMDY } from '../signals/format';
 import './VixChip.css';
 
 /**
@@ -55,7 +55,7 @@ export function VixChip() {
             aria-hidden={vix ? undefined : true}
             title={
                 vix
-                    ? `VIX closed at ${vix.value.toFixed(2)} on ${formatDayLabel(vix.asOf)}` +
+                    ? `VIX closed at ${vix.value.toFixed(2)} on ${formatMDY(vix.asOf)}` +
                       `${actualChange === null ? '' : `, ${actualChange} on the session before`}. ` +
                       `Below ${VIX_CALM_BELOW} grades yellow and below ${VIX_DEAD_BELOW} red: premium is thin.`
                     : undefined

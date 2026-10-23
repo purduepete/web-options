@@ -109,14 +109,14 @@ describe('CalendarWeekPage', () => {
         await screen.findByRole('heading', { name: 'Rally week' });
 
         // The range is the heading's job when there is no title, not a subtitle's.
-        expect(screen.queryByText(/Aug 10 – Aug 14 ·/)).toBeNull();
+        expect(screen.queryByText(/08\/10 – 08\/14 ·/)).toBeNull();
         expect(container.querySelector('.macro-banner > :last-child')?.className).toBe('macro-meta');
     });
 
     it('falls back to the week range when the newsletter had no title', async () => {
         fetchCalendar.mockResolvedValue(calendar({ title: null }));
         renderWeek();
-        expect(await screen.findByRole('heading', { name: 'Week of Aug 10 – Aug 14' })).toBeTruthy();
+        expect(await screen.findByRole('heading', { name: 'Week of 08/10 – 08/14' })).toBeTruthy();
     });
 
     it('says nothing until it knows the week, rather than naming itself twice', () => {
@@ -131,10 +131,10 @@ describe('CalendarWeekPage', () => {
         fetchCalendar.mockResolvedValue(calendar());
         renderWeek();
 
-        const monday = await screen.findByRole('region', { name: 'Monday Aug 10' });
+        const monday = await screen.findByRole('region', { name: 'Monday 08/10' });
         expect(within(monday).getByText('Sell puts on steady names.')).toBeTruthy();
 
-        const wednesday = screen.getByRole('region', { name: 'Wednesday Aug 12' });
+        const wednesday = screen.getByRole('region', { name: 'Wednesday 08/12' });
         expect(within(wednesday).getByText('Key event: July CPI release.')).toBeTruthy();
     });
 
@@ -142,7 +142,7 @@ describe('CalendarWeekPage', () => {
         fetchCalendar.mockResolvedValue(calendar());
         renderWeek();
 
-        const monday = await screen.findByRole('region', { name: 'Monday Aug 10' });
+        const monday = await screen.findByRole('region', { name: 'Monday 08/10' });
         expect(
             within(monday)
                 .getAllByRole('heading', { level: 3 })
@@ -158,7 +158,7 @@ describe('CalendarWeekPage', () => {
         fetchCalendar.mockResolvedValue(calendar());
         renderWeek();
 
-        const wednesday = await screen.findByRole('region', { name: 'Wednesday Aug 12' });
+        const wednesday = await screen.findByRole('region', { name: 'Wednesday 08/12' });
         expect(within(wednesday).getByText('No new positions scheduled. Follow the rule above.')).toBeTruthy();
     });
 
