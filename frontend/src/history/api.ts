@@ -17,8 +17,8 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-export const searchHistoryContracts = (query: string, offset: number, signal?: AbortSignal) =>
-    get<ContractSearchResponse>(`/contracts?${new URLSearchParams({ q: query, offset: String(offset) })}`, signal);
+export const searchHistoryContracts = (query: string, signal?: AbortSignal) =>
+    get<ContractSearchResponse>(`/contracts?${new URLSearchParams({ q: query })}`, signal);
 export const getHistoryDates = (key: string, signal?: AbortSignal) =>
     get<{ dates: string[] }>(`/${encodeURIComponent(key)}/dates`, signal);
 export const getContractHistory = (key: string, from: string, to: string, signal?: AbortSignal) =>

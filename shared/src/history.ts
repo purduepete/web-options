@@ -5,6 +5,8 @@ export interface HistoryContract {
     strike: number;
     /** First VADER signal date (`yyyy-mm-dd`), or when the contract was first seen. */
     added: string | null;
+    /** Lower-case VADER tier on the contract's first signal; its group in the picker. */
+    tier: string | null;
     /** Distinct lower-case VADER tiers across this contract's signals. */
     tiers: string[];
 }

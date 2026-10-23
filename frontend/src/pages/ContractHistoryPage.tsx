@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { GROUP_LABELS } from '@weboptions/shared';
+import { GROUP_LABELS, TIER_ORDER } from '@weboptions/shared';
 import type {
     ContractSearchResponse,
     GroupId,
@@ -28,10 +28,34 @@ import {
 } from '../history/format';
 import './ContractHistoryPage.css';
 
-/** `Balanced · Added 10/21/2026`, or whichever half is known. */
-function contractMeta(item: HistoryContract): string {
-    const tiers = item.tiers.map((tier) => GROUP_LABELS[tier as GroupId] ?? tier).join(', ');
-    return [tiers, item.added && `Added ${sessionLabel(item.added)}`].filter(Boolean).join(' · ');
+const tierLabel = (tier: string) => GROUP_LABELS[tier as GroupId] ?? 'Other';
+const tierRank = (tier: string) => {
+    const rank = (TIER_ORDER as readonly string[]).indexOf(tier);
+    return rank < 0 ? TIER_ORDER.length : rank;
+};
+
+interface AddedGroup {
+    added: string | null;
+    tiers: { tier: string; items: HistoryContract[] }[];
+}
+
+/** Newest date added first; within a date, conservative to aggressive, then the rest. */
+function groupByAdded(items: readonly HistoryContract[]): AddedGroup[] {
+    const days = new Map<string, Map<string, HistoryContract[]>>();
+    for (const item of items) {
+        const day = days.get(item.added ?? '') ?? new Map<string, HistoryContract[]>();
+        days.set(item.added ?? '', day);
+        const tier = item.tier && tierRank(item.tier) < TIER_ORDER.length ? item.tier : 'other';
+        day.set(tier, [...(day.get(tier) ?? []), item]);
+    }
+    return [...days]
+        .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : b.localeCompare(a)))
+        .map(([added, tiers]) => ({
+            added: added || null,
+            tiers: [...tiers]
+                .sort(([a], [b]) => tierRank(a) - tierRank(b))
+                .map(([tier, grouped]) => ({ tier, items: grouped })),
+        }));
 }
 
 function TooltipBody({ point }: { point: HistoryPoint }) {
@@ -54,7 +78,6 @@ export function ContractHistoryPage() {
     const from = params.get('from') ?? '';
     const to = mode === 'day' ? from : (params.get('to') ?? from);
     const [search, setSearch] = useState('');
-    const [offset, setOffset] = useState(0);
     const [contracts, setContracts] = useState<ContractSearchResponse | null>(null);
     const [history, setHistory] = useState<HistoryResponse | null>(null);
     const [dates, setDates] = useState<string[]>([]);
@@ -79,7 +102,7 @@ export function ContractHistoryPage() {
         const controller = new AbortController();
         const timer = setTimeout(() => {
             setSearchError('');
-            void searchHistoryContracts(search, offset, controller.signal)
+            void searchHistoryContracts(search, controller.signal)
                 .then(setContracts)
                 .catch((failure: unknown) => {
                     if (controller.signal.aborted) return;
@@ -91,7 +114,7 @@ export function ContractHistoryPage() {
             clearTimeout(timer);
             controller.abort();
         };
-    }, [search, offset, revision, lock]);
+    }, [search, revision, lock]);
 
     useEffect(() => {
         if (!key) return;
@@ -165,10 +188,7 @@ export function ContractHistoryPage() {
                             value={search}
                             placeholder="Find symbol"
                             maxLength={12}
-                            onChange={(event) => {
-                                setSearch(event.target.value.toUpperCase());
-                                setOffset(0);
-                            }}
+                            onChange={(event) => setSearch(event.target.value.toUpperCase())}
                         />
                     </label>
                     <ChoiceMenu
@@ -218,33 +238,40 @@ export function ContractHistoryPage() {
             <details className="history-contracts" open={!key || !!search}>
                 <summary>{key ? 'Choose another contract' : 'Choose a contract (expired contracts included)'}</summary>
                 {contracts?.items.length === 0 && <p>No matching VADER contracts.</p>}
-                <div className="history-contract-list">
-                    {contracts?.items.map((item) => (
-                        <button
-                            type="button"
-                            key={item.key}
-                            aria-pressed={item.key === key}
-                            onClick={() => update({ contract: item.key, from: '', to: '' })}
-                        >
-                            <strong>
-                                {item.symbol} ${item.strike} put
-                            </strong>
-                            <span>Expires {sessionLabel(item.expiration)}</span>
-                            {contractMeta(item) && <small>{contractMeta(item)}</small>}
-                        </button>
-                    ))}
-                </div>
-                {(offset > 0 || contracts?.hasMore) && (
-                    <div className="history-pagination">
-                        <button disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 50))}>
-                            Previous contracts
-                        </button>
-                        <span>Page {offset / 50 + 1}</span>
-                        <button disabled={!contracts?.hasMore} onClick={() => setOffset(offset + 50)}>
-                            Next contracts
-                        </button>
-                    </div>
-                )}
+                {groupByAdded(contracts?.items ?? []).map((day) => (
+                    <section key={day.added ?? 'unknown'} className="history-added-group">
+                        <h3>{day.added ? `Added ${sessionLabel(day.added)}` : 'Date added unknown'}</h3>
+                        {day.tiers.map((group) => (
+                            <div key={group.tier} className="history-tier-group">
+                                <h4>
+                                    {tierLabel(group.tier)} <span>{group.items.length}</span>
+                                </h4>
+                                <div className="history-contract-list">
+                                    {group.items.map((item) => {
+                                        const others = item.tiers.filter((tier) => tier !== group.tier);
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={item.key}
+                                                aria-pressed={item.key === key}
+                                                onClick={() => update({ contract: item.key, from: '', to: '' })}
+                                            >
+                                                <strong>
+                                                    {item.symbol} ${item.strike} put
+                                                </strong>
+                                                <span>Expires {sessionLabel(item.expiration)}</span>
+                                                {others.length > 0 && (
+                                                    <small>Also {others.map(tierLabel).join(', ')}</small>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </section>
+                ))}
+                {contracts?.hasMore && <p>Showing the newest 1,000 contracts. Search a symbol to narrow the list.</p>}
                 {!!contracts?.unmappedContracts && (
                     <p>{contracts.unmappedContracts} legacy VADER contracts have no verified broker mapping.</p>
                 )}

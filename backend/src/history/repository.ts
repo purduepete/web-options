@@ -32,12 +32,15 @@ interface ContractRow {
     expiration: string;
     strike: string;
     added: string | null;
+    tier: string | null;
     tiers: string[] | null;
 }
 
-const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tiers FROM eligible e
+const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers FROM eligible e
  LEFT JOIN LATERAL (
    SELECT COALESCE(min(g.report_date), min(v.first_seen))::text AS added,
+          (array_agg(lower(g.tier) ORDER BY g.report_date, lower(g.tier))
+             FILTER (WHERE g.tier IS NOT NULL))[1] AS tier,
           array_agg(DISTINCT lower(g.tier)) FILTER (WHERE g.tier IS NOT NULL) AS tiers
    FROM public.vader_contract v LEFT JOIN public.vader_signal g ON g.contract_key=v.contract_key
    WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
@@ -51,6 +54,7 @@ function contract(row: ContractRow): HistoryContract {
         expiration: row.expiration,
         strike: Number(row.strike),
         added: row.added,
+        tier: row.tier,
         tiers: row.tiers ?? [],
     };
 }
@@ -64,7 +68,11 @@ export async function searchContracts(
     return withHistory(config, async (db) => {
         const rows = await db.query<ContractRow>(
             `${CONTRACTS} SELECT ${CONTRACT_COLUMNS}
-             WHERE e.symbol ILIKE $1 ORDER BY e.symbol,e.expiration,e.strike,e.contract_key OFFSET $2 LIMIT $3`,
+             WHERE e.symbol ILIKE $1
+             ORDER BY s.added DESC NULLS LAST,
+               CASE s.tier WHEN 'conservative' THEN 1 WHEN 'balanced' THEN 2 WHEN 'aggressive' THEN 3 ELSE 4 END,
+               e.symbol,e.expiration,e.strike,e.contract_key
+             OFFSET $2 LIMIT $3`,
             [`${query}%`, offset, limit + 1]
         );
         const unmapped = await db.query<{ count: string }>(

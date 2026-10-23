@@ -28,6 +28,7 @@ const contract = {
     strike: 150,
     expiration: '2026-10-30',
     added: '2026-10-21',
+    tier: 'balanced',
     tiers: ['balanced', 'aggressive'],
 };
 const result: HistoryResponse = {
@@ -124,8 +125,41 @@ describe('contract history page', () => {
     it('searches VADER contracts including expired results', async () => {
         mount('');
         fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'aapl' } });
-        await waitFor(() => expect(api.search).toHaveBeenCalledWith('AAPL', 0, expect.any(AbortSignal)));
+        await waitFor(() => expect(api.search).toHaveBeenCalledWith('AAPL', expect.any(AbortSignal)));
         await screen.findByText('Expires 10/30/2026');
-        expect(screen.getByText('Balanced, Aggressive · Added 10/21/2026')).toBeDefined();
+        expect(screen.getByText('Also Aggressive')).toBeDefined();
+    });
+    it('groups contracts by date added, newest first, then by tier', async () => {
+        const make = (strike: number, added: string, tier: string | null) => ({
+            ...contract,
+            key: `AAPL  261030P00${strike}000`,
+            strike,
+            added,
+            tier,
+            tiers: tier ? [tier] : [],
+        });
+        api.search.mockResolvedValue({
+            items: [
+                make(140, '2026-10-20', 'aggressive'),
+                make(141, '2026-10-22', 'aggressive'),
+                make(142, '2026-10-22', null),
+                make(143, '2026-10-22', 'conservative'),
+            ],
+            hasMore: false,
+            unmappedContracts: 0,
+        });
+        const { container } = mount('');
+        await screen.findByText('Added 10/22/2026');
+        expect([...container.querySelectorAll('.history-added-group h3')].map((node) => node.textContent)).toEqual([
+            'Added 10/22/2026',
+            'Added 10/20/2026',
+        ]);
+        const first = container.querySelector('.history-added-group')!;
+        expect([...first.querySelectorAll('h4')].map((node) => node.textContent)).toEqual([
+            'Conservative 1',
+            'Aggressive 1',
+            'Other 1',
+        ]);
+        expect(screen.queryByText(/Next contracts|Page 1/)).toBeNull();
     });
 });

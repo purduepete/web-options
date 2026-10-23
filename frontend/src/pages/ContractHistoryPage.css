@@ -34,6 +34,28 @@
     color: var(--text-muted);
     font-size: 0.8rem;
 }
+.history-added-group {
+    margin-block: 0.75rem;
+}
+.history-added-group h3 {
+    margin: 0 0 0.25rem;
+    padding-bottom: 0.2rem;
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--text-heading);
+    font-size: 0.85rem;
+}
+.history-tier-group h4 {
+    margin: 0.4rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.history-tier-group h4 span {
+    color: var(--text-muted);
+    font-weight: 400;
+}
 .history-contract-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
@@ -57,17 +79,6 @@
 .history-contract-list button[aria-pressed='true'] {
     border-color: var(--highlight);
     color: var(--highlight);
-}
-.history-pagination {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
-}
-.history-pagination button {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.8rem;
 }
 .history-result {
     display: flex;

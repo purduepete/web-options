@@ -4,6 +4,9 @@ import type { AppConfig } from '../config';
 import { withHistory } from './db';
 import { fetchHistory, historyDates, HistoryRangeError, MAX_DATES, searchContracts } from './repository';
 
+/** The contract picker lists every match at once, grouped by date added, so it needs no paging. */
+const MAX_SEARCH = 1000;
+
 export function createHistoryRouter(config: AppConfig): Router {
     const router = Router();
     router.use((_req, res, next) => {
@@ -24,7 +27,7 @@ export function createHistoryRouter(config: AppConfig): Router {
     router.get('/contracts', async (req, res, next) => {
         const q = req.query.q ?? '';
         const offset = Number(req.query.offset ?? 0);
-        const limit = Number(req.query.limit ?? 50);
+        const limit = Number(req.query.limit ?? MAX_SEARCH);
         if (
             Object.keys(req.query).some((name) => !['q', 'offset', 'limit'].includes(name)) ||
             (req.query.offset !== undefined && typeof req.query.offset !== 'string') ||
@@ -36,7 +39,7 @@ export function createHistoryRouter(config: AppConfig): Router {
             offset > 100000 ||
             !Number.isSafeInteger(limit) ||
             limit < 1 ||
-            limit > 50
+            limit > MAX_SEARCH
         ) {
             res.status(400).json({ error: 'Invalid contract search or pagination.' });
             return;

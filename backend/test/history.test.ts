@@ -129,7 +129,7 @@ describe('history routes', () => {
         const app = createApp(config);
         expect((await request(app).get('/api/contract-history/contracts?q=aapl&limit=10')).status).toBe(200);
         expect(search).toHaveBeenCalledWith(config, 'AAPL', 0, 10);
-        expect((await request(app).get('/api/contract-history/contracts?limit=51')).status).toBe(400);
+        expect((await request(app).get('/api/contract-history/contracts?limit=1001')).status).toBe(400);
         expect((await request(app).get('/api/contract-history/contracts?q[]=AAPL')).status).toBe(400);
     });
     it('reports range overflow explicitly and hides database errors', async () => {
