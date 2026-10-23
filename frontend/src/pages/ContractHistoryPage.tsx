@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { GROUP_LABELS, TIER_ORDER, hasExpired } from '@weboptions/shared';
-import type {
-    ContractSearchResponse,
-    GroupId,
-    HistoryContract,
-    HistoryPoint,
-    HistoryResponse,
-} from '@weboptions/shared';
+import type { ContractSearchResponse, GroupId, HistoryContract, HistoryResponse } from '@weboptions/shared';
 import { UnauthorizedError } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
@@ -18,14 +11,13 @@ import { SignalDatePicker } from '../components/SignalDatePicker';
 import { MoneynessChip } from '../grade/GradeBadge';
 import { seekingAlphaUrl, tradeContext, tradingViewUrl, withContext } from '../signals/researchLinks';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
+import { HistoryCharts } from '../history/HistoryCharts';
 import {
-    axisTime,
     changeSummary,
     deltaText,
-    evenTicks,
-    fitDomain,
     money,
     pacificTime,
+    premiumCaptured,
     sessionLabel,
     signedDelta,
     signedMoney,
@@ -81,25 +73,13 @@ function groupByAdded(items: readonly HistoryContract[]): AddedGroup[] {
 
 const addedLabel = (added: string) => (added ? `Added ${sessionLabel(added)}` : 'Date added unknown');
 
-function TooltipBody({ point }: { point: HistoryPoint }) {
-    return (
-        <div className="history-tooltip">
-            <strong>{pacificTime(point.time)}</strong>
-            <span>Mark {money(point.mark)}</span>
-            <span>Delta {deltaText(point.delta)}</span>
-            {(point.reason || point.flags.length > 0) && (
-                <small>{[point.reason, ...point.flags].filter(Boolean).join('; ').replaceAll('_', ' ')}</small>
-            )}
-        </div>
-    );
-}
-
 export function ContractHistoryPage() {
     const [params, setParams] = useSearchParams();
     const key = params.get('contract') ?? '';
     const mode = params.get('mode') === 'multi' ? 'multi' : 'day';
     const from = params.get('from') ?? '';
     const to = mode === 'day' ? from : (params.get('to') ?? from);
+    const signalDate = params.get('signalDate') ?? '';
     const [search, setSearch] = useState('');
     const [addedDay, setAddedDay] = useState<string | null>(null);
     const [contracts, setContracts] = useState<ContractSearchResponse | null>(null);
@@ -169,7 +149,13 @@ export function ContractHistoryPage() {
                     setParams(next, { replace: true });
                     return;
                 }
-                return getContractHistory(key, selectedFrom, to || selectedFrom, controller.signal).then((result) => {
+                return getContractHistory(
+                    key,
+                    selectedFrom,
+                    to || selectedFrom,
+                    controller.signal,
+                    signalDate || undefined
+                ).then((result) => {
                     if (controller.signal.aborted) return;
                     setHistory(result);
                     setPending(false);
@@ -182,7 +168,7 @@ export function ContractHistoryPage() {
                 setPending(false);
             });
         return () => controller.abort();
-    }, [key, from, to, revision, lock, setParams]);
+    }, [key, from, to, signalDate, revision, lock, setParams]);
 
     const coverage = history?.coverage;
     const hasGaps = !!coverage && coverage.knownPriceGaps + coverage.knownDeltaGaps + coverage.unknownSlots > 0;
@@ -199,17 +185,13 @@ export function ContractHistoryPage() {
               underlyingChangePct: null,
           })
         : [];
-    const priceDomain = fitDomain(
-        (history?.points ?? []).map((point) => point.mark),
-        0.1,
-        [0, Number.POSITIVE_INFINITY]
-    );
-    const deltaDomain = fitDomain(
-        (history?.points ?? []).map((point) => point.delta),
-        0.02,
-        [-1, 1]
-    );
-    const stale = !!history && (history.contract.key !== key || history.from !== from || history.to !== to);
+    const captured = history && price.last ? premiumCaptured(history.entry, price.last) : null;
+    const stale =
+        !!history &&
+        (history.contract.key !== key ||
+            history.from !== from ||
+            history.to !== to ||
+            (!!signalDate && history.signalDate !== signalDate));
     const label = history
         ? `${history.contract.symbol} $${history.contract.strike} put, expires ${sessionLabel(history.contract.expiration)}`
         : '';
@@ -223,7 +205,12 @@ export function ContractHistoryPage() {
     // A contract signaled on several dates is listed under each of them.
     const chosen = days.findIndex((option) => option.added === addedDay);
     const lists = (index: number) => !!days[index]?.tiers.some((group) => group.items.some((item) => item.key === key));
-    const owning = lists(chosen) ? chosen : days.findIndex((_, index) => lists(index));
+    const signalIndex = days.findIndex((option) => option.added === (signalDate || history?.signalDate));
+    const owning = lists(chosen)
+        ? chosen
+        : lists(signalIndex)
+          ? signalIndex
+          : days.findIndex((_, index) => lists(index));
     const dayIndex = chosen >= 0 ? chosen : Math.max(owning, 0);
     const day = days[dayIndex];
     const goToDay = (index: number) => setAddedDay(days[index]?.added ?? null);
@@ -231,7 +218,7 @@ export function ContractHistoryPage() {
     const siblings = owning >= 0 ? (days[owning]?.tiers.flatMap((group) => group.items) ?? []) : [];
     const position = siblings.findIndex((item) => item.key === key);
     const openContract = (item: HistoryContract | undefined) => {
-        if (item) update({ contract: item.key, from: '', to: '' });
+        if (item) update({ contract: item.key, signalDate: item.added ?? '', from: '', to: '' });
     };
     return (
         <main className="history-page">
@@ -458,6 +445,7 @@ export function ContractHistoryPage() {
                             </nav>
                         </div>
                         <p>
+                            {history.signalDate && <>Signal {sessionLabel(history.signalDate)}. Viewing </>}
                             {history.from === history.to
                                 ? sessionLabel(history.from)
                                 : `${sessionLabel(history.from)} to ${sessionLabel(history.to)}`}
@@ -468,6 +456,21 @@ export function ContractHistoryPage() {
                         </p>
                     </div>
                     <div className="history-stats">
+                        <div>
+                            <small>Entry{history.signalDate ? ` · ${sessionLabel(history.signalDate)}` : ''}</small>
+                            <strong>{history.entry ? money(history.entry.mark) : 'Entry quote unavailable'}</strong>
+                            {history.entry && (
+                                <>
+                                    <span>{money(history.entry.mark * 100)} credit / standard contract</span>
+                                    <span>Entry delta {deltaText(history.entry.delta)}</span>
+                                    <small>
+                                        {history.entry.capturedAt
+                                            ? `Captured ${pacificTime(history.entry.capturedAt)}`
+                                            : 'Capture time unavailable'}
+                                    </small>
+                                </>
+                            )}
+                        </div>
                         <div>
                             <small>Mark</small>
                             <strong>{money(price.value)}</strong>
@@ -491,6 +494,25 @@ export function ContractHistoryPage() {
                                 </small>
                             )}
                         </div>
+                        <div>
+                            <small>Premium captured</small>
+                            <strong>{captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}</strong>
+                            {captured !== null && history.entry && price.value !== null && (
+                                <>
+                                    <span>
+                                        {signedMoney((history.entry.mark - price.value) * 100)} / standard contract
+                                    </span>
+                                    <small>Hypothetical at last viewed mark. Excludes fees and actual fills.</small>
+                                </>
+                            )}
+                            {captured === null && (
+                                <small>
+                                    {history.entry?.mark === 0
+                                        ? 'Entry credit is zero; percentage unavailable.'
+                                        : 'Requires an entry quote and a mark at or after entry.'}
+                                </small>
+                            )}
+                        </div>
                         {history.contract.underlyingPrice !== null && (
                             <div>
                                 <small>{history.contract.symbol} stock</small>
@@ -505,76 +527,7 @@ export function ContractHistoryPage() {
                             </div>
                         )}
                     </div>
-                    <div
-                        className="history-chart"
-                        role="img"
-                        aria-label="Mark price on the left axis, signed delta on the right. Detailed observations follow."
-                    >
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={history.points} margin={{ top: 12, right: 0, bottom: 16, left: 0 }}>
-                                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                                <XAxis
-                                    type="number"
-                                    dataKey="time"
-                                    domain={['dataMin', 'dataMax']}
-                                    scale="time"
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                    tickFormatter={(value: number) => axisTime(value, history.from !== history.to)}
-                                    minTickGap={50}
-                                />
-                                <YAxis
-                                    yAxisId="price"
-                                    width={48}
-                                    domain={priceDomain}
-                                    ticks={evenTicks(priceDomain)}
-                                    interval={0}
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                    tickFormatter={(value: number) => `$${value.toFixed(2)}`}
-                                />
-                                <YAxis
-                                    yAxisId="delta"
-                                    orientation="right"
-                                    width={48}
-                                    domain={deltaDomain}
-                                    ticks={evenTicks(deltaDomain)}
-                                    interval={0}
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                    tickFormatter={(value: number) => value.toFixed(3)}
-                                />
-                                <Tooltip
-                                    content={({ active, payload }) => {
-                                        const point = payload?.[0]?.payload as HistoryPoint | undefined;
-                                        return active && point ? <TooltipBody point={point} /> : null;
-                                    }}
-                                />
-                                <Legend wrapperStyle={{ fontSize: '0.72rem' }} />
-                                <Line
-                                    yAxisId="price"
-                                    name="Mark ($ / share)"
-                                    type="linear"
-                                    dataKey="mark"
-                                    stroke="var(--highlight)"
-                                    strokeWidth={2}
-                                    dot={{ r: 2 }}
-                                    activeDot={{ r: 3 }}
-                                    connectNulls={false}
-                                    isAnimationActive={false}
-                                />
-                                <Line
-                                    yAxisId="delta"
-                                    name="Signed delta"
-                                    type="linear"
-                                    dataKey="delta"
-                                    stroke="var(--history-delta)"
-                                    strokeWidth={2}
-                                    strokeDasharray="5 3"
-                                    dot={{ r: 2 }}
-                                    connectNulls={false}
-                                    isAnimationActive={false}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+                    <HistoryCharts history={history} />
                     {hasGaps && (
                         <p className="history-coverage">
                             {history.coverage.knownPriceGaps} price gaps, {history.coverage.knownDeltaGaps} delta gaps

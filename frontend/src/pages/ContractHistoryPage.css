@@ -181,6 +181,24 @@
     height: clamp(16rem, 45vh, 26rem);
     min-width: 0px;
 }
+.history-chart-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+.history-chart-head h3 {
+    margin: 0;
+    font-size: 0.85rem;
+}
+.history-chart-head > span {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+}
+.history-stock-chart {
+    height: clamp(12rem, 28vh, 18rem);
+}
 .history-tooltip {
     display: flex;
     flex-direction: column;

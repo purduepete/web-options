@@ -159,6 +159,7 @@ export interface QuoteRow {
     contract_key: string | null;
     mark_per_share: string | null;
     delta: string | null;
+    underlying_price: string | null;
     price_status: string | null;
     delta_status: string | null;
     price_flags: string[] | null;
@@ -205,6 +206,8 @@ export function buildTimeline(
             kind: row.capture_kind,
             mark,
             delta,
+            underlyingPrice:
+                row.price_status === 'ok' && row.underlying_price !== null ? Number(row.underlying_price) : null,
             priceTime: row.provider_quote_time?.toISOString() ?? null,
             deltaTime: row.delta_event_time?.toISOString() ?? null,
             priceReceivedAt: row.price_received_at?.toISOString() ?? null,
@@ -227,6 +230,7 @@ export function buildTimeline(
             kind: slot.captureKind,
             mark: null,
             delta: null,
+            underlyingPrice: null,
             priceTime: null,
             deltaTime: null,
             priceReceivedAt: null,
@@ -246,6 +250,7 @@ export function buildTimeline(
                 kind: 'session_boundary',
                 mark: null,
                 delta: null,
+                underlyingPrice: null,
                 reason: 'Market session boundary',
                 flags: [],
             });
@@ -261,17 +266,31 @@ export async function fetchHistory(
     config: AppConfig,
     key: string,
     from: string,
-    to: string
+    to: string,
+    signalDate?: string
 ): Promise<HistoryResponse | null> {
     const snapshot = await withHistory(config, async (db) => {
         const selected = await findContract(db, key);
         if (!selected) return null;
+        const selectedSignal = signalDate ?? selected.added;
+        const entry = selectedSignal
+            ? await db.query<{ entry_mark_per_share: string; entry_delta: string | null; captured_at: Date | null }>(
+                  `SELECT g.entry_mark_per_share,g.entry_delta,g.captured_at
+                   FROM public.history_signal_entry g JOIN public.vader_contract v
+                     ON v.contract_key=g.contract_key
+                   WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
+                     THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=$1
+                     AND g.report_date=$2::date AND g.entry_mark_per_share IS NOT NULL
+                   ORDER BY g.captured_at ASC NULLS LAST,g.entry_mark_per_share,g.entry_delta LIMIT 1`,
+                  [key, selectedSignal]
+              )
+            : null;
         const activation = await db.query<{ first: string | null }>(
             'SELECT min(session_date)::text AS first FROM public.option_collection_run WHERE started_at IS NOT NULL'
         );
         const result = await db.query<QuoteRow>(
             `SELECT r.id AS run_id,r.session_date::text,r.scheduled_at,r.capture_kind,r.status,r.discovery_status,
-             q.contract_key,q.mark_per_share,q.delta,q.price_status,q.delta_status,q.price_flags,q.delta_flags,
+             q.contract_key,q.mark_per_share,q.delta,q.underlying_price,q.price_status,q.delta_status,q.price_flags,q.delta_flags,
              q.provider_quote_time,q.delta_event_time,q.price_received_at,q.delta_received_at,
              EXISTS(SELECT 1 FROM public.option_capture_owner o WHERE o.run_id=r.id AND o.contract_key=$1
                AND o.source_kind IN ('signal','vader_contract')) AS eligible
@@ -283,7 +302,22 @@ export async function fetchHistory(
             [key, from, to, selected.expiration]
         );
         if (result.rows.length > MAX_POINTS) throw new HistoryRangeError();
-        return { selected, rows: result.rows, activation: activation.rows[0]?.first };
+        const baseline = entry?.rows[0];
+        return {
+            selected,
+            selectedSignal,
+            entry:
+                baseline && selectedSignal
+                    ? {
+                          signalDate: selectedSignal,
+                          mark: Number(baseline.entry_mark_per_share),
+                          delta: baseline.entry_delta === null ? null : Number(baseline.entry_delta),
+                          capturedAt: baseline.captured_at?.toISOString() ?? null,
+                      }
+                    : null,
+            rows: result.rows,
+            activation: activation.rows[0]?.first,
+        };
     });
     if (!snapshot) return null;
     const schedule = (await readSchedule(config, from, to)).filter(
@@ -295,6 +329,8 @@ export async function fetchHistory(
         contract: snapshot.selected,
         from,
         to,
+        signalDate: snapshot.selectedSignal,
+        entry: snapshot.entry,
         ...built,
         warnings: [
             'Sampled observations can miss moves between captures. Price and delta are separate broker events.',

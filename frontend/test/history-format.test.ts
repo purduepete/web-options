@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { HistoryPoint } from '@weboptions/shared';
-import { axisTime, changeSummary, evenTicks, fitDomain, pacificTime, sessionLabel } from '../src/history/format';
+import {
+    axisTime,
+    changeSummary,
+    evenTicks,
+    fitDomain,
+    pacificTime,
+    premiumCaptured,
+    sessionLabel,
+} from '../src/history/format';
 
 function point(time: number, mark: number | null, delta: number | null): HistoryPoint {
     return {
@@ -9,6 +17,7 @@ function point(time: number, mark: number | null, delta: number | null): History
         kind: 'open_session',
         mark,
         delta,
+        underlyingPrice: null,
         priceTime: null,
         deltaTime: null,
         priceReceivedAt: null,
@@ -18,6 +27,17 @@ function point(time: number, mark: number | null, delta: number | null): History
     };
 }
 describe('history summaries', () => {
+    it('calculates captured premium against entry and rejects missing, zero and pre-entry baselines', () => {
+        const entry = { signalDate: '2026-10-23', mark: 2, delta: -0.28, capturedAt: '2026-10-23T13:35:00Z' };
+        const at = Date.parse('2026-10-23T14:00:00Z');
+        expect(premiumCaptured(entry, point(at, 0.8, -0.2))).toBe(60);
+        expect(premiumCaptured(entry, point(at, 2.6, -0.2))).toBeCloseTo(-30);
+        expect(premiumCaptured(entry, point(at, 0, -0.2))).toBe(100);
+        expect(premiumCaptured({ ...entry, mark: 0 }, point(at, 1, null))).toBeNull();
+        expect(premiumCaptured(null, point(at, 1, null))).toBeNull();
+        expect(premiumCaptured(entry, point(at, null, -0.2))).toBeNull();
+        expect(premiumCaptured(entry, point(at - 86400000, 1, null))).toBeNull();
+    });
     it('uses first and last valid values per component and preserves negative delta', () => {
         const data = [point(1, 2, null), point(2, null, -0.4), point(3, 1, -0.2)];
         expect(changeSummary(data, 'mark')).toMatchObject({ value: 1, change: -1, percent: -50 });

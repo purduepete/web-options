@@ -28,6 +28,7 @@ function row(changes: Partial<QuoteRow> = {}): QuoteRow {
         contract_key: 'AAPL  261030P00150000',
         mark_per_share: '0',
         delta: '0',
+        underlying_price: '160',
         price_status: 'ok',
         delta_status: 'ok',
         price_flags: [],
@@ -45,13 +46,13 @@ afterEach(() => vi.restoreAllMocks());
 describe('history timeline', () => {
     it('preserves zero price and signed/zero delta', () => {
         const result = buildTimeline([row(), row({ run_id: '2', delta: '-0.35' })], [], '2026-10-30');
-        expect(result.points[0]).toMatchObject({ mark: 0, delta: 0 });
+        expect(result.points[0]).toMatchObject({ mark: 0, delta: 0, underlyingPrice: 160 });
         expect(result.points[1]?.delta).toBe(-0.35);
         expect(result.coverage.validDeltas).toBe(2);
     });
     it('gaps each component independently', () => {
         const result = buildTimeline([row({ price_status: 'invalid', delta: '-0.2' })], [], '2026-10-30');
-        expect(result.points[0]).toMatchObject({ mark: null, delta: -0.2 });
+        expect(result.points[0]).toMatchObject({ mark: null, delta: -0.2, underlyingPrice: null });
         expect(result.coverage).toMatchObject({ knownPriceGaps: 1, knownDeltaGaps: 0 });
     });
     it('reports absent historical eligibility as unknown rather than a miss denominator', () => {
@@ -68,7 +69,7 @@ describe('history timeline', () => {
             Date.parse('2026-10-23T20:00:00Z')
         );
         expect(result.coverage).toMatchObject({ unknownSlots: 1, knownExpected: 0, knownPriceGaps: 0 });
-        expect(result.points[0]).toMatchObject({ mark: null, delta: null });
+        expect(result.points[0]).toMatchObject({ mark: null, delta: null, underlyingPrice: null });
     });
     it('separates sessions and keeps recovery and settle', () => {
         const result = buildTimeline(
@@ -85,7 +86,16 @@ describe('history timeline', () => {
         expect(result.points.find((point) => point.kind === 'session_boundary')).toMatchObject({
             mark: null,
             delta: null,
+            underlyingPrice: null,
         });
+    });
+    it('preserves a valid zero underlying without filling a missing quote', () => {
+        const result = buildTimeline(
+            [row({ underlying_price: '0' }), row({ underlying_price: null })],
+            [],
+            '2026-10-30'
+        );
+        expect(result.points.map((point) => point.underlyingPrice)).toEqual([0, null]);
     });
     it('does not create future or post-expiry gaps', () => {
         const result = buildTimeline(
@@ -119,8 +129,18 @@ describe('history routes', () => {
             `/${key}?from=2026-01-01&to=2026-12-01`,
             `/${key}?from=2026-02-30&to=2026-03-01`,
             '/bad/dates',
+            `/${key}?from=2026-10-23&to=2026-10-23&signalDate=2026-02-30`,
+            `/${key}?from=2026-10-23&to=2026-10-23&signalDate[]=2026-10-21`,
         ])
             expect((await request(app).get(`/api/contract-history${path}`)).status).toBe(400);
+    });
+    it('passes the independently selected signal date to history', async () => {
+        const fetch = vi.spyOn(repository, 'fetchHistory').mockResolvedValue(null);
+        const response = await request(createApp(config)).get(
+            `/api/contract-history/${key}?from=2026-10-23&to=2026-10-23&signalDate=2026-10-21`
+        );
+        expect(response.status).toBe(404);
+        expect(fetch).toHaveBeenCalledWith(config, decodeURIComponent(key), '2026-10-23', '2026-10-23', '2026-10-21');
     });
     it('validates search limits and passes parameterized search arguments', async () => {
         const search = vi

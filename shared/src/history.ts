@@ -32,6 +32,7 @@ export interface HistoryPoint {
     kind: string;
     mark: number | null;
     delta: number | null;
+    underlyingPrice: number | null;
     priceTime: string | null;
     deltaTime: string | null;
     priceReceivedAt: string | null;
@@ -40,10 +41,20 @@ export interface HistoryPoint {
     reason: string | null;
 }
 
+export interface HistoryEntry {
+    signalDate: string;
+    mark: number;
+    delta: number | null;
+    capturedAt: string | null;
+}
+
 export interface HistoryResponse {
     contract: HistoryContract;
     from: string;
     to: string;
+    signalDate: string | null;
+    /** Captured market entry for this signal, never an advertised premium fallback. */
+    entry: HistoryEntry | null;
     points: HistoryPoint[];
     coverage: {
         observations: number;

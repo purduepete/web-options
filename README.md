@@ -33,7 +33,18 @@ Open **Tools > Contract History** to search VADER puts, including expired
 contracts with retained quotes. Intraday opens the contract's latest usable
 Pacific session. Multi-day retains every observation across up to 93 calendar
 dates. The dual-axis chart shows mark dollars per share and signed delta.
-The observation readout works with touch and keyboard controls.
+Choose **Captured %** to plot `(entry mark - observed mark) / entry mark * 100`.
+The entry card uses the captured market quote for the selected signal date,
+independent of the chart's viewing range. Repeated signals have separate entries.
+The premium-captured card shows the last viewed mark's percentage and hypothetical
+gross dollars per standard 100-share contract. Negative returns remain negative;
+fees and actual fills are excluded. Missing captured entries stay unavailable,
+with no VADER-premium substitution; zero entries cannot produce percentages.
+Points before the entry capture are excluded from captured percentages.
+The dashed entry-price line and, when in range, the entry capture marker locate
+the baseline. A shorter stock chart shares the time range and hover position,
+with a dashed strike and a shaded put ITM region below it. Missing observations
+and market-session boundaries break both lines.
 The contract picker lists each signal date separately, using that day's tiers
 and top picks. Its calendar enables dates with signals and shows the number of
 contracts beneath each day. Arrow buttons step between signal dates.
@@ -50,6 +61,9 @@ It never uses the collector's writable credentials. Production settings require
 Python executable), and `WEBOPTIONS_HISTORY_COLLECTOR_ROOT` (the deployed release).
 The Python process exports the collector's exchange-calendar schedule without
 database access or broker calls. PostgreSQL stays on host loopback.
+Apply `database/postgres/007_history_signal_entry.sql` as administrator after
+independent review. This narrowly readable view exposes the entry capture time
+without granting the reader access to the collector's full source payload.
 
 History readiness is `/api/contract-history/readiness` under the existing API
 access boundary. PostgreSQL failure affects history only; `/healthz`, Azure

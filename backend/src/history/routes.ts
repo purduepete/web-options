@@ -67,16 +67,18 @@ export function createHistoryRouter(config: AppConfig): Router {
         }
     });
     router.get('/:key', async (req, res, next) => {
-        const { from, to } = req.query;
+        const { from, to, signalDate } = req.query;
         const realDate = (value: string) =>
             isIsoDate(value) &&
             Number.isFinite(Date.parse(value)) &&
             new Date(value).toISOString().slice(0, 10) === value;
         if (
+            Object.keys(req.query).some((name) => !['from', 'to', 'signalDate'].includes(name)) ||
             typeof from !== 'string' ||
             typeof to !== 'string' ||
             !realDate(from) ||
             !realDate(to) ||
+            (signalDate !== undefined && (typeof signalDate !== 'string' || !realDate(signalDate))) ||
             to < from ||
             (Date.parse(to) - Date.parse(from)) / 86400000 >= MAX_DATES
         ) {
@@ -87,7 +89,7 @@ export function createHistoryRouter(config: AppConfig): Router {
             return;
         }
         try {
-            const history = await fetchHistory(config, req.params.key, from, to);
+            const history = await fetchHistory(config, req.params.key, from, to, signalDate);
             if (!history) res.status(404).json({ error: 'VADER contract not found.' });
             else res.json(history);
         } catch (error) {

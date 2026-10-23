@@ -21,5 +21,8 @@ export const searchHistoryContracts = (query: string, signal?: AbortSignal) =>
     get<ContractSearchResponse>(`/contracts?${new URLSearchParams({ q: query })}`, signal);
 export const getHistoryDates = (key: string, signal?: AbortSignal) =>
     get<{ dates: string[] }>(`/${encodeURIComponent(key)}/dates`, signal);
-export const getContractHistory = (key: string, from: string, to: string, signal?: AbortSignal) =>
-    get<HistoryResponse>(`/${encodeURIComponent(key)}?${new URLSearchParams({ from, to })}`, signal);
+export const getContractHistory = (key: string, from: string, to: string, signal?: AbortSignal, signalDate?: string) =>
+    get<HistoryResponse>(
+        `/${encodeURIComponent(key)}?${new URLSearchParams({ from, to, ...(signalDate ? { signalDate } : {}) })}`,
+        signal
+    );

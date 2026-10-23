@@ -1,4 +1,4 @@
-import type { HistoryPoint } from '@weboptions/shared';
+import type { HistoryEntry, HistoryPoint } from '@weboptions/shared';
 
 const PACIFIC_PARTS = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -70,6 +70,12 @@ export const signedDelta = (value: number | null) =>
     value === null ? 'Unavailable' : `${value < 0 ? '' : '+'}${value.toFixed(3)}`;
 export const money = (value: number | null) => (value === null ? 'Unavailable' : `$${value.toFixed(2)}`);
 export const deltaText = (value: number | null) => (value === null ? 'Unavailable' : value.toFixed(3));
+
+export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint): number | null {
+    if (!entry || entry.mark <= 0 || point.mark === null || point.sessionDate < entry.signalDate) return null;
+    if (entry.capturedAt && point.time < Date.parse(entry.capturedAt)) return null;
+    return ((entry.mark - point.mark) / entry.mark) * 100;
+}
 
 export function changeSummary(points: HistoryPoint[], component: 'mark' | 'delta') {
     const valid = points.filter((point) => point[component] !== null);
