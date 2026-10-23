@@ -35,9 +35,11 @@ interface ContractRow {
     tier: string | null;
     tiers: string[] | null;
     top_pick: boolean | null;
+    underlying_price: string | null;
 }
 
-const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers,s.top_pick FROM eligible e
+const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.added,s.tier,s.tiers,s.top_pick,
+ u.underlying_price FROM eligible e
  LEFT JOIN LATERAL (
    SELECT COALESCE(min(g.report_date), min(v.first_seen))::text AS added,
           (array_agg(lower(g.tier) ORDER BY g.report_date, lower(g.tier))
@@ -48,7 +50,13 @@ const CONTRACT_COLUMNS = `e.contract_key,e.symbol,e.expiration::text,e.strike,s.
    FROM public.vader_contract v LEFT JOIN public.vader_signal g ON g.contract_key=v.contract_key
    WHERE (CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
                THEN 'BRKB  ' || substring(v.occ_symbol FROM 7) ELSE v.occ_symbol END)=e.contract_key
- ) s ON true`;
+ ) s ON true
+ LEFT JOIN LATERAL (
+   SELECT q.underlying_price FROM public.broker_option_quote q
+   JOIN public.option_collection_run r ON r.id=q.run_id
+   WHERE q.contract_key=e.contract_key AND q.underlying_price IS NOT NULL AND r.session_date <= e.expiration
+   ORDER BY r.scheduled_at DESC, r.id DESC LIMIT 1
+ ) u ON true`;
 
 function contract(row: ContractRow): HistoryContract {
     return {
@@ -60,6 +68,7 @@ function contract(row: ContractRow): HistoryContract {
         tier: row.tier,
         tiers: row.tiers ?? [],
         topPick: row.top_pick === true,
+        underlyingPrice: row.underlying_price === null ? null : Number(row.underlying_price),
     };
 }
 

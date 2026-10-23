@@ -31,6 +31,7 @@ const contract = {
     tier: 'balanced',
     tiers: ['balanced', 'aggressive'],
     topPick: false,
+    underlyingPrice: 160,
 };
 const result: HistoryResponse = {
     contract,
@@ -170,5 +171,19 @@ describe('contract history page', () => {
         await screen.findByText('Added 10/20/2026');
         expect(headings()).toEqual(['Aggressive 1']);
         expect(screen.getByRole('button', { name: 'Earlier date' }).hasAttribute('disabled')).toBe(true);
+    });
+    it('marks ITM and expired cards and steps through the selected contract date', async () => {
+        const itm = { ...contract, key: 'AAPL  200116P00150000', expiration: '2020-01-16', underlyingPrice: 149.5 };
+        api.search.mockResolvedValue({ items: [contract, itm], hasMore: false, unmappedContracts: 0 });
+        const { container } = mount();
+        await screen.findByText('-0.200');
+        await waitFor(() => expect(container.querySelectorAll('.history-contract-list button')).toHaveLength(2));
+        const cards = [...container.querySelectorAll('.history-contract-list button')];
+        expect(cards.map((card) => card.classList.contains('is-expired'))).toEqual([true, false]);
+        expect(cards.map((card) => !!card.querySelector('.moneyness-chip.itm'))).toEqual([true, false]);
+        expect(screen.getByText('2 of 2')).toBeDefined();
+        expect(screen.getByRole('button', { name: 'Next contract' }).hasAttribute('disabled')).toBe(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Previous contract' }));
+        await waitFor(() => expect(api.dates).toHaveBeenLastCalledWith(itm.key, expect.any(AbortSignal)));
     });
 });

@@ -70,10 +70,26 @@
     text-align: left;
     overflow-wrap: anywhere;
 }
-.history-contract-list button span,
-.history-contract-list button small {
+.history-contract-list button > span,
+.history-contract-list button > small {
     color: var(--text-muted);
     font-size: 0.7rem;
+}
+.history-contract-list button > .history-contract-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    color: inherit;
+    font-size: inherit;
+}
+/* The same hatch Live Signals lays over an expired ticket. */
+.history-contract-list button.is-expired {
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent 0 10px,
+        color-mix(in srgb, var(--text-muted) 7%, transparent) 10px 11px
+    );
 }
 .history-contract-list button[aria-pressed='true'] {
     border-color: var(--highlight);
@@ -84,10 +100,20 @@
     flex-direction: column;
     gap: 0.75rem;
 }
+.history-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+}
 .history-title h2 {
     margin: 0;
     font-size: 1.05rem;
     overflow-wrap: anywhere;
+}
+.history-contract-position {
+    color: var(--text-muted);
+    font-size: 0.72rem;
 }
 .history-title p,
 .history-coverage {

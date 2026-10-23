@@ -11,6 +11,8 @@ export interface HistoryContract {
     tiers: string[];
     /** VADER named it a top pick on its first signal date. */
     topPick: boolean;
+    /** Underlying price on the latest captured quote, up to expiration; null before any capture. */
+    underlyingPrice: number | null;
 }
 
 export interface ContractSearchResponse {

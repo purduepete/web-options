@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { GROUP_LABELS, TIER_ORDER } from '@weboptions/shared';
+import { GROUP_LABELS, TIER_ORDER, hasExpired } from '@weboptions/shared';
 import type {
     ContractSearchResponse,
     GroupId,
@@ -14,6 +14,7 @@ import { useApiKey } from '../auth/ApiKeyProvider';
 import { ChoiceMenu } from '../components/ChoiceMenu';
 import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
+import { MoneynessChip } from '../grade/GradeBadge';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
 import {
     axisTime,
@@ -35,6 +36,8 @@ const groupOf = (item: HistoryContract) =>
     item.topPick ? 'top-picks' : item.tier && TIER_ORDER.includes(item.tier as never) ? item.tier : 'other';
 const byExpiration = (a: HistoryContract, b: HistoryContract) =>
     a.expiration.localeCompare(b.expiration) || a.symbol.localeCompare(b.symbol) || a.strike - b.strike;
+/** Every contract here is a put, so it is in the money once the underlying is below the strike. */
+const inTheMoney = (item: HistoryContract) => item.underlyingPrice !== null && item.underlyingPrice < item.strike;
 
 interface AddedGroup {
     /** `yyyy-mm-dd`, or '' when the date added is unknown. */
@@ -197,6 +200,12 @@ export function ContractHistoryPage() {
     const dayIndex = chosen >= 0 ? chosen : Math.max(owning, 0);
     const day = days[dayIndex];
     const goToDay = (index: number) => setAddedDay(days[index]?.added ?? null);
+    // The selected contract's own date, in picker order, so the title can step through it.
+    const siblings = owning >= 0 ? (days[owning]?.tiers.flatMap((group) => group.items) ?? []) : [];
+    const position = siblings.findIndex((item) => item.key === key);
+    const openContract = (item: HistoryContract | undefined) => {
+        if (item) update({ contract: item.key, from: '', to: '' });
+    };
     return (
         <main className="history-page">
             <div className="page-head history-head">
@@ -324,17 +333,30 @@ export function ContractHistoryPage() {
                                 <div className="history-contract-list">
                                     {group.items.map((item) => {
                                         const others = item.tiers.filter((tier) => tier !== group.tier);
+                                        const itm = inTheMoney(item);
                                         return (
                                             <button
                                                 type="button"
                                                 key={item.key}
+                                                className={hasExpired(item.expiration) ? 'is-expired' : undefined}
                                                 aria-pressed={item.key === key}
-                                                onClick={() => update({ contract: item.key, from: '', to: '' })}
+                                                onClick={() => openContract(item)}
                                             >
-                                                <strong>
-                                                    {item.symbol} ${item.strike} put
-                                                </strong>
-                                                <span>Expires {sessionLabel(item.expiration)}</span>
+                                                <span className="history-contract-name">
+                                                    <strong>
+                                                        {item.symbol} ${item.strike} put
+                                                    </strong>
+                                                    {itm && (
+                                                        <MoneynessChip
+                                                            moneyness="itm"
+                                                            title={`Underlying ${money(item.underlyingPrice)} on the latest capture`}
+                                                        />
+                                                    )}
+                                                </span>
+                                                <span>
+                                                    {hasExpired(item.expiration) ? 'Expired' : 'Expires'}{' '}
+                                                    {sessionLabel(item.expiration)}
+                                                </span>
                                                 {others.length > 0 && (
                                                     <small>Also {others.map(tierLabel).join(', ')}</small>
                                                 )}
@@ -368,7 +390,36 @@ export function ContractHistoryPage() {
                     aria-busy={pending}
                 >
                     <div className="history-title">
-                        <h2>{label}</h2>
+                        <div className="history-title-row">
+                            <h2>{label}</h2>
+                            {position >= 0 && siblings.length > 1 && (
+                                <div className="history-contract-steps week-nav">
+                                    <div className="week-steps">
+                                        <button
+                                            type="button"
+                                            aria-label="Previous contract"
+                                            title="Previous contract"
+                                            disabled={position === 0}
+                                            onClick={() => openContract(siblings[position - 1])}
+                                        >
+                                            <ChevronLeftIcon />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="Next contract"
+                                            title="Next contract"
+                                            disabled={position === siblings.length - 1}
+                                            onClick={() => openContract(siblings[position + 1])}
+                                        >
+                                            <ChevronRightIcon />
+                                        </button>
+                                    </div>
+                                    <span className="history-contract-position">
+                                        {position + 1} of {siblings.length}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                         <p>
                             {history.from === history.to
                                 ? sessionLabel(history.from)
