@@ -101,16 +101,6 @@ export function HistoryAnalysis({
                             )}
                         </div>
                     </div>
-                    <p className="history-coverage">
-                        {analysis.validMarks} valid marks; {analysis.recordedGaps} recorded captures without a valid
-                        mark.
-                        {analysis.firstObservedAt !== null && (
-                            <> Observed from {pacificTime(analysis.firstObservedAt)}.</>
-                        )}
-                        {analysis.through !== null && <> Captures through {pacificTime(analysis.through)}.</>}{' '}
-                        Unrecorded periods and moves between samples are unknown. A crossing does not establish an
-                        executable fill. Elapsed time includes nights and weekends.
-                    </p>
                 </>
             )}
         </section>

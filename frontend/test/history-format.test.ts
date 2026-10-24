@@ -9,6 +9,7 @@ import {
     pacificTime,
     premiumCaptured,
     sessionLabel,
+    standardSpan,
     targetPrice,
 } from '../src/history/format';
 
@@ -29,6 +30,15 @@ function point(time: number, mark: number | null, delta: number | null): History
     };
 }
 describe('history summaries', () => {
+    it('treats only open-to-settle across the viewed dates as the standard span', () => {
+        const open = Date.parse('2026-10-21T13:35:00Z');
+        const settle = Date.parse('2026-10-23T20:10:00Z');
+        expect(standardSpan(open, settle, '2026-10-21', '2026-10-23')).toBe(true);
+        expect(standardSpan(Date.parse('2026-10-23T13:35:00Z'), settle, '2026-10-23', '2026-10-23')).toBe(true);
+        expect(standardSpan(Date.parse('2026-10-21T14:05:00Z'), settle, '2026-10-21', '2026-10-23')).toBe(false);
+        expect(standardSpan(open, Date.parse('2026-10-23T18:15:00Z'), '2026-10-21', '2026-10-23')).toBe(false);
+        expect(standardSpan(open, settle, '2026-10-20', '2026-10-23')).toBe(false);
+    });
     it('keeps exact fractional-cent target prices rather than rounding a near miss into a crossing', () => {
         expect(targetPrice(0.7125)).toBe('$0.7125');
         expect(targetPrice(0.35625)).toBe('$0.35625');

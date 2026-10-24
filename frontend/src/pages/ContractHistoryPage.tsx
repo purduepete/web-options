@@ -21,6 +21,7 @@ import {
     sessionLabel,
     signedDelta,
     signedMoney,
+    standardSpan,
 } from '../history/format';
 import './ContractHistoryPage.css';
 import '../components/SiteMarks.css';
@@ -476,21 +477,25 @@ export function ContractHistoryPage() {
                                 {signedMoney(price.change)}
                                 {price.percent !== null ? ` (${price.percent.toFixed(1)}%)` : ''}
                             </span>
-                            {price.first && price.last && (
-                                <small>
-                                    {pacificTime(price.first.time)} to {pacificTime(price.last.time)}
-                                </small>
-                            )}
+                            {price.first &&
+                                price.last &&
+                                !standardSpan(price.first.time, price.last.time, history.from, history.to) && (
+                                    <small>
+                                        {pacificTime(price.first.time)} to {pacificTime(price.last.time)}
+                                    </small>
+                                )}
                         </div>
                         <div>
                             <small>Delta</small>
                             <strong>{deltaText(delta.value)}</strong>
                             <span>{signedDelta(delta.change)}</span>
-                            {delta.first && delta.last && (
-                                <small>
-                                    {pacificTime(delta.first.time)} to {pacificTime(delta.last.time)}
-                                </small>
-                            )}
+                            {delta.first &&
+                                delta.last &&
+                                !standardSpan(delta.first.time, delta.last.time, history.from, history.to) && (
+                                    <small>
+                                        {pacificTime(delta.first.time)} to {pacificTime(delta.last.time)}
+                                    </small>
+                                )}
                         </div>
                         <div>
                             <small>Premium captured</small>

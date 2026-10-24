@@ -28,6 +28,15 @@ export const pacificTime = (value: number | string) => {
 };
 
 /**
+ * True when a change runs from the 06:35 open on the first viewed date to the
+ * 13:10 settle on the last, so the span repeats what the date picker says.
+ */
+export function standardSpan(first: number, last: number, from: string, to: string): boolean {
+    const date = (value: string) => `${value.slice(5, 7)}/${value.slice(8, 10)}/${value.slice(0, 4)}`;
+    return pacificTime(first) === `${date(from)} 06:35` && pacificTime(last) === `${date(to)} 13:10`;
+}
+
+/**
  * An axis range that fits the data, padded 10% each side, so a 40-cent move on
  * a $2 mark fills the chart. `minSpan` keeps a near-flat series from being
  * stretched until rounding noise looks like a trend.
