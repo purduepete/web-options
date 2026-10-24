@@ -69,6 +69,13 @@ export const signedMoney = (value: number | null) =>
 export const signedDelta = (value: number | null) =>
     value === null ? 'Unavailable' : `${value < 0 ? '' : '+'}${value.toFixed(3)}`;
 export const money = (value: number | null) => (value === null ? 'Unavailable' : `$${value.toFixed(2)}`);
+export const targetPrice = (value: number) =>
+    value.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 10,
+    });
 export const deltaText = (value: number | null) => (value === null ? 'Unavailable' : value.toFixed(3));
 
 export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint): number | null {

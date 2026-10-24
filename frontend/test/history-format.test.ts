@@ -9,6 +9,7 @@ import {
     pacificTime,
     premiumCaptured,
     sessionLabel,
+    targetPrice,
 } from '../src/history/format';
 
 function point(time: number, mark: number | null, delta: number | null): HistoryPoint {
@@ -28,6 +29,11 @@ function point(time: number, mark: number | null, delta: number | null): History
     };
 }
 describe('history summaries', () => {
+    it('keeps exact fractional-cent target prices rather than rounding a near miss into a crossing', () => {
+        expect(targetPrice(0.7125)).toBe('$0.7125');
+        expect(targetPrice(0.35625)).toBe('$0.35625');
+        expect(targetPrice(1)).toBe('$1.00');
+    });
     it('formats target elapsed time including nights and missing capture times', () => {
         expect(elapsedTime('2026-10-21T14:00:00Z', Date.parse('2026-10-22T15:25:00Z'))).toBe('1d 1h 25m elapsed');
         expect(elapsedTime(null, 0)).toBe('Entry capture time unavailable');

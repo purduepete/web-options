@@ -1,6 +1,6 @@
 import type { HistoryResponse } from '@weboptions/shared';
 import { ChoiceMenu } from '../components/ChoiceMenu';
-import { elapsedTime, money, pacificTime, sessionLabel, signedMoney } from './format';
+import { elapsedTime, money, pacificTime, sessionLabel, signedMoney, targetPrice } from './format';
 
 export type TargetChoice = '25' | '50' | '75';
 
@@ -50,7 +50,10 @@ export function HistoryAnalysis({
                     <div className="history-stats">
                         <div>
                             <small>{target}% exit target</small>
-                            <strong>{selected ? `${money(selected.closingMark)} to close` : 'Unavailable'}</strong>
+                            <strong>
+                                {selected ? `${targetPrice(selected.closingMark)} to close` : 'Unavailable'}
+                            </strong>
+                            <small>Mark at or below this price per share</small>
                             {entry && <span>{money(entry.mark * Number(target))} target credit retained</span>}
                             {crossing ? (
                                 <>
