@@ -1,5 +1,34 @@
 # WebOptions repository instructions
 
+## Collector deployment and runtime changes
+
+Follow the shared [collector reliability procedure](https://github.com/purduepete/solution-deploy/blob/main/docs/CollectorReliability.md).
+
+- For collector task changes, use the current supported
+  `C:\ProgramData\SolutionDeploy\installers\web-options\Install-CollectorTasks.ps1`.
+  Do not manually repoint tasks or use an installer from a retained release.
+  If the supported installer is broken or unsupported for the change, stop and
+  escalate to Jim. These are procedural rules; they cannot prevent privileged
+  manual changes.
+- Before registering or switching any task, require a successful actual LOCAL
+  SERVICE (`S-1-5-19`) preflight for every candidate release, Python interpreter,
+  runtime or dependency path change, including new runtime versions and junction
+  targets. Use the existing SolutionDeploy `scripts\Test-CollectorAccess.ps1`
+  helper for permission-only work; the supported installer runs the same gate.
+  The probe can apply scoped read/execute permissions and restores original
+  release ACLs on failure, so it is not read-only.
+- If preflight fails, retain the existing healthy task targets. Never grant
+  blanket access across releases or loosen runtime permissions to bypass a
+  failure. Do not rerun database activation or isolation probes solely to repair
+  file permissions. Database-altering work requires separate independent review.
+- Preserve disabled task states, activation approvals and deliberate compatible
+  split targets across collector, watchdog and audit tasks. Frontend-only
+  deployments must not change collector tasks, releases or runtimes.
+- Use the managed PowerShell runtime. Update shared framework code only through
+  SolutionDeploy `scripts\Update-HostExecutor.ps1` to preserve its inventory.
+  Instruction-only edits require no live redeployment or probe of an unchanged
+  runtime.
+
 ## Upstream repo: webportfolio
 
 The signal data this app renders is produced by a separate app, **webportfolio**,
