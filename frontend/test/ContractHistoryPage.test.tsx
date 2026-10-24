@@ -83,6 +83,23 @@ beforeEach(() => {
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('keeps the chart visible during refresh without a loading-selection message', async () => {
+        mount();
+        await screen.findByText('25.0%');
+        let complete!: (response: HistoryResponse) => void;
+        api.history.mockReturnValueOnce(
+            new Promise<HistoryResponse>((resolve) => {
+                complete = resolve;
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+        const chart = screen.getByRole('region', { name: 'Contract price and delta history' });
+        await waitFor(() => expect(chart.getAttribute('aria-busy')).toBe('true'));
+        expect(screen.queryByText(/Loading selection/)).toBeNull();
+        expect(screen.getByText('Stock ($ / share)')).toBeDefined();
+        complete(result);
+        await waitFor(() => expect(chart.getAttribute('aria-busy')).toBe('false'));
+    });
     it('shows signal-date entry and hypothetical captured dollars with a separate stock chart', async () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&signalDate=2026-10-21&from=2026-10-23`);
         await screen.findByText('25.0%');

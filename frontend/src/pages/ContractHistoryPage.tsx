@@ -383,7 +383,6 @@ export function ContractHistoryPage() {
                 </p>
             )}
             {pending && !history && <Loading />}
-            {pending && history && <p role="status">Loading selection. The previous chart remains below.</p>}
             {key && !pending && !error && !history && (
                 <p>No usable observations have been collected for this contract.</p>
             )}
