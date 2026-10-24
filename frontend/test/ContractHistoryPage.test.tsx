@@ -18,14 +18,20 @@ vi.mock('recharts', () => ({
     Legend: () => null,
     Tooltip: () => null,
     XAxis: () => null,
-    YAxis: ({ yAxisId }: { yAxisId: string }) => <span>Axis {yAxisId}</span>,
+    YAxis: ({ yAxisId, domain }: { yAxisId: string; domain?: number[] }) => (
+        <span data-testid={`axis-${yAxisId}`} data-domain={JSON.stringify(domain)}>
+            Axis {yAxisId}
+        </span>
+    ),
     Line: ({ name }: { name: string }) => <span>{name}</span>,
     ReferenceLine: ({ x, y, label }: { x?: number; y?: number; label?: { value: string } }) => (
         <span data-testid="reference-line" data-x={x} data-y={y}>
             {label?.value}
         </span>
     ),
-    ReferenceArea: () => null,
+    ReferenceArea: ({ y1, y2 }: { y1: number; y2: number }) => (
+        <span data-testid="itm-area" data-low={y1} data-high={y2} />
+    ),
     ReferenceDot: () => <span data-testid="best-marker" />,
 }));
 
@@ -121,6 +127,45 @@ beforeEach(() => {
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('fits the stock axis to its movement without forcing a distant strike into range', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            points: [
+                { ...result.points[0]!, underlyingPrice: 160 },
+                { ...result.points[0]!, time: result.points[0]!.time + 600000, underlyingPrice: 160.2 },
+            ],
+        });
+        mount();
+        await screen.findByText('Stock ($ / share)');
+        const domain = JSON.parse(screen.getByTestId('axis-stock').getAttribute('data-domain')!) as number[];
+        expect(domain[0]).toBeCloseTo(159.98);
+        expect(domain[1]).toBeCloseTo(160.22);
+        expect(screen.getByText(/Strike \$150.00 below chart range/)).toBeDefined();
+        expect(screen.queryByTestId('itm-area')).toBeNull();
+        expect(screen.queryByText('Strike $150.00', { exact: true })).toBeNull();
+    });
+    it('shades the entire visible stock range when the strike is above it', async () => {
+        api.history.mockResolvedValue({ ...result, contract: { ...contract, strike: 170 } });
+        mount();
+        await screen.findByText(/Strike \$170.00 above chart range/);
+        const domain = JSON.parse(screen.getByTestId('axis-stock').getAttribute('data-domain')!) as number[];
+        const area = screen.getByTestId('itm-area');
+        expect(Number(area.getAttribute('data-low'))).toBe(domain[0]);
+        expect(Number(area.getAttribute('data-high'))).toBe(domain[1]);
+    });
+    it('retains the strike line and clips ITM shading when the stock crosses strike', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            points: [
+                { ...result.points[0]!, underlyingPrice: 149 },
+                { ...result.points[0]!, time: result.points[0]!.time + 600000, underlyingPrice: 151 },
+            ],
+        });
+        mount();
+        await screen.findByText('Strike $150.00', { exact: true });
+        expect(Number(screen.getByTestId('itm-area').getAttribute('data-high'))).toBe(150);
+        expect(screen.queryByText(/Strike \$150.00 (above|below) chart range/)).toBeNull();
+    });
     it('shows all-history crossings, best, worst and giveback independently of the chart range', async () => {
         const { container } = mount();
         await screen.findByText('35.0 pp');

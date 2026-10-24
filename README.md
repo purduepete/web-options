@@ -45,6 +45,9 @@ The dashed entry-price line and, when in range, the entry capture marker locate
 the baseline. A shorter stock chart shares the time range and hover position,
 with a dashed strike and a shaded put ITM region below it. Missing observations
 and market-session boundaries break both lines.
+The stock axis fits its observed prices with padding, independent of the strike.
+A strike outside that scale is labeled above or below the chart range; ITM shading
+is clipped to the visible range so a distant strike never compresses the movement.
 
 **Since signal entry** analyzes every recorded capture after that signal's entry
 and through expiration or the latest collection, independent of the chart dates.

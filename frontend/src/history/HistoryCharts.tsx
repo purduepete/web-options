@@ -50,7 +50,8 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
     );
     const stockValues = points.map((point) => point.underlyingPrice);
     const hasStock = stockValues.some((value) => value !== null);
-    const stockDomain = fitDomain([...stockValues, history.contract.strike], 0.5, [0, Number.POSITIVE_INFINITY]);
+    const stockDomain = fitDomain(stockValues, 0.1, [0, Number.POSITIVE_INFINITY]);
+    const strikeInScale = history.contract.strike >= stockDomain[0] && history.contract.strike <= stockDomain[1];
     const start = points[0]?.time;
     const end = points.at(-1)?.time;
     const entryTime = history.entry?.capturedAt ? Date.parse(history.entry.capturedAt) : null;
@@ -248,7 +249,13 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
             </div>
             <div className="history-chart-head">
                 <h3>{history.contract.symbol} stock versus strike</h3>
-                <span>Strike {money(history.contract.strike)} · Shaded below strike = ITM</span>
+                <span>
+                    Strike {money(history.contract.strike)}
+                    {hasStock && !strikeInScale
+                        ? ` ${history.contract.strike < stockDomain[0] ? 'below' : 'above'} chart range`
+                        : ''}
+                    {' · Shaded below strike = ITM'}
+                </span>
             </div>
             {!hasStock ? (
                 <p className="history-coverage">Underlying history unavailable for this range.</p>
@@ -284,26 +291,30 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
                                 axisLine={false}
                                 tickLine={false}
                             />
-                            <ReferenceArea
-                                yAxisId="stock"
-                                y1={stockDomain[0]}
-                                y2={history.contract.strike}
-                                fill="var(--danger)"
-                                fillOpacity={0.07}
-                                strokeOpacity={0}
-                            />
-                            <ReferenceLine
-                                yAxisId="stock"
-                                y={history.contract.strike}
-                                stroke="var(--text-muted)"
-                                strokeDasharray="4 4"
-                                label={{
-                                    value: `Strike ${money(history.contract.strike)}`,
-                                    fill: 'var(--text-muted)',
-                                    fontSize: 11,
-                                    position: 'insideTopLeft',
-                                }}
-                            />
+                            {history.contract.strike > stockDomain[0] && (
+                                <ReferenceArea
+                                    yAxisId="stock"
+                                    y1={stockDomain[0]}
+                                    y2={Math.min(history.contract.strike, stockDomain[1])}
+                                    fill="var(--danger)"
+                                    fillOpacity={0.07}
+                                    strokeOpacity={0}
+                                />
+                            )}
+                            {strikeInScale && (
+                                <ReferenceLine
+                                    yAxisId="stock"
+                                    y={history.contract.strike}
+                                    stroke="var(--text-muted)"
+                                    strokeDasharray="4 4"
+                                    label={{
+                                        value: `Strike ${money(history.contract.strike)}`,
+                                        fill: 'var(--text-muted)',
+                                        fontSize: 11,
+                                        position: 'insideTopLeft',
+                                    }}
+                                />
+                            )}
                             <Tooltip
                                 content={({ active, payload }) => {
                                     const point = payload?.[0]?.payload as ChartPoint | undefined;
