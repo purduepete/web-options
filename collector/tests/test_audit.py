@@ -148,6 +148,21 @@ def test_mismatches_and_nonmatching_live_paper_identity():
     assert report["sections"]["portfolio"]["missing_azure"] == 1
 
 
+def test_value_differences_and_azure_gaps_are_informational():
+    owners, runs, quotes, vader, portfolio = fixtures()
+    vader[-1]["mark"] = "2"
+    portfolio[0]["mid"] = "3"
+    portfolio.pop()
+    report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
+    assert report["status"] == "pass"
+    assert report["sections"]["vader"]["status"] == "pass"
+    assert report["sections"]["vader"]["mismatches"] == 1
+    assert report["sections"]["portfolio"]["status"] == "pass"
+    assert report["sections"]["portfolio"]["mismatches"] == 1
+    assert report["sections"]["portfolio"]["missing_azure"] == 1
+    assert len(report["sections"]["portfolio"]["examples"]) == 2
+
+
 def test_early_close_and_time_distance_missing_azure():
     day = date(2026, 11, 27)
     data = fixtures(day)

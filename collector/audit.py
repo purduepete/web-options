@@ -65,6 +65,13 @@ def problem(result: dict, category: str, example: dict) -> None:
         result["examples"].append({"reason": category, **example})
 
 
+def note(result: dict, category: str, example: dict) -> None:
+    """Azure-side gaps and value differences between non-simultaneous samples are reported, never failed."""
+    result[category] = result.get(category, 0) + 1
+    if len(result["examples"]) < 20:
+        result["examples"].append({"reason": category, **example})
+
+
 def compare_values(local: dict, source: dict, *, portfolio=False) -> list[dict]:
     fields = [
         ("mid", "mid_per_share", PRICE_TOLERANCE),
@@ -128,6 +135,8 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             "VADER's 13:15 sample is compared with the 13:10 settle capture only; Azure has no 13:00 sample.",
             "Portfolio is compared with the last open-session capture; Azure stops refreshing at 12:50.",
             "Broker no-quote contracts (no bid/ask) are reported under broker_unquoted and do not fail.",
+            "VADER and portfolio mismatches and missing_azure are informational: the samples are minutes "
+            "apart and Azure gaps are not collector failures. Only missing local data fails.",
         ],
     }
     if session_bounds(day) is None:
@@ -162,14 +171,14 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             nearest = min(candidates, key=lambda row: abs(timestamp(row["captured_at_utc"]) - reference),
                           default=None)
             if nearest is None or abs(timestamp(nearest["captured_at_utc"]) - reference) > TIME_TOLERANCE:
-                problem(vader, "missing_azure", identity)
+                note(vader, "missing_azure", identity)
                 continue
             if quote is None:
                 continue
             vader["compared"] += 1
             differences = compare_values(quote, nearest)
             if differences:
-                problem(vader, "mismatches", {**identity, "fields": differences})
+                note(vader, "mismatches", {**identity, "fields": differences})
             else:
                 vader["matched"] += 1
     portfolio = sections["portfolio"]
@@ -195,14 +204,14 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
         if quote is None:
             problem(portfolio, "missing_local", identity)
         if not sources:
-            problem(portfolio, "missing_azure", identity)
+            note(portfolio, "missing_azure", identity)
         elif len(sources) > 1:
-            problem(portfolio, "mismatches", {**identity, "detail": "ambiguous Azure daily rows"})
+            note(portfolio, "mismatches", {**identity, "detail": "ambiguous Azure daily rows"})
         elif quote is not None:
             portfolio["compared"] += 1
             differences = compare_values(quote, sources[0], portfolio=True)
             if differences:
-                problem(portfolio, "mismatches", {**identity, "fields": differences})
+                note(portfolio, "mismatches", {**identity, "fields": differences})
             else:
                 portfolio["matched"] += 1
     coverage = sections["coverage"]

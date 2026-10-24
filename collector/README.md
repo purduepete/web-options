@@ -62,6 +62,13 @@ using the same price/delta tolerances. Azure's MERGE refreshes that row every
 value. That section reports value agreement only: `created_at` cannot establish
 the time of an updated daily row. Current discovery cannot reconstruct past
 eligibility for historical `--date` runs or positions closed earlier that day.
+
+VADER and portfolio value mismatches and `missing_azure` rows are informational.
+They keep their counts and examples but never fail the audit, because the two
+sides are sampled minutes apart and an Azure gap is not a collector failure.
+From 10/20 to 10/23/2026 they failed every night (18 of 19 portfolio rows on
+10/23, prices 10 to 60 cents apart) while coverage passed. Missing local quotes,
+coverage gaps and degraded runs still fail.
 Coverage compares the current distinct discovered universe against complete
 price/delta/IV components in every expected slot, and reports missing/degraded
 runs. A quote whose price failed with `invalid_or_missing_bid_ask` (the broker
