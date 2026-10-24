@@ -199,6 +199,17 @@ worker disabled until a safe exclusive schedule or coexistence is verified.
 Only then set `enabled: true` in the protected configuration and install the
 tasks with `scripts\Install-CollectorTasks.ps1 -EnableCollection`.
 
+The installer requires SolutionDeploy's shared
+`C:\ProgramData\SolutionDeploy\control\framework\src\CollectorAccess.psm1`
+(`-CollectorAccessModulePath` overrides it) and uses managed PowerShell at
+`C:\ProgramData\SolutionDeploy\runtime\powershell\7\pwsh.exe`, never PATH discovery.
+Before registering tasks it grants SID `S-1-5-19` RX only on the selected release,
+then uses a temporary LOCAL SERVICE task to open code, dependencies and external protected
+config and test a disposable log file. Failure restores original release ACLs and leaves
+existing collector tasks unchanged. The printed ACL snapshot permits later rollback.
+SolutionDeploy's standalone `scripts\Test-CollectorAccess.ps1` checks access without running
+collectors, audits or database isolation probes.
+
 The installer registers a one-minute collector tick and a separate one-minute
 watchdog under `\JimlerTech`, running as LOCAL SERVICE without sign-in. Without
 `-EnableCollection` both tasks are registered disabled.

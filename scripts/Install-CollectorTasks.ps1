@@ -3,6 +3,8 @@ param(
     [Parameter(Mandatory)][string]$ReleasePath,
     [Parameter(Mandatory)][string]$PythonPath,
     [Parameter(Mandatory)][string]$ConfigPath,
+    [string]$PowerShellPath = 'C:\ProgramData\SolutionDeploy\runtime\powershell\7\pwsh.exe',
+    [string]$CollectorAccessModulePath = 'C:\ProgramData\SolutionDeploy\control\framework\src\CollectorAccess.psm1',
     [string]$AdminPassFile,
     [string]$SecretsDirectory,
     [switch]$EnableCollection
@@ -23,6 +25,17 @@ $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
 if ($EnableCollection -and $config.enabled -ne $true) {
     throw 'Broker compatibility must be approved in the protected configuration before activation.'
 }
+if (-not (Test-Path -LiteralPath $CollectorAccessModulePath -PathType Leaf)) {
+    throw "Shared collector access helper missing: $CollectorAccessModulePath. Install SolutionDeploy control framework or specify -CollectorAccessModulePath."
+}
+Import-Module $CollectorAccessModulePath -Force
+$logs = Join-Path (Split-Path -Parent (Split-Path -Parent $ReleasePath)) 'shared\logs'
+$writeDirectories = @($logs)
+if ($config.notification_state_file) { $writeDirectories += Split-Path -Parent $config.notification_state_file }
+$access = Invoke-CollectorAccessPreflight -ReleasePath $ReleasePath -PythonPath $PythonPath -ConfigPath $ConfigPath `
+    -PowerShellPath $PowerShellPath -WritableDirectories ($writeDirectories | Sort-Object -Unique)
+if (-not $access.Success -or $access.Sid -ne 'S-1-5-19') { throw 'Collector access preflight failed; tasks unchanged.' }
+Write-Host "Collector access verified; original ACLs: $($access.AclSnapshot)"
 if ($EnableCollection) {
     if (-not $AdminPassFile -or -not $SecretsDirectory) {
         throw 'Activation requires administrator-run database isolation probes in this installer invocation.'
@@ -34,7 +47,7 @@ if ($EnableCollection) {
     }
     finally { Pop-Location }
 }
-$pwsh = (Get-Command pwsh.exe -CommandType Application | Select-Object -First 1).Source
+$pwsh = $PowerShellPath
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LOCAL SERVICE' -LogonType ServiceAccount
 foreach ($kind in @('tick', 'watchdog', 'audit')) {
     $taskName = switch ($kind) {
