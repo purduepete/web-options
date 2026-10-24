@@ -4,6 +4,7 @@ import type { AppConfig } from '../config';
 import { withHistory } from './db';
 import { readSchedule } from './schedule';
 import type { ScheduleSlot } from './schedule';
+import { analyzeHistory, type AnalysisRow } from './analysis';
 
 export const MAX_DATES = 93;
 export const MAX_POINTS = 10000;
@@ -303,18 +304,33 @@ export async function fetchHistory(
         );
         if (result.rows.length > MAX_POINTS) throw new HistoryRangeError();
         const baseline = entry?.rows[0];
+        const capturedEntry =
+            baseline && selectedSignal
+                ? {
+                      signalDate: selectedSignal,
+                      mark: Number(baseline.entry_mark_per_share),
+                      delta: baseline.entry_delta === null ? null : Number(baseline.entry_delta),
+                      capturedAt: baseline.captured_at?.toISOString() ?? null,
+                  }
+                : null;
+        const analysisRows =
+            capturedEntry && capturedEntry.mark > 0
+                ? await db.query<AnalysisRow>(
+                      `SELECT r.session_date::text,r.scheduled_at,q.mark_per_share,q.price_status
+                 FROM public.option_collection_run r LEFT JOIN public.broker_option_quote q
+                   ON q.run_id=r.id AND q.contract_key=$1
+                 WHERE r.session_date BETWEEN $2::date AND $3::date
+                   AND r.scheduled_at >= COALESCE($4::timestamptz, $2::date::timestamp AT TIME ZONE 'America/Los_Angeles')
+                   AND r.scheduled_at <= CURRENT_TIMESTAMP
+                 ORDER BY r.scheduled_at,r.id`,
+                      [key, capturedEntry.signalDate, selected.expiration, capturedEntry.capturedAt]
+                  )
+                : null;
         return {
             selected,
             selectedSignal,
-            entry:
-                baseline && selectedSignal
-                    ? {
-                          signalDate: selectedSignal,
-                          mark: Number(baseline.entry_mark_per_share),
-                          delta: baseline.entry_delta === null ? null : Number(baseline.entry_delta),
-                          capturedAt: baseline.captured_at?.toISOString() ?? null,
-                      }
-                    : null,
+            entry: capturedEntry,
+            analysis: analyzeHistory(capturedEntry, analysisRows?.rows ?? []),
             rows: result.rows,
             activation: activation.rows[0]?.first,
         };
@@ -331,6 +347,7 @@ export async function fetchHistory(
         to,
         signalDate: snapshot.selectedSignal,
         entry: snapshot.entry,
+        analysis: snapshot.analysis,
         ...built,
         warnings: [
             'Sampled observations can miss moves between captures. Price and delta are separate broker events.',

@@ -20,8 +20,13 @@ vi.mock('recharts', () => ({
     XAxis: () => null,
     YAxis: ({ yAxisId }: { yAxisId: string }) => <span>Axis {yAxisId}</span>,
     Line: ({ name }: { name: string }) => <span>{name}</span>,
-    ReferenceLine: () => null,
+    ReferenceLine: ({ x, y, label }: { x?: number; y?: number; label?: { value: string } }) => (
+        <span data-testid="reference-line" data-x={x} data-y={y}>
+            {label?.value}
+        </span>
+    ),
     ReferenceArea: () => null,
+    ReferenceDot: () => <span data-testid="best-marker" />,
 }));
 
 const contract = {
@@ -42,6 +47,39 @@ const result: HistoryResponse = {
     to: '2026-10-23',
     signalDate: '2026-10-21',
     entry: { signalDate: '2026-10-21', mark: 2, delta: -0.28, capturedAt: '2026-10-21T13:35:00Z' },
+    analysis: {
+        validMarks: 3,
+        recordedGaps: 1,
+        firstObservedAt: Date.parse('2026-10-21T14:00:00Z'),
+        through: Date.parse('2026-10-23T13:35:00Z'),
+        best: { time: Date.parse('2026-10-22T14:00:00Z'), mark: 0.8, capturedPercent: 60, dollars: 120 },
+        worst: { time: Date.parse('2026-10-21T14:00:00Z'), mark: 2.6, capturedPercent: -30, dollars: -60 },
+        latest: { time: Date.parse('2026-10-23T13:35:00Z'), mark: 1.5, capturedPercent: 25, dollars: 50 },
+        giveback: { percentagePoints: 35, dollars: 70 },
+        targets: [
+            {
+                percent: 25,
+                closingMark: 1.5,
+                firstCrossing: {
+                    time: Date.parse('2026-10-22T14:00:00Z'),
+                    mark: 0.8,
+                    capturedPercent: 60,
+                    dollars: 120,
+                },
+            },
+            {
+                percent: 50,
+                closingMark: 1,
+                firstCrossing: {
+                    time: Date.parse('2026-10-22T14:00:00Z'),
+                    mark: 0.8,
+                    capturedPercent: 60,
+                    dollars: 120,
+                },
+            },
+            { percent: 75, closingMark: 0.5, firstCrossing: null },
+        ],
+    },
     points: [
         {
             time: Date.parse('2026-10-23T13:35:00Z'),
@@ -83,6 +121,64 @@ beforeEach(() => {
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('shows all-history crossings, best, worst and giveback independently of the chart range', async () => {
+        const { container } = mount();
+        await screen.findByText('35.0 pp');
+        expect(screen.getByText('60.0%')).toBeDefined();
+        expect(screen.getByText('-30.0%')).toBeDefined();
+        expect(screen.getByText('$70.00 decline from best to latest')).toBeDefined();
+        expect(screen.getByText('First observed crossing 10/22/2026 07:00')).toBeDefined();
+        expect(screen.getByText('1d 0h 25m elapsed')).toBeDefined();
+        expect(screen.getByText('$1.00 to close')).toBeDefined();
+        expect(screen.queryByTestId('best-marker')).toBeNull();
+        expect(screen.queryByText('First 50%')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Exit target: 50%' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /75%/ }));
+        expect(screen.getByText('$0.50 to close')).toBeDefined();
+        expect(screen.getByText('Not observed in collected history')).toBeDefined();
+        fireEvent.click(screen.getByRole('button', { name: 'Exit target: 75%' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /25%/ }));
+        expect(screen.getByText('First observed crossing 10/22/2026 07:00')).toBeDefined();
+        expect(api.history).toHaveBeenCalledTimes(1);
+        expect(container.querySelector('select,datalist')).toBeNull();
+    });
+    it('marks a visible best and first crossing, and converts the target line between price and percent', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            from: '2026-10-21',
+            to: '2026-10-23',
+            points: [
+                { ...result.points[0]!, time: Date.parse('2026-10-21T14:00:00Z'), mark: 2.6 },
+                { ...result.points[0]!, time: Date.parse('2026-10-22T14:00:00Z'), mark: 0.8 },
+                result.points[0]!,
+            ],
+        });
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=multi&from=2026-10-21&to=2026-10-23`);
+        await screen.findByTestId('best-marker');
+        expect(screen.getByText('First 50%')).toBeDefined();
+        expect(screen.getByText('50% target').getAttribute('data-y')).toBe('1');
+        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
+        expect(screen.getByText('50% target').getAttribute('data-y')).toBe('50');
+    });
+    it('reports no valid observations without inventing crossings or giveback', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            analysis: {
+                ...result.analysis,
+                validMarks: 0,
+                best: null,
+                worst: null,
+                latest: null,
+                giveback: null,
+                targets: result.analysis!.targets.map((target) => ({ ...target, firstCrossing: null })),
+            },
+        });
+        mount();
+        await screen.findByText('No valid post-entry marks');
+        expect(screen.queryByText(/First observed crossing/)).toBeNull();
+        expect(screen.queryByText(/decline from best/)).toBeNull();
+    });
     it('keeps the chart visible during refresh without a loading-selection message', async () => {
         mount();
         await screen.findByText('25.0%');
@@ -114,7 +210,7 @@ describe('contract history page', () => {
         expect(screen.queryByText('Mark ($ / share)')).toBeNull();
     });
     it('keeps missing entry explicit without substituting the displayed mark', async () => {
-        api.history.mockResolvedValue({ ...result, entry: null });
+        api.history.mockResolvedValue({ ...result, entry: null, analysis: null });
         mount();
         await screen.findByText('Entry quote unavailable');
         expect(screen.queryByText(/credit \/ standard contract/)).toBeNull();

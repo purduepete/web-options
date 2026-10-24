@@ -45,6 +45,24 @@ The dashed entry-price line and, when in range, the entry capture marker locate
 the baseline. A shorter stock chart shares the time range and hover position,
 with a dashed strike and a shaded put ITM region below it. Missing observations
 and market-session boundaries break both lines.
+
+**Since signal entry** analyzes every recorded capture after that signal's entry
+and through expiration or the latest collection, independent of the chart dates.
+Choose a 25%, 50% (default), or 75% exit target. The card gives the closing mark
+needed, first observed crossing, actual sampled credit retained, and elapsed
+calendar time from entry, including nights and weekends. Crossings include exact
+threshold matches and are never interpolated across gaps.
+Best and worst are the highest and lowest observed captured percentages, with
+their timestamps and hypothetical dollars. Giveback is best minus latest valid
+observation, in percentage points and dollars. An entirely losing history keeps
+its negative best and worst; no artificial zero-profit entry point is added.
+Tied extrema use the earliest capture. The chart marks best and first crossing
+only when their times are visible. The target line appears in Price and Captured %
+when inside the fitted scale; an off-scale note preserves readable movement.
+Missing/nonpositive entries and missing observations remain explicit. Recorded
+gaps are counted separately; unrecorded periods remain unknown. A sampled target
+crossing does not prove an executable fill.
+
 The contract picker lists each signal date separately, using that day's tiers
 and top picks. Its calendar enables dates with signals and shows the number of
 contracts beneath each day. Arrow buttons step between signal dates.

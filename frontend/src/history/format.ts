@@ -77,6 +77,15 @@ export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint)
     return ((entry.mark - point.mark) / entry.mark) * 100;
 }
 
+export function elapsedTime(from: string | null, to: number): string {
+    if (!from) return 'Entry capture time unavailable';
+    const minutes = Math.floor((to - Date.parse(from)) / 60000);
+    if (!Number.isFinite(minutes) || minutes < 0) return 'Elapsed time unavailable';
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    return `${days ? `${days}d ` : ''}${hours}h ${minutes % 60}m elapsed`;
+}
+
 export function changeSummary(points: HistoryPoint[], component: 'mark' | 'delta') {
     const valid = points.filter((point) => point[component] !== null);
     const first = valid[0];

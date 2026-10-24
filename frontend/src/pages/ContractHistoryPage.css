@@ -188,6 +188,11 @@
     justify-content: space-between;
     gap: 0.4rem;
 }
+.history-analysis {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
 .history-chart-head h3 {
     margin: 0;
     font-size: 0.85rem;

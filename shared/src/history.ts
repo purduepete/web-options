@@ -48,6 +48,26 @@ export interface HistoryEntry {
     capturedAt: string | null;
 }
 
+export interface HistoryOutcome {
+    /** Scheduled capture time, in milliseconds since epoch, as on the charts. */
+    time: number;
+    mark: number;
+    capturedPercent: number;
+    dollars: number;
+}
+
+export interface HistoryAnalysis {
+    validMarks: number;
+    recordedGaps: number;
+    firstObservedAt: number | null;
+    through: number | null;
+    best: HistoryOutcome | null;
+    worst: HistoryOutcome | null;
+    latest: HistoryOutcome | null;
+    giveback: { percentagePoints: number; dollars: number } | null;
+    targets: { percent: 25 | 50 | 75; closingMark: number; firstCrossing: HistoryOutcome | null }[];
+}
+
 export interface HistoryResponse {
     contract: HistoryContract;
     from: string;
@@ -55,6 +75,8 @@ export interface HistoryResponse {
     signalDate: string | null;
     /** Captured market entry for this signal, never an advertised premium fallback. */
     entry: HistoryEntry | null;
+    /** All recorded captures since the selected entry, independent of the plotted dates. */
+    analysis: HistoryAnalysis | null;
     points: HistoryPoint[];
     coverage: {
         observations: number;

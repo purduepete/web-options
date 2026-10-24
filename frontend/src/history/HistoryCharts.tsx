@@ -5,6 +5,7 @@ import {
     Line,
     LineChart,
     ReferenceArea,
+    ReferenceDot,
     ReferenceLine,
     ResponsiveContainer,
     Tooltip,
@@ -14,6 +15,7 @@ import {
 import type { HistoryPoint, HistoryResponse } from '@weboptions/shared';
 import { ChoiceMenu } from '../components/ChoiceMenu';
 import { axisTime, deltaText, evenTicks, fitDomain, money, pacificTime, premiumCaptured } from './format';
+import { HistoryAnalysis, type TargetChoice } from './HistoryAnalysis';
 
 interface ChartPoint extends HistoryPoint {
     captured: number | null;
@@ -21,6 +23,7 @@ interface ChartPoint extends HistoryPoint {
 
 export function HistoryCharts({ history }: { history: HistoryResponse }) {
     const [metric, setMetric] = useState<'price' | 'captured'>('price');
+    const [target, setTarget] = useState<TargetChoice>('50');
     const syncId = useId();
     const percentage = metric === 'captured';
     const points: ChartPoint[] = history.points.map((point) => ({
@@ -28,13 +31,11 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
         captured: premiumCaptured(history.entry, point),
     }));
     const values = points.map((point) => (percentage ? point.captured : point.mark));
+    const domainValues = [...values, ...(percentage ? [] : [history.entry?.mark ?? null])];
     const priceDomain = fitDomain(
-        [
-            ...points.map((point) => (percentage ? point.captured : point.mark)),
-            ...(percentage ? [] : [history.entry?.mark ?? null]),
-        ],
+        domainValues,
         percentage ? 2 : 0.1,
-        values.some((value) => value !== null)
+        domainValues.some((value) => value !== null && Number.isFinite(value))
             ? percentage
                 ? [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]
                 : [0, Number.POSITIVE_INFINITY]
@@ -55,6 +56,12 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
     const entryTime = history.entry?.capturedAt ? Date.parse(history.entry.capturedAt) : null;
     const showEntryTime =
         entryTime !== null && start !== undefined && end !== undefined && entryTime >= start && entryTime <= end;
+    const exitTarget = history.analysis?.targets.find((item) => item.percent === Number(target));
+    const targetValue = exitTarget ? (percentage ? exitTarget.percent : exitTarget.closingMark) : null;
+    const targetInScale = targetValue !== null && targetValue >= priceDomain[0] && targetValue <= priceDomain[1];
+    const inView = (time: number) => start !== undefined && end !== undefined && time >= start && time <= end;
+    const firstCrossing = exitTarget?.firstCrossing;
+    const best = history.analysis?.best;
     const tick = { fill: 'var(--text-muted)', fontSize: 11 };
     const xAxis = (
         <XAxis
@@ -70,6 +77,7 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
 
     return (
         <>
+            <HistoryAnalysis history={history} target={target} onTargetChange={setTarget} />
             <div className="history-chart-head">
                 <h3>Option price and delta</h3>
                 <ChoiceMenu
@@ -83,6 +91,9 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
                     ]}
                 />
             </div>
+            {exitTarget && !targetInScale && (
+                <p className="history-coverage">{target}% target is outside the current chart scale.</p>
+            )}
             {percentage && !history.entry && (
                 <p className="history-coverage">Entry quote unavailable. Captured percentages cannot be calculated.</p>
             )}
@@ -141,6 +152,46 @@ export function HistoryCharts({ history }: { history: HistoryResponse }) {
                                 x={entryTime}
                                 stroke="var(--text-muted)"
                                 strokeDasharray="2 4"
+                            />
+                        )}
+                        {targetInScale && targetValue !== null && (
+                            <ReferenceLine
+                                yAxisId="price"
+                                y={targetValue}
+                                stroke="var(--positive)"
+                                strokeDasharray="6 4"
+                                label={{
+                                    value: `${target}% target`,
+                                    fill: 'var(--positive)',
+                                    fontSize: 11,
+                                    position: 'insideTopLeft',
+                                }}
+                            />
+                        )}
+                        {firstCrossing && inView(firstCrossing.time) && (
+                            <ReferenceLine
+                                yAxisId="price"
+                                x={firstCrossing.time}
+                                stroke="var(--positive)"
+                                strokeDasharray="6 4"
+                                label={{
+                                    value: `First ${target}%`,
+                                    fill: 'var(--positive)',
+                                    fontSize: 11,
+                                    position: 'insideTopRight',
+                                }}
+                            />
+                        )}
+                        {best && inView(best.time) && (
+                            <ReferenceDot
+                                yAxisId="price"
+                                x={best.time}
+                                y={percentage ? best.capturedPercent : best.mark}
+                                r={4}
+                                fill="var(--surface)"
+                                stroke="var(--positive)"
+                                strokeWidth={2}
+                                label={{ value: 'Best', fill: 'var(--positive)', fontSize: 11, position: 'top' }}
                             />
                         )}
                         <Tooltip

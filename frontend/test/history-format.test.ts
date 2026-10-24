@@ -4,6 +4,7 @@ import {
     axisTime,
     changeSummary,
     evenTicks,
+    elapsedTime,
     fitDomain,
     pacificTime,
     premiumCaptured,
@@ -27,6 +28,11 @@ function point(time: number, mark: number | null, delta: number | null): History
     };
 }
 describe('history summaries', () => {
+    it('formats target elapsed time including nights and missing capture times', () => {
+        expect(elapsedTime('2026-10-21T14:00:00Z', Date.parse('2026-10-22T15:25:00Z'))).toBe('1d 1h 25m elapsed');
+        expect(elapsedTime(null, 0)).toBe('Entry capture time unavailable');
+        expect(elapsedTime('2026-10-21T14:00:00Z', Date.parse('2026-10-21T14:00:00Z'))).toBe('0h 0m elapsed');
+    });
     it('calculates captured premium against entry and rejects missing, zero and pre-entry baselines', () => {
         const entry = { signalDate: '2026-10-23', mark: 2, delta: -0.28, capturedAt: '2026-10-23T13:35:00Z' };
         const at = Date.parse('2026-10-23T14:00:00Z');
