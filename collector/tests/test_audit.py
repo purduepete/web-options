@@ -141,7 +141,7 @@ def test_other_quote_failures_still_fail_partial_runs():
 
 def test_mismatches_and_nonmatching_live_paper_identity():
     data = fixtures()
-    data[3][-1]["mark"] = "2"
+    data[3][-1]["mark"] = "1.20"
     data[4][0]["is_paper"] = False
     report = audit_day(DAY, *data)
     assert report["sections"]["vader"]["mismatches"] == 1
@@ -150,8 +150,8 @@ def test_mismatches_and_nonmatching_live_paper_identity():
 
 def test_value_differences_and_azure_gaps_are_informational():
     owners, runs, quotes, vader, portfolio = fixtures()
-    vader[-1]["mark"] = "2"
-    portfolio[0]["mid"] = "3"
+    vader[-1]["mark"] = "1.20"
+    portfolio[0]["mid"] = "1.30"
     portfolio.pop()
     report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
     assert report["status"] == "pass"
@@ -161,6 +161,52 @@ def test_value_differences_and_azure_gaps_are_informational():
     assert report["sections"]["portfolio"]["mismatches"] == 1
     assert report["sections"]["portfolio"]["missing_azure"] == 1
     assert len(report["sections"]["portfolio"]["examples"]) == 2
+
+
+@pytest.mark.parametrize(("field", "value"), [("mark", "2"), ("mid", "0"), ("delta", "-.45")])
+def test_gross_value_differences_fail(field, value):
+    owners, runs, quotes, vader, portfolio = fixtures()
+    vader[-1][field] = value
+    portfolio[0][field] = value
+    report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
+    assert report["status"] == "fail"
+    for name in ("vader", "portfolio"):
+        assert report["sections"][name]["status"] == "fail"
+        assert report["sections"][name]["gross_mismatches"] == 1
+
+
+def test_gross_limits_scale_with_price_and_cover_missing_local_values():
+    local = dict(mid_per_share="20", mark_per_share="20", delta="-.5", implied_volatility_fraction="4")
+    source = dict(mid="24.9", mark="15.1", delta="-.36", implied_volatility="11")
+    assert not any(d["gross"] for d in compare_values(local, source))
+    source["mid"] = "26.8"
+    assert [d["field"] for d in compare_values(local, source) if d["gross"]] == ["mid"]
+    assert [d["field"] for d in compare_values({**local, "delta": None}, source) if d["gross"]] == ["mid", "delta"]
+    assert not any(d["gross"] for d in compare_values(local, {**source, "mid": None, "mark": "20"})
+                   if d["field"] != "delta")
+
+
+@pytest.mark.parametrize(("local", "source", "expected"), [
+    (dict(mid_per_share="0"), dict(mid=".40"), True),
+    (dict(mid_per_share="0"), dict(mid=".04"), False),
+    (dict(mark_per_share="-.10"), dict(mark="0"), True),
+    (dict(delta="1.20"), dict(delta=".98"), True),
+    (dict(delta=".07"), dict(delta="-.07"), True),
+    (dict(delta=".03"), dict(delta="-.02"), False),
+])
+def test_invalid_local_values_are_gross_even_inside_the_drift_limits(local, source, expected):
+    field = next(iter(source))
+    assert [d["gross"] for d in compare_values(local, source) if d["field"] == field] == [expected]
+
+
+def test_losing_most_azure_comparisons_fails_the_section():
+    owners, runs, quotes, vader, portfolio = fixtures()
+    vader.clear()
+    portfolio.clear()
+    report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
+    for name in ("vader", "portfolio"):
+        assert report["sections"][name]["status"] == "fail"
+        assert report["sections"][name]["low_comparison_coverage"] == 1
 
 
 def test_early_close_and_time_distance_missing_azure():

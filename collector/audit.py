@@ -33,6 +33,15 @@ JOIN public.option_collection_run r ON r.id=q.run_id WHERE r.session_date=%s
 PRICE_TOLERANCE = Decimal(".01")
 DELTA_TOLERANCE = Decimal(".01")
 IV_TOLERANCE = Decimal(".02")
+# Differences past these limits are too large to be minutes of market drift and fail the audit.
+GROSS_PRICE_FLOOR = Decimal(".50")
+GROSS_PRICE_FRACTION = Decimal(".25")
+GROSS_DELTA = Decimal(".15")
+# A zero local price is wrong when the source shows more than this; a delta sign flip counts past this size.
+ZERO_PRICE_SOURCE = Decimal(".05")
+DELTA_SIGN_FLOOR = Decimal(".05")
+# Below this share of expected rows compared, Azure gaps could be hiding collector defects.
+MIN_COMPARED_FRACTION = Decimal(".5")
 TIME_TOLERANCE = timedelta(minutes=20)
 BROKER_UNQUOTED = "invalid_or_missing_bid_ask"
 EXCUSED = ("complete", "no_work")
@@ -87,13 +96,45 @@ def compare_values(local: dict, source: dict, *, portfolio=False) -> list[dict]:
             differences.append({"field": source_name, "reason": "both_missing"})
             continue
         if a is None or b is None:
-            differences.append({"field": source_name, "local": a, "azure": b, "reason": "missing_value"})
+            differences.append({"field": source_name, "local": a, "azure": b, "reason": "missing_value",
+                                "gross": a is None})
             continue
         a, b = Decimal(str(a)), Decimal(str(b))
-        if not a.is_finite() or not b.is_finite() or abs(a - b) > tolerance:
+        if not a.is_finite() or not b.is_finite():
+            differences.append({"field": source_name, "local": str(a), "azure": str(b), "gross": True})
+        elif abs(a - b) > tolerance:
             differences.append({"field": source_name, "local": str(a), "azure": str(b),
-                                "tolerance": str(tolerance)})
+                                "tolerance": str(tolerance), "gross": gross(source_name, a, b)})
     return differences
+
+
+def gross(field: str, local: Decimal, source: Decimal) -> bool:
+    if field in ("mid", "mark"):
+        if local < 0 or (local == 0 and source > ZERO_PRICE_SOURCE):
+            return True
+        return abs(local - source) > max(GROSS_PRICE_FLOOR, max(abs(local), abs(source)) * GROSS_PRICE_FRACTION)
+    if field == "delta":
+        if abs(local) > 1:
+            return True
+        if min(abs(local), abs(source)) > DELTA_SIGN_FLOOR and (local > 0) != (source > 0):
+            return True
+        return abs(local - source) > GROSS_DELTA
+    return False
+
+
+def check_compared(result: dict) -> None:
+    usable = result["expected"] - result.get("broker_unquoted", 0)
+    if usable > 0 and result["compared"] < usable * MIN_COMPARED_FRACTION:
+        problem(result, "low_comparison_coverage",
+                {"compared": result["compared"], "expected": usable,
+                 "minimum_fraction": str(MIN_COMPARED_FRACTION)})
+
+
+def record(result: dict, identity: dict, differences: list[dict]) -> None:
+    if any(difference.get("gross") for difference in differences):
+        problem(result, "gross_mismatches", {**identity, "fields": differences})
+    else:
+        note(result, "mismatches", {**identity, "fields": differences})
 
 
 def exception(result: dict, example: dict) -> None:
@@ -136,7 +177,12 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             "Portfolio is compared with the last open-session capture; Azure stops refreshing at 12:50.",
             "Broker no-quote contracts (no bid/ask) are reported under broker_unquoted and do not fail.",
             "VADER and portfolio mismatches and missing_azure are informational: the samples are minutes "
-            "apart and Azure gaps are not collector failures. Only missing local data fails.",
+            "apart and Azure gaps are not collector failures.",
+            "gross_mismatches fail: a price off by more than max($0.50, 25%), a delta off by more than "
+            "0.15, a non-finite value or a value missing locally.",
+            "Also gross: a negative local price, a zero local price against an Azure price above $0.05, "
+            "a local |delta| above 1, or a delta sign flip when both sides exceed 0.05.",
+            "low_comparison_coverage fails when under half the expected rows could be compared with Azure.",
         ],
     }
     if session_bounds(day) is None:
@@ -178,9 +224,10 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             vader["compared"] += 1
             differences = compare_values(quote, nearest)
             if differences:
-                note(vader, "mismatches", {**identity, "fields": differences})
+                record(vader, identity, differences)
             else:
                 vader["matched"] += 1
+    check_compared(vader)
     portfolio = sections["portfolio"]
     portfolio["note"] = ("Value agreement only; Azure daily row has no update timestamp. "
                          "Compared with the last open-session capture, after Azure's 12:50 refresh.")
@@ -211,9 +258,10 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             portfolio["compared"] += 1
             differences = compare_values(quote, sources[0], portfolio=True)
             if differences:
-                note(portfolio, "mismatches", {**identity, "fields": differences})
+                record(portfolio, identity, differences)
             else:
                 portfolio["matched"] += 1
+    check_compared(portfolio)
     coverage = sections["coverage"]
     expected = {owner["contract"].broker_occ for owner in discovery}
     coverage["distinct_contracts_expected"] = len(expected)
@@ -299,6 +347,7 @@ def execute(config, day: date, output_root: Path) -> int:
             f"{name}: {result['status']} matched={result.get('matched', 0)}/{result.get('expected', 0)} "
             f"missing L/A={result.get('missing_local', 0)}/{result.get('missing_azure', 0)} "
             f"mismatch={result.get('mismatches', 0)}"
+            + (f" gross={result['gross_mismatches']}" if result.get("gross_mismatches") else "")
             + (f" broker_unquoted={result['broker_unquoted']}" if result.get("broker_unquoted") else "")
         )
     directory = output_root / "shared" / "logs" / "audit"
