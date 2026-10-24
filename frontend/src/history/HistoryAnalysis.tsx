@@ -1,6 +1,6 @@
 import type { HistoryResponse } from '@weboptions/shared';
 import { ChoiceMenu } from '../components/ChoiceMenu';
-import { elapsedTime, money, pacificTime, sessionLabel, signedMoney, targetPrice } from './format';
+import { elapsedTime, money, pacificTime, signedMoney, targetPrice } from './format';
 
 export type TargetChoice = '25' | '50' | '75';
 
@@ -33,12 +33,6 @@ export function HistoryAnalysis({
                     }))}
                 />
             </div>
-            <p className="history-coverage">
-                All collected history since{' '}
-                {history.signalDate ? sessionLabel(history.signalDate) : 'the selected signal'}, independent of chart
-                dates. Sampled marks, hypothetical dollars per standard 100-share contract. Fees and actual fills
-                excluded.
-            </p>
             {!analysis ? (
                 <p className="history-coverage">
                     {entry && entry.mark <= 0
@@ -53,8 +47,6 @@ export function HistoryAnalysis({
                             <strong>
                                 {selected ? `${targetPrice(selected.closingMark)} to close` : 'Unavailable'}
                             </strong>
-                            <small>Mark at or below this price per share</small>
-                            {entry && <span>{money(entry.mark * Number(target))} target credit retained</span>}
                             {crossing ? (
                                 <>
                                     <span>First observed crossing {pacificTime(crossing.time)}</span>

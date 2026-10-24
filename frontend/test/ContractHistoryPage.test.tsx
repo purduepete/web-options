@@ -244,7 +244,6 @@ describe('contract history page', () => {
     it('shows signal-date entry and hypothetical captured dollars with a separate stock chart', async () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&signalDate=2026-10-21&from=2026-10-23`);
         await screen.findByText('25.0%');
-        expect(screen.getByText('$200.00 credit / standard contract')).toBeDefined();
         expect(screen.getByText('+$50.00 / standard contract')).toBeDefined();
         expect(screen.getByText('Entry delta -0.280')).toBeDefined();
         expect(screen.getByText('Captured 10/21/2026 06:35')).toBeDefined();
@@ -258,7 +257,7 @@ describe('contract history page', () => {
         api.history.mockResolvedValue({ ...result, entry: null, analysis: null });
         mount();
         await screen.findByText('Entry quote unavailable');
-        expect(screen.queryByText(/credit \/ standard contract/)).toBeNull();
+        expect(screen.queryByText(/Entry delta/)).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
         fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
         expect(screen.getByText(/Captured percentages cannot be calculated/)).toBeDefined();
@@ -291,7 +290,7 @@ describe('contract history page', () => {
         await screen.findByText('Added 10/22/2026');
         fireEvent.click(container.querySelector('.history-contract-list button')!);
         await screen.findByText('50.0%');
-        expect(screen.getByText('$300.00 credit / standard contract')).toBeDefined();
+        expect(container.querySelector('.history-stats strong')!.textContent).toBe('$3.00');
         fireEvent.click(screen.getByRole('button', { name: 'Date: 10/23/2026' }));
         fireEvent.click(screen.getByRole('menuitemradio', { name: /10\/22\/2026/ }));
         await waitFor(() =>
@@ -303,7 +302,7 @@ describe('contract history page', () => {
                 '2026-10-22'
             )
         );
-        expect(screen.getByText('$300.00 credit / standard contract')).toBeDefined();
+        expect(container.querySelector('.history-stats strong')!.textContent).toBe('$3.00');
     });
     it('links the selected underlying to research pages with the displayed option context', async () => {
         mount();

@@ -460,7 +460,6 @@ export function ContractHistoryPage() {
                             <strong>{history.entry ? money(history.entry.mark) : 'Entry quote unavailable'}</strong>
                             {history.entry && (
                                 <>
-                                    <span>{money(history.entry.mark * 100)} credit / standard contract</span>
                                     <span>Entry delta {deltaText(history.entry.delta)}</span>
                                     <small>
                                         {history.entry.capturedAt
@@ -497,12 +496,7 @@ export function ContractHistoryPage() {
                             <small>Premium captured</small>
                             <strong>{captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}</strong>
                             {captured !== null && history.entry && price.value !== null && (
-                                <>
-                                    <span>
-                                        {signedMoney((history.entry.mark - price.value) * 100)} / standard contract
-                                    </span>
-                                    <small>Hypothetical at last viewed mark. Excludes fees and actual fills.</small>
-                                </>
+                                <span>{signedMoney((history.entry.mark - price.value) * 100)} / standard contract</span>
                             )}
                             {captured === null && (
                                 <small>
