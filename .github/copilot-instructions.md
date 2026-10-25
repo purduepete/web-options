@@ -1,5 +1,38 @@
 # WebOptions repository instructions
 
+## Commit, push and deploy
+
+For the existing jimbrownhome1 installation, "commit, push and deploy" requires
+the recorded common release workflow. This applies to frontend-only changes too.
+After committing and pushing, resolve the exact full commit and run:
+
+```powershell
+& C:\Files\Dev\main\solution-deploy\Deploy.ps1 -Action Release `
+    -App web-options -Component web -Target jimbrownhome1 -Commit <full-pushed-commit> `
+    -TailscaleUrl 'https://jimbrownhome1.tail8ad282.ts.net:8797/' `
+    -ApproveRelease -ApprovalReason '<approved change>' -DatabaseChangesReviewed
+```
+
+Follow the shared [deployment procedure](https://github.com/purduepete/solution-deploy/blob/main/docs/Deployment.md#one-entry-point-existing-procedures).
+Review database changes independently before running them; for changes without
+database work, state that explicitly in the approval reason.
+Select only `web` for UI/backend changes. Leave collector tasks and releases
+unchanged unless collector deployment was requested.
+
+Never copy a local build into `current` or an existing release folder. A build,
+file copy, task restart or passing health check does not complete deployment.
+Do not edit release dates or metadata to make an unrecorded copy look recorded.
+Build and launcher scripts are internal steps, not substitute release commands.
+
+Before reporting completion, verify both Tailscale and Cloudflare and read
+Solution Directory's `/deployments.json`. Require this app's `web` release commit
+to match the requested commit and its completion time to match the release
+receipt, displayed in local time. Confirm `state\common-release.json` agrees.
+On `NoChanges`, retain the existing date and explain that nothing was released.
+If the record is absent, stale or a record-write warning occurs, report the
+deployment as incomplete and investigate; do not silently retry or fabricate
+a release record.
+
 ## Collector deployment and runtime changes
 
 Follow the shared [collector reliability procedure](https://github.com/purduepete/solution-deploy/blob/main/docs/CollectorReliability.md).

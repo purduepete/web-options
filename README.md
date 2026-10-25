@@ -211,10 +211,37 @@ and Tailscale access controls on
 external boundaries and does not validate Cloudflare JWTs or identity headers.
 Trade links use `https://web-portfolio.jimlertech.com`.
 
-For deployed frontend updates, run `npm run build:frontend:access` from the repository
+For the hosted installation, use the recorded release procedure below, including
+for frontend-only updates. Its build uses `npm run build:frontend:access` from the repository
 root. This selects the checked-in `frontend/.env.access` profile, so a rebuild cannot
 accidentally restore the API-key prompt by omitting a shell environment variable.
 The ordinary frontend build keeps API-key mode for other installations.
+
+### Recorded hosted releases
+
+After committing and pushing, release the exact pushed commit through
+[Solution Deploy](https://github.com/purduepete/solution-deploy/blob/main/docs/Deployment.md#one-entry-point-existing-procedures):
+
+```powershell
+& C:\Files\Dev\main\solution-deploy\Deploy.ps1 -Action Release `
+    -App web-options -Component web -Target jimbrownhome1 -Commit <full-pushed-commit> `
+    -TailscaleUrl 'https://jimbrownhome1.tail8ad282.ts.net:8797/' `
+    -ApproveRelease -ApprovalReason '<approved change>' -DatabaseChangesReviewed
+```
+
+Database changes require independent review before execution. For a release
+without database changes, say so in the approval reason. Selecting `web` leaves
+the collector unchanged.
+
+Do not copy builds into `current` or an existing release folder, or invoke the
+launcher below as a replacement for a recorded release. Verify both access
+paths, `state\common-release.json`, and the `web-options` web component in
+Solution Directory's `/deployments.json`. Its commit and completion time must
+match the release receipt. A missing/stale record or record-write warning
+means deployment verification is incomplete. `NoChanges` retains the prior date.
+
+### Runtime settings and launcher
+
 Keep protected settings JSON outside the repo and release, readable only by
 administrators and `NT AUTHORITY\LOCAL SERVICE`:
 
