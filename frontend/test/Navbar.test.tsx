@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { STORAGE_KEYS } from '@weboptions/shared';
 import { FavoritesProvider } from '../src/navigation/FavoritesProvider';
 import { RecentlyVisitedProvider } from '../src/navigation/RecentlyVisitedProvider';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
@@ -112,16 +113,96 @@ describe('Navbar on desktop', () => {
         expect(signals?.textContent).not.toContain('Owned Contracts');
     });
 
-    it('cycles the theme from the bar and comes back around', async () => {
+    it('keeps the theme picker open while applying and persisting theme changes', async () => {
         const user = userEvent.setup();
         renderNavbar();
 
         expect(document.documentElement.getAttribute('data-theme')).toBe('midnight');
-        for (const expected of ['dark', 'light', 'midnight']) {
-            // Re-queried each time: the label names the theme it is showing.
-            await user.click(screen.getByRole('button', { name: /^Theme:/ }));
-            expect(document.documentElement.getAttribute('data-theme')).toBe(expected);
-        }
+        const trigger = screen.getByRole('button', { name: 'Theme: Midnight' });
+        await user.click(trigger);
+
+        const options = screen.getAllByRole('radio');
+        expect(options.map((option) => option.textContent?.trim())).toEqual(['Light', 'Midnight', 'Dark', 'System']);
+        expect(screen.getByRole('radio', { name: 'Midnight' }).getAttribute('aria-checked')).toBe('true');
+
+        await user.click(screen.getByRole('radio', { name: 'Dark' }));
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        expect(localStorage.getItem(STORAGE_KEYS.themePreference)).toBe('dark');
+        expect(screen.getByRole('button', { name: 'Theme: Dark' }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('dialog', { name: 'Appearance settings' })).toBeTruthy();
+        expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'Dark' }));
+
+        await user.click(screen.getByRole('radio', { name: 'Light' }));
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+        expect(localStorage.getItem(STORAGE_KEYS.themePreference)).toBe('light');
+        expect(screen.getByRole('dialog', { name: 'Appearance settings' })).toBeTruthy();
+
+        await user.click(screen.getByRole('button', { name: 'Theme: Light' }));
+        expect(screen.queryByRole('dialog', { name: 'Appearance settings' })).toBeNull();
+    });
+
+    it('closes the theme picker when its icon is pressed again', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        const trigger = screen.getByRole('button', { name: 'Theme: Midnight' });
+        await user.click(trigger);
+        expect(screen.getByRole('dialog', { name: 'Appearance settings' })).toBeTruthy();
+
+        await user.click(trigger);
+
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByRole('dialog', { name: 'Appearance settings' })).toBeNull();
+
+        await user.click(trigger);
+        expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('closes the theme picker on Escape and restores focus to its trigger', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        const trigger = screen.getByRole('button', { name: 'Theme: Midnight' });
+        await user.click(trigger);
+        expect(screen.getByRole('dialog', { name: 'Appearance settings' })).toBeTruthy();
+
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('dialog', { name: 'Appearance settings' })).toBeNull();
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('closes the theme picker when the pointer leaves it', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        await user.click(screen.getByRole('button', { name: 'Theme: Midnight' }));
+        fireEvent.pointerDown(document.body);
+
+        expect(screen.queryByRole('dialog', { name: 'Appearance settings' })).toBeNull();
+    });
+
+    it('closes the theme picker when Tab moves focus outside', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        await user.click(screen.getByRole('button', { name: 'Theme: Midnight' }));
+        await user.tab();
+
+        expect(screen.queryByRole('dialog', { name: 'Appearance settings' })).toBeNull();
+    });
+
+    it('moves through the theme picker options with arrow keys', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        await user.click(screen.getByRole('button', { name: 'Theme: Midnight' }));
+        await user.keyboard('{ArrowRight}');
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        expect(screen.getByRole('radio', { name: 'Dark' }).getAttribute('aria-checked')).toBe('true');
     });
 
     it('puts page reload in the top bar', () => {
@@ -129,6 +210,7 @@ describe('Navbar on desktop', () => {
 
         const reload = screen.getByRole('button', { name: 'Reload page' });
         expect(reload.getAttribute('title')).toBe('Reload page');
+        expect(reload.querySelectorAll('svg path')).toHaveLength(4);
     });
 
     it('closes the panel once a destination is chosen', async () => {

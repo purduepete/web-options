@@ -10,7 +10,7 @@ import {
     CloseIcon,
     MenuIcon,
     PageIcon,
-    RotateCcwIcon,
+    RefreshCwIcon,
     SearchIcon,
     SlidersIcon,
     StarIcon,
@@ -142,7 +142,7 @@ export function Navbar({
                             title="Reload page"
                             onClick={() => window.location.reload()}
                         >
-                            <RotateCcwIcon />
+                            <RefreshCwIcon />
                         </button>
 
                         <ThemeToggle />

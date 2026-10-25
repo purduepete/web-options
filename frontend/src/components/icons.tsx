@@ -53,6 +53,17 @@ export function MoonStarIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function PaletteIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 0-4 1.5 1.5 0 0 1 0-3h2a6 6 0 0 0 6-6c0-3-4-5-9-5Z" />
+            <circle cx="7.5" cy="10" r=".5" />
+            <circle cx="10" cy="6.5" r=".5" />
+            <circle cx="15" cy="7" r=".5" />
+        </svg>
+    );
+}
+
 export function MonitorIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...base} {...props}>
@@ -301,6 +312,17 @@ export function RotateCcwIcon(props: SVGProps<SVGSVGElement>) {
         <svg {...base} {...props}>
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
+        </svg>
+    );
+}
+
+export function RefreshCwIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...base} {...props}>
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M8 16H3v5" />
         </svg>
     );
 }

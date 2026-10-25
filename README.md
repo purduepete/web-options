@@ -447,6 +447,10 @@ SQL refused it.
 # Appearance
 
 System follows the OS live; Light, Midnight and optional gray Dark remain selectable.
+The header palette icon opens a segmented theme picker. Selecting a theme keeps
+the picker open; press the palette icon again, click outside, move focus outside,
+or press Escape to close it. The header reload button uses the two-arrow refresh
+icon and reloads the page.
 Midnight is the default. Preferences use plain strings in `config_theme_preference`;
 legacy JSON-quoted preferences are accepted. Switching resolved themes restores
 Midnight Blue in Light and Steel Blue in either dark theme. A custom color can still
