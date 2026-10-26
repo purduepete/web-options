@@ -32,7 +32,24 @@ The existing dashboard connection and pages are unchanged.
 Open **Tools > Contract History** to search VADER puts, including expired
 contracts with retained quotes. Intraday opens the contract's latest usable
 Pacific session. Multi-day retains every observation across up to 93 calendar
-dates. The dual-axis chart shows mark dollars per share and signed delta.
+dates. The dual-axis chart shows signed delta on the left and mark dollars per
+share (or captured percentage) on the right.
+Compact quote and analysis summaries keep the charts visible first. Expand
+**Quote details** or **Analysis details** for timestamps and the full figures.
+On large fine-pointer screens at least 800px tall, the collapsed page fits the
+viewport and shares the remaining height between option and stock charts.
+Expanded details, smaller windows and touch layouts scroll normally.
+Switching contracts retains the chosen view mode and date range. Both charts
+use equally spaced, two-line date/time labels; tooltips show exact capture times.
+Each contract-picker card shows its latest captured premium percentage at the
+upper right, calculated against that card's signal-date entry, independent of the
+viewed dates. Negative percentages remain negative; `--` means no usable entry or mark.
+The percentage uses compact text rounded to whole numbers. Picker labels omit "put";
+in-the-money symbol-and-strike labels have a red border with unchanged text colors.
+Captured percentages at or above 50% use green text, based on the unrounded value.
+Top Picks use their tier's color on the label text and border in place of extra tier text;
+ITM takes precedence, retaining normal text with a red border.
+A compact, color-coded legend sits at the right of the date-navigation row and wraps on narrow screens.
 Choose **Captured %** to plot `(entry mark - observed mark) / entry mark * 100`.
 The entry card uses the captured market quote for the selected signal date,
 independent of the chart's viewing range. Repeated signals have separate entries.

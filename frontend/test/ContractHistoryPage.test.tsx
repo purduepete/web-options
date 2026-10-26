@@ -13,13 +13,17 @@ vi.mock('../src/history/api', () => ({
 }));
 vi.mock('recharts', () => ({
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => children,
-    LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    LineChart: ({ children, data }: { children: React.ReactNode; data: unknown[] }) => (
+        <div data-testid="history-chart-data" data-points={JSON.stringify(data)}>
+            {children}
+        </div>
+    ),
     CartesianGrid: () => null,
     Legend: () => null,
     Tooltip: () => null,
-    XAxis: () => null,
-    YAxis: ({ yAxisId, domain }: { yAxisId: string; domain?: number[] }) => (
-        <span data-testid={`axis-${yAxisId}`} data-domain={JSON.stringify(domain)}>
+    XAxis: ({ ticks }: { ticks?: number[] }) => <span data-testid="time-axis" data-ticks={JSON.stringify(ticks)} />,
+    YAxis: ({ yAxisId, domain, orientation }: { yAxisId: string; domain?: number[]; orientation?: string }) => (
+        <span data-testid={`axis-${yAxisId}`} data-domain={JSON.stringify(domain)} data-orientation={orientation}>
             Axis {yAxisId}
         </span>
     ),
@@ -127,6 +131,147 @@ beforeEach(() => {
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('shows only the latest captured percentage on each picker card, including losses and unavailable quotes', async () => {
+        api.search.mockResolvedValue({
+            items: [
+                { ...contract, capturedPercent: 37.74 },
+                { ...contract, key: 'MSFT', symbol: 'MSFT', capturedPercent: -12.5 },
+                { ...contract, key: 'GM', symbol: 'GM', capturedPercent: null },
+            ],
+            hasMore: false,
+            unmappedContracts: 0,
+        });
+        mount();
+        const captured = await screen.findByLabelText('Premium captured 38%');
+        expect(captured.textContent).toBe('38%');
+        expect(screen.getByLabelText('Premium captured -13%').textContent).toBe('-13%');
+        expect(screen.getByLabelText('Premium captured unavailable').textContent).toBe('--');
+    });
+
+    it('colors captured percentages green at 50 percent, using the unrounded value', async () => {
+        api.search.mockResolvedValue({
+            items: [49.9, 50, 75].map((capturedPercent, index) => ({
+                ...contract,
+                key: `threshold-${index}`,
+                capturedPercent,
+            })),
+            hasMore: false,
+            unmappedContracts: 0,
+        });
+        const { container } = mount();
+        await waitFor(() => expect(container.querySelectorAll('.history-contract-captured')).toHaveLength(3));
+        const values = [...container.querySelectorAll('.history-contract-captured')];
+        expect(values.map((value) => value.classList.contains('is-target-met'))).toEqual([false, true, true]);
+        expect(values.map((value) => value.textContent)).toEqual(['50%', '50%', '75%']);
+    });
+
+    it('places delta on the left and price or captured percentage on the right', async () => {
+        mount();
+        await screen.findByTestId('axis-price');
+        expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
+        expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
+        expect(
+            screen.getByRole('img', { name: 'Signed delta on the left axis, mark price on the right.' })
+        ).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
+        expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
+        expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
+        expect(
+            screen.getByRole('img', { name: 'Signed delta on the left axis, premium captured percent on the right.' })
+        ).toBeTruthy();
+    });
+
+    it.each(['day', 'multi'])('keeps the %s view and dates when stepping contracts', async (mode) => {
+        const next = { ...contract, key: 'MSFT  261030P00150000', symbol: 'MSFT' };
+        api.search.mockResolvedValue({ items: [contract, next], hasMore: false, unmappedContracts: 0 });
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=${mode}&from=2026-10-21&to=2026-10-23`);
+        await screen.findByRole('button', { name: 'Next contract' });
+        fireEvent.click(screen.getByRole('button', { name: 'Next contract' }));
+        await waitFor(() =>
+            expect(api.history).toHaveBeenLastCalledWith(
+                next.key,
+                '2026-10-21',
+                mode === 'multi' ? '2026-10-23' : '2026-10-21',
+                expect.any(AbortSignal),
+                contract.added
+            )
+        );
+        expect(
+            screen.getByRole('button', { name: `View: ${mode === 'multi' ? 'Multi-day' : 'Intraday'}` })
+        ).toBeTruthy();
+    });
+
+    it('spaces time ticks symmetrically even when samples do not divide evenly', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            points: Array.from({ length: 8 }, (_, i) => ({
+                ...result.points[0]!,
+                time: result.points[0]!.time + i * 600000,
+            })),
+        });
+        mount();
+        await waitFor(() => expect(screen.getAllByTestId('time-axis')).toHaveLength(2));
+        for (const axis of screen.getAllByTestId('time-axis')) {
+            const ticks = JSON.parse(axis.getAttribute('data-ticks')!) as number[];
+            expect(ticks).toHaveLength(6);
+            for (let i = 1; i < ticks.length; i++) expect(ticks[i]! - ticks[i - 1]!).toBeCloseTo(7 / 5);
+        }
+    });
+
+    it('starts with compact summaries and keeps quote and analysis details expandable', async () => {
+        mount();
+        await screen.findByText('Quote details');
+        expect(screen.queryByText(/target is outside the current chart scale/)).toBeNull();
+        expect(screen.queryByText(/Collected .* to/)).toBeNull();
+        expect(screen.queryByText(/Viewing /)).toBeNull();
+        for (const label of ['Quote details', 'Analysis details']) {
+            const details = screen.getByText(label).closest('details');
+            expect(details?.open).toBe(false);
+            fireEvent.click(screen.getByText(label).closest('summary')!);
+            expect(details?.open).toBe(true);
+        }
+        expect(screen.getByText('Entry delta -0.280')).toBeTruthy();
+        expect(screen.getByText('Giveback from best')).toBeTruthy();
+    });
+
+    it('joins sessions without removing genuine missing quotes from either chart', async () => {
+        const first = result.points[0]!;
+        const nextTime = Date.parse('2026-10-26T13:35:00Z');
+        api.history.mockResolvedValue({
+            ...result,
+            to: '2026-10-26',
+            points: [
+                first,
+                {
+                    ...first,
+                    time: first.time + 1,
+                    kind: 'session_boundary',
+                    mark: null,
+                    delta: null,
+                    underlyingPrice: null,
+                },
+                { ...first, sessionDate: '2026-10-26', time: nextTime },
+                { ...first, sessionDate: '2026-10-26', time: nextTime + 600000, mark: null },
+            ],
+        });
+        mount();
+        await waitFor(() => expect(screen.getAllByTestId('history-chart-data')).toHaveLength(2));
+        for (const chart of screen.getAllByTestId('history-chart-data')) {
+            const points = JSON.parse(chart.getAttribute('data-points')!) as Array<{
+                kind: string;
+                slot: number;
+                mark: number | null;
+                time: number;
+            }>;
+            expect(points).toHaveLength(3);
+            expect(points.map((point) => point.slot)).toEqual([0, 1, 2]);
+            expect(points.some((point) => point.kind === 'session_boundary')).toBe(false);
+            expect(points[1]?.time).toBe(nextTime);
+            expect(points[2]?.mark).toBeNull();
+        }
+    });
+
     it('fits the stock axis to its movement without forcing a distant strike into range', async () => {
         api.history.mockResolvedValue({
             ...result,
@@ -387,7 +532,7 @@ describe('contract history page', () => {
         fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'aapl' } });
         await waitFor(() => expect(api.search).toHaveBeenCalledWith('AAPL', expect.any(AbortSignal)));
         await screen.findByText('Expires 10/30/2026');
-        expect(screen.getByText('Also Aggressive')).toBeDefined();
+        expect(screen.getByText('Aggressive', { selector: 'small' })).toBeDefined();
     });
     it('shows one date added at a time, top picks first, earliest expiration first', async () => {
         const make = (strike: number, added: string, tier: string | null, expiration: string, topPick = false) => ({
@@ -420,10 +565,16 @@ describe('contract history page', () => {
         expect(headings()).toEqual(['Top Picks 1', 'Conservative 1', 'Aggressive 2', 'Other 1']);
         const aggressive = container.querySelectorAll('.history-tier-group')[2]!;
         expect([...aggressive.querySelectorAll('strong')].map((node) => node.textContent)).toEqual([
-            'ZS $143 put',
-            'AAPL $141 put',
+            'ZS $143',
+            'AAPL $141',
         ]);
-        expect(screen.getByText('Also Balanced')).toBeDefined();
+        const topPicks = container.querySelector('.history-tier-group')!;
+        expect(topPicks.querySelector('strong.balanced')?.textContent).toBe('AAPL $144');
+        expect(topPicks.querySelector('small')).toBeNull();
+        expect(screen.getByRole('group', { name: 'Contract border legend' }).textContent).toBe(
+            'Legend:ConservativeBalancedAggressiveITM'
+        );
+        expect(topPicks.parentElement!.querySelector('.history-day-nav .history-color-key')).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Later date' }).hasAttribute('disabled')).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Earlier date' }));
         await screen.findByText('Added 10/20/2026');
@@ -431,7 +582,14 @@ describe('contract history page', () => {
         expect(screen.getByRole('button', { name: 'Earlier date' }).hasAttribute('disabled')).toBe(true);
     });
     it('marks ITM and expired cards and steps through the selected contract date', async () => {
-        const itm = { ...contract, key: 'AAPL  200116P00150000', expiration: '2020-01-16', underlyingPrice: 149.5 };
+        const itm = {
+            ...contract,
+            key: 'AAPL  200116P00150000',
+            expiration: '2020-01-16',
+            underlyingPrice: 149.5,
+            topPick: true,
+            tier: 'aggressive',
+        };
         api.search.mockResolvedValue({ items: [contract, itm], hasMore: false, unmappedContracts: 0 });
         const { container } = mount();
         await screen.findByText('-0.200');
@@ -441,7 +599,14 @@ describe('contract history page', () => {
         await waitFor(() => expect(container.querySelectorAll('.history-contract-list button')).toHaveLength(2));
         const cards = [...container.querySelectorAll('.history-contract-list button')];
         expect(cards.map((card) => card.classList.contains('is-expired'))).toEqual([true, false]);
-        expect(cards.map((card) => !!card.querySelector('.moneyness-chip.itm'))).toEqual([true, false]);
+        expect(cards.map((card) => !!card.querySelector('strong.is-itm'))).toEqual([true, false]);
+        expect(cards.every((card) => !card.classList.contains('is-itm'))).toBe(true);
+        expect(cards[0]!.querySelector('strong')?.textContent).toBe('AAPL $150');
+        expect(cards[0]!.querySelector('strong.aggressive')).toBeNull();
+        expect(cards[0]!.querySelector('small')).toBeNull();
+        expect(cards[0]!.querySelector('.moneyness-chip')).toBeNull();
+        expect(cards[0]!.querySelector('.sr-only')?.textContent).toBe('In the money');
+        expect(cards[0]!.querySelector('.history-contract-name .history-contract-captured')).toBeTruthy();
         expect(screen.getByText('2 of 2')).toBeDefined();
         expect(screen.getByRole('button', { name: 'Next contract' }).hasAttribute('disabled')).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Previous contract' }));

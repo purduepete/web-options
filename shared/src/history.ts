@@ -18,6 +18,8 @@ export interface HistoryContract {
     underlyingPrice: number | null;
     /** ISO time of that quote. */
     underlyingAt: string | null;
+    /** Latest valid mark versus this row's signal-date entry credit, independent of viewed dates. */
+    capturedPercent?: number | null;
 }
 
 export interface ContractSearchResponse {

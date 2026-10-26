@@ -37,6 +37,7 @@ interface ContractRow {
     top_pick: boolean | null;
     underlying_price: string | null;
     underlying_at: Date | null;
+    captured_percent: string | null;
 }
 
 const VADER_MATCH = `(CASE WHEN v.symbol IN ('BRK-B','BRK.B','BRKB')
@@ -71,7 +72,10 @@ const EACH_SIGNAL = `
             WHERE g.contract_key=v.contract_key AND g.report_date IS NOT NULL))`;
 
 const contractColumns = (signals: string) => `e.contract_key,e.symbol,e.expiration::text,e.strike,
- s.added,s.tier,s.tiers,s.top_pick,u.underlying_price,u.underlying_at FROM eligible e
+ s.added,s.tier,s.tiers,s.top_pick,u.underlying_price,u.underlying_at,
+ CASE WHEN b.entry_mark_per_share > 0 THEN
+   (b.entry_mark_per_share - m.mark_per_share) / b.entry_mark_per_share * 100
+ END AS captured_percent FROM eligible e
  LEFT JOIN LATERAL (${signals}
  ) s ON true
  LEFT JOIN LATERAL (
@@ -80,7 +84,22 @@ const contractColumns = (signals: string) => `e.contract_key,e.symbol,e.expirati
    JOIN public.option_collection_run r ON r.id=q.run_id
    WHERE q.contract_key=e.contract_key AND q.underlying_price IS NOT NULL AND r.session_date <= e.expiration
    ORDER BY r.scheduled_at DESC, r.id DESC LIMIT 1
- ) u ON true`;
+ ) u ON true
+ LEFT JOIN LATERAL (
+   SELECT g.entry_mark_per_share,g.captured_at
+   FROM public.history_signal_entry g JOIN public.vader_contract v ON v.contract_key=g.contract_key
+   WHERE ${VADER_MATCH} AND g.report_date=s.added::date AND g.entry_mark_per_share IS NOT NULL
+   ORDER BY g.captured_at ASC NULLS LAST,g.entry_mark_per_share,g.entry_delta LIMIT 1
+ ) b ON true
+ LEFT JOIN LATERAL (
+   SELECT q.mark_per_share
+   FROM public.broker_option_quote q JOIN public.option_collection_run r ON r.id=q.run_id
+   WHERE q.contract_key=e.contract_key AND q.price_status='ok' AND q.mark_per_share >= 0
+     AND r.session_date BETWEEN s.added::date AND e.expiration
+     AND r.scheduled_at >= COALESCE(b.captured_at, s.added::date::timestamp AT TIME ZONE 'America/Los_Angeles')
+     AND r.scheduled_at <= CURRENT_TIMESTAMP
+   ORDER BY r.scheduled_at DESC,r.id DESC LIMIT 1
+ ) m ON true`;
 
 function contract(row: ContractRow): HistoryContract {
     return {
@@ -94,6 +113,7 @@ function contract(row: ContractRow): HistoryContract {
         topPick: row.top_pick === true,
         underlyingPrice: row.underlying_price === null ? null : Number(row.underlying_price),
         underlyingAt: row.underlying_at === null ? null : new Date(row.underlying_at).toISOString(),
+        capturedPercent: row.captured_percent == null ? null : Number(row.captured_percent),
     };
 }
 

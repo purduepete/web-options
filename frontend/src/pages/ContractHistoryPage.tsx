@@ -8,7 +8,6 @@ import { ChoiceMenu } from '../components/ChoiceMenu';
 import { ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/icons';
 import { Loading } from '../components/Loading';
 import { SignalDatePicker } from '../components/SignalDatePicker';
-import { MoneynessChip } from '../grade/GradeBadge';
 import { seekingAlphaUrl, tradeContext, tradingViewUrl, withContext } from '../signals/researchLinks';
 import { getContractHistory, getHistoryDates, searchHistoryContracts } from '../history/api';
 import { HistoryCharts } from '../history/HistoryCharts';
@@ -219,7 +218,7 @@ export function ContractHistoryPage() {
     const siblings = owning >= 0 ? (days[owning]?.tiers.flatMap((group) => group.items) ?? []) : [];
     const position = siblings.findIndex((item) => item.key === key);
     const openContract = (item: HistoryContract | undefined) => {
-        if (item) update({ contract: item.key, signalDate: item.added ?? '', from: '', to: '' });
+        if (item) update({ contract: item.key, signalDate: item.added ?? '', mode });
     };
     return (
         <main className="history-page">
@@ -328,6 +327,13 @@ export function ContractHistoryPage() {
                                 </button>
                             </div>
                             <SignalDatePicker value={day.added} dates={days} onChange={setAddedDay} />
+                            <div className="history-color-key" role="group" aria-label="Contract border legend">
+                                <span>Legend:</span>
+                                <span className="conservative">Conservative</span>
+                                <span className="balanced">Balanced</span>
+                                <span className="aggressive">Aggressive</span>
+                                <span className="is-itm">ITM</span>
+                            </div>
                         </div>
                         <h3 className="sr-only">{addedLabel(day.added)}</h3>
                         {day.tiers.map((group) => (
@@ -348,22 +354,42 @@ export function ContractHistoryPage() {
                                                 onClick={() => openContract(item)}
                                             >
                                                 <span className="history-contract-name">
-                                                    <strong>
-                                                        {item.symbol} ${item.strike} put
+                                                    <strong
+                                                        className={
+                                                            itm
+                                                                ? 'is-itm'
+                                                                : item.topPick
+                                                                  ? (item.tier ?? undefined)
+                                                                  : undefined
+                                                        }
+                                                    >
+                                                        {item.symbol} ${item.strike}
                                                     </strong>
-                                                    {itm && (
-                                                        <MoneynessChip
-                                                            moneyness="itm"
-                                                            title={`Underlying ${money(item.underlyingPrice)} on the latest capture`}
-                                                        />
-                                                    )}
+                                                    <span
+                                                        className={`history-contract-captured${item.capturedPercent != null && item.capturedPercent >= 50 ? ' is-target-met' : ''}`}
+                                                        aria-label={
+                                                            item.capturedPercent == null
+                                                                ? 'Premium captured unavailable'
+                                                                : `Premium captured ${item.capturedPercent.toFixed(0)}%`
+                                                        }
+                                                    >
+                                                        {item.capturedPercent == null
+                                                            ? '--'
+                                                            : `${item.capturedPercent.toFixed(0)}%`}
+                                                    </span>
                                                 </span>
-                                                <span>
-                                                    {hasExpired(item.expiration) ? 'Expired' : 'Expires'}{' '}
-                                                    {sessionLabel(item.expiration)}
+                                                <span className="history-contract-expiration">
+                                                    <span>
+                                                        {hasExpired(item.expiration) ? 'Expired' : 'Expires'}{' '}
+                                                        {sessionLabel(item.expiration)}
+                                                    </span>
+                                                    {itm && <span className="sr-only">In the money</span>}
                                                 </span>
-                                                {others.length > 0 && (
-                                                    <small>Also {others.map(tierLabel).join(', ')}</small>
+                                                {item.topPick && item.tier && (
+                                                    <span className="sr-only">{tierLabel(item.tier)}</span>
+                                                )}
+                                                {!item.topPick && others.length > 0 && (
+                                                    <small>{others.map(tierLabel).join(', ')}</small>
                                                 )}
                                             </button>
                                         );
@@ -444,87 +470,106 @@ export function ContractHistoryPage() {
                                 </a>
                             </nav>
                         </div>
-                        <p>
-                            {history.signalDate && <>Signal {sessionLabel(history.signalDate)}. Viewing </>}
-                            {history.from === history.to
-                                ? sessionLabel(history.from)
-                                : `${sessionLabel(history.from)} to ${sessionLabel(history.to)}`}
-                            {stale ? ' (previous selection)' : ''}
-                            {dates.length > 0 &&
-                                `. Collected ${sessionLabel(dates.at(-1) ?? '')} to ${sessionLabel(dates[0] ?? '')}`}
-                            .
-                        </p>
+                        {stale && <p role="status">Showing the previous selection while history loads.</p>}
                     </div>
-                    <div className="history-stats">
-                        <div>
-                            <small>Entry{history.signalDate ? ` · ${sessionLabel(history.signalDate)}` : ''}</small>
-                            <strong>{history.entry ? money(history.entry.mark) : 'Entry quote unavailable'}</strong>
-                            {history.entry && (
-                                <>
-                                    <span>Entry delta {deltaText(history.entry.delta)}</span>
-                                    <small>
-                                        {history.entry.capturedAt
-                                            ? `Captured ${pacificTime(history.entry.capturedAt)}`
-                                            : 'Capture time unavailable'}
-                                    </small>
-                                </>
-                            )}
-                        </div>
-                        <div>
-                            <small>Mark</small>
-                            <strong>{money(price.value)}</strong>
+                    <details className="history-summary-details">
+                        <summary>
                             <span>
-                                {signedMoney(price.change)}
-                                {price.percent !== null ? ` (${price.percent.toFixed(1)}%)` : ''}
+                                <strong>Entry {history.entry ? money(history.entry.mark) : 'Unavailable'}</strong>
                             </span>
-                            {price.first &&
-                                price.last &&
-                                !standardSpan(price.first.time, price.last.time, history.from, history.to) && (
-                                    <small>
-                                        {pacificTime(price.first.time)} to {pacificTime(price.last.time)}
-                                    </small>
-                                )}
-                        </div>
-                        <div>
-                            <small>Delta</small>
-                            <strong>{deltaText(delta.value)}</strong>
-                            <span>{signedDelta(delta.change)}</span>
-                            {delta.first &&
-                                delta.last &&
-                                !standardSpan(delta.first.time, delta.last.time, history.from, history.to) && (
-                                    <small>
-                                        {pacificTime(delta.first.time)} to {pacificTime(delta.last.time)}
-                                    </small>
-                                )}
-                        </div>
-                        <div>
-                            <small>Premium captured</small>
-                            <strong>{captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}</strong>
-                            {captured !== null && history.entry && price.value !== null && (
-                                <span>{signedMoney((history.entry.mark - price.value) * 100)} / standard contract</span>
-                            )}
-                            {captured === null && (
-                                <small>
-                                    {history.entry?.mark === 0
-                                        ? 'Entry credit is zero; percentage unavailable.'
-                                        : 'Requires an entry quote and a mark at or after entry.'}
-                                </small>
-                            )}
-                        </div>
-                        {history.contract.underlyingPrice !== null && (
+                            <span>
+                                <strong>Mark {money(price.value)}</strong> {signedMoney(price.change)}
+                            </span>
+                            <span>
+                                <strong>Delta {deltaText(delta.value)}</strong>
+                            </span>
+                            <span>
+                                <strong>
+                                    Captured {captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}
+                                </strong>
+                            </span>
+                            <span>
+                                <strong>
+                                    {history.contract.symbol} {money(history.contract.underlyingPrice)}
+                                </strong>
+                            </span>
+                            <span className="history-details-label">Quote details</span>
+                        </summary>
+                        <div className="history-stats">
                             <div>
-                                <small>{history.contract.symbol} stock</small>
-                                <strong>{money(history.contract.underlyingPrice)}</strong>
-                                <span>{strikeDistance(history.contract.underlyingPrice, history.contract.strike)}</span>
-                                {history.contract.underlyingAt && (
+                                <small>Entry{history.signalDate ? ` · ${sessionLabel(history.signalDate)}` : ''}</small>
+                                <strong>{history.entry ? money(history.entry.mark) : 'Entry quote unavailable'}</strong>
+                                {history.entry && (
+                                    <>
+                                        <span>Entry delta {deltaText(history.entry.delta)}</span>
+                                        <small>
+                                            {history.entry.capturedAt
+                                                ? `Captured ${pacificTime(history.entry.capturedAt)}`
+                                                : 'Capture time unavailable'}
+                                        </small>
+                                    </>
+                                )}
+                            </div>
+                            <div>
+                                <small>Mark</small>
+                                <strong>{money(price.value)}</strong>
+                                <span>
+                                    {signedMoney(price.change)}
+                                    {price.percent !== null ? ` (${price.percent.toFixed(1)}%)` : ''}
+                                </span>
+                                {price.first &&
+                                    price.last &&
+                                    !standardSpan(price.first.time, price.last.time, history.from, history.to) && (
+                                        <small>
+                                            {pacificTime(price.first.time)} to {pacificTime(price.last.time)}
+                                        </small>
+                                    )}
+                            </div>
+                            <div>
+                                <small>Delta</small>
+                                <strong>{deltaText(delta.value)}</strong>
+                                <span>{signedDelta(delta.change)}</span>
+                                {delta.first &&
+                                    delta.last &&
+                                    !standardSpan(delta.first.time, delta.last.time, history.from, history.to) && (
+                                        <small>
+                                            {pacificTime(delta.first.time)} to {pacificTime(delta.last.time)}
+                                        </small>
+                                    )}
+                            </div>
+                            <div>
+                                <small>Premium captured</small>
+                                <strong>{captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}</strong>
+                                {captured !== null && history.entry && price.value !== null && (
+                                    <span>
+                                        {signedMoney((history.entry.mark - price.value) * 100)} / standard contract
+                                    </span>
+                                )}
+                                {captured === null && (
                                     <small>
-                                        {hasExpired(history.contract.expiration) ? 'Last captured ' : 'Captured '}
-                                        {pacificTime(history.contract.underlyingAt)}
+                                        {history.entry?.mark === 0
+                                            ? 'Entry credit is zero; percentage unavailable.'
+                                            : 'Requires an entry quote and a mark at or after entry.'}
                                     </small>
                                 )}
                             </div>
-                        )}
-                    </div>
+                            {history.contract.underlyingPrice !== null && (
+                                <div>
+                                    <small>{history.contract.symbol} stock</small>
+                                    <strong>{money(history.contract.underlyingPrice)}</strong>
+                                    <span>
+                                        {strikeDistance(history.contract.underlyingPrice, history.contract.strike)}
+                                    </span>
+                                    {history.contract.underlyingAt && (
+                                        <small>
+                                            {hasExpired(history.contract.expiration) ? 'Last captured ' : 'Captured '}
+                                            {pacificTime(history.contract.underlyingAt)}
+                                        </small>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </details>
                     <HistoryCharts history={history} />
                     {hasGaps && (
                         <p className="history-coverage">

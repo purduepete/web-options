@@ -83,9 +83,20 @@
     color: inherit;
     font-size: inherit;
 }
-/* An auto margin keeps the chip on the right edge even when it wraps under the name. */
-.history-contract-name .moneyness-chip {
+.history-contract-expiration {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+.history-contract-captured {
     margin-left: auto;
+    color: var(--text-heading);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+}
+.history-contract-captured.is-target-met {
+    color: var(--positive);
 }
 /* The same hatch Live Signals lays over an expired ticket. */
 .history-contract-list button.is-expired {
@@ -98,6 +109,57 @@
 .history-contract-list button[aria-pressed='true'] {
     border-color: var(--highlight);
     color: var(--highlight);
+}
+.history-contract-name strong {
+    border: 1px solid transparent;
+    padding-inline: 0.2rem;
+}
+.history-color-key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-left: auto;
+    align-self: center;
+}
+.history-color-key > span[class] {
+    border-width: 1px;
+    border-style: solid;
+    padding: 0.1rem 0.375rem;
+    text-align: center;
+}
+.history-color-key > .is-itm {
+    color: var(--negative);
+}
+.history-contract-name strong.conservative,
+.history-color-key > .conservative {
+    color: var(--conservative);
+}
+.history-contract-name strong.balanced,
+.history-color-key > .balanced {
+    color: var(--balanced);
+}
+.history-contract-name strong.aggressive,
+.history-color-key > .aggressive {
+    color: var(--aggressive);
+}
+.history-contract-name strong.is-itm,
+.history-color-key > .is-itm {
+    border-color: var(--negative);
+}
+.history-contract-name strong.conservative,
+.history-color-key > .conservative {
+    border-color: var(--conservative);
+}
+.history-contract-name strong.balanced,
+.history-color-key > .balanced {
+    border-color: var(--balanced);
+}
+.history-contract-name strong.aggressive,
+.history-color-key > .aggressive {
+    border-color: var(--aggressive);
 }
 .history-result {
     display: flex;
@@ -127,7 +189,6 @@
     justify-content: center;
     height: calc(1.5em + 0.6rem + 2 * var(--border-width));
     padding: 0.3rem 0.6rem;
-    border: var(--border-width) solid var(--border);
 }
 .history-research-links a:hover {
     background: var(--surface-hover);
@@ -203,6 +264,55 @@
 }
 .history-stock-chart {
     height: clamp(12rem, 28vh, 18rem);
+}
+.history-summary-details {
+    border: var(--border-width) solid var(--border);
+    background: var(--surface);
+}
+.history-summary-details > summary {
+    padding: 0.35rem 0.6rem;
+    line-height: 1.6;
+}
+.history-summary-details > summary > span {
+    display: inline-block;
+    margin-right: 1rem;
+}
+.history-summary-details strong {
+    color: var(--text-heading);
+    font-weight: 600;
+}
+.history-summary-details .history-stats {
+    padding: 0.4rem;
+}
+.history-details-label {
+    color: var(--highlight);
+}
+@media (min-width: 1101px) and (min-height: 800px) and (pointer: fine) {
+    .history-page {
+        gap: 0.4rem;
+        padding-block: 0.6rem;
+        padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+    }
+    .history-result,
+    .history-analysis {
+        gap: 0.35rem;
+    }
+    .history-page:has(.history-result):not(:has(details[open])) {
+        height: calc(100dvh - var(--navbar-height, 3.5rem));
+    }
+    .history-page:not(:has(details[open])) .history-result {
+        flex: 1;
+        min-height: 0;
+    }
+    .history-page:not(:has(details[open])) .history-chart {
+        flex: 3 1 0;
+        height: auto;
+        min-height: 14rem;
+    }
+    .history-page:not(:has(details[open])) .history-stock-chart {
+        flex: 2 1 0;
+        min-height: 10rem;
+    }
 }
 .history-tooltip {
     display: flex;
