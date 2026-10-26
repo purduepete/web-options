@@ -1,0 +1,244 @@
+{
+  "publishDate": "2026-10-26",
+  "title": null,
+  "macro": [
+    {
+      "label": "VIX: 19.45",
+      "text": "The S&P 500 closed at 7,623.68. VIX recovered from Wednesday's 16.68 after Thursday's chip selloff. Waiting for the Fed may reduce premium as event uncertainty clears."
+    },
+    {
+      "label": "Brent crude: $116.72",
+      "text": "Oil rose about 6% last week after attacks on Saudi targets. Energy contributed to September inflation; Thursday's PCE release covers that month."
+    },
+    {
+      "label": "Fed, inflation and technology earnings",
+      "text": "The Fed decision is Wednesday at 11:00 AM Pacific. GDP, PCE and claims follow Thursday at 5:30 AM Pacific. Microsoft and Alphabet report Wednesday evening; Amazon and Intel report Thursday evening. Chip and cloud setups wait until Friday."
+    },
+    {
+      "label": "Expiry risks and position management",
+      "text": "No listed contract expires Oct 30. Nov 6 contracts span Apple's Nov 2 earnings, AMD and Arista earnings and elections Nov 3, then expiry-day jobs. Nov 13 contracts span Nov 10 CPI and Nov 13 PPI. GE also spans Nov 25 PCE, the Nov 26 market closure, Dec 4 jobs, Dec 9 Fed, Dec 10 CPI and Dec 15 PPI. The source suggests a GTC buyback at 50% of entry credit and sizing puts for assignment and calls for delivery."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Oct 26",
+      "rule": "No new entries from this slate. Covered calls begin Wednesday; puts wait until Thursday and chip and cloud names until Friday. Oil and geopolitical developments can still move prices.",
+      "event": "No major economic releases listed. VZ reports before the open; CDNS and AMKR after the close, with possible effects on chip shares.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Oct 27",
+      "rule": "No new entries scheduled. Keep DAL, UNH and GE for Wednesday after the relevant airline, health insurer and aerospace reports.",
+      "event": "Durable goods at 5:30 AM Pacific; Case-Shiller and FHFA home prices at 6:00 AM Pacific; consumer confidence and new home sales at 7:00 AM Pacific. KO, BA, UPS, CNC and JBLU report before the open; V after the close.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Oct 28",
+      "rule": "Four covered calls have a 7:45-10:00 AM Pacific window, after oil inventories and the relevant peer reports. Defer unfilled orders after 10:00 AM Pacific until Thursday. Rising oil can weaken DAL; a pre-Fed rally may warrant a higher call strike to preserve the listed cushion. These entries still carry the Fed, technology earnings and Thursday and Friday data.",
+      "event": "Goods trade and inventories at 5:30 AM Pacific; crude inventories at 7:30 AM Pacific. Fed decision at 11:00 AM Pacific and press conference at 11:30 AM Pacific. MSFT, GOOGL, NOW, FTNT, F and KLAC report after the close.",
+      "trades": [
+        {
+          "ticker": "UNH",
+          "type": "call",
+          "strike": "$430C",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "+0.37",
+          "ann": "27.5%",
+          "premium": "$788",
+          "collateral": "$41,809",
+          "risk": "conservative",
+          "note": "UNH and Centene earnings precede this window."
+        },
+        {
+          "ticker": "GE",
+          "type": "call",
+          "strike": "$300C",
+          "expiry": "2026-12-18",
+          "dte": 53,
+          "delta": "+0.39",
+          "ann": "21.9%",
+          "premium": "$910",
+          "collateral": "$28,564",
+          "risk": "conservative",
+          "note": "Wait for Boeing's report. December expiry carries the additional macro dates in the banner."
+        },
+        {
+          "ticker": "DAL",
+          "type": "call",
+          "strike": "$80C",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "+0.38",
+          "ann": "39.9%",
+          "premium": "$210",
+          "collateral": "$7,678",
+          "risk": "balanced",
+          "note": "Strike is 4.2% above the source share price. Wait for JetBlue's report and oil inventories; a 50% buyback is $105 per contract."
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$68C",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "+0.38",
+          "ann": "32.0%",
+          "premium": "$145",
+          "collateral": "$6,585",
+          "risk": "balanced",
+          "note": "The source lists no close peer earnings this week."
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Oct 29",
+      "rule": "Five puts and the CRM covered call begin at 7:00 AM Pacific, after the Fed and morning growth and inflation data. If inflation is hot and shares fall, reassess lower put strikes to preserve the source cushion. Softer inflation can reduce put premium and call cushion. Amazon, Intel and Friday's data remain ahead.",
+      "event": "GDP, September PCE and jobless claims at 5:30 AM Pacific. LLY, MA and CAT report before the open; AMZN and INTC after the close. Wednesday's NOW, MSFT, FTNT and F results precede CRM, CRWD and GM entries.",
+      "trades": [
+        {
+          "ticker": "XBI",
+          "type": "put",
+          "strike": "$142P",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "-0.27",
+          "ann": "26.3%",
+          "premium": "$256",
+          "collateral": "$14,200",
+          "risk": "conservative",
+          "note": "Biotech ETF spreads company-specific earnings exposure across its holdings."
+        },
+        {
+          "ticker": "GM",
+          "type": "put",
+          "strike": "$72.5P",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "-0.28",
+          "ann": "24.8%",
+          "premium": "$123",
+          "collateral": "$7,250",
+          "risk": "conservative",
+          "note": "Strike is 4.5% below the source share price; Ford's report precedes entry."
+        },
+        {
+          "ticker": "NKE",
+          "type": "put",
+          "strike": "$36P",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "-0.35",
+          "ann": "41.4%",
+          "premium": "$102",
+          "collateral": "$3,600",
+          "risk": "balanced",
+          "note": "Lowest collateral on this slate. Assignment at $36 less $1.02 credit gives a $34.98 share cost."
+        },
+        {
+          "ticker": "CRM",
+          "type": "call",
+          "strike": "$265C",
+          "expiry": "2026-11-20",
+          "dte": 25,
+          "delta": "+0.32",
+          "ann": "34.5%",
+          "premium": "$588",
+          "collateral": "$24,857",
+          "risk": "balanced",
+          "note": "Strike is 6.6% above the source share price. Wait for ServiceNow and Microsoft results."
+        },
+        {
+          "ticker": "CRWD",
+          "type": "put",
+          "strike": "$245P",
+          "expiry": "2026-11-13",
+          "dte": 18,
+          "delta": "-0.34",
+          "ann": "75.3%",
+          "premium": "$910",
+          "collateral": "$24,500",
+          "risk": "aggressive",
+          "note": "Strike is 4.9% below the source share price. Wait for Fortinet's report; expiry spans CPI and PPI."
+        },
+        {
+          "ticker": "SLV",
+          "type": "put",
+          "strike": "$47P",
+          "expiry": "2026-11-13",
+          "dte": 18,
+          "delta": "-0.33",
+          "ann": "47.9%",
+          "premium": "$111",
+          "collateral": "$4,700",
+          "risk": "aggressive",
+          "note": "Silver ETF has no company earnings date; expiry spans CPI and PPI."
+        }
+      ]
+    },
+    {
+      "name": "Friday",
+      "date": "Oct 30",
+      "rule": "Chip puts and the ORCL call begin at 7:00 AM Pacific after Amazon, Intel and the morning wage and factory reports. If chip shares are still falling then, the source suggests deferring until Monday. Reassess lower put strikes after a gap down. November 6 expiry still spans next week's earnings, elections and jobs report.",
+      "event": "Employment cost index at 5:30 AM Pacific; Chicago PMI at 6:45 AM Pacific; Fed official speech at 9:30 AM Pacific. XOM, CVX, ABBV and CL report before the open. Weekly expiry at 1:00 PM Pacific; none of these 14 contracts expires today.",
+      "trades": [
+        {
+          "ticker": "MRVL",
+          "type": "put",
+          "strike": "$215P",
+          "expiry": "2026-11-06",
+          "dte": 11,
+          "delta": "-0.30",
+          "ann": "103.0%",
+          "premium": "$668",
+          "collateral": "$21,500",
+          "risk": "aggressive",
+          "note": "Strike is 5.9% below the source share price."
+        },
+        {
+          "ticker": "AVGO",
+          "type": "put",
+          "strike": "$310P",
+          "expiry": "2026-11-06",
+          "dte": 11,
+          "delta": "-0.31",
+          "ann": "62.3%",
+          "premium": "$583",
+          "collateral": "$31,000",
+          "risk": "aggressive",
+          "note": "Wait until the major chip customers and Intel have reported."
+        },
+        {
+          "ticker": "NVDA",
+          "type": "put",
+          "strike": "$205P",
+          "expiry": "2026-11-06",
+          "dte": 11,
+          "delta": "-0.34",
+          "ann": "60.7%",
+          "premium": "$375",
+          "collateral": "$20,500",
+          "risk": "aggressive",
+          "note": "Source open interest is 5,548 contracts; wait for the chip spending reports."
+        },
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$132C",
+          "expiry": "2026-11-06",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "109.2%",
+          "premium": "$415",
+          "collateral": "$12,616",
+          "risk": "aggressive",
+          "note": "Strike is 4.6% above the source share price. Wait for competing cloud companies' reports."
+        }
+      ]
+    }
+  ]
+}
