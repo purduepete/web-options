@@ -44,6 +44,7 @@ const pages = readdirSync(pagesDir)
 const indexHtml = readFileSync(resolve('../index.html'), 'utf8');
 const indexCss = sheets.find((sheet) => sheet.name === 'index.css')?.css ?? '';
 const liveSignalsCss = sheets.find((sheet) => sheet.name === 'pages/LiveSignalsPage.css')?.css ?? '';
+const contractHistoryCss = sheets.find((sheet) => sheet.name === 'pages/ContractHistoryPage.css')?.css ?? '';
 const choiceMenuCss = sheets.find((sheet) => sheet.name === 'components/ChoiceMenu.css')?.css ?? '';
 const navbarCss = sheets.find((sheet) => sheet.name === 'navigation/Navbar.css')?.css ?? '';
 
@@ -205,5 +206,34 @@ describe('a large tablet is not a desktop', () => {
             // the one signal that separates it from a laptop.
             expect(condition, 'a desktop-only rule must test the pointer').toMatch(/pointer:\s*fine|hover:\s*hover/);
         }
+    });
+});
+
+describe('contract history overlays and summaries', () => {
+    it('keeps the floating contract picker below the sticky navbar', () => {
+        const desktop = mediaBlocks(contractHistoryCss).find(
+            ({ condition }) => /min-width:\s*1101px/.test(condition) && /min-height:\s*800px/.test(condition)
+        );
+        const picker =
+            /\.history-page:has\(\.history-result\) \.history-contracts\s*\{([^}]*)\}/.exec(desktop?.body ?? '')?.[1] ??
+            '';
+        const navbar = /\.navbar\s*\{([^}]*)\}/.exec(navbarCss)?.[1] ?? '';
+
+        expect(picker).toContain('z-index: 18');
+        expect(navbar).toContain('z-index: 20');
+    });
+
+    it('gives summary labels room at narrower desktop widths and keeps them on one line', () => {
+        const narrowDesktop = mediaBlocks(contractHistoryCss).find(
+            ({ condition }) => /min-width:\s*1101px/.test(condition) && /max-width:\s*1280px/.test(condition)
+        );
+        const midDesktop = mediaBlocks(contractHistoryCss).find(
+            ({ condition }) => /min-width:\s*1281px/.test(condition) && /max-width:\s*1600px/.test(condition)
+        );
+        const label = /\.history-summary-label\s*\{([^}]*)\}/.exec(contractHistoryCss)?.[1] ?? '';
+
+        expect(narrowDesktop?.body ?? '').toMatch(/padding-right:\s*15%/);
+        expect(midDesktop?.body ?? '').toMatch(/padding-right:\s*30%/);
+        expect(label).toContain('white-space: nowrap');
     });
 });

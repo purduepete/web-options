@@ -130,8 +130,10 @@ const floats = (body: Element | null | undefined) => !!body && getComputedStyle(
 const pickerFloatsOver = (picker: HTMLDetailsElement | null) =>
     floats(picker?.querySelector('.history-contracts-body'));
 const rowFloats = (row: HTMLDetailsElement) => floats(row.querySelector(':scope > :not(summary)'));
-function closeFloatingPicker(picker: HTMLDetailsElement | null) {
-    if (picker?.open && pickerFloatsOver(picker)) picker.open = false;
+function closeFloatingPicker(picker: HTMLDetailsElement | null, onClose: () => void, force = false) {
+    if (!picker?.open || (!force && !pickerFloatsOver(picker))) return;
+    picker.open = false;
+    onClose();
 }
 
 export function ContractHistoryPage() {
@@ -142,6 +144,7 @@ export function ContractHistoryPage() {
     const to = mode === 'day' ? from : (params.get('to') ?? from);
     const signalDate = params.get('signalDate') ?? '';
     const [search, setSearch] = useState('');
+    const [pickerOpen, setPickerOpen] = useState(!key);
     const [target, setTarget] = useState<TargetChoice>('50');
     const [metric, setMetric] = useState<ChartMetric>('captured');
     const [chartView, setChartView] = useState<ChartView>(() => {
@@ -174,22 +177,36 @@ export function ContractHistoryPage() {
     const picker = useRef<HTMLDetailsElement>(null);
     currentParams.current = params;
 
-    const pickerFloats = () => pickerFloatsOver(picker.current);
-    const closePicker = () => closeFloatingPicker(picker.current);
+    useEffect(() => {
+        if (!key) setPickerOpen(true);
+    }, [key]);
     useEffect(() => {
         const onPointerDown = (event: PointerEvent) => {
             const details = picker.current;
             // The signal-date calendar renders in a portal outside the picker, so a
             // click in it must not count as a click elsewhere.
             const inDatePopup = event.target instanceof Element && !!event.target.closest('.signal-date-popup');
-            if (details?.open && !details.contains(event.target as Node) && !inDatePopup) closeFloatingPicker(details);
+            if (details?.open && !details.contains(event.target as Node) && !inDatePopup)
+                closeFloatingPicker(details, () => setPickerOpen(false));
             for (const row of document.querySelectorAll<HTMLDetailsElement>('.history-summary-details[open]'))
                 if (!row.contains(event.target as Node) && rowFloats(row)) row.open = false;
         };
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Escape') return;
+            if (event.key !== 'Escape' || event.defaultPrevented) return;
+            const target = event.target instanceof Element ? event.target : null;
+            if (target?.closest('.choice-panel, .signal-date-popup, .theme-picker-popover, [role="dialog"]')) return;
+            const details = picker.current;
+            if (details?.open && pickerFloatsOver(details)) {
+                closeFloatingPicker(details, () => setPickerOpen(false), true);
+                event.preventDefault();
+                if (target && details.contains(target)) details.querySelector('summary')?.focus();
+                return;
+            }
             for (const row of document.querySelectorAll<HTMLDetailsElement>('.history-summary-details[open]'))
-                if (rowFloats(row)) row.open = false;
+                if (rowFloats(row)) {
+                    row.open = false;
+                    event.preventDefault();
+                }
         };
         document.addEventListener('pointerdown', onPointerDown);
         document.addEventListener('keydown', onKeyDown);
@@ -281,6 +298,14 @@ export function ContractHistoryPage() {
     // does. A new date range for the same contract dims and swaps in place.
     const shown = history && history.contract.key === key ? history : null;
     const delta = changeSummary(history?.points ?? [], 'delta');
+    const underlyingPoint =
+        history?.points.reduce<(typeof history.points)[number] | null>(
+            (latest, point) =>
+                point.underlyingPrice !== null && (!latest || point.time > latest.time) ? point : latest,
+            null
+        ) ?? null;
+    const underlyingPrice = underlyingPoint?.underlyingPrice ?? null;
+    const underlyingAt = underlyingPoint ? (underlyingPoint.priceTime ?? underlyingPoint.time) : null;
     const researchContext = history
         ? tradeContext({
               symbol: history.contract.symbol,
@@ -288,7 +313,7 @@ export function ContractHistoryPage() {
               expiration: history.contract.expiration,
               delta: delta.value,
               premium: price.value === null ? null : price.value * 100,
-              underlyingPrice: history.contract.underlyingPrice,
+              underlyingPrice,
               underlyingChangePct: null,
           })
         : [];
@@ -326,7 +351,7 @@ export function ContractHistoryPage() {
     const openContract = (item: HistoryContract | undefined) => {
         // Multi-day reopens on the new contract's full range, filled in once its dates load.
         if (!item) return;
-        closePicker();
+        closeFloatingPicker(picker.current, () => setPickerOpen(false), true);
         update({
             contract: item.key,
             signalDate: item.added ?? '',
@@ -334,6 +359,29 @@ export function ContractHistoryPage() {
             ...(mode === 'multi' ? { from: '', to: '' } : {}),
         });
     };
+    const stepContract = useRef<(step: number) => void>(() => {});
+    stepContract.current = (step) => {
+        if (position >= 0) openContract(siblings[position + step]);
+    };
+    useEffect(() => {
+        // Left and right step through the contracts, unless a control that uses the
+        // arrows itself has focus: a text field, a menu, the date calendar or the chart.
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+            const target = event.target instanceof Element ? event.target : null;
+            if (
+                target?.closest(
+                    'input, textarea, select, [contenteditable], [role="listbox"], [role="menu"], [role="slider"], .signal-date-popup, .recharts-wrapper'
+                )
+            )
+                return;
+            event.preventDefault();
+            stepContract.current(event.key === 'ArrowLeft' ? -1 : 1);
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, []);
     return (
         <main className="history-page">
             <div className="page-head history-head">
@@ -347,8 +395,10 @@ export function ContractHistoryPage() {
                             placeholder="Find symbol"
                             maxLength={12}
                             onChange={(event) => {
-                                setSearch(event.target.value.toUpperCase());
+                                const next = event.target.value.toUpperCase();
+                                setSearch(next);
                                 setAddedDay(null);
+                                setPickerOpen(!key || !!next);
                             }}
                         />
                     </label>
@@ -399,15 +449,10 @@ export function ContractHistoryPage() {
             <details
                 ref={picker}
                 className="history-contracts"
-                open={!key || !!search}
-                onKeyDown={(event) => {
-                    if (event.key === 'Escape' && picker.current?.open && pickerFloats()) {
-                        closePicker();
-                        picker.current.querySelector('summary')?.focus();
-                    }
-                }}
+                open={pickerOpen}
+                onToggle={(event) => setPickerOpen(event.currentTarget.open)}
             >
-                <summary>{key ? 'Choose another contract' : 'Choose a contract (expired contracts included)'}</summary>
+                <summary>{key ? 'Change contract' : 'Choose a contract (expired contracts included)'}</summary>
                 <div className="history-contracts-body">
                     {contracts?.items.length === 0 && <p>No matching VADER contracts.</p>}
                     {day && (
@@ -616,26 +661,25 @@ export function ContractHistoryPage() {
                         <div className="history-summary-row">
                             <details name="history-summary" className="history-summary-details history-quote-summary">
                                 <summary>
-                                    <span>
-                                        <strong>
-                                            Entry {history.entry ? money(history.entry.mark) : 'Unavailable'}
-                                        </strong>
+                                    <span className="history-summary-field">
+                                        <span className="history-summary-label">Entry:</span>
+                                        <strong>{history.entry ? money(history.entry.mark) : 'Unavailable'}</strong>
                                     </span>
-                                    <span>
-                                        <strong>Mark {money(price.value)}</strong> {signedMoney(price.change)}
+                                    <span className="history-summary-field">
+                                        <span className="history-summary-label">Mark:</span>
+                                        <strong>{money(price.value)}</strong>
                                     </span>
-                                    <span>
-                                        <strong>Delta {deltaText(delta.value)}</strong>
+                                    <span className="history-summary-field">
+                                        <span className="history-summary-label">Delta:</span>
+                                        <strong>{deltaText(delta.value)}</strong>
                                     </span>
-                                    <span>
-                                        <strong>
-                                            Captured {captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}
-                                        </strong>
+                                    <span className="history-summary-field">
+                                        <span className="history-summary-label">Captured:</span>
+                                        <strong>{captured === null ? 'Unavailable' : `${captured.toFixed(1)}%`}</strong>
                                     </span>
-                                    <span>
-                                        <strong>
-                                            {history.contract.symbol} {money(history.contract.underlyingPrice)}
-                                        </strong>
+                                    <span className="history-summary-field">
+                                        <span className="history-summary-label">Underlying:</span>
+                                        <strong>{money(underlyingPrice)}</strong>
                                     </span>
                                 </summary>
                                 <div className="history-stats">
@@ -711,26 +755,18 @@ export function ContractHistoryPage() {
                                             </small>
                                         )}
                                     </div>
-                                    {history.contract.underlyingPrice !== null && (
-                                        <div>
-                                            <small>{history.contract.symbol} stock</small>
-                                            <strong>{money(history.contract.underlyingPrice)}</strong>
-                                            <span>
-                                                {strikeDistance(
-                                                    history.contract.underlyingPrice,
-                                                    history.contract.strike
-                                                )}
-                                            </span>
-                                            {history.contract.underlyingAt && (
-                                                <small>
-                                                    {hasExpired(history.contract.expiration)
-                                                        ? 'Last captured '
-                                                        : 'Captured '}
-                                                    {pacificTime(history.contract.underlyingAt)}
-                                                </small>
-                                            )}
-                                        </div>
-                                    )}
+                                    <div>
+                                        <small>Underlying</small>
+                                        <strong>{money(underlyingPrice)}</strong>
+                                        {underlyingPrice !== null && (
+                                            <span>{strikeDistance(underlyingPrice, history.contract.strike)}</span>
+                                        )}
+                                        <small>
+                                            {underlyingAt === null
+                                                ? 'Unavailable in this date range'
+                                                : `Captured ${pacificTime(underlyingAt)}`}
+                                        </small>
+                                    </div>
                                 </div>
                             </details>
                         </div>

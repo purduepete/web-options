@@ -40,19 +40,21 @@ export function HistoryAnalysisSummary({ history, target }: { history: HistoryRe
     ) : (
         <details name="history-summary" className="history-summary-details">
             <summary>
-                <span>
-                    <strong>
-                        {target}% target {selected ? `${targetPrice(selected.closingMark)} to close` : 'Unavailable'}
-                    </strong>
+                <span className="history-summary-field">
+                    <span className="history-summary-label">{target}% target:</span>
+                    <strong>{selected ? money(selected.closingMark) : 'Unavailable'}</strong>
                 </span>
-                <span>
-                    <strong>Best {best ? `${best.capturedPercent.toFixed(1)}%` : 'Unavailable'}</strong>
+                <span className="history-summary-field">
+                    <span className="history-summary-label">Best:</span>
+                    <strong>{best ? `${best.capturedPercent.toFixed(1)}%` : 'Unavailable'}</strong>
                 </span>
-                <span>
-                    <strong>Worst {worst ? `${worst.capturedPercent.toFixed(1)}%` : 'Unavailable'}</strong>
+                <span className="history-summary-field">
+                    <span className="history-summary-label">Worst:</span>
+                    <strong>{worst ? `${worst.capturedPercent.toFixed(1)}%` : 'Unavailable'}</strong>
                 </span>
-                <span>
-                    <strong>Giveback {giveback ? `${giveback.percentagePoints.toFixed(1)} pp` : 'Unavailable'}</strong>
+                <span className="history-summary-field">
+                    <span className="history-summary-label">Giveback:</span>
+                    <strong>{giveback ? `${giveback.percentagePoints.toFixed(1)} pp` : 'Unavailable'}</strong>
                 </span>
             </summary>
             <div className="history-summary-body">

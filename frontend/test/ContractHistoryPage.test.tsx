@@ -170,6 +170,50 @@ describe('contract history page', () => {
         await screen.findByText('No contracts in the selected tiers on this date.');
         expect(screen.getByRole('button', { name: 'Tier: Aggressive' })).toBeTruthy();
     });
+
+    it('reopens the contract picker when the user continues typing after dismissing it', async () => {
+        const { container } = mount();
+        const input = screen.getByRole<HTMLInputElement>('searchbox', { name: 'Find VADER contracts' });
+        const picker = container.querySelector<HTMLDetailsElement>('.history-contracts')!;
+        container.querySelector<HTMLElement>('.history-contracts-body')!.style.position = 'absolute';
+
+        fireEvent.change(input, { target: { value: 'L' } });
+        await waitFor(() => expect(picker.open).toBe(true));
+        fireEvent.pointerDown(screen.getByRole('heading', { name: 'Contract History' }));
+        await waitFor(() => expect(picker.open).toBe(false));
+
+        fireEvent.change(input, { target: { value: 'LR' } });
+        await waitFor(() => expect(picker.open).toBe(true));
+    });
+
+    it('gives Escape to the nested tier menu before the contract picker', async () => {
+        const { container } = mount();
+        const picker = container.querySelector<HTMLDetailsElement>('.history-contracts')!;
+        container.querySelector<HTMLElement>('.history-contracts-body')!.style.position = 'absolute';
+        fireEvent.click(picker.querySelector('summary')!);
+        await screen.findByText('Added 10/21/2026');
+        const tier = screen.getByRole('button', { name: 'Tier: Tier' });
+        fireEvent.click(tier);
+        fireEvent.keyDown(screen.getByRole('menuitemcheckbox', { name: /Top Picks/ }), { key: 'Escape' });
+
+        await waitFor(() => expect(screen.queryByRole('menu', { name: 'Tier' })).toBeNull());
+        expect(picker.open).toBe(true);
+        expect(document.activeElement).toBe(tier);
+    });
+
+    it('closes the floating contract picker on Escape from the search field', async () => {
+        const { container } = mount();
+        const input = screen.getByRole<HTMLInputElement>('searchbox', { name: 'Find VADER contracts' });
+        const picker = container.querySelector<HTMLDetailsElement>('.history-contracts')!;
+        container.querySelector<HTMLElement>('.history-contracts-body')!.style.position = 'absolute';
+        fireEvent.change(input, { target: { value: 'L' } });
+        await waitFor(() => expect(picker.open).toBe(true));
+
+        expect(fireEvent.keyDown(input, { key: 'Escape' })).toBe(false);
+
+        await waitFor(() => expect(picker.open).toBe(false));
+        expect(input.value).toBe('L');
+    });
     it('shows only the latest captured percentage on each picker card, including losses and unavailable quotes', async () => {
         api.search.mockResolvedValue({
             items: [
@@ -271,6 +315,32 @@ describe('contract history page', () => {
         expect(screen.getByRole('button', { name: 'View: Intraday' })).toBeTruthy();
     });
 
+    it('steps contracts with the arrow keys, but not while typing', async () => {
+        const next = { ...contract, key: 'MSFT  261030P00150000', symbol: 'MSFT' };
+        api.search.mockResolvedValue({ items: [contract, next], hasMore: false, unmappedContracts: 0 });
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=day&from=2026-10-21&to=2026-10-23`);
+        await screen.findByRole('button', { name: 'Next contract' });
+        fireEvent.keyDown(screen.getByRole('searchbox'), { key: 'ArrowRight' });
+        fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
+        expect(api.history).not.toHaveBeenCalledWith(
+            next.key,
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything()
+        );
+        fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+        await waitFor(() =>
+            expect(api.history).toHaveBeenLastCalledWith(
+                next.key,
+                '2026-10-21',
+                '2026-10-21',
+                expect.any(AbortSignal),
+                contract.added
+            )
+        );
+    });
+
     it('opens the next contract on its full range when stepping in multi-day', async () => {
         const next = { ...contract, key: 'MSFT  261030P00150000', symbol: 'MSFT' };
         api.search.mockResolvedValue({ items: [contract, next], hasMore: false, unmappedContracts: 0 });
@@ -335,6 +405,18 @@ describe('contract history page', () => {
         expect(compactRows).toHaveLength(2);
         expect(compactRows[0]?.textContent).not.toContain('Since signal entry');
         expect(compactRows[1]?.textContent).toContain('Since signal entry');
+        const quoteFields = compactRows[0]!.querySelectorAll('.history-summary-field');
+        const analysisFields = compactRows[1]!.querySelectorAll('.history-summary-field');
+        expect(quoteFields).toHaveLength(5);
+        expect(analysisFields).toHaveLength(4);
+        expect(quoteFields[0]?.querySelector('.history-summary-label')?.textContent).toBe('Entry:');
+        expect(quoteFields[0]?.querySelector('strong')?.textContent).toBe('$2.00');
+        expect(quoteFields[1]?.children).toHaveLength(2);
+        expect(quoteFields[1]?.lastElementChild?.textContent).toBe('$1.50');
+        expect(analysisFields[0]?.querySelector('.history-summary-label')?.textContent).toBe('50% target:');
+        expect(analysisFields[0]?.querySelector('strong')?.textContent).toBe('$1.00');
+        expect(compactRows[0]?.textContent).toContain('Underlying:');
+        expect(compactRows[0]?.textContent).not.toContain(`${contract.symbol}:`);
         expect(document.body.textContent).not.toMatch(/Quote details|Analysis details/);
         expect(target.closest('details')).toBeNull();
         expect(compactRows[1]?.lastElementChild?.classList.contains('history-target-slot')).toBe(true);
@@ -347,6 +429,7 @@ describe('contract history page', () => {
             fireEvent.click(details.querySelector('summary')!);
             expect(details.open).toBe(true);
         }
+        expect(screen.getByText('Underlying')).toBeTruthy();
         expect(screen.getByText('Entry delta -0.280')).toBeTruthy();
         expect(screen.getByText('Giveback from best')).toBeTruthy();
     });
@@ -444,9 +527,9 @@ describe('contract history page', () => {
     });
     it('shows all-history crossings, best, worst and giveback independently of the chart range', async () => {
         const { container } = mount();
-        await screen.findByText('35.0 pp');
-        expect(screen.getByText('60.0%')).toBeDefined();
-        expect(screen.getByText('-30.0%')).toBeDefined();
+        await screen.findAllByText('35.0 pp');
+        expect(screen.getAllByText('60.0%').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('-30.0%').length).toBeGreaterThan(0);
         expect(screen.getByText('$70.00 decline from best to latest')).toBeDefined();
         expect(screen.getByText('First observed crossing 10/22/2026 07:00')).toBeDefined();
         expect(screen.getByText('1d 0h 25m elapsed')).toBeDefined();
@@ -504,7 +587,7 @@ describe('contract history page', () => {
         const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400 };
         api.search.mockResolvedValue({ items: [contract, other], hasMore: false, unmappedContracts: 0 });
         mount();
-        await screen.findByText('25.0%');
+        await screen.findAllByText('25.0%');
         let complete!: (response: HistoryResponse) => void;
         api.history.mockReturnValueOnce(
             new Promise<HistoryResponse>((resolve) => {
@@ -526,7 +609,7 @@ describe('contract history page', () => {
     });
     it('shows signal-date entry and hypothetical captured dollars with a separate stock chart', async () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&signalDate=2026-10-21&from=2026-10-23`);
-        await screen.findByText('25.0%');
+        await screen.findAllByText('25.0%');
         expect(screen.getByText('+$50.00 / standard contract')).toBeDefined();
         expect(screen.getByText('Entry delta -0.280')).toBeDefined();
         expect(screen.getByText('Captured 10/21/2026 06:35')).toBeDefined();
@@ -565,12 +648,12 @@ describe('contract history page', () => {
                 })
         );
         const { container } = mount();
-        await screen.findByText('25.0%');
+        await screen.findAllByText('25.0%');
         await screen.findByText('Added 10/21/2026');
         fireEvent.click(screen.getByRole('button', { name: 'Later date' }));
         await screen.findByText('Added 10/22/2026');
         fireEvent.click(container.querySelector('.history-contract-list button')!);
-        await screen.findByText('50.0%');
+        await screen.findAllByText('50.0%');
         expect(container.querySelector('.history-stats strong')!.textContent).toBe('$3.00');
         fireEvent.click(screen.getByRole('button', { name: 'Date: 10/23/2026' }));
         fireEvent.click(screen.getByRole('menuitemradio', { name: /10\/22\/2026/ }));
@@ -585,7 +668,26 @@ describe('contract history page', () => {
         );
         expect(container.querySelector('.history-stats strong')!.textContent).toBe('$3.00');
     });
-    it('links the selected underlying to research pages with the displayed option context', async () => {
+    it('uses the latest underlying in the selected range for research context', async () => {
+        const first = result.points[0]!;
+        api.history.mockResolvedValue({
+            ...result,
+            contract: { ...contract, underlyingPrice: 190, underlyingAt: '2026-10-24T20:10:00Z' },
+            points: [
+                {
+                    ...first,
+                    time: Date.parse('2026-10-23T13:45:00Z'),
+                    priceTime: '2026-10-23T13:44:00Z',
+                    underlyingPrice: 158,
+                },
+                {
+                    ...first,
+                    time: Date.parse('2026-10-23T14:00:00Z'),
+                    priceTime: '2026-10-23T13:59:00Z',
+                    underlyingPrice: 160,
+                },
+            ],
+        });
         mount();
         const seeking = await screen.findByRole<HTMLAnchorElement>('link', { name: 'AAPL Seeking Alpha' });
         const trading = screen.getByRole<HTMLAnchorElement>('link', { name: 'AAPL TradingView' });
@@ -602,6 +704,23 @@ describe('contract history page', () => {
             expect(link.textContent).toBe('');
             expect(link.title).toBe(link.getAttribute('aria-label'));
         }
+        expect(screen.getByText('Underlying:').parentElement?.querySelector('strong')?.textContent).toBe('$160.00');
+        fireEvent.click(document.querySelector('.history-quote-summary > summary')!);
+        expect(screen.getByText('Captured 10/23/2026 06:59')).toBeTruthy();
+    });
+
+    it('does not substitute a newer underlying when the selected range has none', async () => {
+        api.history.mockResolvedValue({
+            ...result,
+            points: [{ ...result.points[0]!, underlyingPrice: null }],
+        });
+        mount();
+        const seeking = await screen.findByRole<HTMLAnchorElement>('link', { name: 'AAPL Seeking Alpha' });
+        expect(screen.getByText('Underlying:').parentElement?.querySelector('strong')?.textContent).toBe('Unavailable');
+        expect(seeking.href).not.toContain('trade_underlyingPrice');
+        expect(seeking.href).not.toContain('trade_strikePct');
+        fireEvent.click(document.querySelector('.history-quote-summary > summary')!);
+        expect(screen.getByText('Unavailable in this date range')).toBeTruthy();
     });
 
     it('supports keyboard view choices and returns focus on Escape', () => {
@@ -617,7 +736,7 @@ describe('contract history page', () => {
     });
     it('opens latest collected date with both axes, signed delta and coverage', async () => {
         const { container } = mount();
-        await screen.findByText('-0.200');
+        await screen.findAllByText('-0.200');
         expect(screen.getByRole('button', { name: 'Date: 10/23/2026' })).toBeDefined();
         expect(api.history).toHaveBeenCalledWith(
             contract.key,
@@ -655,7 +774,7 @@ describe('contract history page', () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&from=2026-10-23`);
         await screen.findByRole('alert');
         fireEvent.click(screen.getByText('Retry'));
-        await screen.findByText('$1.50');
+        await screen.findAllByText('$1.50');
     });
     it('shows an empty state for a known contract without observations', async () => {
         api.dates.mockResolvedValue({ dates: [] });
@@ -730,9 +849,9 @@ describe('contract history page', () => {
         };
         api.search.mockResolvedValue({ items: [contract, itm], hasMore: false, unmappedContracts: 0 });
         const { container } = mount();
-        await screen.findByText('-0.200');
-        expect(screen.getByText('AAPL stock')).toBeDefined();
-        expect(screen.getByText('$160.00')).toBeDefined();
+        await screen.findAllByText('-0.200');
+        expect(screen.getByText('Underlying')).toBeDefined();
+        expect(screen.getAllByText('$160.00').length).toBeGreaterThan(0);
         expect(screen.getByText('6.7% above the $150 strike')).toBeDefined();
         await waitFor(() => expect(container.querySelectorAll('.history-contract-list button')).toHaveLength(2));
         const cards = [...container.querySelectorAll('.history-contract-list button')];
