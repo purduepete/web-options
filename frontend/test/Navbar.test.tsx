@@ -122,7 +122,8 @@ describe('Navbar on desktop', () => {
         await user.click(trigger);
 
         const options = screen.getAllByRole('radio');
-        expect(options.map((option) => option.textContent?.trim())).toEqual(['Light', 'Midnight', 'Dark', 'System']);
+        expect(options.map((option) => option.textContent?.trim())).toEqual(['Light', 'Dark', 'Midnight', 'System']);
+        expect(options.every((option) => !option.querySelector('svg'))).toBe(true);
         expect(screen.getByRole('radio', { name: 'Midnight' }).getAttribute('aria-checked')).toBe('true');
 
         await user.click(screen.getByRole('radio', { name: 'Dark' }));
@@ -158,6 +159,24 @@ describe('Navbar on desktop', () => {
 
         await user.click(trigger);
         expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('closes the theme picker when Safari blurs an option before the icon click', async () => {
+        const user = userEvent.setup();
+        renderNavbar();
+
+        const trigger = screen.getByRole('button', { name: 'Theme: Midnight' });
+        await user.click(trigger);
+        const option = screen.getByRole('radio', { name: 'Midnight' });
+        expect(document.activeElement).toBe(option);
+
+        // Safari's order on a tap: pointerdown, the option blurs with no
+        // relatedTarget because the button is never focused, then click.
+        fireEvent.pointerDown(trigger, { button: 0 });
+        fireEvent.blur(option, { relatedTarget: null });
+        fireEvent.click(trigger);
+
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
     });
 
     it('closes the theme picker on Escape and restores focus to its trigger', async () => {
@@ -201,8 +220,8 @@ describe('Navbar on desktop', () => {
         await user.click(screen.getByRole('button', { name: 'Theme: Midnight' }));
         await user.keyboard('{ArrowRight}');
 
-        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-        expect(screen.getByRole('radio', { name: 'Dark' }).getAttribute('aria-checked')).toBe('true');
+        expect(localStorage.getItem(STORAGE_KEYS.themePreference)).toBe('system');
+        expect(screen.getByRole('radio', { name: 'System' }).getAttribute('aria-checked')).toBe('true');
     });
 
     it('puts page reload in the top bar', () => {

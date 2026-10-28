@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { ThemePreference } from '@weboptions/shared';
-import { MonitorIcon, MoonIcon, MoonStarIcon, PaletteIcon, SunIcon } from '../components/icons';
+import { PaletteIcon } from '../components/icons';
 import { useTheme } from '../theme/ThemeProvider';
 import './ThemeToggle.css';
 
 const THEME_OPTIONS: {
     value: ThemePreference;
     label: string;
-    icon: typeof SunIcon;
 }[] = [
-    { value: 'light', label: 'Light', icon: SunIcon },
-    { value: 'midnight', label: 'Midnight', icon: MoonStarIcon },
-    { value: 'dark', label: 'Dark', icon: MoonIcon },
-    { value: 'system', label: 'System', icon: MonitorIcon },
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+    { value: 'midnight', label: 'Midnight' },
+    { value: 'system', label: 'System' },
 ];
 
 export function ThemeToggle() {
@@ -20,6 +19,7 @@ export function ThemeToggle() {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const pressingTrigger = useRef(false);
     const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
     const selectedIndex = THEME_OPTIONS.findIndex((option) => option.value === preference);
     const selectedLabel = THEME_OPTIONS[selectedIndex]?.label ?? 'Theme';
@@ -78,6 +78,9 @@ export function ThemeToggle() {
             className="theme-picker-anchor"
             ref={containerRef}
             onBlur={(event) => {
+                // Safari does not focus a tapped button, so a press on the icon blurs
+                // the open picker with no relatedTarget. The icon's click decides instead.
+                if (pressingTrigger.current) return;
                 const nextTarget = event.relatedTarget;
                 if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
                     setOpen(false);
@@ -94,10 +97,17 @@ export function ThemeToggle() {
                 aria-expanded={open}
                 aria-controls="theme-picker-popover"
                 onPointerDown={(event) => {
-                    // Keep Safari from dismissing on blur before the toggle click.
-                    if (event.button === 0) event.preventDefault();
+                    if (event.button !== 0) return;
+                    pressingTrigger.current = true;
+                    event.preventDefault();
                 }}
-                onClick={() => setOpen((isOpen) => !isOpen)}
+                onPointerCancel={() => {
+                    pressingTrigger.current = false;
+                }}
+                onClick={() => {
+                    pressingTrigger.current = false;
+                    setOpen((isOpen) => !isOpen);
+                }}
                 onKeyDown={(event) => {
                     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                         event.preventDefault();
@@ -122,7 +132,7 @@ export function ThemeToggle() {
                         aria-hidden="true"
                         style={{ '--theme-index': selectedIndex } as CSSProperties}
                     />
-                    {THEME_OPTIONS.map(({ value, label, icon: Icon }, index) => (
+                    {THEME_OPTIONS.map(({ value, label }, index) => (
                         <button
                             key={value}
                             ref={(element) => {
@@ -134,7 +144,6 @@ export function ThemeToggle() {
                             tabIndex={preference === value ? 0 : -1}
                             onClick={() => setPreference(value)}
                         >
-                            <Icon width={15} height={15} />
                             <span>{label}</span>
                         </button>
                     ))}

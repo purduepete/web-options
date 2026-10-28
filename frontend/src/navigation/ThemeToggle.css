@@ -32,20 +32,18 @@
 
 .theme-picker-options {
     position: relative;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
     box-sizing: border-box;
     height: 2.25rem;
-    padding: 2px;
     border: var(--border-width) solid var(--border);
     background: var(--surface);
 }
 
 .theme-picker-options .theme-selection {
     position: absolute;
-    inset: 2px auto 2px 2px;
+    inset: 0 auto 0 0;
     z-index: 0;
-    width: calc((100% - 4px) / 4);
+    width: 25%;
     background: var(--highlight);
     transform: translateX(calc(var(--theme-index, 0) * 100%));
     transition: transform 0.25s ease-out;
@@ -57,6 +55,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 0px;
+    flex: 1;
     gap: 0.25rem;
     padding: 0 0.2rem;
     border: 0;
@@ -83,40 +83,26 @@
     color: var(--text);
 }
 
+/* Matches Web Portfolio's 36px selector at every width. Each segment is still
+   60px or wider on a 320px phone, so the global 44px button floor is lifted here. */
 @media (pointer: coarse) {
-    .theme-picker-options {
-        height: auto;
-        min-height: 44px;
-    }
-
     .theme-picker-options button {
-        min-height: 44px;
-    }
-
-    .theme-picker-options .theme-selection {
-        inset: 0 auto 0 0;
-        width: 25%;
+        min-width: 0px;
+        min-height: auto;
     }
 }
 
 @media (max-width: 640px) {
-    .theme-picker-options {
-        grid-template-columns: 1fr;
-        height: auto;
+    .theme-picker-anchor {
+        position: static;
     }
 
-    .theme-picker-options .theme-selection {
-        inset: 2px 2px auto;
+    .theme-picker-popover {
+        left: max(0.75rem, env(safe-area-inset-left));
+        right: max(0.75rem, env(safe-area-inset-right));
         width: auto;
-        height: 44px;
-        transform: translateY(calc(var(--theme-index, 0) * 100%));
-    }
-
-    .theme-picker-options button {
-        min-height: 44px;
-        justify-content: flex-start;
-        padding-inline: 0.75rem;
-        font-size: 0.8rem;
+        max-height: calc(100dvh - var(--navbar-height) - 1rem - env(safe-area-inset-bottom));
+        overflow-y: auto;
     }
 }
 

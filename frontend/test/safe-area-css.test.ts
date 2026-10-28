@@ -16,8 +16,26 @@ const indexHtml = read('../index.html');
 const indexCss = read('../src/index.css');
 const navbarCss = read('../src/navigation/Navbar.css');
 const toastCss = read('../src/components/Toasts.css');
+const themeCss = read('../src/navigation/ThemeToggle.css');
 
 describe('safe areas', () => {
+    it('anchors the phone theme picker to the navbar with safe viewport gutters', () => {
+        const mobile = themeCss.slice(themeCss.indexOf('@media (max-width: 640px)'));
+        expect(mobile).toMatch(/\.theme-picker-anchor\s*\{\s*position:\s*static;/);
+        const popup = /\.theme-picker-popover\s*\{([^}]*)\}/.exec(mobile)?.[1] ?? '';
+        expect(popup).toContain('left: max(0.75rem, env(safe-area-inset-left))');
+        expect(popup).toContain('right: max(0.75rem, env(safe-area-inset-right))');
+        expect(popup).toContain('width: auto');
+        expect(popup).toContain('100dvh - var(--navbar-height)');
+        expect(popup).toContain('env(safe-area-inset-bottom)');
+        expect(popup).toContain('overflow-y: auto');
+        expect(themeCss).toContain('flex: 1');
+        expect(mobile).not.toContain('grid-template-columns: 1fr');
+        expect(themeCss).not.toContain('translateY');
+        expect(/\.theme-picker-options\s*\{[^}]*height:\s*2\.25rem/.test(themeCss)).toBe(true);
+        expect(mobile).not.toMatch(/min-height:\s*44px/);
+    });
+
     it('asks for the whole screen, or every inset reads as zero', () => {
         // Without viewport-fit=cover the browser letterboxes the page away from
         // the notch itself and env() resolves to 0px, so the rules below would
