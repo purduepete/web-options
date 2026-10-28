@@ -4,7 +4,7 @@ import type { AppConfig } from '../config';
 import { withHistory } from './db';
 import { readSchedule } from './schedule';
 import type { ScheduleSlot } from './schedule';
-import { analyzeHistory, type AnalysisRow } from './analysis';
+import { analyzeHistory, isExcludedCapture, type AnalysisRow } from './analysis';
 
 export const MAX_DATES = 93;
 export const MAX_POINTS = 10000;
@@ -210,6 +210,7 @@ export function buildTimeline(
         unknownSlots: 0,
     };
     for (const row of rows) {
+        if (isExcludedCapture(row.scheduled_at)) continue;
         const mark = row.price_status === 'ok' && row.mark_per_share !== null ? Number(row.mark_per_share) : null;
         const delta = row.delta_status === 'ok' && row.delta !== null ? Number(row.delta) : null;
         const known = row.eligible && row.contract_key !== null;
@@ -244,6 +245,7 @@ export function buildTimeline(
     for (const slot of schedule) {
         const time = Date.parse(slot.scheduledAt);
         if (time > now || slot.sessionDate > expiration || existing.has(`${time}|${slot.captureKind}`)) continue;
+        if (isExcludedCapture(time)) continue;
         coverage.unknownSlots++;
         points.push({
             time,

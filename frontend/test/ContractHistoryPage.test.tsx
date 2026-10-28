@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { HistoryResponse } from '@weboptions/shared';
 import { ContractHistoryPage } from '../src/pages/ContractHistoryPage';
+import { historyCaptureDotRadius } from '../src/history/format';
 
 const api = vi.hoisted(() => ({ search: vi.fn(), dates: vi.fn(), history: vi.fn(), lock: vi.fn() }));
 vi.mock('../src/auth/ApiKeyProvider', () => ({ useApiKey: () => ({ lock: api.lock }) }));
@@ -61,10 +62,10 @@ const result: HistoryResponse = {
         validMarks: 3,
         recordedGaps: 1,
         firstObservedAt: Date.parse('2026-10-21T14:00:00Z'),
-        through: Date.parse('2026-10-23T13:35:00Z'),
+        through: Date.parse('2026-10-23T13:45:00Z'),
         best: { time: Date.parse('2026-10-22T14:00:00Z'), mark: 0.8, capturedPercent: 60, dollars: 120 },
         worst: { time: Date.parse('2026-10-21T14:00:00Z'), mark: 2.6, capturedPercent: -30, dollars: -60 },
-        latest: { time: Date.parse('2026-10-23T13:35:00Z'), mark: 1.5, capturedPercent: 25, dollars: 50 },
+        latest: { time: Date.parse('2026-10-23T13:45:00Z'), mark: 1.5, capturedPercent: 25, dollars: 50 },
         giveback: { percentagePoints: 35, dollars: 70 },
         targets: [
             {
@@ -92,7 +93,7 @@ const result: HistoryResponse = {
     },
     points: [
         {
-            time: Date.parse('2026-10-23T13:35:00Z'),
+            time: Date.parse('2026-10-23T13:45:00Z'),
             sessionDate: '2026-10-23',
             kind: 'open_session',
             mark: 1.5,
@@ -124,13 +125,51 @@ function mount(query = `?contract=${encodeURIComponent(contract.key)}`) {
         </MemoryRouter>
     );
 }
+/** A chart stays mounted, hidden, once built, so look only in the one on show. */
+function shownChart() {
+    return within(document.querySelector<HTMLElement>('.history-chart-pane[data-active="true"]')!);
+}
 beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     api.search.mockResolvedValue({ items: [contract], hasMore: false, unmappedContracts: 0 });
     api.dates.mockResolvedValue({ dates: ['2026-10-23'] });
     api.history.mockResolvedValue(result);
 });
 describe('contract history page', () => {
+    it('makes the settle capture dot larger than regular capture dots', () => {
+        expect(historyCaptureDotRadius('settle')).toBe(5);
+        expect(historyCaptureDotRadius('open_session')).toBe(2);
+    });
+
+    it('filters the picker to the selected tiers and remembers the choice', async () => {
+        const pick = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400, topPick: true };
+        const safe = { ...contract, key: 'KO  261030P00060000', symbol: 'KO', strike: 60, tier: 'conservative' };
+        api.search.mockResolvedValue({ items: [contract, pick, safe], hasMore: false, unmappedContracts: 0 });
+        const { container, unmount } = mount();
+        const headings = () =>
+            [...container.querySelectorAll('h4')].map((node) => node.firstChild?.textContent?.trim());
+        await waitFor(() => expect(headings()).toEqual(['Top Picks', 'Conservative', 'Balanced']));
+        fireEvent.click(screen.getByRole('button', { name: 'Tier: Tier' }));
+        fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Top Picks/ }));
+        fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Conservative/ }));
+        expect(headings()).toEqual(['Top Picks', 'Conservative']);
+        expect(JSON.parse(localStorage.getItem('history_tier_filter')!)).toEqual(['top-picks', 'conservative']);
+        unmount();
+        const again = mount();
+        await waitFor(() =>
+            expect(
+                [...again.container.querySelectorAll('h4')].map((node) => node.firstChild?.textContent?.trim())
+            ).toEqual(['Top Picks', 'Conservative'])
+        );
+    });
+
+    it('says when no contract on the date is in the selected tiers', async () => {
+        localStorage.setItem('history_tier_filter', JSON.stringify(['aggressive']));
+        mount();
+        await screen.findByText('No contracts in the selected tiers on this date.');
+        expect(screen.getByRole('button', { name: 'Tier: Aggressive' })).toBeTruthy();
+    });
     it('shows only the latest captured percentage on each picker card, including losses and unavailable quotes', async () => {
         api.search.mockResolvedValue({
             items: [
@@ -171,35 +210,103 @@ describe('contract history page', () => {
         expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
         expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
         expect(
-            screen.getByRole('img', { name: 'Signed delta on the left axis, mark price on the right.' })
+            screen.getByRole('img', { name: 'Signed delta on the left axis, premium captured percent on the right.' })
         ).toBeTruthy();
-        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
-        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Chart: Captured %' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /Price/ }));
         expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
         expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
         expect(
-            screen.getByRole('img', { name: 'Signed delta on the left axis, premium captured percent on the right.' })
+            screen.getByRole('img', { name: 'Signed delta on the left axis, mark price on the right.' })
         ).toBeTruthy();
     });
 
-    it.each(['day', 'multi'])('keeps the %s view and dates when stepping contracts', async (mode) => {
+    it('shows one chart at a time, retaining the option metric and remembering the chart view', async () => {
+        const page = mount();
+        await screen.findByText('Premium captured (%)');
+        expect(screen.getAllByRole('img')).toHaveLength(1);
+        expect(screen.queryByText('Option price and delta')).toBeNull();
+        const stockButton = screen.getByRole('button', { name: 'Stock' });
+        expect(stockButton.closest('.history-tools')).toBeTruthy();
+        fireEvent.click(stockButton);
+        expect(stockButton.getAttribute('aria-pressed')).toBe('true');
+        // A pane not yet built is built a frame after the click; the old one stays up meanwhile.
+        await waitFor(() => expect(shownChart().queryByText('Premium captured (%)')).toBeNull());
+        expect(screen.getAllByRole('img')).toHaveLength(1);
+        const hidden = document.querySelector('.history-chart-pane[data-active="false"]')!;
+        expect(hidden.getAttribute('aria-hidden')).toBe('true');
+        expect(hidden.hasAttribute('inert')).toBe(true);
+        expect(screen.queryByRole('button', { name: 'Chart: Captured %' })).toBeNull();
+        expect(shownChart().getByText('Stock ($ / share)')).toBeTruthy();
+        expect(screen.getByText(/Strike \$150.00/).closest('.history-title-row')).toBeTruthy();
+        page.unmount();
+        mount();
+        await screen.findByText('Stock ($ / share)');
+        fireEvent.click(screen.getByRole('button', { name: 'Option' }));
+        await waitFor(() => expect(shownChart().getByText('Premium captured (%)')).toBeTruthy());
+    });
+
+    it('defaults to Option for an invalid stored chart view', async () => {
+        localStorage.setItem('history_chart_view', 'invalid');
+        mount();
+        await screen.findByText('Premium captured (%)');
+        expect(screen.getByRole('button', { name: 'Option' }).getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('keeps the day view and date when stepping contracts', async () => {
         const next = { ...contract, key: 'MSFT  261030P00150000', symbol: 'MSFT' };
         api.search.mockResolvedValue({ items: [contract, next], hasMore: false, unmappedContracts: 0 });
-        mount(`?contract=${encodeURIComponent(contract.key)}&mode=${mode}&from=2026-10-21&to=2026-10-23`);
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=day&from=2026-10-21&to=2026-10-23`);
         await screen.findByRole('button', { name: 'Next contract' });
         fireEvent.click(screen.getByRole('button', { name: 'Next contract' }));
         await waitFor(() =>
             expect(api.history).toHaveBeenLastCalledWith(
                 next.key,
                 '2026-10-21',
-                mode === 'multi' ? '2026-10-23' : '2026-10-21',
+                '2026-10-21',
                 expect.any(AbortSignal),
                 contract.added
             )
         );
-        expect(
-            screen.getByRole('button', { name: `View: ${mode === 'multi' ? 'Multi-day' : 'Intraday'}` })
-        ).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'View: Intraday' })).toBeTruthy();
+    });
+
+    it('opens the next contract on its full range when stepping in multi-day', async () => {
+        const next = { ...contract, key: 'MSFT  261030P00150000', symbol: 'MSFT' };
+        api.search.mockResolvedValue({ items: [contract, next], hasMore: false, unmappedContracts: 0 });
+        api.dates.mockImplementation((key: string) =>
+            Promise.resolve({ dates: key === next.key ? ['2026-10-26', '2026-10-23', '2026-10-20'] : ['2026-10-23'] })
+        );
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=multi&from=2026-10-21&to=2026-10-23`);
+        await screen.findByRole('button', { name: 'Next contract' });
+        fireEvent.click(screen.getByRole('button', { name: 'Next contract' }));
+        await waitFor(() =>
+            expect(api.history).toHaveBeenLastCalledWith(
+                next.key,
+                '2026-10-20',
+                '2026-10-26',
+                expect.any(AbortSignal),
+                contract.added
+            )
+        );
+        expect(screen.getByRole('button', { name: 'View: Multi-day' })).toBeTruthy();
+    });
+
+    it('selects the first available date when switching to multi-day, within the 93-date limit', async () => {
+        api.dates.mockResolvedValue({ dates: ['2026-10-23', '2026-07-23', '2026-07-22', '2026-06-01'] });
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=day&from=2026-10-23&to=2026-10-23`);
+        await screen.findByRole('button', { name: 'View: Intraday' });
+        fireEvent.click(screen.getByRole('button', { name: 'View: Intraday' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /Multi-day/ }));
+        await waitFor(() =>
+            expect(api.history).toHaveBeenLastCalledWith(
+                contract.key,
+                '2026-07-23',
+                '2026-10-23',
+                expect.any(AbortSignal),
+                undefined
+            )
+        );
     });
 
     it('spaces time ticks symmetrically even when samples do not divide evenly', async () => {
@@ -211,8 +318,10 @@ describe('contract history page', () => {
             })),
         });
         mount();
-        await waitFor(() => expect(screen.getAllByTestId('time-axis')).toHaveLength(2));
-        for (const axis of screen.getAllByTestId('time-axis')) {
+        await screen.findByTestId('time-axis');
+        for (const view of ['Option', 'Stock']) {
+            fireEvent.click(screen.getByRole('button', { name: view }));
+            const axis = shownChart().getByTestId('time-axis');
             const ticks = JSON.parse(axis.getAttribute('data-ticks')!) as number[];
             expect(ticks).toHaveLength(6);
             for (let i = 1; i < ticks.length; i++) expect(ticks[i]! - ticks[i - 1]!).toBeCloseTo(7 / 5);
@@ -221,23 +330,39 @@ describe('contract history page', () => {
 
     it('starts with compact summaries and keeps quote and analysis details expandable', async () => {
         mount();
-        await screen.findByText('Quote details');
+        const target = await screen.findByRole('button', { name: 'Exit target: 50%' });
+        const compactRows = document.querySelectorAll('.history-summary-row');
+        expect(compactRows).toHaveLength(2);
+        expect(compactRows[0]?.textContent).not.toContain('Since signal entry');
+        expect(compactRows[1]?.textContent).toContain('Since signal entry');
+        expect(document.body.textContent).not.toMatch(/Quote details|Analysis details/);
+        expect(target.closest('details')).toBeNull();
+        expect(compactRows[1]?.lastElementChild?.classList.contains('history-target-slot')).toBe(true);
+        expect(screen.queryByText('Since signal entry')?.closest('details')?.open).toBe(false);
         expect(screen.queryByText(/target is outside the current chart scale/)).toBeNull();
         expect(screen.queryByText(/Collected .* to/)).toBeNull();
         expect(screen.queryByText(/Viewing /)).toBeNull();
-        for (const label of ['Quote details', 'Analysis details']) {
-            const details = screen.getByText(label).closest('details');
-            expect(details?.open).toBe(false);
-            fireEvent.click(screen.getByText(label).closest('summary')!);
-            expect(details?.open).toBe(true);
+        for (const details of document.querySelectorAll<HTMLDetailsElement>('.history-summary-details')) {
+            expect(details.open).toBe(false);
+            fireEvent.click(details.querySelector('summary')!);
+            expect(details.open).toBe(true);
         }
         expect(screen.getByText('Entry delta -0.280')).toBeTruthy();
         expect(screen.getByText('Giveback from best')).toBeTruthy();
     });
 
+    it('keeps the target slot on desktop when analysis is unavailable and hides it from assistive technology', async () => {
+        api.history.mockResolvedValue({ ...result, analysis: null });
+        mount();
+        await screen.findByText('Entry quote unavailable. Target and giveback analysis unavailable.');
+        expect(document.querySelector('.history-analysis-row')?.classList.contains('is-unavailable')).toBe(true);
+        expect(document.querySelector('.history-target-slot')?.getAttribute('aria-hidden')).toBe('true');
+        expect(screen.queryByRole('button', { name: 'Exit target: 50%' })).toBeNull();
+    });
+
     it('joins sessions without removing genuine missing quotes from either chart', async () => {
         const first = result.points[0]!;
-        const nextTime = Date.parse('2026-10-26T13:35:00Z');
+        const nextTime = Date.parse('2026-10-26T13:45:00Z');
         api.history.mockResolvedValue({
             ...result,
             to: '2026-10-26',
@@ -256,8 +381,10 @@ describe('contract history page', () => {
             ],
         });
         mount();
-        await waitFor(() => expect(screen.getAllByTestId('history-chart-data')).toHaveLength(2));
-        for (const chart of screen.getAllByTestId('history-chart-data')) {
+        await screen.findByTestId('history-chart-data');
+        for (const view of ['Option', 'Stock']) {
+            fireEvent.click(screen.getByRole('button', { name: view }));
+            const chart = shownChart().getByTestId('history-chart-data');
             const points = JSON.parse(chart.getAttribute('data-points')!) as Array<{
                 kind: string;
                 slot: number;
@@ -281,6 +408,7 @@ describe('contract history page', () => {
             ],
         });
         mount();
+        fireEvent.click(await screen.findByRole('button', { name: 'Stock' }));
         await screen.findByText('Stock ($ / share)');
         const domain = JSON.parse(screen.getByTestId('axis-stock').getAttribute('data-domain')!) as number[];
         expect(domain[0]).toBeCloseTo(159.98);
@@ -292,7 +420,9 @@ describe('contract history page', () => {
     it('shades the entire visible stock range when the strike is above it', async () => {
         api.history.mockResolvedValue({ ...result, contract: { ...contract, strike: 170 } });
         mount();
+        fireEvent.click(await screen.findByRole('button', { name: 'Stock' }));
         await screen.findByText(/Strike \$170.00 above chart range/);
+        await screen.findByTestId('axis-stock');
         const domain = JSON.parse(screen.getByTestId('axis-stock').getAttribute('data-domain')!) as number[];
         const area = screen.getByTestId('itm-area');
         expect(Number(area.getAttribute('data-low'))).toBe(domain[0]);
@@ -307,6 +437,7 @@ describe('contract history page', () => {
             ],
         });
         mount();
+        fireEvent.click(await screen.findByRole('button', { name: 'Stock' }));
         await screen.findByText('Strike $150.00', { exact: true });
         expect(Number(screen.getByTestId('itm-area').getAttribute('data-high'))).toBe(150);
         expect(screen.queryByText(/Strike \$150.00 (above|below) chart range/)).toBeNull();
@@ -346,10 +477,10 @@ describe('contract history page', () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&mode=multi&from=2026-10-21&to=2026-10-23`);
         await screen.findByTestId('best-marker');
         expect(screen.getByText('First 50%')).toBeDefined();
-        expect(screen.getByText('50% target').getAttribute('data-y')).toBe('1');
-        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
-        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
         expect(screen.getByText('50% target').getAttribute('data-y')).toBe('50');
+        fireEvent.click(screen.getByRole('button', { name: 'Chart: Captured %' }));
+        fireEvent.click(screen.getByRole('menuitemradio', { name: /Price/ }));
+        expect(screen.getByText('50% target').getAttribute('data-y')).toBe('1');
     });
     it('reports no valid observations without inventing crossings or giveback', async () => {
         api.history.mockResolvedValue({
@@ -369,7 +500,9 @@ describe('contract history page', () => {
         expect(screen.queryByText(/First observed crossing/)).toBeNull();
         expect(screen.queryByText(/decline from best/)).toBeNull();
     });
-    it('keeps the chart visible during refresh without a loading-selection message', async () => {
+    it('clears the old contract and shows the next one fresh, like a reload', async () => {
+        const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400 };
+        api.search.mockResolvedValue({ items: [contract, other], hasMore: false, unmappedContracts: 0 });
         mount();
         await screen.findByText('25.0%');
         let complete!: (response: HistoryResponse) => void;
@@ -378,13 +511,18 @@ describe('contract history page', () => {
                 complete = resolve;
             })
         );
-        fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-        const chart = screen.getByRole('region', { name: 'Contract price and delta history' });
-        await waitFor(() => expect(chart.getAttribute('aria-busy')).toBe('true'));
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Next contract' })).toBeDefined());
+        const before = screen.getByRole('region', { name: 'Contract price and delta history' });
+        fireEvent.click(screen.getByRole('button', { name: 'Next contract' }));
+        await waitFor(() =>
+            expect(screen.queryByRole('region', { name: 'Contract price and delta history' })).toBeNull()
+        );
         expect(screen.queryByText(/Loading selection/)).toBeNull();
-        expect(screen.getByText('Stock ($ / share)')).toBeDefined();
-        complete(result);
-        await waitFor(() => expect(chart.getAttribute('aria-busy')).toBe('false'));
+        complete({ ...result, contract: other });
+        const after = await screen.findByRole('region', { name: 'Contract price and delta history' });
+        expect(after).not.toBe(before);
+        expect(after.classList.contains('enter')).toBe(true);
+        expect(screen.getByText(/MSFT \$400 put/)).toBeDefined();
     });
     it('shows signal-date entry and hypothetical captured dollars with a separate stock chart', async () => {
         mount(`?contract=${encodeURIComponent(contract.key)}&signalDate=2026-10-21&from=2026-10-23`);
@@ -392,19 +530,17 @@ describe('contract history page', () => {
         expect(screen.getByText('+$50.00 / standard contract')).toBeDefined();
         expect(screen.getByText('Entry delta -0.280')).toBeDefined();
         expect(screen.getByText('Captured 10/21/2026 06:35')).toBeDefined();
-        expect(screen.getByText('Stock ($ / share)')).toBeDefined();
-        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
-        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
         expect(screen.getByText('Premium captured (%)')).toBeDefined();
         expect(screen.queryByText('Mark ($ / share)')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Stock' }));
+        await waitFor(() => expect(shownChart().getByText('Stock ($ / share)')).toBeDefined());
+        expect(shownChart().queryByText('Premium captured (%)')).toBeNull();
     });
     it('keeps missing entry explicit without substituting the displayed mark', async () => {
         api.history.mockResolvedValue({ ...result, entry: null, analysis: null });
         mount();
         await screen.findByText('Entry quote unavailable');
         expect(screen.queryByText(/Entry delta/)).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Chart: Price' }));
-        fireEvent.click(screen.getByRole('menuitemradio', { name: /Captured %/ }));
         expect(screen.getByText(/Captured percentages cannot be calculated/)).toBeDefined();
     });
     it('changes the baseline for the same contract on another signal date and retains it across viewing dates', async () => {
@@ -492,7 +628,7 @@ describe('contract history page', () => {
         );
         expect(screen.getByText('Axis price')).toBeDefined();
         expect(screen.getByText('Axis delta')).toBeDefined();
-        expect(screen.getByText(/2 slots with unknown coverage/)).toBeDefined();
+        expect(screen.queryByText(/slots with unknown coverage/)).toBeNull();
         expect(container.querySelector('select,datalist')).toBeNull();
         expect(screen.queryByText(/Observation 1 of/)).toBeNull();
     });
@@ -574,7 +710,9 @@ describe('contract history page', () => {
         expect(screen.getByRole('group', { name: 'Contract border legend' }).textContent).toBe(
             'Legend:ConservativeBalancedAggressiveITM'
         );
-        expect(topPicks.parentElement!.querySelector('.history-day-nav .history-color-key')).toBeTruthy();
+        expect(
+            topPicks.closest('.history-added-group')!.querySelector('.history-day-nav .history-color-key')
+        ).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Later date' }).hasAttribute('disabled')).toBe(true);
         fireEvent.click(screen.getByRole('button', { name: 'Earlier date' }));
         await screen.findByText('Added 10/20/2026');
@@ -630,8 +768,6 @@ describe('contract history page', () => {
         );
         expect(api.dates.mock.calls.filter(([key]) => key === contract.key)).toHaveLength(1);
         expect(api.dates.mock.calls.filter(([key]) => key === other.key)).toHaveLength(1);
-        fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
-        await waitFor(() => expect(api.dates.mock.calls.filter(([key]) => key === other.key)).toHaveLength(2));
     });
     it('lists a contract under every date it was signaled and steps within the viewed date', async () => {
         const other = { ...contract, key: 'MSFT  261030P00400000', symbol: 'MSFT', strike: 400, tiers: ['balanced'] };

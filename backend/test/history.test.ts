@@ -21,7 +21,7 @@ function row(changes: Partial<QuoteRow> = {}): QuoteRow {
     return {
         run_id: '1',
         session_date: '2026-10-23',
-        scheduled_at: new Date('2026-10-23T13:35:00Z'),
+        scheduled_at: new Date('2026-10-23T13:45:00Z'),
         capture_kind: 'open_session',
         status: 'complete',
         discovery_status: 'ok',
@@ -44,6 +44,17 @@ function row(changes: Partial<QuoteRow> = {}): QuoteRow {
 afterEach(() => vi.restoreAllMocks());
 
 describe('history timeline', () => {
+    it('leaves out the 06:35 Pacific opening capture, recorded or scheduled', () => {
+        const open = new Date('2026-10-23T13:35:00Z');
+        const result = buildTimeline(
+            [row({ scheduled_at: open }), row({ run_id: '2' })],
+            [{ sessionDate: '2026-10-23', captureKind: 'open_session', scheduledAt: '2026-11-03T14:35:00Z' }],
+            '2026-11-30',
+            Date.parse('2026-11-04T00:00:00Z')
+        );
+        expect(result.points.map((point) => point.time)).toEqual([Date.parse('2026-10-23T13:45:00Z')]);
+        expect(result.coverage.observations).toBe(1);
+    });
     it('preserves zero price and signed/zero delta', () => {
         const result = buildTimeline([row(), row({ run_id: '2', delta: '-0.35' })], [], '2026-10-30');
         expect(result.points[0]).toMatchObject({ mark: 0, delta: 0, underlyingPrice: 160 });
@@ -62,7 +73,7 @@ describe('history timeline', () => {
                 {
                     sessionDate: '2026-10-23',
                     captureKind: 'open_session',
-                    scheduledAt: '2026-10-23T13:35:00Z',
+                    scheduledAt: '2026-10-23T13:45:00Z',
                 },
             ],
             '2026-10-30',
@@ -77,7 +88,7 @@ describe('history timeline', () => {
                 row(),
                 row({ run_id: '2', capture_kind: 'recovery' }),
                 row({ run_id: '3', capture_kind: 'settle' }),
-                row({ run_id: '4', session_date: '2026-10-26', scheduled_at: new Date('2026-10-26T13:35:00Z') }),
+                row({ run_id: '4', session_date: '2026-10-26', scheduled_at: new Date('2026-10-26T13:45:00Z') }),
             ],
             [],
             '2026-10-30'

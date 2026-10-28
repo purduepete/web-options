@@ -6,6 +6,12 @@ function row(time: string, mark: string | null, price_status = 'ok'): AnalysisRo
     return { session_date: time.slice(0, 10), scheduled_at: new Date(time), mark_per_share: mark, price_status };
 }
 describe('all-history exit analysis', () => {
+    it('ignores the 06:35 Pacific opening capture for best, worst and target crossings', () => {
+        const result = analyzeHistory(entry, [row('2026-10-22T13:35:00Z', '0.1'), row('2026-10-22T13:45:00Z', '1.5')])!;
+        expect(result.validMarks).toBe(1);
+        expect(result.best?.time).toBe(Date.parse('2026-10-22T13:45:00Z'));
+        expect(result.targets.every((item) => item.percent === 25 || item.firstCrossing === null)).toBe(true);
+    });
     it('finds inclusive first crossings, extrema and giveback without relying on chart dates or input order', () => {
         const result = analyzeHistory(entry, [
             row('2026-10-23T14:00:00Z', '0.8'),

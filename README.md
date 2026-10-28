@@ -32,14 +32,26 @@ The existing dashboard connection and pages are unchanged.
 Open **Tools > Contract History** to search VADER puts, including expired
 contracts with retained quotes. Intraday opens the contract's latest usable
 Pacific session. Multi-day retains every observation across up to 93 calendar
-dates. The dual-axis chart shows signed delta on the left and mark dollars per
+dates. Switching to Multi-day, or stepping to another contract while in it,
+selects the contract's first available date through its latest. The dual-axis chart shows signed delta on the left and mark dollars per
 share (or captured percentage) on the right.
-Compact quote and analysis summaries keep the charts visible first. Expand
-**Quote details** or **Analysis details** for timestamps and the full figures.
-On large fine-pointer screens at least 800px tall, the collapsed page fits the
-viewport and shares the remaining height between option and stock charts.
-Expanded details, smaller windows and touch layouts scroll normally.
-Switching contracts retains the chosen view mode and date range. Both charts
+Compact quote and analysis summaries keep the charts visible first. Click a
+summary row to expand it for timestamps and the full figures. The summaries
+stack as full-width rows, with the exit-target menu at the far right of the
+analysis row. On large fine-pointer screens at least 800px tall, the collapsed
+page fits the viewport and gives the selected chart the remaining height.
+The entry and target rows and the contract picker all drop over the chart
+instead of pushing it down, so opening one never resizes or redraws the chart.
+Only one row panel is open at a time, and each closes on Escape or a click
+elsewhere; the picker also closes on a pick. Smaller windows and touch layouts
+keep them in the flow and scroll normally.
+Switching contracts retains the chosen view mode and date range. The 06:35
+Pacific opening capture quotes poorly, so the charts and the best, worst,
+giveback and target figures leave it out; the entry price is unaffected. A new contract
+clears the old one and fades in fresh, like a page load; changing the date range
+for the same contract dims the current view and swaps in place. The Option and
+Stock charts share one space and crossfade; each stays built once drawn, and
+the hidden one is built shortly after the first one paints. Both charts
 use equally spaced, two-line date/time labels; tooltips show exact capture times.
 Each contract-picker card shows its latest captured premium percentage at the
 upper right, calculated against that card's signal-date entry, independent of the
@@ -50,7 +62,10 @@ Captured percentages at or above 50% use green text, based on the unrounded valu
 Top Picks use their tier's color on the label text and border in place of extra tier text;
 ITM takes precedence, retaining normal text with a red border.
 A compact, color-coded legend sits at the right of the date-navigation row and wraps on narrow screens.
-Choose **Captured %** to plot `(entry mark - observed mark) / entry mark * 100`.
+The option chart defaults to **Captured %**, plotting `(entry mark - observed mark) / entry mark * 100`.
+Use the Option / Stock segmented control to show one chart at a time; the chart choice is remembered.
+The option chart's Price / Captured % menu sits beside the contract title. Stock
+view shows the strike note in that same position.
 The entry card uses the captured market quote for the selected signal date,
 independent of the chart's viewing range. Repeated signals have separate entries.
 The premium-captured card shows the last viewed mark's percentage and hypothetical
@@ -59,7 +74,7 @@ fees and actual fills are excluded. Missing captured entries stay unavailable,
 with no VADER-premium substitution; zero entries cannot produce percentages.
 Points before the entry capture are excluded from captured percentages.
 The dashed entry-price line and, when in range, the entry capture marker locate
-the baseline. A shorter stock chart shares the time range and hover position,
+the baseline. The stock chart uses the same time range,
 with a dashed strike and a shaded put ITM region below it. Missing observations
 and market-session boundaries break both lines.
 The stock axis fits its observed prices with padding, independent of the strike.
@@ -85,12 +100,16 @@ crossing does not prove an executable fill.
 
 The contract picker lists each signal date separately, using that day's tiers
 and top picks. Its calendar enables dates with signals and shows the number of
-contracts beneath each day. Arrow buttons step between signal dates.
+contracts beneath each day. Arrow buttons step between signal dates. A Tier
+menu narrows the picker to one or more of Top Picks, Conservative, Balanced and
+Aggressive, as on the signals page, and the choice is remembered. Stepping
+between contracts stays within the selected tiers.
 Seeking Alpha and TradingView links beside the selected contract open its
 underlying in new tabs, with the option context for the research overlays.
 Quotes are read fresh on every history request. Exchange schedules are reused
 for up to 5 minutes (at most 32 date ranges), avoiding a Python startup on each
-contract switch. Refresh also reloads the selected contract's available dates.
+contract switch. The navbar reload button refetches the page, including the
+selected contract's available dates.
 
 This page reads PostgreSQL using the separate `sd_web_options_reader` login.
 It never uses the collector's writable credentials. Production settings require
@@ -107,8 +126,9 @@ History readiness is `/api/contract-history/readiness` under the existing API
 access boundary. PostgreSQL failure affects history only; `/healthz`, Azure
 `/readyz`, and existing pages retain their previous behavior. The page reports
 missing and invalid components independently. It does not replace them with
-zero or VADER-advertised numbers. Unknown historical discovery or cadence is
-labeled unknown coverage, not an exact missed-observation count.
+zero or VADER-advertised numbers. The API reports unknown historical discovery
+or cadence as unknown coverage, not an exact missed-observation count; the page
+does not show the coverage counts.
 
 Ranges above 93 dates or 10,000 timeline points are rejected explicitly.
 Settle and recovery observations are labeled. Each point sits at its scheduled

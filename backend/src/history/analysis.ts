@@ -7,6 +7,15 @@ export interface AnalysisRow {
     price_status: string | null;
 }
 
+const PACIFIC_CLOCK = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+});
+/** The 06:35 Pacific opening capture quotes poorly, so history leaves it out of charts and analysis. */
+export const isExcludedCapture = (time: Date | number) => PACIFIC_CLOCK.format(time) === '06:35';
+
 export function analyzeHistory(entry: HistoryEntry | null, rows: readonly AnalysisRow[]): HistoryAnalysis | null {
     if (!entry || !Number.isFinite(entry.mark) || entry.mark <= 0) return null;
     const capturedAt = entry.capturedAt ? Date.parse(entry.capturedAt) : null;
@@ -28,6 +37,7 @@ export function analyzeHistory(entry: HistoryEntry | null, rows: readonly Analys
     for (const row of rows) {
         const time = row.scheduled_at.getTime();
         if (row.session_date < entry.signalDate || (capturedAt !== null && time < capturedAt)) continue;
+        if (isExcludedCapture(time)) continue;
         analysis.through = Math.max(analysis.through ?? time, time);
         const mark = row.mark_per_share === null ? null : Number(row.mark_per_share);
         if (row.price_status !== 'ok' || mark === null || !Number.isFinite(mark) || mark < 0) {

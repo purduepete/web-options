@@ -21,6 +21,12 @@ function pacificParts(value: number | string) {
     };
 }
 
+/** The 06:35 Pacific opening capture quotes poorly, so history views filter it out. */
+export const isExcludedCapture = (time: number) => pacificParts(time).time === '06:35';
+
+/** The 13:10 settle capture is the day's close, so its dot is drawn larger. */
+export const historyCaptureDotRadius = (kind: string) => (kind === 'settle' ? 5 : 2);
+
 /** `10/23/2026 06:35`. Times here are always Pacific, so the zone is left off. */
 export const pacificTime = (value: number | string) => {
     const parts = pacificParts(value);
@@ -28,12 +34,13 @@ export const pacificTime = (value: number | string) => {
 };
 
 /**
- * True when a change runs from the 06:35 open on the first viewed date to the
- * 13:10 settle on the last, so the span repeats what the date picker says.
+ * True when a change runs from the first charted capture (06:45, since the
+ * 06:35 open is left out) on the first viewed date to the 13:10 settle on the
+ * last, so the span repeats what the date picker says.
  */
 export function standardSpan(first: number, last: number, from: string, to: string): boolean {
     const date = (value: string) => `${value.slice(5, 7)}/${value.slice(8, 10)}/${value.slice(0, 4)}`;
-    return pacificTime(first) === `${date(from)} 06:35` && pacificTime(last) === `${date(to)} 13:10`;
+    return pacificTime(first) === `${date(from)} 06:45` && pacificTime(last) === `${date(to)} 13:10`;
 }
 
 /**
