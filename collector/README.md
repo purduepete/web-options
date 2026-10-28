@@ -60,15 +60,21 @@ from the last open-session slot (12:55 on a full day) to its Azure daily row,
 using the same price/delta tolerances. Azure's MERGE refreshes that row every
 10 minutes through 12:50, so 12:55 is the closest local capture to its final
 value. That section reports value agreement only: `created_at` cannot establish
-the time of an updated daily row. Current discovery cannot reconstruct past
-eligibility for historical `--date` runs or positions closed earlier that day.
+the time of an updated daily row. Historical runs exclude VADER contracts first
+seen after the audited date and portfolio transactions after that Pacific date.
+Excluded owners are counted under `introduced_after_session`; missing source
+dates fail explicitly. Current discovery still cannot reconstruct positions
+closed since that day or historical ownership revisions.
 
 VADER and portfolio value mismatches and `missing_azure` rows are informational.
 They keep their counts and examples but never fail the audit, because the two
 sides are sampled minutes apart and an Azure gap is not a collector failure.
 From 10/20 to 10/23/2026 they failed every night (18 of 19 portfolio rows on
 10/23, prices 10 to 60 cents apart) while coverage passed. Missing local quotes,
-coverage gaps and degraded runs still fail.
+coverage gaps and degraded runs still fail. Gross price differences above
+max($0.50, 25%) and delta differences above 0.15 also fail. A positive mid-price
+outlier stays informational when both marks are finite and within the gross
+price threshold; missing, non-finite, zero or negative local mids are not excused.
 Coverage compares the current distinct discovered universe against complete
 price/delta/IV components in every expected slot, and reports missing/degraded
 runs. A quote whose price failed with `invalid_or_missing_bid_ask` (the broker
@@ -76,7 +82,9 @@ had no bid/ask) is counted under `broker_unquoted` with examples in every
 section and does not fail the day. A partial run passes only when every failed
 quote in it is broker-unquoted. When a run's discovery succeeded, a contract the
 source had not yet published at that slot (VADER posts new signals around 07:30)
-is counted under `not_yet_discovered` instead of `missing_local`. Examples are capped at 20 per section. Weekends and full-day exchange
+is counted under `not_yet_discovered` instead of `missing_local`. `examples` is
+capped at 20 per section and prioritizes failures over informational entries.
+The separate `failures` list retains every failure. Weekends and full-day exchange
 holidays are `not_run`/overall pass, even though weekday-holiday quote collection
 still has its separate 13:10 settle purpose.
 

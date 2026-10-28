@@ -63,15 +63,28 @@ def timestamp(value):
 def section() -> dict:
     return {
         "status": "pass", "expected": 0, "compared": 0, "matched": 0,
-        "missing_local": 0, "missing_azure": 0, "mismatches": 0, "examples": [],
+        "missing_local": 0, "missing_azure": 0, "mismatches": 0, "examples": [], "failures": [],
     }
+
+
+def failure_example(result: dict, category: str, example: dict) -> None:
+    entry = {"reason": category, **example}
+    result["failures"].append(entry)
+    examples = result["examples"]
+    if len(examples) < 20:
+        examples.append(entry)
+        return
+    # Keep capped examples useful when informational rows have already filled the list.
+    for index in range(len(examples) - 1, -1, -1):
+        if not any(examples[index] is failure for failure in result["failures"]):
+            examples[index] = entry
+            return
 
 
 def problem(result: dict, category: str, example: dict) -> None:
     result["status"] = "fail"
     result[category] = result.get(category, 0) + 1
-    if len(result["examples"]) < 20:
-        result["examples"].append({"reason": category, **example})
+    failure_example(result, category, example)
 
 
 def note(result: dict, category: str, example: dict) -> None:
@@ -105,7 +118,23 @@ def compare_values(local: dict, source: dict, *, portfolio=False) -> list[dict]:
         elif abs(a - b) > tolerance:
             differences.append({"field": source_name, "local": str(a), "azure": str(b),
                                 "tolerance": str(tolerance), "gross": gross(source_name, a, b)})
+    mid = next((difference for difference in differences if difference["field"] == "mid"), None)
+    if mid and mid.get("gross") and "tolerance" in mid and marks_reconcile(local, source):
+        local_mid = Decimal(str(local["mid_per_share"]))
+        source_mid = Decimal(str(source["mid"]))
+        if local_mid > 0 and source_mid > 0:
+            mid["gross"] = False
+            mid["reason"] = "marks_within_gross_price_threshold"
     return differences
+
+
+def marks_reconcile(local: dict, source: dict) -> bool:
+    local_mark, source_mark = local.get("mark_per_share"), source.get("mark")
+    if local_mark is None or source_mark is None:
+        return False
+    local_mark, source_mark = Decimal(str(local_mark)), Decimal(str(source_mark))
+    return (local_mark.is_finite() and source_mark.is_finite()
+            and not gross("mark", local_mark, source_mark))
 
 
 def gross(field: str, local: Decimal, source: Decimal) -> bool:
@@ -171,14 +200,17 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
                        "iv_fraction": str(IV_TOLERANCE), "vader_nearest_minutes": 20},
         "limitations": [
             "Portfolio values only: option_daily_price has no update timestamp or run identity.",
-            "Discovery is current at audit time, not a reconstruction of historical open positions.",
+            "Current owners introduced after the Pacific audit date are excluded. Historical closures "
+            "and ownership revisions are not reconstructed.",
             "VADER nearest samples within 20 minutes are value checks, not simultaneous quote parity.",
             "VADER's 13:15 sample is compared with the 13:10 settle capture only; Azure has no 13:00 sample.",
             "Portfolio is compared with the last open-session capture; Azure stops refreshing at 12:50.",
             "Broker no-quote contracts (no bid/ask) are reported under broker_unquoted and do not fail.",
             "VADER and portfolio mismatches and missing_azure are informational: the samples are minutes "
             "apart and Azure gaps are not collector failures.",
-            "gross_mismatches fail: a price off by more than max($0.50, 25%), a delta off by more than "
+            "gross_mismatches fail: a price off by more than max($0.50, 25%) (a mid difference is "
+            "informational when both mids are positive and both marks are finite and within that price threshold), "
+            "a delta off by more than "
             "0.15, a non-finite value or a value missing locally.",
             "Also gross: a negative local price, a zero local price against an Azure price above $0.05, "
             "a local |delta| above 1, or a delta sign flip when both sides exceed 0.05.",
@@ -190,6 +222,22 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
             result["status"] = "not_run"
             result["note"] = "No exchange session; weekday-holiday settle capture is outside this audit."
         return report
+    scoped = []
+    for owner in discovery:
+        kind = owner["source_kind"]
+        if kind in ("vader_contract", "portfolio"):
+            name, field = ("vader", "report_date") if kind == "vader_contract" else ("portfolio", "transaction_date")
+            introduced = owner.get(field)
+            if isinstance(introduced, datetime):
+                introduced = timestamp(introduced).astimezone(PACIFIC).date()
+            identity = {"source": owner["source_id"], "broker_contract": owner["contract"].broker_occ}
+            if not isinstance(introduced, date):
+                problem(sections[name], "invalid_source_date", {**identity, "field": field})
+            elif introduced > day:
+                note(sections[name], "introduced_after_session", {**identity, "source_date": introduced.isoformat()})
+                continue
+        scoped.append(owner)
+    discovery = scoped
     local = {(row["run_id"], row["contract_key"]): row for row in quotes}
     source_by_contract = defaultdict(list)
     for row in vader_rows:
@@ -291,10 +339,10 @@ def audit_day(day: date, discovery: list[dict], runs: list[dict], quotes: list[d
         if missing:
             coverage["status"] = "fail"
             coverage["missing_local"] += len(missing)
-            for key in sorted(missing)[:20]:
-                if len(coverage["examples"]) < 20:
-                    coverage["examples"].append({"reason": "missing_local", "contract": key,
-                                                "purpose": slot.kind, "at": slot.instant.isoformat()})
+            for key in sorted(missing):
+                failure_example(coverage, "missing_local", {
+                    "contract": key, "purpose": slot.kind, "at": slot.instant.isoformat(),
+                })
         if run is None or not acceptable(run, quotes):
             problem(coverage, "bad_runs", {"purpose": slot.kind, "at": slot.instant.isoformat(),
                                           "status": run["status"] if run else "missing"})

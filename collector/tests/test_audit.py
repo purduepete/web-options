@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from collector.audit import audit_day, compare_values, execute, read_inputs
+from collector.audit import audit_day, compare_values, execute, note, problem, read_inputs, section
 from collector.model import slots
 from collector.source import normalize
 
@@ -16,11 +16,13 @@ DAY = date(2026, 10, 20)
 def fixtures(day=DAY):
     owners = [
         normalize(dict(source_id="vader", contract_key="vader", symbol="TEST",
-                       expiration=day, strike=100), "vader_contract"),
+                       expiration=day, strike=100, report_date=day), "vader_contract"),
         normalize(dict(source_id=1, symbol="TEST", expiration=day, strike=100,
-                       is_paper=True), "portfolio"),
+                       is_paper=True, transaction_date=datetime(day.year, day.month, day.day, 19, tzinfo=UTC)),
+                  "portfolio"),
         normalize(dict(source_id=2, symbol="TEST", expiration=day, strike=100,
-                       is_paper=False), "portfolio"),
+                       is_paper=False, transaction_date=datetime(day.year, day.month, day.day, 19, tzinfo=UTC)),
+                  "portfolio"),
     ]
     runs, quotes = [], []
     for index, slot in enumerate(slots(day), start=1):
@@ -99,7 +101,8 @@ def test_portfolio_uses_last_open_session_capture_not_settle():
 
 def test_contracts_added_after_a_successful_discovery_are_not_misses():
     owners, runs, quotes, vader, portfolio = fixtures()
-    late = normalize(dict(source_id="late", contract_key="late", symbol="LATE", expiration=DAY, strike=50),
+    late = normalize(dict(source_id="late", contract_key="late", symbol="LATE", expiration=DAY, strike=50,
+                          report_date=DAY),
                      "vader_contract")
     owners.append(late)
     for run in runs:
@@ -180,10 +183,94 @@ def test_gross_limits_scale_with_price_and_cover_missing_local_values():
     source = dict(mid="24.9", mark="15.1", delta="-.36", implied_volatility="11")
     assert not any(d["gross"] for d in compare_values(local, source))
     source["mid"] = "26.8"
-    assert [d["field"] for d in compare_values(local, source) if d["gross"]] == ["mid"]
-    assert [d["field"] for d in compare_values({**local, "delta": None}, source) if d["gross"]] == ["mid", "delta"]
+    assert not any(d["gross"] for d in compare_values(local, source))
+    assert [d["field"] for d in compare_values({**local, "delta": None}, source) if d["gross"]] == ["delta"]
+    source["mark"] = "14.9"
+    assert [d["field"] for d in compare_values(local, source) if d["gross"]] == ["mid", "mark"]
+    assert [d["field"] for d in compare_values({**local, "delta": None}, source) if d["gross"]] == [
+        "mid", "mark", "delta"
+    ]
     assert not any(d["gross"] for d in compare_values(local, {**source, "mid": None, "mark": "20"})
                    if d["field"] != "delta")
+
+
+def test_gross_mid_outlier_is_informational_when_marks_reconcile():
+    local = dict(mid_per_share="5.35", mark_per_share="5.35", delta="-.33",
+                 implied_volatility_fraction=".4")
+    source = dict(mid="7.15", mark="5.497866", delta="-.33", implied_volatility=".4")
+    differences = compare_values(local, source)
+    mid = next(difference for difference in differences if difference["field"] == "mid")
+    assert mid["gross"] is False
+    assert mid["reason"] == "marks_within_gross_price_threshold"
+
+    owners, runs, quotes, vader, portfolio = fixtures()
+    settle_quote = next(quote for quote, run in zip(quotes, runs) if run["capture_kind"] == "settle")
+    settle_quote.update(mid_per_share="5.35", mark_per_share="5.35")
+    vader[-1].update(mid="7.15", mark="5.497866")
+    report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
+    assert report["status"] == "pass"
+    assert report["sections"]["vader"]["mismatches"] == 1
+    assert report["sections"]["vader"].get("gross_mismatches", 0) == 0
+
+    source["mark"] = "7.15"
+    differences = compare_values(local, source)
+    assert next(difference for difference in differences if difference["field"] == "mid")["gross"] is True
+    assert next(difference for difference in differences if difference["field"] == "mark")["gross"] is True
+
+
+def test_zero_mid_remains_gross_even_when_marks_reconcile():
+    local = dict(mid_per_share="0", mark_per_share="1.05", delta="-.25",
+                 implied_volatility_fraction=".4")
+    source = dict(mid="1.05", mark="1.05", delta="-.25", implied_volatility=".4")
+    mid = next(difference for difference in compare_values(local, source) if difference["field"] == "mid")
+    assert mid["gross"] is True
+
+
+@pytest.mark.parametrize("value", [None, "NaN", "Infinity", "-1"])
+def test_invalid_mid_is_not_excused_by_agreeing_marks(value):
+    local = dict(mid_per_share=value, mark_per_share="1.05")
+    source = dict(mid="1.05", mark="1.05")
+    mid = next(difference for difference in compare_values(local, source) if difference["field"] == "mid")
+    assert mid["gross"] is True
+
+
+def test_historical_rerun_excludes_future_owners_from_every_section():
+    owners, runs, quotes, vader, portfolio = fixtures()
+    tomorrow = DAY + timedelta(days=1)
+    owners.extend([
+        normalize(dict(source_id="future", contract_key="future", symbol="LATE", expiration=tomorrow,
+                       strike=50, report_date=tomorrow), "vader_contract"),
+        normalize(dict(source_id=3, symbol="LATE", expiration=tomorrow, strike=50, is_paper=False,
+                       transaction_date=datetime(tomorrow.year, tomorrow.month, tomorrow.day, 15, tzinfo=UTC)),
+                  "portfolio"),
+    ])
+    report = audit_day(DAY, owners, runs, quotes, vader, portfolio)
+    assert report["status"] == "pass"
+    assert report["sections"]["vader"]["expected"] == 1
+    assert report["sections"]["portfolio"]["expected"] == 2
+    assert report["sections"]["vader"]["introduced_after_session"] == 1
+    assert report["sections"]["portfolio"]["introduced_after_session"] == 1
+    assert report["sections"]["coverage"]["distinct_contracts_expected"] == 1
+
+
+def test_transaction_dates_use_the_pacific_session_date():
+    data = fixtures()
+    # Early the next UTC day is still the audited Pacific day.
+    data[0][1]["transaction_date"] = datetime(2026, 10, 21, 1)
+    report = audit_day(DAY, *data)
+    assert report["status"] == "pass"
+    assert report["sections"]["portfolio"]["expected"] == 2
+
+
+@pytest.mark.parametrize(("index", "field", "section_name"), [
+    (0, "report_date", "vader"), (1, "transaction_date", "portfolio"),
+])
+def test_missing_source_dates_fail_without_silently_excluding_owners(index, field, section_name):
+    data = fixtures()
+    data[0][index].pop(field)
+    report = audit_day(DAY, *data)
+    assert report["status"] == "fail"
+    assert report["sections"][section_name]["invalid_source_date"] == 1
 
 
 @pytest.mark.parametrize(("local", "source", "expected"), [
@@ -247,6 +334,21 @@ def test_failure_examples_are_capped_and_missing_runs_fail():
     assert report["status"] == "fail"
     assert report["sections"]["vader"]["missing_local"] == 100
     assert len(report["sections"]["vader"]["examples"]) == 20
+    assert sum(failure["reason"] == "missing_local"
+               for failure in report["sections"]["vader"]["failures"]) == 100
+    assert any(failure["reason"] == "low_comparison_coverage"
+               for failure in report["sections"]["vader"]["failures"])
+
+
+def test_failures_remain_in_examples_after_informational_examples_fill_the_cap():
+    result = section()
+    for index in range(20):
+        note(result, "mismatches", {"index": index})
+    problem(result, "gross_mismatches", {"contract": "SOXX"})
+
+    assert len(result["examples"]) == 20
+    assert result["examples"][-1] == {"reason": "gross_mismatches", "contract": "SOXX"}
+    assert result["failures"] == [{"reason": "gross_mismatches", "contract": "SOXX"}]
 
 
 def test_audit_readonly_queries_no_repository_writes():
