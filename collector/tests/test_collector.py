@@ -192,3 +192,28 @@ def test_azure_outage_blocks_stale_ownership_capture(has_contracts):
         with pytest.raises(RuntimeError, match="current eligible universe is unknown"):
             tick(config, at)
         capture.assert_not_called()
+
+@pytest.mark.parametrize(
+    ("error", "age", "expected", "logged"),
+    [
+        ("capture_partial", 1, 0, None),
+        (None, 1, 0, None),
+        ("unresolved_capture", 1, 1, "collector reported unresolved_capture at 13:11:00 "
+         "(an earlier partial or missed slot today has not been recovered)"),
+        ("capture_partial", 7, 1, "heartbeat overdue, last 13:05:00 (7 min ago)"),
+    ],
+)
+def test_watchdog_logs_reason_and_leaves_partial_to_tick(caplog, error, age, expected, logged):
+    from collector.__main__ import watchdog
+
+    at = datetime(2026, 10, 28, 20, 12, tzinfo=UTC)
+    beat = at - timedelta(minutes=age)
+    config = Config("", {}, "", "", True, {})
+    with patch("collector.__main__.Repository") as factory, patch("collector.__main__.notify", return_value=False):
+        factory.return_value.execute.return_value.fetchone.return_value = {
+            "heartbeat_at": beat, "last_error": error, "last_alert_key": None,
+        }
+        with caplog.at_level("WARNING", logger="collector"):
+            assert watchdog(config, at) == expected
+    warnings = [record.getMessage() for record in caplog.records if record.levelname == "WARNING"]
+    assert warnings == ([f"unhealthy: {logged}"] if logged else [])

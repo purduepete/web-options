@@ -134,6 +134,25 @@ def tick(config, at) -> int:
         repo.close()
 
 
+ERROR_MEANINGS = {
+    "discovery_failed": "the eligible option universe could not be loaded",
+    "unresolved_capture": "an earlier partial or missed slot today has not been recovered",
+    "no_collector_heartbeat": "the collector has never recorded a heartbeat",
+}
+
+
+def unhealthy_reason(health, at) -> str:
+    if health is None:
+        return "no collector heartbeat recorded"
+    beat = health["heartbeat_at"].astimezone(PACIFIC)
+    age = (at - health["heartbeat_at"]).total_seconds() / 60
+    if age > 5:
+        return f"heartbeat overdue, last {beat:%H:%M:%S} ({age:.0f} min ago)"
+    error = health["last_error"]
+    meaning = ERROR_MEANINGS.get(error, "the collector run raised this error")
+    return f"collector reported {error} at {beat:%H:%M:%S} ({meaning})"
+
+
 def watchdog(config, at) -> int:
     if not config.enabled:
         LOG.info("collector disabled; watchdog not active")
@@ -151,8 +170,12 @@ def watchdog(config, at) -> int:
         health = repo.execute("SELECT * FROM public.collector_health WHERE id=1").fetchone()
         overdue = health is None or at - health["heartbeat_at"] > timedelta(minutes=5)
         key = f"{at.astimezone(EASTERN).date()}:heartbeat"
-        # Persistent partial data also needs an operational notification.
-        unhealthy = overdue or (health is not None and health["last_error"] is not None)
+        error = health["last_error"] if health else None
+        # The tick that records capture_partial already exits 1 and retries; a slot that stays
+        # degraded becomes unresolved_capture, which still counts here.
+        unhealthy = overdue or error not in (None, "capture_partial")
+        if unhealthy:
+            LOG.warning("unhealthy: %s", unhealthy_reason(health, at))
         if unhealthy and (health is None or health["last_alert_key"] != key):
             sent = notify(
                 config, "Collector heartbeat missing or capture degraded. Check collector status and task logs."
