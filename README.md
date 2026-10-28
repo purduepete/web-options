@@ -491,7 +491,8 @@ SQL refused it.
 # Appearance
 
 System follows the OS live; Light, Midnight and optional gray Dark remain selectable.
-The header palette icon opens a segmented theme picker with one text-only row
+The header palette icon, first in the header tools before Search and Reload, opens a
+segmented theme picker with one text-only row
 ordered Light, Dark, Midnight, System. Selecting a theme keeps
 the picker open; press the palette icon again, click outside, move focus outside,
 or press Escape to close it. The header reload button uses the two-arrow refresh

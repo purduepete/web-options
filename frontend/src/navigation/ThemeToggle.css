@@ -9,12 +9,14 @@
     right: 0;
     z-index: 30;
     box-sizing: border-box;
-    width: min(22rem, calc(100vw - 1.5rem));
+    width: min(20rem, calc(100vw - 1.5rem));
     padding: 1rem;
     border: var(--border-width) solid var(--border);
     background: var(--surface);
     color: var(--text);
-    box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 10%),
+        0 4px 6px -4px rgb(0 0 0 / 10%);
 }
 
 .theme-picker-popover[hidden] {
@@ -23,20 +25,36 @@
 
 .theme-popover-label {
     display: block;
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.5rem;
     color: var(--text-muted);
-    font-size: 0.7rem;
-    font-weight: 650;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1rem;
+    letter-spacing: 0.025em;
     text-transform: uppercase;
 }
 
+/* Web Portfolio's track: an inset gray-100 / gray-300 well in light and the page
+   color with a gray-600 edge in both dark themes. */
 .theme-picker-options {
+    --theme-option-color: var(--gray-300);
+    --theme-option-hover: var(--white);
+
     position: relative;
     display: flex;
     box-sizing: border-box;
     height: 2.25rem;
-    border: var(--border-width) solid var(--border);
-    background: var(--surface);
+    overflow: hidden;
+    border: var(--border-width) solid var(--gray-600);
+    background: var(--c-gray-900);
+}
+
+[data-theme='light'] .theme-picker-options {
+    --theme-option-color: var(--gray-600);
+    --theme-option-hover: var(--ink);
+
+    border-color: var(--gray-300);
+    background: var(--gray-100);
 }
 
 .theme-picker-options .theme-selection {
@@ -57,26 +75,31 @@
     justify-content: center;
     min-width: 0px;
     flex: 1;
-    gap: 0.25rem;
-    padding: 0 0.2rem;
+    padding: 0 0.25rem;
     border: 0;
     background: transparent;
-    color: var(--text-muted);
-    font-size: 0.68rem;
+    color: var(--theme-option-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
     white-space: nowrap;
+    transition: color var(--transition);
 }
 
-.theme-picker-options button svg {
-    flex: none;
+.theme-picker-options button:hover:not(:disabled) {
+    background: transparent;
+    color: var(--theme-option-hover);
 }
 
-.theme-picker-options button[aria-checked='true'] {
+.theme-picker-options button[aria-checked='true'],
+.theme-picker-options button[aria-checked='true']:hover:not(:disabled) {
     color: var(--highlight-contrast);
 }
 
 .theme-picker-options button:focus-visible {
-    outline: 2px solid var(--text-heading);
-    outline-offset: -2px;
+    z-index: 2;
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--highlight);
 }
 
 .theme-toggle[aria-expanded='true'] {

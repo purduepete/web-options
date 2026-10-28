@@ -123,6 +123,8 @@ export function Navbar({
                     <VixChip />
 
                     <div className="bar-tools">
+                        <ThemeToggle />
+
                         {onOpenSearch && (
                             <button
                                 type="button"
@@ -144,8 +146,6 @@ export function Navbar({
                         >
                             <RefreshCwIcon />
                         </button>
-
-                        <ThemeToggle />
                     </div>
 
                     {!isDesktop && (
