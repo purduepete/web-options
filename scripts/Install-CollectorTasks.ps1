@@ -63,7 +63,7 @@ foreach ($kind in @('tick', 'watchdog', 'audit')) {
         -ExecutionTimeLimit (New-TimeSpan -Minutes 4) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     $triggers = @($boot, $repeat)
     if ($kind -eq 'audit') {
-        $triggers = @(New-ScheduledTaskTrigger -Daily -At '23:30')
+        $triggers = @(New-ScheduledTaskTrigger -Daily -At '13:30')
         $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable `
             -ExecutionTimeLimit (New-TimeSpan -Minutes 15) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     }

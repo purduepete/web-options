@@ -375,6 +375,6 @@ def test_task_launcher_and_daily_registration_contract():
     assert "'audit')" in launcher
     assert "-m collector.audit --config $config" in launcher
     assert "SolutionDeploy-web-options-daily-audit" in installer
-    assert "New-ScheduledTaskTrigger -Daily -At '23:30'" in installer
+    assert "New-ScheduledTaskTrigger -Daily -At '13:30'" in installer
     assert "-ExecutionTimeLimit (New-TimeSpan -Minutes 15)" in installer
     assert "NT AUTHORITY\\LOCAL SERVICE" in installer

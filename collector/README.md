@@ -89,7 +89,8 @@ holidays are `not_run`/overall pass, even though weekday-holiday quote collectio
 still has its separate 13:10 settle purpose.
 
 The installer adds `\JimlerTech\SolutionDeploy-web-options-daily-audit`, daily
-at 23:30 host-local time, under LOCAL SERVICE, with a 15-minute limit. It uses
+at 13:30 host-local time, after the 13:10 settle capture and Azure's 13:15 sample,
+under LOCAL SERVICE, with a 15-minute limit. It uses
 the same protected config and enabled/disabled installation switch as the
 existing collector tasks. No schema, grants, new config keys or broker calls
 are required. LOCAL SERVICE needs write permission to the existing logs tree.
