@@ -76,6 +76,11 @@ def tick(config, at) -> int:
             raise RuntimeError("source unavailable; current eligible universe is unknown")
         if contracts:
             asyncio.run(collect(config, repo, run_id, contracts, slot.deadline))
+        # Ticks run once a minute, so this is the settle slot's last chance at a live quote.
+        if slot.kind == "settle" and now() >= slot.deadline - timedelta(minutes=1):
+            filled = repo.fill_from_close(run_id, day)
+            if filled:
+                LOG.warning("run=%d filled %d unpriced settle contracts from the close run", run_id, filled)
         for other, shared_id in shared_runs:
             repo.share_capture(run_id, shared_id, other.deadline)
             repo.finish(shared_id, now())

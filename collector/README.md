@@ -49,7 +49,10 @@ This worker runs on `jimbrownhome1`, separate from the existing dashboard.
 Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplies
 delta and IV. When both REST attempts leave a price crossed or absent, the same
 DXLink connection subscribes the `Quote` event for those contracts and stores the
-first valid bid/ask, flagged `stream_quote`, with mark set to the midpoint. Azure SQL is a temporary, SELECT-only discovery source for active
+first valid bid/ask, flagged `stream_quote`, with mark set to the midpoint. If a
+13:10 settle price is still crossed or absent on the slot's last tick, the collector
+copies that contract's valid price from the same day's 13:00 close run, flagged
+`close_fallback`, and the run counts as complete. Azure SQL is a temporary, SELECT-only discovery source for active
 tracked VADER puts and eligible open live/paper sell-to-open CSP positions.
 Discovery failure blocks collection because current ownership/closure is unknown.
 Implementation is tracked by [#4](https://github.com/purduepete/web-options/issues/4),

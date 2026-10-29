@@ -345,6 +345,25 @@ class Repository:
                         "received_at": row[f"{component}_received_at"], "flags": row[f"{component}_flags"],
                     }, deadline)
 
+    def fill_from_close(self, run_id: int, day: date) -> int:
+        """Copy the same day's valid close price into settle rows that are still unpriced."""
+        return self.execute(
+            """
+            UPDATE public.broker_option_quote s SET
+              bid_per_share=c.bid_per_share,ask_per_share=c.ask_per_share,mark_per_share=c.mark_per_share,
+              mid_per_share=c.mid_per_share,last_per_share=c.last_per_share,underlying_price=c.underlying_price,
+              provider_quote_time=c.provider_quote_time,price_received_at=c.price_received_at,
+              price_flags=array_append(c.price_flags,'close_fallback'),price_status='ok',price_error=NULL,
+              provider_summary_date=c.provider_summary_date,provider_prev_close_date=c.provider_prev_close_date,
+              provider_last_trade_time=c.provider_last_trade_time
+            FROM public.option_collection_run r
+            JOIN public.broker_option_quote c ON c.run_id=r.id AND c.price_status='ok'
+            WHERE s.run_id=%s AND s.price_status<>'ok' AND c.contract_key=s.contract_key
+              AND r.session_date=%s AND r.capture_kind='close'
+            """,
+            (run_id, day),
+        ).rowcount
+
     def finish(self, run_id: int, at: datetime, failed: bool = False) -> dict:
         counts = self.execute(
             """

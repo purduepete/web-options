@@ -152,6 +152,41 @@ def test_persistence_immutable_component_guard_and_late_isolation():
     assert "UPDATE public.broker_option_quote" not in repo.execute.call_args.args[0]
 
 
+def test_close_fallback_only_fills_unpriced_settle_rows_from_a_valid_close():
+    repo = Repository.__new__(Repository)
+    repo.execute = MagicMock()
+    repo.execute.return_value.rowcount = 4
+    assert repo.fill_from_close(7, date(2026, 10, 29)) == 4
+    query, args = repo.execute.call_args.args
+    assert args == (7, date(2026, 10, 29))
+    assert "s.price_status<>'ok'" in query and "c.price_status='ok'" in query
+    assert "r.capture_kind='close'" in query and "'close_fallback'" in query
+
+
+@pytest.mark.parametrize(("seconds_left", "fills"), [(30, True), (180, False)])
+def test_settle_falls_back_to_close_only_on_its_last_tick(seconds_left, fills):
+    config = Config("", {}, "", "", True, {})
+    deadline = datetime(2026, 10, 29, 20, 15, tzinfo=UTC)
+    at = deadline - timedelta(seconds=seconds_left)
+    with (
+        patch("collector.__main__.Repository") as factory,
+        patch("collector.__main__.discover", return_value=[]),
+        patch("collector.__main__.collect"),
+        patch("collector.__main__.now", return_value=at),
+    ):
+        repo = factory.return_value
+        repo.lock.return_value = True
+        repo.runs.return_value = []
+        repo.run.return_value = 9
+        repo.contracts.return_value = [MagicMock()]
+        repo.fill_from_close.return_value = 2
+        repo.finish.return_value = {"status": "complete", "expected": 1}
+        tick(config, at)
+        assert repo.fill_from_close.called is fills
+        if fills:
+            repo.fill_from_close.assert_called_once_with(9, date(2026, 10, 29))
+
+
 def test_busy_lock_opens_no_provider():
     config = Config("", {}, "", "", True, {})
     with patch("collector.__main__.Repository") as factory, patch("collector.__main__.collect") as capture:
