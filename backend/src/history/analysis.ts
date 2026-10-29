@@ -1,4 +1,4 @@
-import type { HistoryAnalysis, HistoryEntry, HistoryOutcome } from '@weboptions/shared';
+import type { HistoryAnalysis, HistoryEntry, HistoryOutcome, HistoryOverride } from '@weboptions/shared';
 
 export interface AnalysisRow {
     session_date: string;
@@ -16,12 +16,17 @@ const PACIFIC_CLOCK = new Intl.DateTimeFormat('en-US', {
 /** The 06:35 Pacific opening capture quotes poorly, so history leaves it out of charts and analysis. */
 export const isExcludedCapture = (time: Date | number) => PACIFIC_CLOCK.format(time) === '06:35';
 
-export function analyzeHistory(entry: HistoryEntry | null, rows: readonly AnalysisRow[]): HistoryAnalysis | null {
+export function analyzeHistory<T extends AnalysisRow>(
+    entry: HistoryEntry | null,
+    rows: readonly T[],
+    overrides: ReadonlyMap<T, readonly HistoryOverride[]> = new Map()
+): HistoryAnalysis | null {
     if (!entry || !Number.isFinite(entry.mark) || entry.mark <= 0) return null;
     const capturedAt = entry.capturedAt ? Date.parse(entry.capturedAt) : null;
     const analysis: HistoryAnalysis = {
         validMarks: 0,
         recordedGaps: 0,
+        overriddenMarks: 0,
         firstObservedAt: null,
         through: null,
         best: null,
@@ -39,6 +44,11 @@ export function analyzeHistory(entry: HistoryEntry | null, rows: readonly Analys
         if (row.session_date < entry.signalDate || (capturedAt !== null && time < capturedAt)) continue;
         if (isExcludedCapture(time)) continue;
         analysis.through = Math.max(analysis.through ?? time, time);
+        // A carried value is not a market observation, so it can't set an extreme or fire a target.
+        if (overrides.get(row)?.some((item) => item.field === 'mark')) {
+            analysis.overriddenMarks = (analysis.overriddenMarks ?? 0) + 1;
+            continue;
+        }
         const mark = row.mark_per_share === null ? null : Number(row.mark_per_share);
         if (row.price_status !== 'ok' || mark === null || !Number.isFinite(mark) || mark < 0) {
             analysis.recordedGaps++;

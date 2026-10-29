@@ -5,6 +5,7 @@ import { withHistory } from './db';
 import { readSchedule } from './schedule';
 import type { ScheduleSlot } from './schedule';
 import { analyzeHistory, isExcludedCapture, type AnalysisRow } from './analysis';
+import { findOverrides, type OverrideRow } from './overrides';
 
 export const MAX_DATES = 93;
 export const MAX_POINTS = 10000;
@@ -199,6 +200,7 @@ export function buildTimeline(
     now = Date.now()
 ): { points: HistoryPoint[]; coverage: HistoryResponse['coverage'] } {
     const points: HistoryPoint[] = [];
+    const overrides = findOverrides(rows);
     const existing = new Set(rows.map((row) => `${row.scheduled_at.getTime()}|${row.capture_kind}`));
     const coverage = {
         observations: 0,
@@ -240,6 +242,7 @@ export function buildTimeline(
                 : mark === null || delta === null
                   ? `Incomplete quote (price ${row.price_status}; delta ${row.delta_status})`
                   : null,
+            ...(overrides.has(row) ? { overrides: overrides.get(row) } : {}),
         });
     }
     for (const slot of schedule) {
@@ -337,22 +340,24 @@ export async function fetchHistory(
                 : null;
         const analysisRows =
             capturedEntry && capturedEntry.mark > 0
-                ? await db.query<AnalysisRow>(
-                      `SELECT r.session_date::text,r.scheduled_at,q.mark_per_share,q.price_status
+                ? await db.query<AnalysisRow & OverrideRow>(
+                      // Whole sessions from the signal date, so a spike next to the entry is judged the
+                      // same way as on the chart; analyzeHistory drops captures before the entry itself.
+                      `SELECT r.session_date::text,r.scheduled_at,r.capture_kind,q.mark_per_share,q.price_status,
+                   q.delta,q.delta_status,q.underlying_price,q.price_flags
                  FROM public.option_collection_run r LEFT JOIN public.broker_option_quote q
                    ON q.run_id=r.id AND q.contract_key=$1
                  WHERE r.session_date BETWEEN $2::date AND $3::date
-                   AND r.scheduled_at >= COALESCE($4::timestamptz, $2::date::timestamp AT TIME ZONE 'America/Los_Angeles')
                    AND r.scheduled_at <= CURRENT_TIMESTAMP
                  ORDER BY r.scheduled_at,r.id`,
-                      [key, capturedEntry.signalDate, selected.expiration, capturedEntry.capturedAt]
+                      [key, capturedEntry.signalDate, selected.expiration]
                   )
                 : null;
         return {
             selected,
             selectedSignal,
             entry: capturedEntry,
-            analysis: analyzeHistory(capturedEntry, analysisRows?.rows ?? []),
+            analysis: analyzeHistory(capturedEntry, analysisRows?.rows ?? [], findOverrides(analysisRows?.rows ?? [])),
             rows: result.rows,
             activation: activation.rows[0]?.first,
         };

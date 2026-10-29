@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract History: missing functionality</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>(function(){document.documentElement.dataset.theme=localStorage.getItem('ideas-theme')||'system';})();</script>
+<style>
+:root{--bg:#0b1020;--surface:#121a2e;--surface2:#18213a;--border:#26304d;--text:#e2e8f0;--muted:#94a3b8;--accent:#8b7cf6;--s:#4ade80;--m:#f59e0b;--l:#f87171;--chip:#1e293b}
+@media (prefers-color-scheme: light){:root[data-theme=system]{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--border:#cbd5e1;--text:#0f172a;--muted:#475569;--accent:#5b4bd6;--s:#15803d;--m:#b45309;--l:#b91c1c;--chip:#e2e8f0}}
+:root[data-theme=light]{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--border:#cbd5e1;--text:#0f172a;--muted:#475569;--accent:#5b4bd6;--s:#15803d;--m:#b45309;--l:#b91c1c;--chip:#e2e8f0}
+*{box-sizing:border-box;border-radius:0}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 60px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:14px}
+h1{font-size:1.35rem;margin:0}
+h2{font-size:1.05rem;margin:28px 0 10px}
+.sub{color:var(--muted);font-size:.85rem;margin-top:4px}
+.seg{display:flex;border:1px solid var(--border)}
+.seg button{background:transparent;color:var(--muted);border:0;padding:6px 12px;font:inherit;font-size:.8rem;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+.box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 16px}
+.box ol,.box ul{margin:6px 0 0;padding-left:20px}
+.box li{margin:4px 0}
+.have{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--chip);font-size:.74rem;padding:2px 8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);font-size:.86rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:.78rem;background:var(--surface2)}
+td.n{color:var(--accent);font-weight:700;white-space:nowrap}
+td b{display:block}
+.q{color:var(--muted);font-size:.8rem;font-style:italic}
+.e{font-weight:600;white-space:nowrap}
+.e.S{color:var(--s)}.e.M{color:var(--m)}.e.L{color:var(--l)}
+.now{font-size:.8rem;color:var(--muted)}
+code{font-size:.78rem;background:var(--surface2);padding:0 4px;overflow-wrap:anywhere}
+.tbl{overflow-x:auto}
+@media (max-width:760px){thead{display:none}tr,td{display:block}td{border:0;padding:4px 10px}tr{border-bottom:1px solid var(--border);padding:8px 0}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>Contract History: what's missing</h1>
+    <div class="sub">Reviewed by GPT-6.1 Sol, Claude Sonnet 5.5 and Gemini 4 Argon · updated 10/28/2026 17:25 local time</div>
+  </div>
+  <div class="seg" role="group" aria-label="Theme"><button data-t="light">Light</button><button data-t="dark">Dark</button><button data-t="system">System</button></div>
+</header>
+
+<h2>What the page does today</h2>
+<div class="box">
+  <div class="have">
+    <span class="chip">Intraday and multi-day views</span><span class="chip">Option / Stock panes</span><span class="chip">Price and Captured % metrics</span>
+    <span class="chip">Entry price and delta lines</span><span class="chip">Best dot</span><span class="chip">First target crossing line</span>
+    <span class="chip">Best, Worst, Giveback summary</span><span class="chip">25/50/75% target picker</span><span class="chip">Amber override bands</span>
+    <span class="chip">Coverage and warning summary</span><span class="chip">Quality markers</span><span class="chip">Session dividers and overnight changes</span>
+    <span class="chip">Date buttons open intraday</span><span class="chip">Symbol search across signal dates</span><span class="chip">Tier colours and ITM corner</span>
+  </div>
+</div>
+
+<h2>Added in this update</h2>
+<div class="box">
+  <ul>
+    <li><code>history.coverage</code> and <code>history.warnings</code>: selected-range counts, quote gaps, unknown slots, flags, overrides and warning notes now appear in the page summary. Ticks mark affected chart positions.</li>
+    <li><code>session_boundary</code> points: multi-day charts now draw subtle dividers, show overnight changes in Mark, Delta and Stock, and let a date button open that session in Intraday.</li>
+    <li><code>analysis.worst</code>: shown as a number in the summary strip, but never drawn on the chart, unlike Best.</li>
+  </ul>
+</div>
+
+<h2>Gaps, ranked</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>#</th><th>Missing</th><th>What it adds</th><th>Today</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td class="n">1</td><td><b>Coverage and quality summary</b><span class="q">How complete is this chart?</span></td><td>Selected-range counts for observations, valid prices and deltas, gaps, unknown slots, overrides and flags. Warnings are expandable; chart ticks mark affected captures.</td><td class="now">Implemented in this update.</td><td class="e S">Done</td></tr>
+<tr><td class="n">2</td><td><b>Worst marker and event list</b><span class="q">Where did each key moment happen?</span></td><td>A red Worst dot to match Best, plus a short clickable list: entry, first target, Best, Worst, strike crossed, overrides. Clicking jumps the chart there.</td><td class="now">Best dot and first-crossing line only.</td><td class="e S">S–M</td></tr>
+<tr><td class="n">3</td><td><b>Session dividers and overnight change</b><span class="q">Did it move during the day or overnight?</span></td><td>Dashed date lines on multi-day charts. Buttons show the change from the previous session's last valid capture to the next session's first valid capture. Selecting a date opens that day in Intraday.</td><td class="now">Implemented in this update.</td><td class="e S">Done</td></tr>
+<tr><td class="n">4</td><td><b>Option and stock together</b><span class="q">What was the stock doing when the put moved?</span></td><td>Stock price and distance to strike in the Option tooltip, and mark, delta and Captured % in the Stock tooltip. Optional desktop "Both" view with linked crosshairs.</td><td class="now">One pane at a time; tooltips show different fields.</td><td class="e S">S</td></tr>
+<tr><td class="n">5</td><td><b>Intrinsic vs time value, and breakeven</b><span class="q">How much of the mark is real loss vs decay still to come?</span></td><td>Tooltip split: intrinsic <code>max(strike − stock, 0)</code> and time value. A breakeven line on the Stock chart at <code>strike − entry credit</code>.</td><td class="now">Only above/below strike.</td><td class="e S">S–M</td></tr>
+<tr><td class="n">6</td><td><b>VADER's numbers next to captured entry</b><span class="q">How far was VADER's quote from the real one?</span></td><td>Advertised premium, delta and yield beside the captured entry values in the Entry details.</td><td class="now">Captured entry only.</td><td class="e S">S</td></tr>
+<tr><td class="n">7</td><td><b>Clear range vs since-entry scope</b><span class="q">Are Best and Worst for this chart range or the whole trade?</span></td><td>Label each figure's scope, or a Visible range / Since entry toggle.</td><td class="now">Mark and delta follow the range; Best/Worst/Giveback are since entry. Easy to misread.</td><td class="e M">M</td></tr>
+<tr><td class="n">8</td><td><b>Compare two points</b><span class="q">What changed between 08:15 and 12:35?</span></td><td>Pick A and B on the chart; a strip shows elapsed time and the change in mark, Captured %, delta and stock.</td><td class="now">One-point tooltip only.</td><td class="e M">M</td></tr>
+<tr><td class="n">9</td><td><b>Did the target hold?</b><span class="q">Was 50% a one-capture touch or sustained?</span></td><td>Next to first crossing: number of captures at or past target, longest run, and any fall back below it.</td><td class="now">First crossing only.</td><td class="e M">M</td></tr>
+<tr><td class="n">10</td><td><b>Overlay a few contracts</b><span class="q">How did this put compare with its siblings?</span></td><td>Add 2 to 4 contracts and overlay their Captured % curves aligned on time since entry.</td><td class="now">One contract at a time.</td><td class="e M">M</td></tr>
+<tr><td class="n">11</td><td><b>Market context lane</b><span class="q">Was it this stock or the whole market?</span></td><td>Daily VIX and the stock's daily % change under the chart.</td><td class="now">None on this page.</td><td class="e M">M</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>Next candidates</h2>
+<div class="box">
+  <ol>
+    <li><b>#2 Worst marker and event list</b>: add a chart marker for Worst and jump-to controls for key events.</li>
+    <li><b>#4 richer tooltips</b> and <b>#6 VADER vs captured</b>: add context to each observation and compare the advertised entry with the captured quote.</li>
+    <li><b>#5 intrinsic/time value</b>: show the put's intrinsic and extrinsic values and its expiration breakeven.</li>
+  </ol>
+  The full recommendation set is in <a href="./future-analysis-and-contract-history-ideas.md">future-analysis-and-contract-history-ideas.md</a>.
+</div>
+</main>
+<script>
+const r=document.documentElement;const s=()=>document.querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===r.dataset.theme));
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{r.dataset.theme=b.dataset.t;localStorage.setItem('ideas-theme',b.dataset.t);s()});s();
+</script>
+</body>
+</html>

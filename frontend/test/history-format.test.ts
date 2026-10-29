@@ -60,6 +60,12 @@ describe('history summaries', () => {
         expect(premiumCaptured(null, point(at, 1, null))).toBeNull();
         expect(premiumCaptured(entry, point(at, null, -0.2))).toBeNull();
         expect(premiumCaptured(entry, point(at - 86400000, 1, null))).toBeNull();
+        const held = (sourceTime: number) => ({
+            ...point(at, 1, -0.2),
+            overrides: [{ field: 'mark' as const, value: 1, original: 1.5, sourceTime, reason: 'spike' }],
+        });
+        expect(premiumCaptured(entry, held(Date.parse('2026-10-23T13:25:00Z')))).toBeNull();
+        expect(premiumCaptured(entry, held(Date.parse('2026-10-23T13:50:00Z')))).toBe(50);
     });
     it('uses first and last valid values per component and preserves negative delta', () => {
         const data = [point(1, 2, null), point(2, null, -0.4), point(3, 1, -0.2)];

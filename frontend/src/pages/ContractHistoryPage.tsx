@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GROUP_LABELS, TIER_ORDER, hasExpired } from '@weboptions/shared';
 import type { ContractSearchResponse, GroupId, HistoryContract, HistoryResponse } from '@weboptions/shared';
@@ -16,11 +16,13 @@ import { HistoryAnalysisSummary, HistoryAnalysisTargetControl, type TargetChoice
 import {
     HistoryChartControls,
     HistoryCharts,
+    HistoryCoverageInfo,
     HistoryViewSwitch,
     type ChartMetric,
     type ChartView,
 } from '../history/HistoryCharts';
 import {
+    applyOverrides,
     changeSummary,
     deltaText,
     money,
@@ -225,6 +227,14 @@ export function ContractHistoryPage() {
         setParams(next);
     }
 
+    function openSession(date: string) {
+        const next = new URLSearchParams(currentParams.current);
+        next.set('mode', 'day');
+        next.set('from', date);
+        next.delete('to');
+        setParams(next);
+    }
+
     useEffect(() => {
         const controller = new AbortController();
         const timer = setTimeout(() => {
@@ -280,7 +290,10 @@ export function ContractHistoryPage() {
                     signalDate || undefined
                 ).then((result) => {
                     if (controller.signal.aborted) return;
-                    setHistory({ ...result, points: result.points.filter((point) => !isExcludedCapture(point.time)) });
+                    setHistory({
+                        ...result,
+                        points: applyOverrides(result.points.filter((point) => !isExcludedCapture(point.time))),
+                    });
                     setPending(false);
                 });
             })
@@ -332,6 +345,8 @@ export function ContractHistoryPage() {
     if (from) heldRange.current = { from, to, dateOptions };
     const range = heldRange.current;
     const days = filterGroups(groupByAdded(contracts?.items ?? []), tierFilter);
+    // A symbol search lists every matching contract at once, a section per signal date.
+    const filtering = search.trim() !== '';
     // Open on the chosen date, else the newest date that lists the selected contract, else the newest.
     // A contract signaled on several dates is listed under each of them.
     const chosen = days.findIndex((option) => option.added === addedDay);
@@ -346,7 +361,14 @@ export function ContractHistoryPage() {
     const day = days[dayIndex];
     const goToDay = (index: number) => setAddedDay(days[index]?.added ?? null);
     // The selected contract's own date, in picker order, so the title can step through it.
-    const siblings = owning >= 0 ? (days[owning]?.tiers.flatMap((group) => group.items) ?? []) : [];
+    // A symbol search steps through every listed contract instead, each once.
+    const siblings = filtering
+        ? days
+              .flatMap((option) => option.tiers.flatMap((group) => group.items))
+              .filter((item, index, all) => all.findIndex((other) => other.key === item.key) === index)
+        : owning >= 0
+          ? (days[owning]?.tiers.flatMap((group) => group.items) ?? [])
+          : [];
     const position = siblings.findIndex((item) => item.key === key);
     const openContract = (item: HistoryContract | undefined) => {
         // Multi-day reopens on the new contract's full range, filled in once its dates load.
@@ -458,45 +480,49 @@ export function ContractHistoryPage() {
                     {day && (
                         <section className="history-added-group">
                             <div className="history-day-nav week-nav">
-                                <div className="week-steps">
-                                    <button
-                                        type="button"
-                                        aria-label="Oldest date"
-                                        title="Oldest date"
-                                        disabled={dayIndex === days.length - 1}
-                                        onClick={() => goToDay(days.length - 1)}
-                                    >
-                                        <ChevronFirstIcon />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        aria-label="Earlier date"
-                                        title="Earlier date"
-                                        disabled={dayIndex === days.length - 1}
-                                        onClick={() => goToDay(dayIndex + 1)}
-                                    >
-                                        <ChevronLeftIcon />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        aria-label="Later date"
-                                        title="Later date"
-                                        disabled={dayIndex === 0}
-                                        onClick={() => goToDay(dayIndex - 1)}
-                                    >
-                                        <ChevronRightIcon />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        aria-label="Newest date"
-                                        title="Newest date"
-                                        disabled={dayIndex === 0}
-                                        onClick={() => goToDay(0)}
-                                    >
-                                        <ChevronLastIcon />
-                                    </button>
-                                </div>
-                                <SignalDatePicker value={day.added} dates={days} onChange={setAddedDay} />
+                                {!filtering && (
+                                    <>
+                                        <div className="week-steps">
+                                            <button
+                                                type="button"
+                                                aria-label="Oldest date"
+                                                title="Oldest date"
+                                                disabled={dayIndex === days.length - 1}
+                                                onClick={() => goToDay(days.length - 1)}
+                                            >
+                                                <ChevronFirstIcon />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                aria-label="Earlier date"
+                                                title="Earlier date"
+                                                disabled={dayIndex === days.length - 1}
+                                                onClick={() => goToDay(dayIndex + 1)}
+                                            >
+                                                <ChevronLeftIcon />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                aria-label="Later date"
+                                                title="Later date"
+                                                disabled={dayIndex === 0}
+                                                onClick={() => goToDay(dayIndex - 1)}
+                                            >
+                                                <ChevronRightIcon />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                aria-label="Newest date"
+                                                title="Newest date"
+                                                disabled={dayIndex === 0}
+                                                onClick={() => goToDay(0)}
+                                            >
+                                                <ChevronLastIcon />
+                                            </button>
+                                        </div>
+                                        <SignalDatePicker value={day.added} dates={days} onChange={setAddedDay} />
+                                    </>
+                                )}
                                 <TierFilterMenu value={tierFilter} onChange={setTierFilter} />
                                 <div className="history-color-key" role="group" aria-label="Contract border legend">
                                     <span>Legend:</span>
@@ -506,71 +532,109 @@ export function ContractHistoryPage() {
                                     <span className="is-itm">ITM</span>
                                 </div>
                             </div>
-                            <h3 className="sr-only">{addedLabel(day.added)}</h3>
-                            <div className="history-tier-groups">
-                                {day.tiers.length === 0 && <p>No contracts in the selected tiers on this date.</p>}
-                                {day.tiers.map((group) => (
-                                    <div key={group.tier} className="history-tier-group">
-                                        <h4>
-                                            {tierLabel(group.tier)} <span>{group.items.length}</span>
-                                        </h4>
-                                        <div className="history-contract-list">
-                                            {group.items.map((item) => {
-                                                const others = item.tiers.filter((tier) => tier !== group.tier);
-                                                const itm = inTheMoney(item);
-                                                return (
-                                                    <button
-                                                        type="button"
-                                                        key={item.key}
-                                                        className={
-                                                            hasExpired(item.expiration) ? 'is-expired' : undefined
-                                                        }
-                                                        aria-pressed={item.key === key}
-                                                        onClick={() => openContract(item)}
-                                                    >
-                                                        <span className="history-contract-name">
-                                                            <strong
-                                                                className={
-                                                                    itm
-                                                                        ? 'is-itm'
-                                                                        : item.topPick
-                                                                          ? (item.tier ?? undefined)
-                                                                          : undefined
-                                                                }
-                                                            >
-                                                                {item.symbol} ${item.strike}
-                                                            </strong>
-                                                            <span
-                                                                className={`history-contract-captured${item.capturedPercent != null && item.capturedPercent >= 50 ? ' is-target-met' : ''}`}
-                                                                aria-label={
-                                                                    item.capturedPercent == null
-                                                                        ? 'Premium captured unavailable'
-                                                                        : `Premium captured ${item.capturedPercent.toFixed(0)}%`
-                                                                }
-                                                            >
-                                                                {item.capturedPercent == null
-                                                                    ? '--'
-                                                                    : `${item.capturedPercent.toFixed(0)}%`}
-                                                            </span>
-                                                        </span>
-                                                        <span className="history-contract-expiration">
-                                                            <span>
-                                                                {hasExpired(item.expiration) ? 'Expired' : 'Expires'}{' '}
-                                                                {sessionLabel(item.expiration)}
-                                                            </span>
-                                                            {itm && <span className="sr-only">In the money</span>}
-                                                        </span>
-                                                        {item.topPick && item.tier && (
-                                                            <span className="sr-only">{tierLabel(item.tier)}</span>
-                                                        )}
-                                                        {!item.topPick && others.length > 0 && (
-                                                            <small>{others.map(tierLabel).join(', ')}</small>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
+                            <div className="history-added-days">
+                                {(filtering ? days : [day]).map((shownDay) => (
+                                    <Fragment key={shownDay.added ?? 'undated'}>
+                                        <h3 className={filtering ? 'history-added-heading' : 'sr-only'}>
+                                            {addedLabel(shownDay.added)}
+                                        </h3>
+                                        <div className="history-tier-groups">
+                                            {shownDay.tiers.length === 0 && (
+                                                <p>No contracts in the selected tiers on this date.</p>
+                                            )}
+                                            {(filtering
+                                                ? shownDay.tiers.length > 0
+                                                    ? [
+                                                          {
+                                                              tier: 'all',
+                                                              items: shownDay.tiers.flatMap((group) => group.items),
+                                                          },
+                                                      ]
+                                                    : []
+                                                : shownDay.tiers
+                                            ).map((group) => (
+                                                <div key={group.tier} className="history-tier-group">
+                                                    {!filtering && (
+                                                        <h4>
+                                                            {tierLabel(group.tier)} <span>{group.items.length}</span>
+                                                        </h4>
+                                                    )}
+                                                    <div className="history-contract-list">
+                                                        {group.items.map((item) => {
+                                                            const others = item.tiers.filter(
+                                                                (tier) => tier !== (filtering ? item.tier : group.tier)
+                                                            );
+                                                            const itm = inTheMoney(item);
+                                                            return (
+                                                                <button
+                                                                    type="button"
+                                                                    key={item.key}
+                                                                    className={[
+                                                                        hasExpired(item.expiration) ? 'is-expired' : '',
+                                                                        itm ? 'is-itm' : '',
+                                                                    ]
+                                                                        .filter(Boolean)
+                                                                        .join(' ')}
+                                                                    aria-pressed={item.key === key}
+                                                                    onClick={() => openContract(item)}
+                                                                >
+                                                                    <span className="history-contract-name">
+                                                                        <strong
+                                                                            className={
+                                                                                item.topPick || filtering
+                                                                                    ? (item.tier ?? undefined)
+                                                                                    : undefined
+                                                                            }
+                                                                        >
+                                                                            {item.symbol} ${item.strike}
+                                                                        </strong>
+                                                                        <span
+                                                                            className={`history-contract-captured${item.capturedPercent != null && item.capturedPercent >= 50 ? ' is-target-met' : ''}`}
+                                                                            aria-label={
+                                                                                item.capturedPercent == null
+                                                                                    ? 'Premium captured unavailable'
+                                                                                    : `Premium captured ${item.capturedPercent.toFixed(0)}%`
+                                                                            }
+                                                                        >
+                                                                            {item.capturedPercent == null
+                                                                                ? '--'
+                                                                                : `${item.capturedPercent.toFixed(0)}%`}
+                                                                        </span>
+                                                                    </span>
+                                                                    <span className="history-contract-expiration">
+                                                                        <span>
+                                                                            {hasExpired(item.expiration)
+                                                                                ? 'Expired'
+                                                                                : 'Expires'}{' '}
+                                                                            {sessionLabel(item.expiration)}
+                                                                        </span>
+                                                                        {itm && (
+                                                                            <span className="sr-only">
+                                                                                In the money
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                    {(item.topPick || filtering) && item.tier && (
+                                                                        <span className="sr-only">
+                                                                            {filtering && item.topPick
+                                                                                ? 'Top pick, '
+                                                                                : ''}
+                                                                            {tierLabel(item.tier)}
+                                                                        </span>
+                                                                    )}
+                                                                    {!item.topPick && others.length > 0 && (
+                                                                        <small>
+                                                                            {others.map(tierLabel).join(', ')}
+                                                                        </small>
+                                                                    )}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
+                                    </Fragment>
                                 ))}
                             </div>
                         </section>
@@ -602,6 +666,7 @@ export function ContractHistoryPage() {
                     <div className="history-title">
                         <div className="history-title-row">
                             <h2>{label}</h2>
+                            <HistoryCoverageInfo history={history} />
                             {position >= 0 && siblings.length > 1 && (
                                 <div className="history-contract-steps week-nav">
                                     <div className="week-steps">
@@ -782,7 +847,13 @@ export function ContractHistoryPage() {
                             </div>
                         </div>
                     </div>
-                    <HistoryCharts history={history} metric={metric} target={target} view={chartView} />
+                    <HistoryCharts
+                        history={history}
+                        metric={metric}
+                        target={target}
+                        view={chartView}
+                        onSessionSelect={openSession}
+                    />
                 </section>
             )}
         </main>

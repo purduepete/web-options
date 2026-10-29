@@ -68,6 +68,17 @@ html:has(.history-page) {
     align-items: stretch;
     margin-bottom: 0.25rem;
 }
+.history-added-heading {
+    margin: 0.75rem 0 0;
+    padding-bottom: 0.2rem;
+    border-bottom: var(--border-width) solid var(--border);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.history-added-days > .history-added-heading:first-child {
+    margin-top: 0.25rem;
+}
 .history-tier-group h4 {
     margin: 0.4rem 0 0;
     color: var(--text-secondary);
@@ -157,6 +168,9 @@ html:has(.history-page) {
 }
 .history-color-key > .is-itm {
     color: var(--negative);
+    position: relative;
+    padding-inline-end: 0.6rem;
+    border-color: var(--negative);
 }
 .history-contract-name strong.conservative,
 .history-color-key > .conservative {
@@ -170,9 +184,24 @@ html:has(.history-page) {
 .history-color-key > .aggressive {
     color: var(--aggressive);
 }
-.history-contract-name strong.is-itm,
-.history-color-key > .is-itm {
-    border-color: var(--negative);
+.history-contract-list button.is-itm {
+    position: relative;
+}
+.history-contract-list button.is-itm::after,
+.history-color-key > .is-itm::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0.85rem;
+    height: 0.85rem;
+    background: var(--negative);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    pointer-events: none;
+}
+.history-color-key > .is-itm::after {
+    width: 0.45rem;
+    height: 0.45rem;
 }
 .history-contract-name strong.conservative,
 .history-color-key > .conservative {
@@ -250,6 +279,128 @@ html:has(.history-page) {
 }
 .history-chart-context > span {
     overflow-wrap: anywhere;
+}
+.history-coverage-info {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+}
+.history-coverage-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-muted);
+}
+.history-coverage-trigger:hover,
+.history-coverage-trigger:focus-visible {
+    border-color: var(--border);
+    background: var(--surface-hover);
+    color: var(--highlight);
+}
+.history-coverage-trigger:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: 2px;
+}
+.history-coverage-tooltip {
+    position: fixed;
+    z-index: 30;
+    top: 0;
+    left: 0;
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: min(24rem, 65vh);
+    padding: 0.55rem 0.7rem;
+    overflow-y: auto;
+    border: var(--border-width) solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-xs);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.2rem);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease;
+}
+.history-coverage-tooltip[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.history-coverage-tooltip > strong {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--text-heading);
+    font-size: 0.75rem;
+}
+.history-coverage-counts,
+.history-coverage-notes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem 0.65rem;
+    min-width: 0%;
+}
+.history-coverage-notes {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: var(--border-width) solid var(--border);
+}
+.history-coverage-notes ul {
+    margin: 0;
+    padding-inline-start: 1.2rem;
+    overflow-wrap: anywhere;
+}
+.history-coverage-notes li + li {
+    margin-top: 0.25rem;
+}
+@media (pointer: coarse) {
+    .history-coverage-trigger {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .history-coverage-tooltip {
+        transition: none;
+        transform: none;
+    }
+}
+.history-session-changes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.55rem;
+    min-width: 0%;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+}
+.history-session-changes > strong {
+    color: var(--text-heading);
+}
+.history-session-changes > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    min-width: 0%;
+}
+.history-session-changes button {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.45rem;
+    padding: 0.2rem 0.4rem;
+    font-size: inherit;
+    color: var(--text-muted);
+}
+.history-session-changes button > span:first-child {
+    color: var(--text-heading);
+    font-weight: 600;
 }
 .history-title p,
 .history-coverage {
@@ -370,7 +521,7 @@ html:has(.history-page) {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: center;
     gap: 0.3rem 0.75rem;
-    padding: 0.3rem 0.6rem 0.3rem 1.2rem;
+    padding: 0.3rem 0.6rem 0.3rem 1.3rem;
     font-size: 0.8rem;
     line-height: 1.5;
     list-style: none;
@@ -396,17 +547,17 @@ html:has(.history-page) {
 .history-summary-details > summary::before {
     content: '';
     position: absolute;
-    left: 0.6rem;
+    left: 0.5rem;
     top: 50%;
-    width: 0.35rem;
-    height: 0.35rem;
-    border: solid currentColor;
-    border-width: 0 1.5px 1.5px 0;
-    transform: translateY(-50%) rotate(-45deg);
+    width: 0.4rem;
+    height: 0.5rem;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    transform: translateY(-50%);
     transition: transform 0.25s ease-out;
 }
 .history-summary-details[open] > summary::before {
-    transform: translateY(-50%) rotate(45deg);
+    transform: translateY(-50%) rotate(90deg);
 }
 .history-summary-details > summary > .history-summary-field {
     position: relative;
@@ -563,7 +714,7 @@ html:has(.history-page) {
         min-height: 0;
         margin-block: 0.6rem;
     }
-    .history-page:has(.history-result) .history-tier-groups {
+    .history-page:has(.history-result) .history-added-days {
         min-height: 0;
         overflow-y: auto;
     }
@@ -587,6 +738,9 @@ html:has(.history-page) {
 }
 .history-tooltip small {
     color: var(--text-muted);
+}
+.history-tooltip small.history-tooltip-override {
+    font-style: italic;
 }
 @media (max-width: 640px) {
     .history-summary-details > summary {

@@ -1,4 +1,4 @@
-import { memo, useEffect, useId, useState } from 'react';
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     CartesianGrid,
     Dot,
@@ -16,6 +16,7 @@ import {
 import type { DotItemDotProps } from 'recharts';
 import type { HistoryPoint, HistoryResponse } from '@weboptions/shared';
 import { ChoiceMenu } from '../components/ChoiceMenu';
+import { InfoIcon } from '../components/icons';
 import {
     axisTime,
     deltaText,
@@ -25,12 +26,300 @@ import {
     money,
     pacificTime,
     premiumCaptured,
+    sessionLabel,
+    signedDelta,
+    signedMoney,
 } from './format';
 import type { TargetChoice } from './HistoryAnalysis';
 
 interface ChartPoint extends HistoryPoint {
     captured: number | null;
     slot: number;
+}
+
+const Y_AXIS_WIDTH = 56;
+const AXIS_TAG_WIDTH = 46;
+
+type ChangeField = 'mark' | 'delta' | 'underlyingPrice';
+
+interface ValueChange {
+    value: number;
+    percent: number | null;
+}
+
+interface SessionChange {
+    sessionDate: string;
+    slot: number;
+    mark: ValueChange | null;
+    delta: ValueChange | null;
+    underlying: ValueChange | null;
+}
+
+function valueOf(point: HistoryPoint, field: ChangeField): number | null {
+    if ((field === 'mark' || field === 'delta') && point.overrides?.some((override) => override.field === field)) {
+        return null;
+    }
+    const value = point[field];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function changeBetween(previous: HistoryPoint[], current: HistoryPoint[], field: ChangeField): ValueChange | null {
+    const before = [...previous].reverse().find((point) => valueOf(point, field) !== null);
+    const after = current.find((point) => valueOf(point, field) !== null);
+    if (!before || !after) return null;
+    const beforeValue = valueOf(before, field)!;
+    const change = valueOf(after, field)! - beforeValue;
+    return {
+        value: change,
+        percent: beforeValue === 0 ? null : (change / beforeValue) * 100,
+    };
+}
+
+function buildSessionChanges(points: ChartPoint[]): SessionChange[] {
+    const sessions: { sessionDate: string; points: ChartPoint[] }[] = [];
+    for (const point of points) {
+        const latest = sessions.at(-1);
+        if (latest?.sessionDate === point.sessionDate) latest.points.push(point);
+        else sessions.push({ sessionDate: point.sessionDate, points: [point] });
+    }
+    return sessions.slice(1).map((current, index) => {
+        const previous = sessions[index]!;
+        return {
+            sessionDate: current.sessionDate,
+            slot: current.points[0]!.slot - 0.5,
+            mark: changeBetween(previous.points, current.points, 'mark'),
+            delta: changeBetween(previous.points, current.points, 'delta'),
+            underlying: changeBetween(previous.points, current.points, 'underlyingPrice'),
+        };
+    });
+}
+
+function formatPercentChange(change: ValueChange) {
+    return `${change.percent === null ? '' : ` (${change.percent >= 0 ? '+' : ''}${change.percent.toFixed(1)}%)`}`;
+}
+
+function sessionChangeLabel(change: SessionChange) {
+    return [
+        `Mark ${change.mark ? `${signedMoney(change.mark.value)}${formatPercentChange(change.mark)}` : 'Unavailable'}`,
+        `Delta ${change.delta ? signedDelta(change.delta.value) : 'Unavailable'}`,
+        `Stock ${
+            change.underlying
+                ? `${signedMoney(change.underlying.value)}${formatPercentChange(change.underlying)}`
+                : 'Unavailable'
+        }`,
+    ].join(' · ');
+}
+
+export function HistoryCoverageInfo({ history }: { history: HistoryResponse }) {
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLSpanElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const hovered = useRef(false);
+    const focused = useRef(false);
+    const suppressFocusOpen = useRef(false);
+    const tooltipId = useId();
+    const points = history.points.filter((point) => point.kind !== 'session_boundary');
+    const overrides = points.filter((point) => point.overrides?.length).length;
+    const flagCounts = new Map<string, number>();
+    for (const point of points) {
+        for (const flag of new Set(point.flags)) flagCounts.set(flag, (flagCounts.get(flag) ?? 0) + 1);
+    }
+    const qualitySlots = points.filter(
+        (point) => point.reason || point.flags.length > 0 || (point.overrides?.length ?? 0) > 0
+    ).length;
+    const coverage = history.coverage;
+
+    useLayoutEffect(() => {
+        if (!open) return;
+        const positionTooltip = () => {
+            const trigger = triggerRef.current;
+            const tooltip = tooltipRef.current;
+            if (!trigger || !tooltip) return;
+            const triggerRect = trigger.getBoundingClientRect();
+            const gutter = 8;
+            const below = triggerRect.bottom + gutter;
+            const belowSpace = window.innerHeight - gutter - below;
+            const aboveSpace = triggerRect.top - gutter * 2;
+            const useBelow = belowSpace >= Math.min(200, tooltip.scrollHeight) || belowSpace >= aboveSpace;
+            const availableSpace = Math.max(0, useBelow ? belowSpace : aboveSpace);
+            const maxHeight = Math.min(384, window.innerHeight * 0.65, availableSpace);
+            tooltip.style.maxHeight = `${maxHeight}px`;
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const left = Math.max(gutter, Math.min(triggerRect.left, window.innerWidth - tooltipRect.width - gutter));
+            const top = useBelow ? below : Math.max(gutter, triggerRect.top - tooltipRect.height - gutter);
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        };
+        positionTooltip();
+        window.addEventListener('resize', positionTooltip);
+        window.addEventListener('scroll', positionTooltip, true);
+        return () => {
+            window.removeEventListener('resize', positionTooltip);
+            window.removeEventListener('scroll', positionTooltip, true);
+        };
+    }, [history, open]);
+
+    useEffect(() => {
+        if (!open) return;
+        const closeOutside = (event: PointerEvent) => {
+            if (!(event.target instanceof Node) || !rootRef.current?.contains(event.target)) setOpen(false);
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setOpen(false);
+            suppressFocusOpen.current = true;
+            triggerRef.current?.focus();
+        };
+        document.addEventListener('pointerdown', closeOutside);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('pointerdown', closeOutside);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [open]);
+
+    return (
+        <span
+            ref={rootRef}
+            className="history-coverage-info"
+            onMouseEnter={() => {
+                hovered.current = true;
+                setOpen(true);
+            }}
+            onMouseLeave={() => {
+                hovered.current = false;
+                if (!focused.current) setOpen(false);
+            }}
+        >
+            <button
+                ref={triggerRef}
+                className="history-coverage-trigger"
+                type="button"
+                aria-label="Coverage and data quality"
+                aria-describedby={tooltipId}
+                aria-controls={tooltipId}
+                aria-expanded={open}
+                onFocus={() => {
+                    focused.current = true;
+                    if (!suppressFocusOpen.current) setOpen(true);
+                }}
+                onBlur={(event) => {
+                    if (event.relatedTarget instanceof Node && rootRef.current?.contains(event.relatedTarget)) return;
+                    focused.current = false;
+                    suppressFocusOpen.current = false;
+                    if (!hovered.current) setOpen(false);
+                }}
+                onClick={() => setOpen(true)}
+            >
+                <InfoIcon width={15} height={15} />
+            </button>
+            <div ref={tooltipRef} id={tooltipId} className="history-coverage-tooltip" data-open={open} role="tooltip">
+                <strong>Coverage and data quality</strong>
+                <div className="history-coverage-counts">
+                    <span>{coverage.observations} observations</span>
+                    <span>{coverage.validPrices} valid prices</span>
+                    <span>{coverage.validDeltas} valid deltas</span>
+                    <span>{coverage.knownExpected} known expected</span>
+                    <span>{coverage.knownPriceGaps} price gaps</span>
+                    <span>{coverage.knownDeltaGaps} delta gaps</span>
+                    <span>{coverage.unknownSlots} unknown slots</span>
+                    <span>{overrides} overridden captures</span>
+                    {[...flagCounts.entries()].map(([flag, count]) => (
+                        <span key={flag}>
+                            {flag.replaceAll('_', ' ')}: {count}
+                        </span>
+                    ))}
+                    {flagCounts.size === 0 && <span>No flagged captures</span>}
+                </div>
+                <div className="history-coverage-notes">
+                    <span>{qualitySlots} chart positions marked for gaps, flags or overrides</span>
+                    {history.warnings.length > 0 && (
+                        <ul>
+                            {history.warnings.map((warning) => (
+                                <li key={warning}>{warning}</li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </span>
+    );
+}
+
+function HistorySessionChanges({
+    changes,
+    onSessionSelect,
+}: {
+    changes: SessionChange[];
+    onSessionSelect: (date: string) => void;
+}) {
+    if (changes.length === 0) return null;
+    return (
+        <section className="history-session-changes" aria-label="Overnight changes">
+            <strong>Overnight changes</strong>
+            <div>
+                {changes.map((change) => (
+                    <button
+                        key={change.sessionDate}
+                        type="button"
+                        aria-label={`Open ${sessionLabel(change.sessionDate)} in intraday view. ${sessionChangeLabel(change)}`}
+                        onClick={() => onSessionSelect(change.sessionDate)}
+                    >
+                        <span>{sessionLabel(change.sessionDate)}</span>
+                        <span>{sessionChangeLabel(change)}</span>
+                    </button>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+// Labels an entry line on its own axis: a small tag over the tick column, plus
+// "Entry" just inside the plot so the line explains itself.
+function EntryAxisTag({
+    viewBox,
+    side,
+    text,
+    color,
+}: {
+    viewBox?: { x?: number; y?: number; width?: number };
+    side: 'left' | 'right';
+    text: string;
+    color: string;
+}) {
+    if (!viewBox || viewBox.y === undefined || viewBox.x === undefined) return null;
+    const plotLeft = viewBox.x;
+    const plotRight = viewBox.x + (viewBox.width ?? 0);
+    const tagX = side === 'right' ? plotRight + 1 : plotLeft - AXIS_TAG_WIDTH - 1;
+    const y = viewBox.y;
+    return (
+        <g className="history-entry-tag" pointerEvents="none">
+            <rect
+                x={tagX}
+                y={y - 8}
+                width={AXIS_TAG_WIDTH}
+                height={16}
+                fill="var(--surface)"
+                stroke={color}
+                strokeOpacity={0.6}
+            />
+            <text x={tagX + AXIS_TAG_WIDTH / 2} y={y} dy="0.35em" textAnchor="middle" fill={color} fontSize={10.5}>
+                {text}
+            </text>
+            <text
+                x={side === 'right' ? plotRight - 4 : plotLeft + 4}
+                y={y - 4}
+                textAnchor={side === 'right' ? 'end' : 'start'}
+                fill={color}
+                fillOpacity={0.8}
+                fontSize={10.5}
+            >
+                Entry
+            </text>
+        </g>
+    );
 }
 
 export type ChartView = 'option' | 'stock';
@@ -123,6 +412,22 @@ function HistoryCaptureDot({ cx, cy, fill, stroke, strokeWidth, payload }: DotIt
     );
 }
 
+function OverrideNotes({ point }: { point: HistoryPoint }) {
+    if (!point.overrides?.length) return null;
+    return (
+        <>
+            {point.overrides.map((item) => (
+                <small key={item.field} className="history-tooltip-override">
+                    {item.field === 'mark' ? 'Mark' : 'Delta'} held from {pacificTime(item.sourceTime).slice(-5)};
+                    captured {item.field === 'mark' ? money(item.original) : deltaText(item.original)}
+                    <br />
+                    {item.reason}
+                </small>
+            ))}
+        </>
+    );
+}
+
 /**
  * Building a chart blocks the page for a few hundred milliseconds, so the
  * Option/Stock switch never builds one on click. Each pane stays mounted once
@@ -134,11 +439,13 @@ export function HistoryCharts({
     metric,
     target,
     view,
+    onSessionSelect,
 }: {
     history: HistoryResponse;
     metric: ChartMetric;
     target: TargetChoice;
     view: ChartView;
+    onSessionSelect: (date: string) => void;
 }) {
     const [built, setBuilt] = useState<ReadonlySet<ChartView>>(() => new Set([view]));
     const ready = built.has(view);
@@ -167,20 +474,37 @@ export function HistoryCharts({
             clearTimeout(timer);
         };
     }, [ready, view]);
+    const points = useMemo(
+        () =>
+            history.points
+                .filter((point) => point.kind !== 'session_boundary')
+                .map((point, slot) => ({ ...point, slot, captured: premiumCaptured(history.entry, point) })),
+        [history.entry, history.points]
+    );
+    const sessionChanges = useMemo(() => buildSessionChanges(points), [points]);
     return (
-        <div className="history-chart-stack">
-            {PANES.filter((pane) => built.has(pane)).map((pane) => (
-                <div
-                    key={pane}
-                    className="history-chart-pane"
-                    data-active={pane === active}
-                    aria-hidden={pane === active ? undefined : true}
-                    inert={pane !== active}
-                >
-                    <ChartPane history={history} metric={metric} target={target} view={pane} />
-                </div>
-            ))}
-        </div>
+        <>
+            <div className="history-chart-stack">
+                {PANES.filter((pane) => built.has(pane)).map((pane) => (
+                    <div
+                        key={pane}
+                        className="history-chart-pane"
+                        data-active={pane === active}
+                        aria-hidden={pane === active ? undefined : true}
+                        inert={pane !== active}
+                    >
+                        <ChartPane
+                            history={history}
+                            metric={metric}
+                            target={target}
+                            view={pane}
+                            sessionChanges={sessionChanges}
+                        />
+                    </div>
+                ))}
+            </div>
+            <HistorySessionChanges changes={sessionChanges} onSessionSelect={onSessionSelect} />
+        </>
     );
 }
 
@@ -191,11 +515,13 @@ const ChartPane = memo(function ChartPane({
     metric,
     target,
     view,
+    sessionChanges,
 }: {
     history: HistoryResponse;
     metric: ChartMetric;
     target: TargetChoice;
     view: ChartView;
+    sessionChanges: SessionChange[];
 }) {
     const syncId = useId();
     const percentage = metric === 'captured';
@@ -207,7 +533,9 @@ const ChartPane = memo(function ChartPane({
             captured: premiumCaptured(history.entry, point),
         }));
     const values = points.map((point) => (percentage ? point.captured : point.mark));
-    const domainValues = [...values, ...(percentage ? [] : [history.entry?.mark ?? null])];
+    const entryPrice = !percentage && history.entry ? history.entry.mark : null;
+    const entryDelta = history.entry?.delta ?? null;
+    const domainValues = [...values, entryPrice];
     const priceDomain = fitDomain(
         domainValues,
         percentage ? 2 : 0.1,
@@ -219,11 +547,7 @@ const ChartPane = memo(function ChartPane({
               ? [-1, 1]
               : [0, 1]
     );
-    const deltaDomain = fitDomain(
-        points.map((point) => point.delta),
-        0.02,
-        [-1, 1]
-    );
+    const deltaDomain = fitDomain([...points.map((point) => point.delta), entryDelta], 0.02, [-1, 1]);
     const stockValues = points.map((point) => point.underlyingPrice);
     const hasStock = stockValues.some((value) => value !== null);
     const stockDomain = fitDomain(stockValues, 0.1, [0, Number.POSITIVE_INFINITY]);
@@ -234,6 +558,10 @@ const ChartPane = memo(function ChartPane({
     const targetValue = exitTarget ? (percentage ? exitTarget.percent : exitTarget.closingMark) : null;
     const targetInScale = targetValue !== null && targetValue >= priceDomain[0] && targetValue <= priceDomain[1];
     const inView = (time: number) => start !== undefined && end !== undefined && time >= start && time <= end;
+    const heldSlots = points.filter((point) => (point.overrides?.length ?? 0) > 0).map((point) => point.slot);
+    const qualitySlots = points
+        .filter((point) => point.reason || point.flags.length > 0 || (point.overrides?.length ?? 0) > 0)
+        .map((point) => point.slot);
     const firstCrossing = exitTarget?.firstCrossing;
     const best = history.analysis?.best;
     const tick = { fill: 'var(--text-muted)', fontSize: 11 };
@@ -287,7 +615,7 @@ const ChartPane = memo(function ChartPane({
                     <div
                         className="history-chart"
                         role="img"
-                        aria-label={`Signed delta on the left axis, ${percentage ? 'premium captured percent' : 'mark price'} on the right.`}
+                        aria-label={`Signed delta on the left axis, ${percentage ? 'premium captured percent' : 'mark price'} on the right. Solid vertical lines mark session changes; amber ticks mark gaps, flags or overrides.`}
                     >
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
@@ -301,7 +629,7 @@ const ChartPane = memo(function ChartPane({
                                 <YAxis
                                     yAxisId="price"
                                     orientation="right"
-                                    width={48}
+                                    width={Y_AXIS_WIDTH}
                                     domain={priceDomain}
                                     ticks={evenTicks(priceDomain)}
                                     interval={0}
@@ -313,25 +641,80 @@ const ChartPane = memo(function ChartPane({
                                 <YAxis
                                     yAxisId="delta"
                                     orientation="left"
-                                    width={48}
+                                    width={Y_AXIS_WIDTH}
                                     domain={deltaDomain}
                                     ticks={evenTicks(deltaDomain)}
                                     interval={0}
                                     tick={tick}
                                     tickFormatter={(value: number) => value.toFixed(3)}
                                 />
-                                {!percentage && history.entry && (
+                                {sessionChanges.map((change) => (
+                                    <ReferenceLine
+                                        key={`session-${change.sessionDate}`}
+                                        x={change.slot}
+                                        yAxisId="price"
+                                        className="history-session-divider"
+                                        stroke="var(--text-muted)"
+                                        strokeOpacity={0.4}
+                                    />
+                                ))}
+                                {qualitySlots.map((slot) => (
+                                    <ReferenceLine
+                                        key={`quality-${slot}`}
+                                        x={slot}
+                                        yAxisId="price"
+                                        className="history-quality-marker"
+                                        stroke="var(--warning)"
+                                        strokeOpacity={0.3}
+                                        strokeDasharray="1 3"
+                                    />
+                                ))}
+                                {heldSlots.map((slot) => (
+                                    <ReferenceArea
+                                        key={`held-${slot}`}
+                                        className="history-held-band"
+                                        yAxisId="delta"
+                                        x1={Math.max(0, slot - 0.4)}
+                                        x2={Math.min(lastSlot, slot + 0.4)}
+                                        fill="var(--warning)"
+                                        fillOpacity={0.12}
+                                        stroke="none"
+                                    />
+                                ))}
+                                {entryPrice !== null && (
                                     <ReferenceLine
                                         yAxisId="price"
-                                        y={history.entry.mark}
-                                        stroke="var(--text-muted)"
-                                        strokeDasharray="4 4"
-                                        label={{
-                                            value: `Entry ${money(history.entry.mark)}`,
-                                            fill: 'var(--text-muted)',
-                                            fontSize: 11,
-                                            position: 'insideTopLeft',
-                                        }}
+                                        y={entryPrice}
+                                        className="history-entry-line"
+                                        stroke="var(--highlight)"
+                                        strokeOpacity={0.45}
+                                        strokeDasharray="2 4"
+                                        label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => (
+                                            <EntryAxisTag
+                                                viewBox={props.viewBox}
+                                                side="right"
+                                                color="var(--highlight)"
+                                                text={money(entryPrice)}
+                                            />
+                                        )}
+                                    />
+                                )}
+                                {entryDelta !== null && (
+                                    <ReferenceLine
+                                        yAxisId="delta"
+                                        y={entryDelta}
+                                        className="history-entry-line"
+                                        stroke="var(--history-delta)"
+                                        strokeOpacity={0.45}
+                                        strokeDasharray="2 4"
+                                        label={(props: { viewBox?: { x?: number; y?: number; width?: number } }) => (
+                                            <EntryAxisTag
+                                                viewBox={props.viewBox}
+                                                side="left"
+                                                color="var(--history-delta)"
+                                                text={entryDelta.toFixed(3)}
+                                            />
+                                        )}
                                     />
                                 )}
                                 {targetInScale && targetValue !== null && (
@@ -393,6 +776,7 @@ const ChartPane = memo(function ChartPane({
                                                         ? 'Unavailable'
                                                         : `${point.captured.toFixed(1)}%`}
                                                 </span>
+                                                <OverrideNotes point={point} />
                                                 {(point.reason || point.flags.length > 0) && (
                                                     <small>
                                                         {[point.reason, ...point.flags]
@@ -405,7 +789,7 @@ const ChartPane = memo(function ChartPane({
                                         ) : null;
                                     }}
                                 />
-                                <Legend wrapperStyle={{ fontSize: '0.72rem' }} />
+                                <Legend wrapperStyle={{ fontSize: '0.72rem' }} itemSorter={null} />
                                 <Line
                                     yAxisId="price"
                                     name={percentage ? 'Premium captured (%)' : 'Mark ($ / share)'}
@@ -442,7 +826,7 @@ const ChartPane = memo(function ChartPane({
                         <div
                             className="history-chart"
                             role="img"
-                            aria-label="Underlying price history with strike line and shaded put ITM region"
+                            aria-label="Underlying price history with strike line, shaded put ITM region and session dividers"
                         >
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart
@@ -455,7 +839,7 @@ const ChartPane = memo(function ChartPane({
                                     {xAxis}
                                     <YAxis
                                         yAxisId="stock"
-                                        width={48}
+                                        width={Y_AXIS_WIDTH}
                                         domain={stockDomain}
                                         ticks={evenTicks(stockDomain)}
                                         interval={0}
@@ -465,11 +849,32 @@ const ChartPane = memo(function ChartPane({
                                     <YAxis
                                         yAxisId="spacer"
                                         orientation="right"
-                                        width={48}
+                                        width={Y_AXIS_WIDTH}
                                         tick={false}
                                         axisLine={false}
                                         tickLine={false}
                                     />
+                                    {sessionChanges.map((change) => (
+                                        <ReferenceLine
+                                            key={`session-${change.sessionDate}`}
+                                            x={change.slot}
+                                            yAxisId="stock"
+                                            className="history-session-divider"
+                                            stroke="var(--text-muted)"
+                                            strokeOpacity={0.4}
+                                        />
+                                    ))}
+                                    {qualitySlots.map((slot) => (
+                                        <ReferenceLine
+                                            key={`quality-${slot}`}
+                                            x={slot}
+                                            yAxisId="stock"
+                                            className="history-quality-marker"
+                                            stroke="var(--warning)"
+                                            strokeOpacity={0.3}
+                                            strokeDasharray="1 3"
+                                        />
+                                    ))}
                                     {history.contract.strike > stockDomain[0] && (
                                         <ReferenceArea
                                             yAxisId="stock"

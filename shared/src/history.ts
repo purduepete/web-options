@@ -41,6 +41,22 @@ export interface HistoryPoint {
     deltaReceivedAt: string | null;
     flags: string[];
     reason: string | null;
+    /**
+     * Read-time substitutes for captures the broker got visibly wrong. `mark` and `delta`
+     * above stay the stored values; the stored rows are never changed.
+     */
+    overrides?: HistoryOverride[];
+}
+
+export interface HistoryOverride {
+    field: 'mark' | 'delta';
+    /** Value shown and analysed in place of the capture. */
+    value: number;
+    /** The value as captured. */
+    original: number;
+    /** Scheduled time of the capture the value was carried from. */
+    sourceTime: number;
+    reason: string;
 }
 
 export interface HistoryEntry {
@@ -61,6 +77,8 @@ export interface HistoryOutcome {
 export interface HistoryAnalysis {
     validMarks: number;
     recordedGaps: number;
+    /** Captures whose mark was overridden; neither observations nor gaps. */
+    overriddenMarks?: number;
     firstObservedAt: number | null;
     through: number | null;
     best: HistoryOutcome | null;

@@ -27,6 +27,23 @@ export const isExcludedCapture = (time: number) => pacificParts(time).time === '
 /** The 13:10 settle capture is the day's close, so its dot is drawn larger. */
 export const historyCaptureDotRadius = (kind: string) => (kind === 'settle' ? 5 : 2);
 
+/** The override for one series, if the server substituted that value. */
+export const overrideOf = (point: HistoryPoint, field: 'mark' | 'delta') =>
+    point.overrides?.find((item) => item.field === field);
+
+/**
+ * Shows the server's read-time overrides in place of the captured values. The captured
+ * values stay on each override as `original`, for the tooltip.
+ */
+export function applyOverrides(points: HistoryPoint[]): HistoryPoint[] {
+    return points.map((point) => {
+        if (!point.overrides?.length) return point;
+        const mark = overrideOf(point, 'mark');
+        const delta = overrideOf(point, 'delta');
+        return { ...point, mark: mark?.value ?? point.mark, delta: delta?.value ?? point.delta };
+    });
+}
+
 /** `10/23/2026 06:35`. Times here are always Pacific, so the zone is left off. */
 export const pacificTime = (value: number | string) => {
     const parts = pacificParts(value);
@@ -96,7 +113,9 @@ export const deltaText = (value: number | null) => (value === null ? 'Unavailabl
 
 export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint): number | null {
     if (!entry || entry.mark <= 0 || point.mark === null || point.sessionDate < entry.signalDate) return null;
-    if (entry.capturedAt && point.time < Date.parse(entry.capturedAt)) return null;
+    // A held mark is as old as the capture it came from, which may predate the entry.
+    const markTime = overrideOf(point, 'mark')?.sourceTime ?? point.time;
+    if (entry.capturedAt && markTime < Date.parse(entry.capturedAt)) return null;
     return ((entry.mark - point.mark) / entry.mark) * 100;
 }
 

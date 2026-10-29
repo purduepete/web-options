@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import type { HistoryResponse } from '@weboptions/shared';
 import { ContractHistoryPage } from '../src/pages/ContractHistoryPage';
-import { historyCaptureDotRadius } from '../src/history/format';
+import { applyOverrides, historyCaptureDotRadius } from '../src/history/format';
 
 const api = vi.hoisted(() => ({ search: vi.fn(), dates: vi.fn(), history: vi.fn(), lock: vi.fn() }));
 vi.mock('../src/auth/ApiKeyProvider', () => ({ useApiKey: () => ({ lock: api.lock }) }));
@@ -29,8 +29,18 @@ vi.mock('recharts', () => ({
         </span>
     ),
     Line: ({ name }: { name: string }) => <span>{name}</span>,
-    ReferenceLine: ({ x, y, label }: { x?: number; y?: number; label?: { value: string } }) => (
-        <span data-testid="reference-line" data-x={x} data-y={y}>
+    ReferenceLine: ({
+        x,
+        y,
+        label,
+        className,
+    }: {
+        x?: number;
+        y?: number;
+        label?: { value: string };
+        className?: string;
+    }) => (
+        <span className={className} data-testid="reference-line" data-x={x} data-y={y}>
             {label?.value}
         </span>
     ),
@@ -140,6 +150,27 @@ describe('contract history page', () => {
     it('makes the settle capture dot larger than regular capture dots', () => {
         expect(historyCaptureDotRadius('settle')).toBe(5);
         expect(historyCaptureDotRadius('open_session')).toBe(2);
+    });
+
+    it('shows override values while keeping the captured values on the override', () => {
+        const point = {
+            time: 1,
+            sessionDate: '2026-10-28',
+            kind: 'settle',
+            mark: 6.75,
+            delta: -0.3881,
+            underlyingPrice: 266.66,
+            priceTime: null,
+            deltaTime: null,
+            priceReceivedAt: null,
+            deltaReceivedAt: null,
+            flags: [],
+            reason: null,
+        };
+        const override = { field: 'delta' as const, value: -0.2581, original: -0.3881, sourceTime: 0, reason: 'r' };
+        const [plain, repaired] = applyOverrides([point, { ...point, overrides: [override] }]);
+        expect(plain).toBe(point);
+        expect(repaired).toMatchObject({ mark: 6.75, delta: -0.2581, overrides: [override] });
     });
 
     it('filters the picker to the selected tiers and remembers the choice', async () => {
@@ -254,14 +285,16 @@ describe('contract history page', () => {
         expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
         expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
         expect(
-            screen.getByRole('img', { name: 'Signed delta on the left axis, premium captured percent on the right.' })
+            screen.getByRole('img', {
+                name: /Signed delta on the left axis, premium captured percent on the right/,
+            })
         ).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Chart: Captured %' }));
         fireEvent.click(screen.getByRole('menuitemradio', { name: /Price/ }));
         expect(screen.getByTestId('axis-price').getAttribute('data-orientation')).toBe('right');
         expect(screen.getByTestId('axis-delta').getAttribute('data-orientation')).toBe('left');
         expect(
-            screen.getByRole('img', { name: 'Signed delta on the left axis, mark price on the right.' })
+            screen.getByRole('img', { name: /Signed delta on the left axis, mark price on the right/ })
         ).toBeTruthy();
     });
 
@@ -434,6 +467,50 @@ describe('contract history page', () => {
         expect(screen.getByText('Giveback from best')).toBeTruthy();
     });
 
+    it('shows current-range coverage in a tooltip beside the contract heading', async () => {
+        const { container } = mount();
+        const trigger = await screen.findByRole('button', { name: 'Coverage and data quality' });
+        const tooltip = screen.getByRole('tooltip');
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+        expect(trigger.getAttribute('aria-describedby')).toBe(tooltip.id);
+        expect(tooltip.getAttribute('data-open')).toBe('false');
+        expect(container.querySelector('.history-title-row h2')?.nextElementSibling).toBe(trigger.parentElement);
+        expect(tooltip.textContent).toContain('1 observations');
+        expect(tooltip.textContent).toContain('1 valid prices');
+        expect(tooltip.textContent).toContain('1 valid deltas');
+        expect(tooltip.textContent).toContain('1 known expected');
+        expect(tooltip.textContent).toContain('2 unknown slots');
+        expect(tooltip.textContent).toContain('wide: 1');
+        expect(document.querySelectorAll('.history-quality-marker')).toHaveLength(1);
+        expect(within(tooltip).getByText('Unknown coverage remains visible.')).toBeTruthy();
+    });
+
+    it('opens coverage help on hover, focus and click, and dismisses it accessibly', async () => {
+        const { container } = mount();
+        const trigger = await screen.findByRole('button', { name: 'Coverage and data quality' });
+        const info = container.querySelector<HTMLElement>('.history-coverage-info')!;
+
+        fireEvent.mouseEnter(info);
+        expect(trigger.getAttribute('aria-expanded')).toBe('true');
+        fireEvent.mouseLeave(info);
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+        fireEvent.focus(trigger);
+        expect(trigger.getAttribute('aria-expanded')).toBe('true');
+        fireEvent.blur(trigger, { relatedTarget: document.body });
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+        fireEvent.click(trigger);
+        expect(trigger.getAttribute('aria-expanded')).toBe('true');
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+        expect(document.activeElement).toBe(trigger);
+
+        fireEvent.click(trigger);
+        fireEvent.pointerDown(document.body);
+        expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    });
+
     it('keeps the target slot on desktop when analysis is unavailable and hides it from assistive technology', async () => {
         api.history.mockResolvedValue({ ...result, analysis: null });
         mount();
@@ -445,25 +522,49 @@ describe('contract history page', () => {
 
     it('joins sessions without removing genuine missing quotes from either chart', async () => {
         const first = result.points[0]!;
+        const held = {
+            ...first,
+            time: first.time + 600000,
+            mark: 0.5,
+            overrides: [
+                {
+                    field: 'mark' as const,
+                    value: 0.5,
+                    original: 3.5,
+                    sourceTime: first.time,
+                    reason: 'Held test value',
+                },
+            ],
+        };
         const nextTime = Date.parse('2026-10-26T13:45:00Z');
+        const nextSession = {
+            ...first,
+            sessionDate: '2026-10-26',
+            time: nextTime,
+            mark: 1.2,
+            delta: -0.23,
+            underlyingPrice: 161.5,
+            flags: [],
+        };
         api.history.mockResolvedValue({
             ...result,
             to: '2026-10-26',
             points: [
                 first,
                 {
-                    ...first,
-                    time: first.time + 1,
+                    ...nextSession,
+                    time: held.time + 1,
                     kind: 'session_boundary',
                     mark: null,
                     delta: null,
                     underlyingPrice: null,
                 },
-                { ...first, sessionDate: '2026-10-26', time: nextTime },
-                { ...first, sessionDate: '2026-10-26', time: nextTime + 600000, mark: null },
+                held,
+                nextSession,
+                { ...nextSession, time: nextTime + 600000, mark: null },
             ],
         });
-        mount();
+        mount(`?contract=${encodeURIComponent(contract.key)}&mode=multi&from=2026-10-23&to=2026-10-26`);
         await screen.findByTestId('history-chart-data');
         for (const view of ['Option', 'Stock']) {
             fireEvent.click(screen.getByRole('button', { name: view }));
@@ -474,12 +575,30 @@ describe('contract history page', () => {
                 mark: number | null;
                 time: number;
             }>;
-            expect(points).toHaveLength(3);
-            expect(points.map((point) => point.slot)).toEqual([0, 1, 2]);
+            expect(points).toHaveLength(4);
+            expect(points.map((point) => point.slot)).toEqual([0, 1, 2, 3]);
             expect(points.some((point) => point.kind === 'session_boundary')).toBe(false);
-            expect(points[1]?.time).toBe(nextTime);
-            expect(points[2]?.mark).toBeNull();
+            expect(points[2]?.time).toBe(nextTime);
+            expect(points[3]?.mark).toBeNull();
+            expect(
+                document
+                    .querySelector('.history-chart-pane[data-active="true"]')
+                    ?.querySelector('.history-session-divider')
+                    ?.getAttribute('data-x')
+            ).toBe('1.5');
         }
+        const nextDayButton = screen.getByRole('button', {
+            name: /Open 10\/26\/2026 in intraday view/,
+        });
+        expect(nextDayButton.textContent).toContain('Mark -$0.30 (-20.0%)');
+        expect(nextDayButton.textContent).toContain('Delta -0.030');
+        expect(nextDayButton.textContent).toContain('Stock +$1.50 (+0.9%)');
+        fireEvent.click(nextDayButton);
+        await waitFor(() => {
+            expect(api.history.mock.calls.some((args) => args[1] === '2026-10-26' && args[2] === '2026-10-26')).toBe(
+                true
+            );
+        });
     });
 
     it('fits the stock axis to its movement without forcing a distant strike into range', async () => {
@@ -856,10 +975,10 @@ describe('contract history page', () => {
         await waitFor(() => expect(container.querySelectorAll('.history-contract-list button')).toHaveLength(2));
         const cards = [...container.querySelectorAll('.history-contract-list button')];
         expect(cards.map((card) => card.classList.contains('is-expired'))).toEqual([true, false]);
-        expect(cards.map((card) => !!card.querySelector('strong.is-itm'))).toEqual([true, false]);
-        expect(cards.every((card) => !card.classList.contains('is-itm'))).toBe(true);
+        expect(cards.map((card) => card.classList.contains('is-itm'))).toEqual([true, false]);
+        expect(cards.every((card) => !card.querySelector('strong.is-itm'))).toBe(true);
         expect(cards[0]!.querySelector('strong')?.textContent).toBe('AAPL $150');
-        expect(cards[0]!.querySelector('strong.aggressive')).toBeNull();
+        expect(cards[0]!.querySelector('strong.aggressive')).not.toBeNull();
         expect(cards[0]!.querySelector('small')).toBeNull();
         expect(cards[0]!.querySelector('.moneyness-chip')).toBeNull();
         expect(cards[0]!.querySelector('.sr-only')?.textContent).toBe('In the money');
@@ -901,6 +1020,26 @@ describe('contract history page', () => {
         fireEvent.click(screen.getByRole('button', { name: '10/21/2026, 2 contracts' }));
         await screen.findByText('Added 10/21/2026');
         expect(headings()).toEqual(['Balanced 2']);
+        expect(screen.getByText('1 of 2')).toBeDefined();
+    });
+
+    it('lists every signal date at once while a symbol is searched, and steps through each contract once', async () => {
+        const second = { ...contract, key: 'AAPL  261106P00190000', strike: 190, tiers: ['balanced'] };
+        const later = { ...contract, added: '2026-10-22', topPick: true, tiers: ['balanced'] };
+        api.search.mockResolvedValue({ items: [later, contract, second], hasMore: false, unmappedContracts: 0 });
+        const { container } = mount(`?contract=${encodeURIComponent(contract.key)}&signalDate=2026-10-22`);
+        await screen.findByText('Added 10/22/2026');
+        fireEvent.change(screen.getByRole('searchbox', { name: 'Find VADER contracts' }), {
+            target: { value: 'aapl' },
+        });
+        await waitFor(() => expect(container.querySelectorAll('.history-added-heading')).toHaveLength(2));
+        expect([...container.querySelectorAll('.history-added-heading')].map((node) => node.textContent)).toEqual([
+            'Added 10/22/2026',
+            'Added 10/21/2026',
+        ]);
+        expect(screen.queryByRole('button', { name: 'Earlier date' })).toBeNull();
+        expect(container.querySelectorAll('.history-tier-group h4')).toHaveLength(0);
+        expect(container.querySelector('.history-contract-name strong.balanced')).not.toBeNull();
         expect(screen.getByText('1 of 2')).toBeDefined();
     });
 });
