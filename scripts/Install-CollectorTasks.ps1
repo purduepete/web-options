@@ -49,11 +49,10 @@ if ($EnableCollection) {
 }
 $pwsh = $PowerShellPath
 $principal = New-ScheduledTaskPrincipal -UserId 'NT AUTHORITY\LOCAL SERVICE' -LogonType ServiceAccount
-foreach ($kind in @('tick', 'watchdog', 'audit')) {
+foreach ($kind in @('tick', 'watchdog')) {
     $taskName = switch ($kind) {
         'tick' { 'SolutionDeploy-web-options-collector' }
         'watchdog' { 'SolutionDeploy-web-options-collector-watchdog' }
-        'audit' { 'SolutionDeploy-web-options-daily-audit' }
     }
     $arguments = "-NoProfile -File `"$launcher`" -ReleasePath `"$ReleasePath`" -PythonPath `"$PythonPath`" -ConfigPath `"$ConfigPath`" -Action $kind"
     $action = New-ScheduledTaskAction -Execute $pwsh -Argument $arguments -WorkingDirectory $ReleasePath
@@ -62,11 +61,6 @@ foreach ($kind in @('tick', 'watchdog', 'audit')) {
     $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable `
         -ExecutionTimeLimit (New-TimeSpan -Minutes 4) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     $triggers = @($boot, $repeat)
-    if ($kind -eq 'audit') {
-        $triggers = @(New-ScheduledTaskTrigger -Daily -At '13:30')
-        $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable `
-            -ExecutionTimeLimit (New-TimeSpan -Minutes 15) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    }
     Register-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $taskName -Action $action `
         -Trigger $triggers -Settings $settings -Principal $principal -Force | Out-Null
     if ($EnableCollection) {
@@ -76,4 +70,10 @@ foreach ($kind in @('tick', 'watchdog', 'audit')) {
         Disable-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $taskName | Out-Null
     }
     Write-Host "$taskName registered; enabled=$([bool]$EnableCollection); account=LOCAL SERVICE"
+}
+# The nightly Azure comparison audit was retired; remove its task if an older install left it.
+$retired = 'SolutionDeploy-web-options-daily-audit'
+if (Get-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $retired -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskPath '\JimlerTech\' -TaskName $retired -Confirm:$false
+    Write-Host "$retired removed"
 }

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from collector.__main__ import notify_database_outage, tick
+from collector.__main__ import tick
 from collector.config import Config
 from collector.model import Contract, choose_slot, event_time, number, slots
 from collector.provider import price_values, quality
@@ -166,14 +166,6 @@ def test_activation_fail_closed():
         tick(Config("", {}, "", "", False, {}), datetime.now(UTC))
 
 
-def test_database_outage_notification_is_deduplicated_without_postgres(tmp_path):
-    config = Config("", {}, "", "", True, {}, str(tmp_path / "outage"))
-    with patch("collector.__main__.notify", return_value=True) as push:
-        notify_database_outage(config, datetime.now(UTC), RuntimeError())
-        notify_database_outage(config, datetime.now(UTC), RuntimeError())
-        push.assert_called_once()
-
-
 @pytest.mark.parametrize("has_contracts", [True, False])
 def test_azure_outage_blocks_stale_ownership_capture(has_contracts):
     config = Config("", {}, "", "", True, {})
@@ -209,11 +201,23 @@ def test_watchdog_logs_reason_and_leaves_partial_to_tick(caplog, error, age, exp
     at = datetime(2026, 10, 28, 20, 12, tzinfo=UTC)
     beat = at - timedelta(minutes=age)
     config = Config("", {}, "", "", True, {})
-    with patch("collector.__main__.Repository") as factory, patch("collector.__main__.notify", return_value=False):
+    with patch("collector.__main__.Repository") as factory:
         factory.return_value.execute.return_value.fetchone.return_value = {
-            "heartbeat_at": beat, "last_error": error, "last_alert_key": None,
+            "heartbeat_at": beat, "last_error": error,
         }
         with caplog.at_level("WARNING", logger="collector"):
             assert watchdog(config, at) == expected
     warnings = [record.getMessage() for record in caplog.records if record.levelname == "WARNING"]
     assert warnings == ([f"unhealthy: {logged}"] if logged else [])
+
+
+def test_watchdog_logs_database_outage_without_notifying(caplog):
+    from collector.__main__ import watchdog
+
+    at = datetime(2026, 10, 28, 20, 12, tzinfo=UTC)
+    with patch("collector.__main__.Repository", side_effect=RuntimeError("secret")):
+        with caplog.at_level("WARNING", logger="collector"):
+            assert watchdog(Config("", {}, "", "", True, {}), at) == 1
+    assert [record.getMessage() for record in caplog.records] == [
+        "unhealthy: collector PostgreSQL unavailable (RuntimeError)"
+    ]

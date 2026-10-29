@@ -37,108 +37,14 @@ only this reader's HBA lines, validate/reload the file, revoke its grants in
 `web_options`, and remove only `sd_web_options_reader`. Never drop history tables,
 the database, or collector roles. Keep the protected HBA backup for the record.
 
-## Nightly audit
+## Monitoring
 
-Tracked by web-options#5. `python -m collector.audit --config <protected-config>
-[--date YYYY-MM-DD]` reads Azure and local PostgreSQL without database writes or
-a capture lock. Date defaults to the current Pacific date. It writes
-`<release grandparent>\shared\logs\audit\options-YYYY-MM-DD.json` and sends one
-Pushover through the existing notifier. Exit 0 means all sections passed (or
-were `not_run`) and notification was sent; exit 1 means a failed check, source
-read or notification.
-
-VADER compares each currently active tracked put's 13:10 settle quote to the
-nearest Azure captured timestamp (VADER samples at 13:15) within 20 minutes. Azure has no 13:00 sample,
-so the actual-close quote is not compared (web-options#14). Tolerances:
-mid/mark $0.01 per share, signed delta 0.01, fractional IV 0.02 (2 percentage
-points). These account for differently timed observations; this nightly value
-check does not replace the stricter sustained-parity gates. Missing fields,
-including both-missing, do not pass numeric checks.
-
-Portfolio compares each currently open live/paper sell-to-open owner's quote
-from the last open-session slot (12:55 on a full day) to its Azure daily row,
-using the same price/delta tolerances. Azure's MERGE refreshes that row every
-10 minutes through 12:50, so 12:55 is the closest local capture to its final
-value. That section reports value agreement only: `created_at` cannot establish
-the time of an updated daily row. Historical runs exclude VADER contracts first
-seen after the audited date and portfolio transactions after that Pacific date.
-Excluded owners are counted under `introduced_after_session`; missing source
-dates fail explicitly. Current discovery still cannot reconstruct positions
-closed since that day or historical ownership revisions.
-
-VADER and portfolio value mismatches and `missing_azure` rows are informational.
-They keep their counts and examples but never fail the audit, because the two
-sides are sampled minutes apart and an Azure gap is not a collector failure.
-From 10/20 to 10/23/2026 they failed every night (18 of 19 portfolio rows on
-10/23, prices 10 to 60 cents apart) while coverage passed. Missing local quotes,
-coverage gaps and degraded runs still fail. Gross price differences above
-max($0.50, 25%) and delta differences above 0.15 also fail. A positive mid-price
-outlier stays informational when both marks are finite and within the gross
-price threshold; missing, non-finite, zero or negative local mids are not excused.
-Coverage compares the current distinct discovered universe against complete
-price/delta/IV components in every expected slot, and reports missing/degraded
-runs. A quote whose price failed with `invalid_or_missing_bid_ask` (the broker
-had no bid/ask) is counted under `broker_unquoted` with examples in every
-section and does not fail the day. A partial run passes only when every failed
-quote in it is broker-unquoted. When a run's discovery succeeded, a contract the
-source had not yet published at that slot (VADER posts new signals around 07:30)
-is counted under `not_yet_discovered` instead of `missing_local`. `examples` is
-capped at 20 per section and prioritizes failures over informational entries.
-The separate `failures` list retains every failure. Weekends and full-day exchange
-holidays are `not_run`/overall pass, even though weekday-holiday quote collection
-still has its separate 13:10 settle purpose.
-
-The installer adds `\JimlerTech\SolutionDeploy-web-options-daily-audit`, daily
-at 13:30 host-local time, after the 13:10 settle capture and Azure's 13:15 sample,
-under LOCAL SERVICE, with a 15-minute limit. It uses
-the same protected config and enabled/disabled installation switch as the
-existing collector tasks. No schema, grants, new config keys or broker calls
-are required. LOCAL SERVICE needs write permission to the existing logs tree.
-
-### Exact audit reads
-
-Azure SQL uses the configured SELECT-only reader. Each `?` is the requested
-Pacific date, passed as a parameter. No signal/entry-quote query is needed:
-
-```sql
-SELECT contract_key AS source_id, contract_key, symbol, expiration, strike,
-       first_seen_date AS report_date
-FROM opt.telegram_tracked_contract
-WHERE is_active = 1 AND option_right = 'P'
-  AND expiration >= CAST(? AS date)
-ORDER BY contract_key;
-
-SELECT id AS source_id, authenticated_user_id, account_id, is_paper,
-       symbol, expiration_date AS expiration, strike_price AS strike,
-       transaction_date, contracts
-FROM dbo.option_transactions
-WHERE status = 'open' AND action = 'sell_to_open' AND is_paper IN (0, 1)
-  AND expiration_date >= CAST(? AS date)
-ORDER BY id;
-
-SELECT contract_key, price_date, captured_at_utc, market_session,
-       bid, ask, mark, mid, last_price, underlying_price, delta, implied_volatility
-FROM opt.telegram_contract_price WHERE price_date = CAST(? AS date);
-
-SELECT COALESCE(option_transactions_id_live, option_transactions_id) AS transaction_id,
-       CASE WHEN option_transactions_id_live IS NOT NULL THEN 0 ELSE 1 END AS is_paper,
-       price_date, created_at, bid, ask, mark, mid, last_price, delta
-FROM dbo.option_daily_price
-WHERE price_date = CAST(? AS date)
-  AND (option_transactions_id_live IS NOT NULL OR option_transactions_id IS NOT NULL);
-```
-
-Local PostgreSQL uses `default_transaction_read_only=on`, with a 20-second
-statement timeout. Each `%s` is the requested Pacific date:
-
-```sql
-SELECT * FROM public.option_collection_run
-WHERE session_date=%s ORDER BY scheduled_at;
-
-SELECT q.* FROM public.broker_option_quote q
-JOIN public.option_collection_run r ON r.id=q.run_id WHERE r.session_date=%s;
-```
-
+The nightly Azure comparison audit was removed on 10/29/2026 after its timing
+caused repeated false failures. Its saved reports under `shared\logs\audit` and
+the `azure_option_observation` rows stay as history. SolutionDeploy's collector
+monitor now alerts on local data: missing or overdue tasks, a stale heartbeat,
+and close, settle or session runs that finish incomplete. See
+`solution-deploy\docs\CollectorReliability.md`.
 This worker runs on `jimbrownhome1`, separate from the existing dashboard.
 Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplies
 delta and IV. When both REST attempts leave a price crossed or absent, the same
@@ -224,7 +130,7 @@ then uses a temporary LOCAL SERVICE task to open code, dependencies and external
 config and test a disposable log file. Failure restores original release ACLs and leaves
 existing collector tasks unchanged. The printed ACL snapshot permits later rollback.
 SolutionDeploy's standalone `scripts\Test-CollectorAccess.ps1` checks access without running
-collectors, audits or database isolation probes.
+collectors or database isolation probes.
 
 The installer registers a one-minute collector tick and a separate one-minute
 watchdog under `\JimlerTech`, running as LOCAL SERVICE without sign-in. Without
@@ -240,14 +146,13 @@ python -m collector sync --config <protected-config>
 python -m collector tick --config <protected-config>
 python -m collector status --config <protected-config>
 python -m collector watchdog --config <protected-config>
-python -m collector compare --run-id <local-run-id> --config <protected-config>
 ```
 
 `dryrun` reads discovery metadata and prints counts and scheduled local times.
 It never opens a broker connection or writes either database. `tick` performs
 only a due capture or existing in-session recovery; it refuses activation when `enabled` is false.
 `status` is read-only. The watchdog checks heartbeat and unresolved capture errors
-and sends operational notifications, not trading alerts. A partial, failed or
+and logs the reason. SolutionDeploy's collector monitor sends the alerts. A partial, failed or
 missed slot stops counting as unresolved once a later recovery run completes.
 During a PostgreSQL outage, a small diagnostic marker in `shared\logs` prevents
 repeated outage notifications. It contains no credentials or market records.
@@ -433,7 +338,8 @@ Portfolio transaction delta is `decimal(10,4)`, a separate source field.
 Actual sustained 10-weekday coverage/freshness/parity and first live capture
 remain unverified until reviewed rollout and observation.
 
-`compare --run-id` snapshots the eligible tracked 13:15 Azure rows with a
+The `compare` command was removed on 10/29/2026; the evidence it wrote stays in
+`azure_option_observation`. `compare --run-id` snapshotted the eligible tracked 13:15 Azure rows with a
 read receipt into append-only `azure_option_observation`; missing rows are
 explicit payloads. Later calls reuse the first immutable observation. It writes
 only that local evidence table, never Azure or local quote fields. Invoke within

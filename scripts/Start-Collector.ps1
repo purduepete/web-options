@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory)][string]$ReleasePath,
     [Parameter(Mandatory)][string]$PythonPath,
     [Parameter(Mandatory)][string]$ConfigPath,
-    [ValidateSet('tick', 'watchdog', 'status', 'dryrun', 'audit')][string]$Action = 'tick'
+    [ValidateSet('tick', 'watchdog', 'status', 'dryrun')][string]$Action = 'tick'
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath $ReleasePath).Path
@@ -22,12 +22,7 @@ $log = Join-Path $logDirectory "collector-$Action.log"
 $env:PYTHONUNBUFFERED = '1'
 Push-Location $root
 try {
-    if ($Action -eq 'audit') {
-        & $PythonPath -m collector.audit --config $config *>> $log
-    }
-    else {
-        & $PythonPath -m collector $Action --config $config *>> $log
-    }
+    & $PythonPath -m collector $Action --config $config *>> $log
     $code = $LASTEXITCODE
 }
 finally {

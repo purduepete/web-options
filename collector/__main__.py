@@ -5,46 +5,15 @@ import asyncio
 from datetime import datetime, timedelta
 import json
 import logging
-from pathlib import Path
 import sys
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
 from .config import load_config
-from .model import EASTERN, PACIFIC, Slot, choose_slot, now, slots
+from .model import PACIFIC, Slot, choose_slot, now, slots
 from .provider import collect
 from .repository import Repository
 from .source import discover
 
 LOG = logging.getLogger("collector")
-
-
-def notify(config, message: str) -> bool:
-    if not config.notification.get("user") or not config.notification.get("token"):
-        LOG.error("operational notification unavailable: configure protected Pushover credentials")
-        return False
-    data = urlencode({**config.notification, "title": "Web Options collector", "message": message}).encode()
-    try:
-        with urlopen(Request("https://api.pushover.net/1/messages.json", data=data), timeout=10) as response:
-            if json.load(response)["status"] != 1:
-                raise RuntimeError("notification rejected")
-        return True
-    except Exception as error:
-        LOG.error("notification failed: %s", type(error).__name__)
-        return False
-
-
-def notify_database_outage(config, at, error: Exception) -> None:
-    if not config.notification_state_file:
-        raise ValueError("watchdog outage notification state path is missing")
-    state = Path(config.notification_state_file)
-    key = f"{at.astimezone(EASTERN).date()}:database_unavailable"
-    if state.exists() and state.read_text(encoding="utf-8") == key:
-        return
-    if notify(
-        config, f"Collector PostgreSQL unavailable ({type(error).__name__}). Check the host and collector tasks."
-    ):
-        state.write_text(key, encoding="utf-8")
 
 
 def tick(config, at) -> int:
@@ -163,33 +132,17 @@ def watchdog(config, at) -> int:
     try:
         repo = Repository(config.postgres)
     except Exception as error:
-        # Diagnostic state is a file so deduplication survives a database outage.
-        notify_database_outage(config, at, error)
+        LOG.warning("unhealthy: collector PostgreSQL unavailable (%s)", type(error).__name__)
         return 1
     try:
         health = repo.execute("SELECT * FROM public.collector_health WHERE id=1").fetchone()
         overdue = health is None or at - health["heartbeat_at"] > timedelta(minutes=5)
-        key = f"{at.astimezone(EASTERN).date()}:heartbeat"
         error = health["last_error"] if health else None
         # The tick that records capture_partial already exits 1 and retries; a slot that stays
         # degraded becomes unresolved_capture, which still counts here.
         unhealthy = overdue or error not in (None, "capture_partial")
         if unhealthy:
             LOG.warning("unhealthy: %s", unhealthy_reason(health, at))
-        if unhealthy and (health is None or health["last_alert_key"] != key):
-            sent = notify(
-                config, "Collector heartbeat missing or capture degraded. Check collector status and task logs."
-            )
-            if sent and health:
-                repo.execute("UPDATE public.collector_health SET last_alert_key=%s WHERE id=1", (key,))
-            elif sent:
-                repo.execute(
-                    """
-                    INSERT INTO public.collector_health (id,heartbeat_at,last_error,last_alert_key)
-                    VALUES (1,%s,'no_collector_heartbeat',%s) ON CONFLICT DO NOTHING
-                """,
-                    (at - timedelta(minutes=6), key),
-                )
         return 1 if unhealthy else 0
     finally:
         repo.close()
@@ -197,9 +150,8 @@ def watchdog(config, at) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Local VADER prices, delta and IV history")
-    parser.add_argument("command", choices=("dryrun", "sync", "tick", "status", "watchdog", "compare"))
+    parser.add_argument("command", choices=("dryrun", "sync", "tick", "status", "watchdog"))
     parser.add_argument("--config", required=True)
-    parser.add_argument("--run-id", type=int)
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     # Provider debug logging may include authorization headers.
@@ -229,13 +181,6 @@ def main() -> int:
         return watchdog(config, at)
     repo = Repository(config.postgres)
     try:
-        if arguments.command == "compare":
-            from .compare import compare
-
-            if arguments.run_id is None:
-                raise ValueError("compare requires --run-id")
-            print(json.dumps(compare(config, repo, arguments.run_id), default=str))
-            return 0
         if arguments.command == "sync":
             if not repo.lock():
                 raise RuntimeError("collector is busy; source sync not started")

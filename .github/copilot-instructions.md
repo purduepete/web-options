@@ -55,7 +55,7 @@ Follow the shared [collector reliability procedure](https://github.com/purduepet
   failure. Do not rerun database activation or isolation probes solely to repair
   file permissions. Database-altering work requires separate independent review.
 - Preserve disabled task states, activation approvals and deliberate compatible
-  split targets across collector, watchdog and audit tasks. Frontend-only
+  split targets across collector and watchdog tasks. Frontend-only
   deployments must not change collector tasks, releases or runtimes.
 - Use the managed PowerShell runtime. Update shared framework code only through
   SolutionDeploy `scripts\Update-HostExecutor.ps1` to preserve its inventory.
