@@ -20,6 +20,14 @@ describe('Loading', () => {
         act(() => vi.advanceTimersByTime(250));
         const status = screen.getByRole('status');
         expect(status.getAttribute('aria-label')).toBe('Loading this week');
-        expect(status.getAttribute('class')).toBe('spinner');
+        expect(status.getAttribute('class')).toBe('loading');
+        expect(status.querySelector('svg.spinner')?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('covers the page below the navbar for a page load', () => {
+        render(<Loading page />);
+
+        act(() => vi.advanceTimersByTime(250));
+        expect(screen.getByRole('status').getAttribute('class')).toBe('loading loading-page');
     });
 });

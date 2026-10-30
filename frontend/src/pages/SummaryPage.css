@@ -62,13 +62,6 @@
     background: var(--surface-hover);
 }
 
-/* Changing a filter refetches every open month. The numbers already read stay
-   where they are and only dim, so nothing collapses and rebuilds underneath. */
-.summary-month-body.is-stale {
-    opacity: 0.5;
-    transition: opacity 0.15s ease;
-}
-
 /* Points down when the month is open, right when it is shut. */
 .summary-month-head svg {
     flex: none;

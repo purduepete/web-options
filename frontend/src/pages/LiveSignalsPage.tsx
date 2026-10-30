@@ -644,7 +644,7 @@ export function LiveSignalsPage() {
                 </p>
             )}
 
-            {loading && <Loading label="Loading this week" />}
+            {loading && <Loading page label="Loading this week" />}
 
             {data && !loading && !error && (
                 <>

@@ -46,7 +46,7 @@ export function LatestCalendarPage() {
                     {error}
                 </p>
             ) : (
-                <Loading label="Finding the latest calendar" />
+                <Loading page label="Finding the latest calendar" />
             )}
         </main>
     );

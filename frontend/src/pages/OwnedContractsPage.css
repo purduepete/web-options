@@ -188,11 +188,6 @@
     min-width: 0%;
 }
 
-.owned-contract-list.is-stale {
-    opacity: 0.55;
-    transition: opacity 0.15s ease;
-}
-
 /* A band's own row, spanning every column rather than joining the subgrid. */
 .owned-group-heading {
     display: flex;
@@ -699,7 +694,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .owned-contract-list.is-stale,
     .owned-refresh-button:disabled:not(.is-idle) svg {
         transition: none;
         animation: none;

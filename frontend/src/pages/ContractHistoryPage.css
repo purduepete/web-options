@@ -7,7 +7,7 @@
 /* Sections open at once and fade their contents in. Animating their height
    made the chart below redraw late and then snap, which read as choppy. */
 .history-page details[open] > :not(summary) {
-    animation: enter 150ms ease-out;
+    animation: enter 250ms ease-out;
 }
 /* The page can gain or lose a scrollbar as sections open; reserving its width
    keeps everything from shifting sideways when it does. */
@@ -219,16 +219,6 @@ html:has(.history-page) {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-}
-/* While the next contract loads, its figures dim so the click shows at once,
-   and come back as the new ones land. The delay keeps a fast answer from
-   flickering. The title row stays lit so stepping again still works. */
-.history-result > :not(.history-title) {
-    transition: opacity 0.15s ease;
-}
-.history-result[aria-busy='true'] > :not(.history-title) {
-    opacity: 0.5;
-    transition-delay: 0.1s;
 }
 .history-title-row {
     display: flex;

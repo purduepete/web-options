@@ -243,7 +243,7 @@ main {
     padding-left: max(3%, env(safe-area-inset-left));
     padding-right: max(3%, env(safe-area-inset-right));
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
-    animation: enter 500ms ease-in;
+    animation: enter 0.6s ease-out;
 }
 
 /* The wide data pages are the only ones that need reining in. Tablets keep a
@@ -273,7 +273,7 @@ main {
 /* Data lands hundreds of milliseconds after the page frame it belongs to, so
    its arrival has to be animated on its own or nobody sees it. */
 .enter {
-    animation: enter 500ms ease-in;
+    animation: enter 0.6s ease-out;
 }
 
 /* Opacity only. A page that slides as well as fades reads as a heavier
@@ -284,10 +284,21 @@ main {
     }
 }
 
+/* Route change: Layout fades the outgoing page out over 250ms, then the new
+   page's own `main` entrance fades it in over 600ms. */
+.route-fade[data-leaving] {
+    opacity: 0;
+    transition: opacity 250ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
     main,
     .enter {
         animation: none;
+    }
+
+    .route-fade[data-leaving] {
+        transition: none;
     }
 }
 

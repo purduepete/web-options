@@ -719,7 +719,7 @@ export function OwnedContractsPage() {
                 </p>
             ) : null}
 
-            {settling ? <Loading label="Loading owned contracts" /> : null}
+            {settling ? <Loading page label="Loading owned contracts" /> : null}
 
             {settling ? null : (
                 <>

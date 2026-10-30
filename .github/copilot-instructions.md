@@ -271,4 +271,9 @@ reader watched something jump, flash, or fill in underneath them.
   everything else, so nothing shifts when it comes back.
 - **`Loading` already waits 250ms** before it shows, so a fast answer flashes
   nothing. Do not add a second delay, and do not mount it where an element that
-  reserves the same space would do.
+  reserves the same space would do. A whole-page wait passes `page`, which
+  covers the view with a fixed overlay in the page background. Refetches keep
+  full opacity; do not dim stale results.
+- **Route changes fade.** `Layout` fades the old view out over 250ms through
+  `.route-fade[data-leaving]`, then the new `main` fades in over 0.6s. Tests
+  that navigate wait for the new view with `findBy*`.

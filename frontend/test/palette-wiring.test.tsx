@@ -78,7 +78,7 @@ describe('command palette wiring', () => {
         await user.keyboard('weekly calendars{Enter}');
 
         expect(screen.queryByRole('dialog')).toBeNull();
-        expect(screen.getByText('latest week page')).toBeTruthy();
+        expect(await screen.findByText('latest week page')).toBeTruthy();
     });
 
     it('opens from the navbar search button and closes on Ctrl+/', async () => {

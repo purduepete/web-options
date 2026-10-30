@@ -652,7 +652,7 @@ export function ContractHistoryPage() {
                     {error} <button onClick={() => setRevision((value) => value + 1)}>Retry</button>
                 </p>
             )}
-            {pending && !shown && <Loading />}
+            {pending && !shown && <Loading page />}
             {key && !pending && !error && !history && (
                 <p>No usable observations have been collected for this contract.</p>
             )}

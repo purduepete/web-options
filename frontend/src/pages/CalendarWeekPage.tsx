@@ -148,7 +148,7 @@ export function CalendarWeekPage() {
                 </p>
             )}
 
-            {!week && !error && <Loading label="Loading the calendar" />}
+            {!week && !error && <Loading page label="Loading the calendar" />}
 
             {week && <CalendarGrid days={week.days} />}
         </main>

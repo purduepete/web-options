@@ -434,7 +434,7 @@ export function SummaryPage() {
                 </p>
             )}
 
-            {opening && <Loading />}
+            {opening && <Loading page />}
 
             {!opening && months?.length === 0 && !error && (
                 <p className="summary-none enter">No signals have been recorded yet.</p>

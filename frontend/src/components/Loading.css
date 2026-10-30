@@ -3,15 +3,24 @@
     align-items: center;
     justify-content: center;
     padding: 3rem 0;
-    animation: loading-in 0.4s ease-out;
+    animation: loading-in 0.6s ease-out;
+}
+
+/* Page loads sit under the fixed navbar on the page background, ring centered. */
+.loading-page {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    padding: 0;
+    background: var(--bg);
 }
 
 /* Drawn as an SVG arc rather than a bordered box: box borders meet at mitred
    45-degree joints, which read as flat chords once the ring starts turning. */
 .spinner {
-    width: 2.25rem;
-    height: 2.25rem;
-    animation: spin 0.9s linear infinite;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
 }
 
 .spinner circle {
@@ -43,11 +52,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .loading {
-        animation: none;
-    }
-
+    .loading,
     .spinner {
-        animation-duration: 2.5s;
+        animation: none;
     }
 }
