@@ -821,7 +821,7 @@ describe('contract history page', () => {
             expect(link.target).toBe('_blank');
             expect(link.rel).toBe('noopener noreferrer');
             expect(link.textContent).toBe('');
-            expect(link.title).toBe(link.getAttribute('aria-label'));
+            expect(link.getAttribute('data-tip')).toBe(link.getAttribute('aria-label'));
         }
         expect(screen.getByText('Underlying:').parentElement?.querySelector('strong')?.textContent).toBe('$160.00');
         fireEvent.click(document.querySelector('.history-quote-summary > summary')!);

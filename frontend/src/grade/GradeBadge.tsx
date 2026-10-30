@@ -46,11 +46,11 @@ const MONEYNESS_LABELS: Record<Moneyness, string> = {
     atm: 'at the money',
 };
 
-/** Where a strike stands against a price. The `title` says which price. */
-export function MoneynessChip({ moneyness, title }: { moneyness: Moneyness | null; title?: string }) {
+/** Where a strike stands against a price. The tooltip says which price. */
+export function MoneynessChip({ moneyness, tooltip }: { moneyness: Moneyness | null; tooltip?: string }) {
     if (moneyness === null) return null;
     return (
-        <span className={`moneyness-chip ${moneyness}`} title={title}>
+        <span className={`moneyness-chip ${moneyness}`} data-tip={tooltip}>
             {moneyness.toUpperCase()}
             <span className="sr-only"> ({MONEYNESS_LABELS[moneyness]})</span>
         </span>
@@ -66,7 +66,7 @@ const TIER_PILL_LABELS = {
 export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: boolean }) {
     if (isTopPick) {
         return (
-            <span className="tier-pill tp" title="Top pick">
+            <span className="tier-pill tp" data-tip="Top pick">
                 TP
                 <span className="sr-only"> (Top pick)</span>
             </span>
@@ -77,7 +77,7 @@ export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: 
     if (normalized !== 'conservative' && normalized !== 'balanced' && normalized !== 'aggressive') return null;
 
     return (
-        <span className={`tier-pill ${normalized}`} title={TIER_PILL_LABELS[normalized]}>
+        <span className={`tier-pill ${normalized}`} data-tip={TIER_PILL_LABELS[normalized]}>
             {normalized.charAt(0).toUpperCase()}
             <span className="sr-only"> ({TIER_PILL_LABELS[normalized]})</span>
         </span>

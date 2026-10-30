@@ -62,7 +62,7 @@ describe('VixChip', () => {
         await waitFor(() => expect(screen.getByText('0.00%')).toBeTruthy());
         expect(container.querySelector('.vix-chip .change')?.className).toBe('change');
         expect(container.querySelector('.vix-chip .change svg')).toBeNull();
-        expect(container.querySelector('.vix-chip')?.getAttribute('title')).toContain('0.00%');
+        expect(container.querySelector('.vix-chip')?.getAttribute('data-tip')).toContain('0.00%');
     });
 
     it.each([

@@ -51,7 +51,7 @@ function Cell({ cell, numberSource }: { cell: SummaryCell; numberSource: NumberS
                 <span className="summary-unit">signals:</span>
                 <b className="summary-figure">{cell.signals}</b>
             </span>
-            <span className="summary-metric" title={`${cell.otm} of ${cell.priced} with a close`}>
+            <span className="summary-metric" data-tip={`${cell.otm} of ${cell.priced} with a close`}>
                 <span className="summary-unit">OTM:</span>
                 <b className="summary-figure">
                     {cell.otm} ({formatPercent(otmRate(cell))})
@@ -59,7 +59,7 @@ function Cell({ cell, numberSource }: { cell: SummaryCell; numberSource: NumberS
             </span>
             <span className="summary-metric">
                 <span className="summary-unit">premium:</span>
-                <b className={figureClass} title={figureTitle}>
+                <b className={figureClass} data-tip={figureTitle}>
                     {formatMoney(cell.premium)}
                 </b>
             </span>
@@ -67,13 +67,13 @@ function Cell({ cell, numberSource }: { cell: SummaryCell; numberSource: NumberS
                 <span className="summary-unit">collateral:</span>
                 {/* A month's committed capital runs to millions, which no column
                     this narrow can print in full. */}
-                <b className="summary-figure" title={formatMoney(cell.collateral)}>
+                <b className="summary-figure" data-tip={formatMoney(cell.collateral)}>
                     {formatCompactMoney(cell.collateral)}
                 </b>
             </span>
-            <span className="summary-metric" title="Weighted by collateral">
+            <span className="summary-metric" data-tip="Weighted by collateral">
                 <span className="summary-unit">yield:</span>
-                <b className={figureClass} title={figureTitle}>
+                <b className={figureClass} data-tip={figureTitle}>
                     {formatPercent(cell.annualizedYield)}
                 </b>
             </span>
@@ -81,7 +81,7 @@ function Cell({ cell, numberSource }: { cell: SummaryCell; numberSource: NumberS
                 printed as a zero: the weeks before it have no figure, not a
                 figure of none. */}
             {cell.halfRollup > 0 && (
-                <span className="summary-metric" title={`${cell.halfKept} of ${cell.signals} signals`}>
+                <span className="summary-metric" data-tip={`${cell.halfKept} of ${cell.signals} signals`}>
                     <span className="summary-unit">over half:</span>
                     <b className="summary-figure">
                         {cell.halfKept} ({formatPercent(halfRate(cell))})
@@ -126,7 +126,7 @@ export function SummaryTable({
                             <th
                                 scope="col"
                                 className={`summary-column-${column}`}
-                                title={column === 'all' ? ALL_TITLE : undefined}
+                                data-tip={column === 'all' ? ALL_TITLE : undefined}
                             >
                                 {SUMMARY_COLUMN_LABELS[column]}
                             </th>

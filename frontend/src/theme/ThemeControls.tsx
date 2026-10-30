@@ -58,7 +58,7 @@ export function ThemeControls() {
                                 role="radio"
                                 aria-checked={selected}
                                 aria-label={option.name}
-                                title={`${option.name} (suits ${option.suits} themes)`}
+                                data-tip={`${option.name} (suits ${option.suits} themes)`}
                                 className={selected ? 'swatch selected' : 'swatch'}
                                 style={{ background: option.value }}
                                 onClick={() => setHighlightColor(option.value)}

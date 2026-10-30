@@ -228,7 +228,7 @@ describe('Navbar on desktop', () => {
         renderNavbar();
 
         const reload = screen.getByRole('button', { name: 'Reload page' });
-        expect(reload.getAttribute('title')).toBe('Reload page');
+        expect(reload.getAttribute('data-tip')).toBe('Reload page');
         expect(reload.querySelectorAll('svg path')).toHaveLength(4);
     });
 

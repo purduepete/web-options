@@ -242,7 +242,7 @@ export function TradeDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Seeking Alpha"
-                            title="Seeking Alpha"
+                            data-tip="Seeking Alpha"
                         >
                             <span className="site-mark site-seekingalpha" aria-hidden="true" />
                         </a>
@@ -252,7 +252,7 @@ export function TradeDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Fidelity"
-                            title="Fidelity option chain"
+                            data-tip="Fidelity option chain"
                         >
                             <span className="site-mark site-fidelity" aria-hidden="true" />
                         </a>
@@ -263,7 +263,7 @@ export function TradeDetail({
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Barchart option price history"
-                                title="Barchart option price history"
+                                data-tip="Barchart option price history"
                             >
                                 <span className="site-mark site-barchart" aria-hidden="true" />
                             </a>
@@ -274,7 +274,7 @@ export function TradeDetail({
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="TradingView"
-                            title="TradingView chart"
+                            data-tip="TradingView chart"
                         >
                             <span className="site-mark site-tradingview" aria-hidden="true" />
                         </a>
@@ -285,7 +285,7 @@ export function TradeDetail({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Trade in Web Portfolio"
-                        title="Execute Option Trade"
+                        data-tip="Execute Option Trade"
                     >
                         <CircleArrowRightIcon />
                     </a>
@@ -325,7 +325,7 @@ export function TradeDetail({
                         detail.ownedContracts > 0 && (
                             <span
                                 className="detail-tag"
-                                title={`${detail.ownedContracts} open contract${detail.ownedContracts === 1 ? '' : 's'}`}
+                                data-tip={`${detail.ownedContracts} open contract${detail.ownedContracts === 1 ? '' : 's'}`}
                             >
                                 Owned
                             </span>
@@ -384,7 +384,7 @@ export function TradeDetail({
                                 {detail.stale && (
                                     <span
                                         className="detail-stale"
-                                        title="The live quote failed; this is the last one cached."
+                                        data-tip="The live quote failed; this is the last one cached."
                                     >
                                         cached
                                     </span>
@@ -430,7 +430,7 @@ export function TradeDetail({
                                     Since the signal
                                     <span
                                         className="detail-tag"
-                                        title={
+                                        data-tip={
                                             detail.outcome.settled
                                                 ? 'The contract has expired, so none of these move again.'
                                                 : 'Closing marks only. Nothing here has moved since last night.'
@@ -469,7 +469,7 @@ export function TradeDetail({
                                         </dd>
                                     </div>
                                     <div>
-                                        <dt title="Webportfolio calls this Max Cap: the largest share of the premium that could have been bought back at any close.">
+                                        <dt data-tip="Webportfolio calls this Max Cap: the largest share of the premium that could have been bought back at any close.">
                                             Best it has been
                                         </dt>
                                         <dd>
@@ -515,7 +515,7 @@ export function TradeDetail({
                                             <dd>
                                                 <MoneynessChip
                                                     moneyness={detail.outcome.moneynessAtExpiration}
-                                                    title="Where the underlying closed against the strike at expiration."
+                                                    tooltip="Where the underlying closed against the strike at expiration."
                                                 />
                                             </dd>
                                         </div>
@@ -550,7 +550,7 @@ export function TradeDetail({
                                 {detail.recentSignals !== null && detail.recentSignals.total > 0 && (
                                     <span
                                         className="past-stats"
-                                        title={`Over the last ${RECENT_SIGNAL_WINDOW_DAYS} trading days: ${detail.recentSignals.inTheMoney} of ${detail.recentSignals.total} in the money, ${detail.recentSignals.assigned} of ${detail.recentSignals.total} assigned.`}
+                                        data-tip={`Over the last ${RECENT_SIGNAL_WINDOW_DAYS} trading days: ${detail.recentSignals.inTheMoney} of ${detail.recentSignals.total} in the money, ${detail.recentSignals.assigned} of ${detail.recentSignals.total} assigned.`}
                                     >
                                         <span>
                                             {detail.recentSignals.total} in {RECENT_SIGNAL_WINDOW_DAYS} days
@@ -600,7 +600,7 @@ export function TradeDetail({
                                                         {signal.ownedLiveContracts > 0 && (
                                                             <span
                                                                 className="ownership-icon live"
-                                                                title={`${signal.ownedLiveContracts} live-owned contract${signal.ownedLiveContracts === 1 ? '' : 's'}`}
+                                                                data-tip={`${signal.ownedLiveContracts} live-owned contract${signal.ownedLiveContracts === 1 ? '' : 's'}`}
                                                             >
                                                                 <ZapIcon width={14} height={14} />
                                                                 <span className="sr-only">Live owned</span>
@@ -609,7 +609,7 @@ export function TradeDetail({
                                                         {signal.ownedPaperContracts > 0 && (
                                                             <span
                                                                 className="ownership-icon paper"
-                                                                title={`${signal.ownedPaperContracts} paper-owned contract${signal.ownedPaperContracts === 1 ? '' : 's'}`}
+                                                                data-tip={`${signal.ownedPaperContracts} paper-owned contract${signal.ownedPaperContracts === 1 ? '' : 's'}`}
                                                             >
                                                                 <FlaskConicalIcon width={14} height={14} />
                                                                 <span className="sr-only">Paper owned</span>
@@ -624,7 +624,7 @@ export function TradeDetail({
                                                     </span>
                                                     <MoneynessChip
                                                         moneyness={moneynessAgainst(signal.strike, reference)}
-                                                        title={
+                                                        tooltip={
                                                             settled
                                                                 ? `Closed ${formatCents(signal.closeAtExpiration)} at expiration, against a ${formatCents(signal.strike)} strike.`
                                                                 : `Still open: ${trade.symbol} is at ${formatCents(detail.price)} today, against a ${formatCents(signal.strike)} strike.`
@@ -640,7 +640,7 @@ export function TradeDetail({
                                                             type="button"
                                                             className="past-row"
                                                             onClick={openRow}
-                                                            title={`Open ${trade.symbol} ${formatCents(signal.strike)}P from ${formatMDY(signal.reportDate)}`}
+                                                            data-tip={`Open ${trade.symbol} ${formatCents(signal.strike)}P from ${formatMDY(signal.reportDate)}`}
                                                         >
                                                             {body}
                                                         </button>

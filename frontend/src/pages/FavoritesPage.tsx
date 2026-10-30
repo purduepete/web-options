@@ -92,7 +92,7 @@ function SortableFavorite({ item, index, onRemove }: { item: NavItem; index: num
                 type="button"
                 className="favorite-drag-handle"
                 aria-label={`Reorder ${item.label}`}
-                title={`Reorder ${item.label}`}
+                data-tip={`Reorder ${item.label}`}
                 {...attributes}
                 {...listeners}
             >
@@ -107,7 +107,7 @@ function SortableFavorite({ item, index, onRemove }: { item: NavItem; index: num
                 type="button"
                 className="favorite-remove"
                 aria-label={`Remove ${item.label} from favorites`}
-                title={`Remove ${item.label} from favorites`}
+                data-tip={`Remove ${item.label} from favorites`}
                 onClick={onRemove}
             >
                 <CloseIcon />

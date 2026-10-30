@@ -26,7 +26,7 @@ export function WeekNav({ onFirst, onPrevious, onNext, onJump, jump, disabled }:
                 <button
                     type="button"
                     aria-label="First week"
-                    title="First week"
+                    data-tip="First week"
                     onClick={onFirst}
                     disabled={disabled.first}
                 >
@@ -35,7 +35,7 @@ export function WeekNav({ onFirst, onPrevious, onNext, onJump, jump, disabled }:
                 <button
                     type="button"
                     aria-label="Previous week"
-                    title="Previous week"
+                    data-tip="Previous week"
                     onClick={onPrevious}
                     disabled={disabled.previous}
                 >
@@ -44,7 +44,7 @@ export function WeekNav({ onFirst, onPrevious, onNext, onJump, jump, disabled }:
                 <button
                     type="button"
                     aria-label="Next week"
-                    title="Next week"
+                    data-tip="Next week"
                     onClick={onNext}
                     disabled={disabled.next}
                 >

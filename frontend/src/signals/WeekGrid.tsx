@@ -209,7 +209,7 @@ function DayCard({
                 {premium.value !== null && (
                     <span
                         className={`day-premium${premium.usesFallback ? ' is-fallback' : ''}`}
-                        title={
+                        data-tip={
                             `${formatMoney(premium.value)} premium on this day.` +
                             (premium.usesFallback ? ' Includes recommended values where no captured quote exists.' : '')
                         }
@@ -220,7 +220,7 @@ function DayCard({
                 {collateral !== null && (
                     <span
                         className="day-collateral"
-                        title={`${formatMoney(collateral)} to secure every contract on this day.`}
+                        data-tip={`${formatMoney(collateral)} to secure every contract on this day.`}
                     >
                         C: {formatCompactMoney(collateral)}
                         <span className="sr-only"> collateral</span>
@@ -329,7 +329,7 @@ function RiskGroup({
                     {priced.length > 0 && (
                         <span
                             className={`otm-score${otm === priced.length ? ' clean' : ''}`}
-                            title={`${otm} of ${priced.length} closed out of the money`}
+                            data-tip={`${otm} of ${priced.length} closed out of the money`}
                         >
                             {otm}/{priced.length}
                             <span className="sr-only"> out of the money</span>
@@ -397,7 +397,7 @@ function useTicketGrade(trade: Trade, dayDate: string, numberSource: NumberSourc
 function Figure({ shown, format }: { shown: Displayed; format: (value: number | null) => string }) {
     if (!shown.fallback) return <b>{format(shown.value)}</b>;
     return (
-        <b className="value-quoted" title={FALLBACK_TITLE}>
+        <b className="value-quoted" data-tip={FALLBACK_TITLE}>
             {format(shown.value)}
             <span className="sr-only"> (recommended value)</span>
         </b>
@@ -452,13 +452,13 @@ function Difference({
     value,
     places,
     suffix,
-    title,
+    tooltip,
     invertArrow = false,
 }: {
     value: number;
     places: number;
     suffix: string;
-    title: string;
+    tooltip: string;
     invertArrow?: boolean;
 }) {
     // Round before reading the sign, so a rounding remainder cannot print "-0.00".
@@ -467,7 +467,7 @@ function Difference({
     const arrowUp = invertArrow ? direction === 'down' : direction === 'up';
 
     return (
-        <span className={`value-diff diff-${direction}`} title={title}>
+        <span className={`value-diff diff-${direction}`} data-tip={tooltip}>
             {direction !== 'flat' && (
                 <>
                     <DiffArrow up={arrowUp} />
@@ -499,7 +499,7 @@ function MoneynessBadge({ trade }: { trade: Trade }) {
         `${trade.symbol} closed at ${dollars(trade.closeUnderlying)}` +
         ` on ${formatMDY(trade.closeDate)}, against a ${dollars(trade.strike)} strike.`;
     return (
-        <span className={`moneyness ${trade.moneyness}`} title={title}>
+        <span className={`moneyness ${trade.moneyness}`} data-tip={title}>
             {trade.moneyness.toUpperCase()}
             <span className="sr-only"> ({MONEYNESS_LABELS[trade.moneyness]})</span>{' '}
             {formatSignedPercent(trade.percentFromStrike)}
@@ -517,7 +517,7 @@ function TicketCorner({ trade, band }: { trade: Trade; band: GradeBand | null })
         return (
             <span
                 className="grade-corner green"
-                title={`Has been up ${formatPercent((trade.bestPremiumKept ?? 0) * 100)} of the premium at a close. Open the ticket for when.`}
+                data-tip={`Has been up ${formatPercent((trade.bestPremiumKept ?? 0) * 100)} of the premium at a close. Open the ticket for when.`}
             >
                 <span className="sr-only">up over half the premium at a close</span>
             </span>
@@ -527,7 +527,7 @@ function TicketCorner({ trade, band }: { trade: Trade; band: GradeBand | null })
     return (
         <span
             className={`grade-corner ${band}`}
-            title={`${GRADE_BAND_LABELS[band]} against your grading thresholds. Open the ticket for why.`}
+            data-tip={`${GRADE_BAND_LABELS[band]} against your grading thresholds. Open the ticket for why.`}
         >
             <span className="sr-only">{GRADE_BAND_LABELS[band]} grade</span>
         </span>
@@ -568,7 +568,7 @@ function Ticket({
             {trade.ownedLiveContracts > 0 && (
                 <span
                     className="ownership-icon live"
-                    title={`${trade.ownedLiveContracts} live-owned contract${trade.ownedLiveContracts === 1 ? '' : 's'}`}
+                    data-tip={`${trade.ownedLiveContracts} live-owned contract${trade.ownedLiveContracts === 1 ? '' : 's'}`}
                 >
                     <ZapIcon width={14} height={14} />
                     <span className="sr-only">
@@ -579,7 +579,7 @@ function Ticket({
             {trade.ownedPaperContracts > 0 && (
                 <span
                     className="ownership-icon paper"
-                    title={`${trade.ownedPaperContracts} paper-owned contract${trade.ownedPaperContracts === 1 ? '' : 's'}`}
+                    data-tip={`${trade.ownedPaperContracts} paper-owned contract${trade.ownedPaperContracts === 1 ? '' : 's'}`}
                 >
                     <FlaskConicalIcon width={14} height={14} />
                     <span className="sr-only">
@@ -655,7 +655,7 @@ function Ticket({
                 {/* DTE is as of the day the signal was published, so on an old week it
                     never counts down to zero on its own. */}
                 {expired && (
-                    <span className="expired" title="This contract has already expired.">
+                    <span className="expired" data-tip="This contract has already expired.">
                         Expired
                     </span>
                 )}
@@ -663,7 +663,7 @@ function Ticket({
             <p className="delta-line">
                 &Delta; <Figure shown={delta} format={formatDelta} />
                 {deltaDiff !== null && (
-                    <Difference value={deltaDiff} places={2} suffix="" title={DELTA_DIFF_TITLE} invertArrow />
+                    <Difference value={deltaDiff} places={2} suffix="" tooltip={DELTA_DIFF_TITLE} invertArrow />
                 )}
             </p>
             <p className="stats">
@@ -673,11 +673,11 @@ function Ticket({
                 <span>
                     <Figure shown={premium} format={formatMoney} />
                     {premiumDiff !== null && (
-                        <Difference value={premiumDiff} places={1} suffix="%" title={PREMIUM_DIFF_TITLE} />
+                        <Difference value={premiumDiff} places={1} suffix="%" tooltip={PREMIUM_DIFF_TITLE} />
                     )}{' '}
                     premium
                     {illiquid && (
-                        <span className="illiquid" title="Wide bid/ask spread when this quote was captured.">
+                        <span className="illiquid" data-tip="Wide bid/ask spread when this quote was captured.">
                             !<span className="sr-only"> wide spread</span>
                         </span>
                     )}

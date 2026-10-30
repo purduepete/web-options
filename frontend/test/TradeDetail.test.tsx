@@ -147,7 +147,7 @@ describe('TradeDetail', () => {
         renderDetail();
 
         expect(await screen.findByText('Owned')).toBeTruthy();
-        expect(screen.getByTitle('2 open contracts')).toBeTruthy();
+        expect(document.querySelector('[data-tip="2 open contracts"]')).toBeTruthy();
     });
 
     it('does not show the marker when the contract is not owned', async () => {
@@ -517,7 +517,7 @@ describe('TradeDetail', () => {
             await screen.findByText('Other signals on VST');
             const rows = [...screen.getByRole('dialog').querySelectorAll('.past-signals li')];
             expect(rows[0]?.querySelector('.past-date')?.textContent).toBe('08/18/2026');
-            expect(screen.getByTitle('1 paper-owned contract')).toBeTruthy();
+            expect(document.querySelector('[data-tip="1 paper-owned contract"]')).toBeTruthy();
         });
 
         it('opens the signal a row names when it is clicked', async () => {
@@ -650,7 +650,7 @@ describe('TradeDetail', () => {
 
             await screen.findByText('Other signals on VST');
             const pills = [...screen.getByRole('dialog').querySelectorAll('.tier-pill')];
-            expect(pills.map((pill) => `${pill.className}:${pill.getAttribute('title')}`)).toEqual([
+            expect(pills.map((pill) => `${pill.className}:${pill.getAttribute('data-tip')}`)).toEqual([
                 'tier-pill conservative:Conservative',
                 'tier-pill balanced:Balanced',
                 'tier-pill aggressive:Aggressive',
@@ -695,7 +695,7 @@ describe('TradeDetail', () => {
             const chips = [...screen.getByRole('dialog').querySelectorAll('.moneyness-chip')];
             // 161.20 finished above a $150 strike; 168.40 finished below a $175 one.
             expect(chips.map((chip) => chip.className)).toEqual(['moneyness-chip otm', 'moneyness-chip itm']);
-            expect(chips[0]!.getAttribute('title')).toBe('Closed $161.20 at expiration, against a $150.00 strike.');
+            expect(chips[0]!.getAttribute('data-tip')).toBe('Closed $161.20 at expiration, against a $150.00 strike.');
         });
 
         it('marks a signal still open against where the underlying is today', async () => {
@@ -723,7 +723,9 @@ describe('TradeDetail', () => {
             // No close to judge it by, so today's $182.35 does: below a $190 strike.
             const chip = screen.getByRole('dialog').querySelector('.moneyness-chip')!;
             expect(chip.className).toBe('moneyness-chip itm');
-            expect(chip.getAttribute('title')).toBe('Still open: VST is at $182.35 today, against a $190.00 strike.');
+            expect(chip.getAttribute('data-tip')).toBe(
+                'Still open: VST is at $182.35 today, against a $190.00 strike.'
+            );
         });
     });
 

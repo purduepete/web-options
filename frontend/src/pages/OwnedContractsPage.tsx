@@ -653,7 +653,7 @@ export function OwnedContractsPage() {
                         disabled={priceSource !== 'live' || loading || refreshing}
                         aria-hidden={priceSource === 'live' ? undefined : true}
                         tabIndex={priceSource === 'live' ? undefined : -1}
-                        title="Refresh owned contracts"
+                        data-tip="Refresh owned contracts"
                     >
                         <RotateCcwIcon width={14} height={14} aria-hidden="true" />
                         {refreshing ? 'Refreshing' : 'Refresh'}
@@ -667,7 +667,7 @@ export function OwnedContractsPage() {
                     disabled={atMenuDefaults}
                     aria-hidden={atMenuDefaults || undefined}
                     tabIndex={atMenuDefaults ? -1 : undefined}
-                    title="Reset filters"
+                    data-tip="Reset filters"
                 >
                     <RotateCcwIcon width={14} height={14} />
                     <span>Reset</span>
@@ -754,7 +754,7 @@ export function OwnedContractsPage() {
                                 className="owned-applied-filter"
                                 onClick={filter.clear}
                                 aria-label={`Clear ${filter.label} filter`}
-                                title={`Clear ${filter.label} filter`}
+                                data-tip={`Clear ${filter.label} filter`}
                             >
                                 <span>{filter.label}</span>
                                 <CloseIcon width={12} height={12} />
@@ -841,13 +841,13 @@ function OwnedContractRow({
                 <div className="owned-contract-title">
                     <span
                         className={position.isPaper ? 'owned-contract-source is-paper' : 'owned-contract-source'}
-                        title={ownershipLabel(position)}
+                        data-tip={ownershipLabel(position)}
                     >
                         <SourceIcon position={position} />
                         <span className="sr-only">{ownershipLabel(position)}</span>
                     </span>
                     <span className="owned-contract-symbol">{position.symbol}</span>
-                    <a className="owned-contract-contract" href={signalUrl(position)} title="Open original signal">
+                    <a className="owned-contract-contract" href={signalUrl(position)} data-tip="Open original signal">
                         <span className="owned-contract-contract-label">{contractLabel(position)}</span>
                         {underlying ? (
                             <span className="owned-contract-current-price">
@@ -914,7 +914,7 @@ function OwnedContractRow({
                     <span
                         className={issue ? 'owned-quote-issue' : 'owned-quote-issue is-idle'}
                         aria-hidden={issue === null}
-                        title={issue ?? undefined}
+                        data-tip={issue ?? undefined}
                     >
                         {issue ?? 'Live quote unavailable'}
                     </span>

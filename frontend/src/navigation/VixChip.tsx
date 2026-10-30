@@ -53,7 +53,7 @@ export function VixChip() {
         <span
             className={vix ? `vix-chip${levelClass(vix.value)}` : 'vix-chip pending'}
             aria-hidden={vix ? undefined : true}
-            title={
+            data-tip={
                 vix
                     ? `VIX closed at ${vix.value.toFixed(2)} on ${formatMDY(vix.asOf)}` +
                       `${actualChange === null ? '' : `, ${actualChange} on the session before`}. ` +

@@ -92,7 +92,7 @@ export function ThemeToggle() {
                 type="button"
                 className="theme-toggle"
                 aria-label={`Theme: ${selectedLabel}`}
-                title="Appearance settings"
+                data-tip="Appearance settings"
                 aria-haspopup="dialog"
                 aria-expanded={open}
                 aria-controls="theme-picker-popover"

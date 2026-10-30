@@ -19,7 +19,7 @@ export function AppliedFilters({ filters, className = '' }: { filters: readonly 
                     className="applied-filter"
                     onClick={filter.remove}
                     aria-label={`Remove ${filter.label} filter`}
-                    title={`Remove ${filter.label} filter`}
+                    data-tip={`Remove ${filter.label} filter`}
                 >
                     <span>{filter.label}</span>
                     <CloseIcon width={12} height={12} />

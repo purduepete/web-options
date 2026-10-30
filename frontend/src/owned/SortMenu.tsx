@@ -46,7 +46,7 @@ export function OwnedSortMenu({
                 className="choice-trigger owned-sort-direction"
                 onClick={() => onChange({ ...value, direction: flipped })}
                 aria-label={`Sort direction: ${value.direction === 'asc' ? 'ascending' : 'descending'}`}
-                title={`Sort ${flipped === 'asc' ? 'ascending' : 'descending'}`}
+                data-tip={`Sort ${flipped === 'asc' ? 'ascending' : 'descending'}`}
             >
                 {value.direction === 'asc' ? (
                     <ArrowDownNarrowWideIcon width={15} height={15} />

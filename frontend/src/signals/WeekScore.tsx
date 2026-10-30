@@ -34,7 +34,7 @@ export function WeekScore({
                     Premium:{' '}
                     <b
                         className={premiumUsesFallback ? 'value-quoted' : undefined}
-                        title={
+                        data-tip={
                             premiumUsesFallback
                                 ? 'Includes contracts with no captured quote, counted at their recommended values'
                                 : undefined
@@ -54,7 +54,7 @@ export function WeekScore({
             {priced > 0 && (
                 <span
                     className="score-otm"
-                    title={unpriced > 0 ? `${unpriced} have no close of their own yet.` : undefined}
+                    data-tip={unpriced > 0 ? `${unpriced} have no close of their own yet.` : undefined}
                 >
                     <b className={otm === priced ? 'clean' : undefined}>
                         {otm} of {priced}
@@ -76,11 +76,11 @@ function Drift({ value, samples }: { value: number; samples: number }) {
     const title = `Averaged over the ${samples} contracts quoted on the morning they were signalled.`;
 
     if (rounded === 0) {
-        return <span title={title}>Actual premium matched VADER</span>;
+        return <span data-tip={title}>Actual premium matched VADER</span>;
     }
 
     return (
-        <span className={`score-drift ${rounded < 0 ? 'under' : 'over'}`} title={title}>
+        <span className={`score-drift ${rounded < 0 ? 'under' : 'over'}`} data-tip={title}>
             Actual premium <b>{Math.abs(rounded).toFixed(1)}%</b> {rounded < 0 ? 'under' : 'over'} VADER
         </span>
     );

@@ -565,7 +565,7 @@ export function LiveSignalsPage() {
                     a week to leave. The slot holds the control run in place. */}
                 <span className="summary-link-slot">
                     {data && (
-                        <Link className="summary-link" to="/summary" title="Summary" aria-label="Summary">
+                        <Link className="summary-link" to="/summary" data-tip="Summary" aria-label="Summary">
                             <TableIcon width={16} height={16} />
                         </Link>
                     )}
@@ -578,7 +578,7 @@ export function LiveSignalsPage() {
                     disabled={atMenuDefaults}
                     aria-hidden={atMenuDefaults || undefined}
                     tabIndex={atMenuDefaults ? -1 : undefined}
-                    title="Reset filters"
+                    data-tip="Reset filters"
                 >
                     <RotateCcwIcon width={14} height={14} />
                     <span>Reset</span>

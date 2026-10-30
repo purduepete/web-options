@@ -4,6 +4,7 @@ import { FavoriteShortcuts } from '../navigation/FavoriteShortcuts';
 import { Navbar } from '../navigation/Navbar';
 import { CommandPaletteHost } from '../search/CommandPaletteHost';
 import { ShortcutsOverlay } from '../shortcuts/ShortcutsOverlay';
+import { TooltipLayer } from './Tooltip';
 import { ToastPortal, useToasts } from './Toasts';
 
 export function Layout() {
@@ -21,6 +22,7 @@ export function Layout() {
             </Fragment>
             <CommandPaletteHost open={paletteOpen} onOpenChange={setPaletteOpen} />
             <ShortcutsOverlay />
+            <TooltipLayer key={pathname} />
             <ToastPortal toasts={toasts} onDismiss={dismiss} />
         </>
     );

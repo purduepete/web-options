@@ -111,7 +111,7 @@ export function Navbar({
                         className={menuOpen ? 'menu-trigger open' : 'menu-trigger'}
                         aria-expanded={menuOpen}
                         aria-controls="mega-panel"
-                        title="Menu (Ctrl \)"
+                        data-tip="Menu (Ctrl \)"
                         onClick={() => setMenuOpen((open) => !open)}
                     >
                         Menu
@@ -130,7 +130,7 @@ export function Navbar({
                                 type="button"
                                 className="search-trigger"
                                 aria-label="Search"
-                                title="Search (Ctrl K)"
+                                data-tip="Search (Ctrl K)"
                                 onClick={onOpenSearch}
                             >
                                 <SearchIcon />
@@ -141,7 +141,7 @@ export function Navbar({
                             type="button"
                             className="reload-trigger"
                             aria-label="Reload page"
-                            title="Reload page"
+                            data-tip="Reload page"
                             onClick={() => window.location.reload()}
                         >
                             <RefreshCwIcon />
@@ -227,11 +227,11 @@ function ItemList({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (
                     {item.path ? (
                         // The description no longer has a line of its own. Keep it as
                         // the tooltip so the wording survives the tighter list.
-                        <NavLink to={item.path} end className="nav-link" title={item.description}>
+                        <NavLink to={item.path} end className="nav-link" data-tip={item.description}>
                             {item.label}
                         </NavLink>
                     ) : (
-                        <span className="nav-link" title={item.description}>
+                        <span className="nav-link" data-tip={item.description}>
                             {item.label} <span className="badge">soon</span>
                         </span>
                     )}
@@ -244,7 +244,7 @@ function ItemList({ items, onNotify }: { items: readonly NavItem[]; onNotify?: (
                             aria-label={
                                 isFavorite(item.id) ? `Remove ${item.label} from favorites` : `Favorite ${item.label}`
                             }
-                            title={isFavorite(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                            data-tip={isFavorite(item.id) ? 'Remove from favorites' : 'Add to favorites'}
                             onClick={() => {
                                 const changed = toggleFavorite(item.id);
                                 if (!changed && isFull) {
@@ -290,7 +290,7 @@ function PillRow({ icon, title, items }: { icon: ReactNode; title: string; items
             <ul className="pills">
                 {items.map((item) => (
                     <li key={item.id}>
-                        <NavLink to={item.path ?? '/'} end className="pill" title={item.description}>
+                        <NavLink to={item.path ?? '/'} end className="pill" data-tip={item.description}>
                             {item.label}
                         </NavLink>
                     </li>

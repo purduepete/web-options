@@ -486,7 +486,7 @@ export function ContractHistoryPage() {
                                             <button
                                                 type="button"
                                                 aria-label="Oldest date"
-                                                title="Oldest date"
+                                                data-tip="Oldest date"
                                                 disabled={dayIndex === days.length - 1}
                                                 onClick={() => goToDay(days.length - 1)}
                                             >
@@ -495,7 +495,7 @@ export function ContractHistoryPage() {
                                             <button
                                                 type="button"
                                                 aria-label="Earlier date"
-                                                title="Earlier date"
+                                                data-tip="Earlier date"
                                                 disabled={dayIndex === days.length - 1}
                                                 onClick={() => goToDay(dayIndex + 1)}
                                             >
@@ -504,7 +504,7 @@ export function ContractHistoryPage() {
                                             <button
                                                 type="button"
                                                 aria-label="Later date"
-                                                title="Later date"
+                                                data-tip="Later date"
                                                 disabled={dayIndex === 0}
                                                 onClick={() => goToDay(dayIndex - 1)}
                                             >
@@ -513,7 +513,7 @@ export function ContractHistoryPage() {
                                             <button
                                                 type="button"
                                                 aria-label="Newest date"
-                                                title="Newest date"
+                                                data-tip="Newest date"
                                                 disabled={dayIndex === 0}
                                                 onClick={() => goToDay(0)}
                                             >
@@ -673,7 +673,7 @@ export function ContractHistoryPage() {
                                         <button
                                             type="button"
                                             aria-label="Previous contract"
-                                            title="Previous contract"
+                                            data-tip="Previous contract"
                                             disabled={position === 0}
                                             onClick={() => openContract(siblings[position - 1])}
                                         >
@@ -682,7 +682,7 @@ export function ContractHistoryPage() {
                                         <button
                                             type="button"
                                             aria-label="Next contract"
-                                            title="Next contract"
+                                            data-tip="Next contract"
                                             disabled={position === siblings.length - 1}
                                             onClick={() => openContract(siblings[position + 1])}
                                         >
@@ -700,7 +700,7 @@ export function ContractHistoryPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${history.contract.symbol} Seeking Alpha`}
-                                    title={`${history.contract.symbol} Seeking Alpha`}
+                                    data-tip={`${history.contract.symbol} Seeking Alpha`}
                                 >
                                     <span className="site-mark site-seekingalpha" aria-hidden="true" />
                                 </a>
@@ -709,7 +709,7 @@ export function ContractHistoryPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${history.contract.symbol} TradingView`}
-                                    title={`${history.contract.symbol} TradingView`}
+                                    data-tip={`${history.contract.symbol} TradingView`}
                                 >
                                     <span className="site-mark site-tradingview" aria-hidden="true" />
                                 </a>

@@ -13,7 +13,7 @@ export function CautionBadge({ symbol }: { symbol: string }) {
     if (!symbols.has(symbol.toUpperCase())) return null;
 
     return (
-        <span className="caution-flag" title={TITLE}>
+        <span className="caution-flag" data-tip={TITLE}>
             <AlertIcon width={14} height={14} />
             <span className="sr-only"> caution</span>
         </span>

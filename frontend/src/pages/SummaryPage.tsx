@@ -380,7 +380,7 @@ export function SummaryPage() {
                     disabled={atDefaults}
                     aria-hidden={atDefaults || undefined}
                     tabIndex={atDefaults ? -1 : undefined}
-                    title="Reset filters"
+                    data-tip="Reset filters"
                 >
                     <RotateCcwIcon width={14} height={14} />
                     <span>Reset</span>

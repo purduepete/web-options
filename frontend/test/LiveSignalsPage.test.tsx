@@ -230,7 +230,7 @@ describe('LiveSignalsPage', () => {
         // A poor grade, but the trade has already made better than half the premium.
         const poor = await screen.findByRole('button', { name: /^POOR/ });
         expect(poor.querySelector('.grade-corner.green')).toBeTruthy();
-        expect(poor.querySelector('.grade-corner')?.getAttribute('title')).toContain('62.0% of the premium');
+        expect(poor.querySelector('.grade-corner')?.getAttribute('data-tip')).toContain('62.0% of the premium');
         // It is history, so it needs no live price and outlasts the grading window.
         expect(screen.getByRole('button', { name: /^OLD/ }).querySelector('.grade-corner.green')).toBeTruthy();
         // Exactly half is not over it, so this one falls back to its own grade.
@@ -513,7 +513,7 @@ describe('LiveSignalsPage', () => {
 
         const ticker = screen.getByText('PAPER $100P').closest('.ticker');
         expect(ticker?.firstElementChild?.classList.contains('ownership-badges')).toBe(true);
-        expect(screen.getByTitle('1 paper-owned contract')).toBeTruthy();
+        expect(document.querySelector('[data-tip="1 paper-owned contract"]')).toBeTruthy();
     });
 
     it('keeps the grade menu open while selecting multiple colors', async () => {
@@ -1115,12 +1115,12 @@ describe('LiveSignalsPage week score', () => {
     it('totals the collateral each day would take to secure', async () => {
         renderPage();
         const monday = await screen.findByRole('region', { name: 'Monday 08/11' });
-        expect(within(monday).getByTitle('$20,000 to secure every contract on this day.').textContent).toContain(
-            'C: $20K'
-        );
+        expect(
+            monday.querySelector('[data-tip="$20,000 to secure every contract on this day."]')?.textContent
+        ).toContain('C: $20K');
 
         const tuesday = screen.getByRole('region', { name: 'Tuesday 08/12' });
-        expect(within(tuesday).getByTitle('$10,000 to secure every contract on this day.')).toBeTruthy();
+        expect(tuesday.querySelector('[data-tip="$10,000 to secure every contract on this day."]')).toBeTruthy();
     });
 
     it('shows each day premium in thousands with one useful decimal', async () => {
@@ -1137,7 +1137,7 @@ describe('LiveSignalsPage week score', () => {
         renderPage();
 
         const monday = await screen.findByRole('region', { name: 'Monday 08/11' });
-        expect(within(monday).getByTitle('$37,500 premium on this day.').textContent).toContain('P: $37.5K');
+        expect(monday.querySelector('[data-tip="$37,500 premium on this day."]')?.textContent).toContain('P: $37.5K');
     });
 
     it('keeps a day premium below one thousand in dollars', async () => {
@@ -1147,7 +1147,7 @@ describe('LiveSignalsPage week score', () => {
         renderPage();
 
         const monday = await screen.findByRole('region', { name: 'Monday 08/11' });
-        expect(within(monday).getByTitle('$500 premium on this day.').textContent).toContain('P: $500');
+        expect(monday.querySelector('[data-tip="$500 premium on this day."]')?.textContent).toContain('P: $500');
         expect(within(monday).queryByText(/0\.5K/)).toBeNull();
     });
 
@@ -1333,7 +1333,7 @@ describe('LiveSignalsPage moneyness', () => {
         expect(found?.className).toContain('otm');
         expect(found?.textContent).toContain('OTM');
         expect(found?.textContent).toContain('+3.2%');
-        expect(found?.getAttribute('title')).toContain('8/14/2025');
+        expect(found?.getAttribute('data-tip')).toContain('8/14/2025');
     });
 
     it('reads a close below the strike as in the money, signed negative', async () => {
