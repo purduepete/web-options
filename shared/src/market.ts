@@ -29,6 +29,8 @@ export interface PastSignal {
     strike: number | null;
     expiration: IsoDate | null;
     annualizedYield: number | null;
+    strategyType: string | null;
+    collateralBucket: string | null;
     tier: string | null;
     isTopPick: boolean;
     closeAtExpiration: number | null;

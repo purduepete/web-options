@@ -145,7 +145,7 @@ export async function writeCached(
  */
 const PAST_SIGNALS_QUERY = `
 SELECT
-    report_date, strike, expiration, annualized_yield, tier, is_top_pick,
+    report_date, strike, expiration, annualized_yield, strategy_type, collateral_bucket, tier, is_top_pick,
     owned_live_contracts, owned_paper_contracts
 FROM (
     SELECT
@@ -160,6 +160,8 @@ FROM (
             s.strike,
             s.expiration,
             s.annualized_yield,
+            s.strategy_type,
+            s.collateral_bucket,
             COALESCE(s.tier, s.profile) AS tier,
             MAX(CAST(s.is_top_pick AS INT)) OVER (
                 PARTITION BY s.report_date, s.strike, s.expiration
@@ -239,6 +241,8 @@ export async function pastSignalsFor(
         strike: toNumber(row.strike),
         expiration: sqlDateToIso(row.expiration),
         annualizedYield: toNumber(row.annualized_yield),
+        strategyType: (row.strategy_type as string | null) ?? null,
+        collateralBucket: (row.collateral_bucket as string | null) ?? null,
         tier: (row.tier as string | null) ?? null,
         isTopPick: Boolean(toNumber(row.is_top_pick)),
         ownedLiveContracts: Math.trunc(toNumber(row.owned_live_contracts) ?? 0),

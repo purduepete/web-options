@@ -336,6 +336,31 @@
         justify-self: start;
     }
 
+    /* Missing badges must not shift the cells that follow into their tracks. */
+    .past-row > .past-date {
+        grid-column: 1;
+    }
+
+    .past-row > .past-ownership {
+        grid-column: 2;
+    }
+
+    .past-row > .tier-pill {
+        grid-column: 3;
+    }
+
+    .past-row > .past-strike {
+        grid-column: 4;
+    }
+
+    .past-row > .moneyness-chip {
+        grid-column: 5;
+    }
+
+    .past-row > .outcome-chip {
+        grid-column: 6;
+    }
+
     /* Ragged left, flush right: a chip is read by its edge, and only the right one
        is common to a three-letter and a nine-letter label. */
     .past-row > .moneyness-chip,
@@ -401,6 +426,13 @@
     .detail-market > .enter > .trades-section,
     .detail-market > .enter > .chart-section {
         border-top: none;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1152px) {
+    .past-signals li .past-row {
+        grid-template-columns: 4.5rem 2rem 2rem minmax(0, 1fr) 2.5rem 8rem;
+        column-gap: 0.25rem;
     }
 }
 

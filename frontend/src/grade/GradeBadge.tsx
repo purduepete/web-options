@@ -63,7 +63,15 @@ const TIER_PILL_LABELS = {
     aggressive: 'Aggressive',
 } as const;
 
-export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: boolean }) {
+export function PastSignalBadge({
+    tier,
+    isTopPick,
+    collateralBucket,
+}: {
+    tier: string | null;
+    isTopPick: boolean;
+    collateralBucket: string | null;
+}) {
     if (isTopPick) {
         return (
             <span className="tier-pill tp" data-tip="Top pick">
@@ -74,12 +82,16 @@ export function TierPill({ tier, isTopPick }: { tier: string | null; isTopPick: 
     }
 
     const normalized = tier?.toLowerCase();
-    if (normalized !== 'conservative' && normalized !== 'balanced' && normalized !== 'aggressive') return null;
+    if (normalized === 'conservative' || normalized === 'balanced' || normalized === 'aggressive') {
+        return (
+            <span className={`tier-pill ${normalized}`} data-tip={TIER_PILL_LABELS[normalized]}>
+                {normalized.charAt(0).toUpperCase()}
+                <span className="sr-only"> ({TIER_PILL_LABELS[normalized]})</span>
+            </span>
+        );
+    }
 
-    return (
-        <span className={`tier-pill ${normalized}`} data-tip={TIER_PILL_LABELS[normalized]}>
-            {normalized.charAt(0).toUpperCase()}
-            <span className="sr-only"> ({TIER_PILL_LABELS[normalized]})</span>
-        </span>
-    );
+    return collateralBucket?.trim().toUpperCase() === 'ETF' ? (
+        <span className="tier-pill classification-pill">ETF</span>
+    ) : null;
 }

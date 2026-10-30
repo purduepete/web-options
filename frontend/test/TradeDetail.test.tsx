@@ -21,6 +21,13 @@ const { TradeDetail } = await import('../src/signals/TradeDetail');
 const { GradeSettingsProvider } = await import('../src/grade/GradeSettingsProvider');
 const { CautionProvider } = await import('../src/caution/CautionProvider');
 
+type TestPastSignal = Omit<SymbolDetail['pastSignals'][number], 'strategyType' | 'collateralBucket'> &
+    Partial<Pick<SymbolDetail['pastSignals'][number], 'strategyType' | 'collateralBucket'>>;
+
+type TestDetail = Omit<Partial<SymbolDetail>, 'pastSignals'> & {
+    pastSignals?: TestPastSignal[];
+};
+
 function trade(extra: Partial<Trade> = {}): Trade {
     return {
         symbol: 'VST',
@@ -52,7 +59,8 @@ function trade(extra: Partial<Trade> = {}): Trade {
     };
 }
 
-function detail(extra: Partial<SymbolDetail> = {}): SymbolDetail {
+function detail(extra: TestDetail = {}): SymbolDetail {
+    const { pastSignals = [], ...rest } = extra;
     return {
         symbol: 'VST',
         longName: 'Vistra Corp.',
@@ -67,11 +75,15 @@ function detail(extra: Partial<SymbolDetail> = {}): SymbolDetail {
             { date: '2026-08-17', close: 180.1 },
             { date: '2026-08-18', close: 182.35 },
         ],
-        pastSignals: [],
         recentSignals: null,
         ownedContracts: null,
         outcome: null,
-        ...extra,
+        ...rest,
+        pastSignals: pastSignals.map((signal) => ({
+            strategyType: null,
+            collateralBucket: null,
+            ...signal,
+        })),
     };
 }
 
@@ -655,6 +667,109 @@ describe('TradeDetail', () => {
                 'tier-pill balanced:Balanced',
                 'tier-pill aggressive:Aggressive',
                 'tier-pill tp:Top pick',
+            ]);
+        });
+
+        it('shows ETF only when no risk or Top Pick badge applies', async () => {
+            const signal: SymbolDetail['pastSignals'][number] = {
+                reportDate: '2026-08-13',
+                strike: 160,
+                expiration: '2026-09-11',
+                annualizedYield: 33,
+                strategyType: 'CSP',
+                collateralBucket: 'ETF',
+                tier: null,
+                isTopPick: false,
+                outcome: 'open',
+                closeAtExpiration: null,
+                ownedLiveContracts: 0,
+                ownedPaperContracts: 0,
+            };
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    pastSignals: [
+                        signal,
+                        { ...signal, reportDate: '2026-08-12', strike: 161, tier: 'balanced' },
+                        { ...signal, reportDate: '2026-08-11', strike: 162, isTopPick: true },
+                        { ...signal, reportDate: '2026-08-10', strike: 163, collateralBucket: null },
+                        {
+                            ...signal,
+                            reportDate: '2026-08-09',
+                            strike: 164,
+                            strategyType: null,
+                            collateralBucket: ' etf ',
+                        },
+                        { ...signal, reportDate: '2026-08-08', strike: 165, collateralBucket: '<$10k' },
+                    ],
+                })
+            );
+            renderDetail();
+
+            await screen.findByText('Other signals on VST');
+            const rows = [...screen.getByRole('dialog').querySelectorAll('.past-row')];
+            expect(
+                rows.map((row) => ({
+                    tier: row.querySelector('.tier-pill:not(.classification-pill)')?.textContent ?? null,
+                    classifications: [...row.querySelectorAll('.classification-pill')].map((pill) => pill.textContent),
+                }))
+            ).toEqual([
+                { tier: null, classifications: ['ETF'] },
+                { tier: 'B (Balanced)', classifications: [] },
+                { tier: 'TP (Top pick)', classifications: [] },
+                { tier: null, classifications: [] },
+                { tier: null, classifications: ['ETF'] },
+                { tier: null, classifications: [] },
+            ]);
+        });
+
+        it('renders past signals with and without tier and moneyness badges', async () => {
+            const signal: SymbolDetail['pastSignals'][number] = {
+                reportDate: '2026-10-30',
+                strike: 75,
+                expiration: '2026-11-20',
+                annualizedYield: 34.6,
+                strategyType: null,
+                collateralBucket: null,
+                tier: null,
+                isTopPick: false,
+                outcome: 'open',
+                closeAtExpiration: null,
+                ownedLiveContracts: 0,
+                ownedPaperContracts: 0,
+            };
+            fetchSymbolDetail.mockResolvedValue(
+                detail({
+                    price: null,
+                    pastSignals: [
+                        signal,
+                        { ...signal, reportDate: '2026-10-29', tier: 'balanced' },
+                        { ...signal, reportDate: '2026-10-28', closeAtExpiration: 80, outcome: 'expired_otm' },
+                        {
+                            ...signal,
+                            reportDate: '2026-10-27',
+                            tier: 'balanced',
+                            closeAtExpiration: 80,
+                            outcome: 'expired_otm',
+                        },
+                    ],
+                })
+            );
+            renderDetail({ onOpenSignal: vi.fn() });
+
+            await screen.findByText('Other signals on VST');
+            const rows = [...screen.getByRole('dialog').querySelectorAll('.past-row')];
+            expect(
+                rows.map((row) => ({
+                    tier: row.querySelector('.tier-pill') !== null,
+                    moneyness: row.querySelector('.moneyness-chip') !== null,
+                    strike: row.querySelector('.past-strike')?.textContent,
+                    outcome: row.querySelector('.outcome-chip') !== null,
+                }))
+            ).toEqual([
+                { tier: false, moneyness: false, strike: '$75.00P · 34.6%', outcome: true },
+                { tier: true, moneyness: false, strike: '$75.00P · 34.6%', outcome: true },
+                { tier: false, moneyness: true, strike: '$75.00P · 34.6%', outcome: true },
+                { tier: true, moneyness: true, strike: '$75.00P · 34.6%', outcome: true },
             ]);
         });
 

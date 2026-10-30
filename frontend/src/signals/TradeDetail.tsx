@@ -11,7 +11,7 @@ import {
 } from '../components/icons';
 import { SymbolMark } from '../components/SymbolMark';
 import { Loading } from '../components/Loading';
-import { GradeBadge, MoneynessChip, OutcomeChip, TierPill } from '../grade/GradeBadge';
+import { GradeBadge, MoneynessChip, OutcomeChip, PastSignalBadge } from '../grade/GradeBadge';
 import { useGradeSettings } from '../grade/GradeSettingsProvider';
 import { useVixValue } from '../grade/VixProvider';
 import { useCautionSymbols } from '../caution/CautionProvider';
@@ -617,7 +617,11 @@ export function TradeDetail({
                                                         )}
                                                         {!owned && <span aria-hidden="true" />}
                                                     </span>
-                                                    <TierPill tier={signal.tier} isTopPick={signal.isTopPick} />
+                                                    <PastSignalBadge
+                                                        tier={signal.tier}
+                                                        isTopPick={signal.isTopPick}
+                                                        collateralBucket={signal.collateralBucket}
+                                                    />
                                                     <span className="past-strike">
                                                         {formatCents(signal.strike)}P ·{' '}
                                                         {formatPercent(signal.annualizedYield)}

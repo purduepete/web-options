@@ -36,6 +36,15 @@
     border-color: var(--aggressive);
 }
 
+.tier-pill.classification-pill {
+    color: var(--text-muted);
+    border-color: var(--border-soft);
+    max-width: 100%;
+    padding-inline: 0.1rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
 /* The existing semantic tokens, used directly. A --grade-green alias would be a
    second name for --positive and one more thing to keep in step across themes. */
 .grade-badge.green {

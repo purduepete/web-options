@@ -21,6 +21,7 @@ const calendarGridCss = read('../src/calendars/CalendarGrid.css');
 const calendarGridTsx = read('../src/calendars/CalendarGrid.tsx');
 const indexCss = read('../src/index.css');
 const tradeDetailCss = read('../src/signals/TradeDetail.css').replace(/\r\n/g, '\n');
+const gradeBadgeCss = read('../src/grade/GradeBadge.css');
 
 /** The bodies of every `@media` block in a stylesheet. */
 function mediaBlocks(css: string): string[] {
@@ -73,10 +74,41 @@ describe('week grid stylesheets', () => {
         expect(weekGridCss).toMatch(/\.day-card\s*\{[^}]*grid-template-rows:\s*subgrid/);
     });
 
-    it('reserves a desktop track for the trade detail tier pill', () => {
+    it('reserves the same desktop track for each trade detail badge', () => {
         expect(tradeDetailCss).toMatch(
             /\.past-signals li \.past-row\s*\{[^}]*grid-template-columns:\s*6rem\s+1\.75rem\s+2rem\s+minmax\(0,\s*1fr\)\s+3\.5rem\s+8rem/
         );
+        expect(gradeBadgeCss).toMatch(/\.tier-pill\.classification-pill\s*\{[^}]*max-width:\s*100%/);
+    });
+
+    it('keeps each past-signal cell in its column when optional badges are missing', () => {
+        const grid = mediaBlocks(tradeDetailCss).find((block) =>
+            /\.past-signals li \.past-row\s*\{[^}]*display:\s*grid/.test(block)
+        );
+        expect(grid).toBeDefined();
+
+        for (const [cell, column] of [
+            ['past-date', 1],
+            ['past-ownership', 2],
+            ['tier-pill', 3],
+            ['past-strike', 4],
+            ['moneyness-chip', 5],
+            ['outcome-chip', 6],
+        ] as const) {
+            expect(grid).toMatch(
+                new RegExp(`\\.past-row\\s*>\\s*\\.${cell}\\s*\\{[^}]*grid-column:\\s*${column}\\s*;`)
+            );
+        }
+    });
+
+    it('leaves room for strike values beside the chart at tablet widths', () => {
+        const compact = /@media\s*\(min-width:\s*1024px\)\s*and\s*\(max-width:\s*1152px\)\s*\{([\s\S]*?)\n\}/.exec(
+            tradeDetailCss
+        )?.[1];
+        expect(compact).toMatch(
+            /\.past-signals li \.past-row\s*\{[^}]*grid-template-columns:\s*4\.5rem\s+2rem\s+2rem\s+minmax\(0,\s*1fr\)\s+2\.5rem\s+8rem/
+        );
+        expect(compact).toMatch(/column-gap:\s*0\.25rem/);
     });
 
     it('gives the calendar the shared card styling before its own overrides', () => {
