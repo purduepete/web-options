@@ -640,9 +640,12 @@ html:has(.history-page) {
     .history-result {
         gap: 0.35rem;
     }
-    /* The page fills one screen whatever is open, and the chart takes the height
-       left over. Only when that would drop the chart below its floor does the
-       page scroll. */
+}
+/* The page fills one screen whatever is open, and the chart takes the height
+   left over. Only when that would drop the chart below its floor does the
+   page scroll. Tablets get this as well as desktops; phones keep the fixed
+   chart height and scroll. */
+@media (min-width: 641px) and (min-height: 600px) {
     .history-page:has(.history-result) {
         height: calc(100dvh - var(--navbar-height, 3.5rem));
     }
@@ -787,5 +790,9 @@ html:has(.history-page) {
 @media (pointer: coarse) {
     .history-summary-details > summary {
         min-height: 44px;
+    }
+    /* Overnight changes are a desktop aid; on iPhone and iPad the chart gets the room. */
+    .history-session-changes {
+        display: none;
     }
 }

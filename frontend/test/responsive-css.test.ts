@@ -229,6 +229,24 @@ describe('contract history overlays and summaries', () => {
         expect(navbar).toContain('z-index: 20');
     });
 
+    it('lets the chart fill the remaining height on tablets as well as desktops', () => {
+        const fill = mediaBlocks(contractHistoryCss).find(
+            ({ condition }) => /min-width:\s*641px/.test(condition) && /min-height:\s*600px/.test(condition)
+        );
+
+        expect(fill?.condition ?? '').not.toContain('pointer');
+        expect(fill?.body ?? '').toMatch(/\.history-page:has\(\.history-result\)\s*\{[^}]*100dvh/);
+        expect(fill?.body ?? '').toMatch(/\.history-chart\s*\{[^}]*flex: 1 1 0/);
+    });
+
+    it('hides overnight changes on touch devices', () => {
+        const touch = mediaBlocks(contractHistoryCss).filter(
+            ({ condition }) => condition.trim() === '(pointer: coarse)'
+        );
+
+        expect(touch.some(({ body }) => /\.history-session-changes\s*\{[^}]*display: none/.test(body))).toBe(true);
+    });
+
     it('gives summary labels room at narrower desktop widths and keeps them on one line', () => {
         const narrowDesktop = mediaBlocks(contractHistoryCss).find(
             ({ condition }) => /min-width:\s*1101px/.test(condition) && /max-width:\s*1280px/.test(condition)
