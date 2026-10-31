@@ -1,4 +1,5 @@
 import { useDelayedLoading } from '../hooks/useDelayedLoading';
+import { useFirstLoadPending } from '../hooks/useFirstLoad';
 import './Loading.css';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 /** Held back a moment, so a quick answer never flashes a spinner on the way in. */
 export function Loading({ label = 'Loading', page = false }: Props) {
+    useFirstLoadPending(true);
     const show = useDelayedLoading(true);
 
     if (!show) return null;

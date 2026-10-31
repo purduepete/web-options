@@ -286,8 +286,6 @@ export function OwnedContractsPage() {
                         setGeneratedAt(result.generatedAt);
                         setFromCache(false);
                     }
-                    // The rows are worth reading before the signals that annotate them.
-                    setLoading(false);
                     const weeks = [...new Set(next.map((position) => weekStart(position.transactionDate)))];
                     const responses = await Promise.allSettled(weeks.map((week) => fetchWeekSignals(week)));
                     if (id !== latestLoad.current) return;

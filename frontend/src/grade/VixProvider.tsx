@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { VixQuote } from '@weboptions/shared';
 import { fetchVix } from '../api';
+import { useFirstLoadPending } from '../hooks/useFirstLoad';
 
 /**
  * The last VIX close, fetched once and shared, because two very different things
@@ -14,6 +15,8 @@ const VixContext = createContext<VixQuote | null>(null);
 
 export function VixProvider({ children }: { children: ReactNode }) {
     const [vix, setVix] = useState<VixQuote | null>(null);
+    const [settled, setSettled] = useState(false);
+    useFirstLoadPending(!settled);
 
     useEffect(() => {
         let cancelled = false;
@@ -21,7 +24,10 @@ export function VixProvider({ children }: { children: ReactNode }) {
             .then((response) => {
                 if (!cancelled) setVix(response.vix);
             })
-            .catch(() => undefined);
+            .catch(() => undefined)
+            .finally(() => {
+                if (!cancelled) setSettled(true);
+            });
         return () => {
             cancelled = true;
         };

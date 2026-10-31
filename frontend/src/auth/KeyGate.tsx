@@ -26,7 +26,7 @@ export function KeyGate() {
     }
 
     return (
-        <main>
+        <main data-first-load-error>
             <h1>Web Options</h1>
             <form onSubmit={onSubmit}>
                 <p>

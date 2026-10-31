@@ -1,0 +1,17 @@
+html[data-first-load='pending'] #root {
+    visibility: hidden;
+}
+html[data-first-load='pending'] .loading-page {
+    visibility: visible;
+}
+html[data-first-load='ready'] #root {
+    animation: enter 600ms ease-out;
+}
+.first-load-content {
+    animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    html[data-first-load='ready'] #root {
+        animation: none !important;
+    }
+}

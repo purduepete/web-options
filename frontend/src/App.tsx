@@ -7,6 +7,7 @@ import { GradeSettingsProvider } from './grade/GradeSettingsProvider';
 import { VixProvider } from './grade/VixProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
+import { Loading } from './components/Loading';
 import { FavoritesProvider } from './navigation/FavoritesProvider';
 import { RecentlyVisitedProvider } from './navigation/RecentlyVisitedProvider';
 import { ApiKeyPage } from './pages/ApiKeyPage';
@@ -60,7 +61,7 @@ function Gate() {
                                         <Route
                                             path="contract-history"
                                             element={
-                                                <Suspense fallback={null}>
+                                                <Suspense fallback={<Loading page />}>
                                                     <ContractHistoryPage />
                                                 </Suspense>
                                             }

@@ -1,5 +1,13 @@
 # weboptions
 
+## First entry
+
+The shell and active page stay laid out but hidden until the initial page and shared
+grading, caution and VIX reads settle, then enter together over 600ms. Initial errors or
+sign-in reveal the app immediately. Refreshes and later routes keep the shell visible.
+Reduced motion removes the entrance animation. Owned-contract signals settle before
+the initial rows enter.
+
 Personal, single-user dashboards for options-trading data. React front end, Express
 API, Azure SQL. Deployment can use Cloudflare Access and a private Tailscale fallback.
 

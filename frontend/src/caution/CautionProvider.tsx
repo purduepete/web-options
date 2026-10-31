@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { UnauthorizedError, describeFailure, fetchCautionSymbols, saveCautionSymbols } from '../api';
+import { useFirstLoadPending } from '../hooks/useFirstLoad';
 
 /**
  * The global caution list, loaded once and shared.
@@ -28,6 +29,7 @@ export function CautionProvider({ children }: { children: ReactNode }) {
     const [symbols, setSymbols] = useState<ReadonlySet<string>>(EMPTY);
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    useFirstLoadPending(!loaded && !error, !!error);
 
     useEffect(() => {
         let cancelled = false;

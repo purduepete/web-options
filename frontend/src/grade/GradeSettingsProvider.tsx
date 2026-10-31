@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { GRADE_DEFAULTS, type GradeSettings } from '@weboptions/shared';
 import { UnauthorizedError, describeFailure, fetchGradeSettings, saveGradeSettings } from '../api';
+import { useFirstLoadPending } from '../hooks/useFirstLoad';
 
 /**
  * The four grading thresholds, loaded once and shared, for the same reason the
@@ -23,6 +24,7 @@ export function GradeSettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<GradeSettings>(GRADE_DEFAULTS);
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    useFirstLoadPending(!loaded && !error, !!error);
 
     useEffect(() => {
         let cancelled = false;

@@ -16,6 +16,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     }
 
     override componentDidCatch(error: Error, info: ErrorInfo): void {
+        if (document.documentElement.dataset.firstLoad === 'pending') {
+            document.documentElement.dataset.firstLoad = 'error';
+        }
         console.error('[weboptions] render failed', error, info.componentStack);
     }
 
