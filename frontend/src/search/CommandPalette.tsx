@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import type { Command, CommandIcon, CommandResult } from './commandModel';
 import type { Range } from './fuzzy';
 import { rankCommands } from './fuzzy';
+import { isAppleTouchDevice } from '../device';
 import { ClockIcon, KeyIcon, PageIcon, SearchIcon, SlidersIcon, StarIcon, SunIcon } from '../components/icons';
 import './CommandPalette.css';
 
@@ -32,6 +33,7 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
     const [active, setActive] = useState(0);
     const [announcement, setAnnouncement] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const dialogRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
     const restoreFocusTo = useRef<Element | null>(null);
     const closeSource = useRef<'pointer' | 'keyboard' | 'tab' | null>(null);
@@ -52,7 +54,8 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
         if (!open) return;
         restoreFocusTo.current = document.activeElement;
         closeSource.current = null;
-        inputRef.current?.focus();
+        // On iPhone and iPad, focusing the search field would open the software keyboard.
+        (isAppleTouchDevice() ? dialogRef : inputRef).current?.focus();
 
         return () => {
             const previous = restoreFocusTo.current;
@@ -163,7 +166,14 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
                 }}
             />
 
-            <div className="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+            <div
+                ref={dialogRef}
+                className="palette"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Command palette"
+                tabIndex={-1}
+            >
                 <div className="palette-input">
                     <SearchIcon />
                     <input

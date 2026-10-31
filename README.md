@@ -517,6 +517,9 @@ ordered Light, Dark, Midnight, System. Selecting a theme keeps
 the picker open; press the palette icon again, click outside, move focus outside,
 or press Escape to close it. The header reload button uses the two-arrow refresh
 icon and reloads the page.
+On iPhone and iPad, the Search command palette opens with focus on the dialog so the
+software keyboard stays closed; desktop browsers still focus the search field, and
+tapping it searches as usual.
 On phones, the theme popup spans the navbar's safe-area gutters rather than
 extending left from the palette button; short screens can scroll its contents.
 Midnight is the default. Preferences use plain strings in `config_theme_preference`;

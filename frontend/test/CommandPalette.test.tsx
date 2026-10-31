@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CommandPalette } from '../src/search/CommandPalette';
@@ -285,3 +285,54 @@ function nameOf(element: HTMLElement): string {
     const id = element.getAttribute('aria-labelledby');
     return id ? (document.getElementById(id)?.textContent ?? '') : '';
 }
+
+describe('CommandPalette initial focus by device', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it.each([
+        {
+            label: 'desktop',
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            platform: 'Win32',
+            touches: 0,
+            ios: false,
+        },
+        {
+            label: 'iPhone',
+            userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+            platform: 'iPhone',
+            touches: 5,
+            ios: true,
+        },
+        {
+            label: 'iPad desktop identity',
+            userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            platform: 'MacIntel',
+            touches: 5,
+            ios: true,
+        },
+    ])(
+        'focuses the $label search only where it will not open a keyboard',
+        async ({ userAgent, platform, touches, ios }) => {
+            vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+            vi.spyOn(navigator, 'platform', 'get').mockReturnValue(platform);
+            vi.stubGlobal('navigator', Object.create(navigator, { maxTouchPoints: { value: touches } }));
+            const user = userEvent.setup();
+            const onClose = vi.fn();
+            renderPalette(COMMANDS, onClose);
+
+            const input = screen.getByRole('combobox');
+            expect(document.activeElement).toBe(ios ? screen.getByRole('dialog') : input);
+
+            await user.click(input);
+            expect(document.activeElement).toBe(input);
+            await user.keyboard('cal');
+            expect((input as HTMLInputElement).value).toBe('cal');
+            await user.keyboard('{Escape}');
+            expect(onClose).toHaveBeenCalled();
+        }
+    );
+});

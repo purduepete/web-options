@@ -24,6 +24,11 @@
     box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
+/* Takes initial focus on iPhone and iPad so the software keyboard stays closed. */
+.palette:focus {
+    outline: none;
+}
+
 .palette-input {
     display: flex;
     align-items: center;
