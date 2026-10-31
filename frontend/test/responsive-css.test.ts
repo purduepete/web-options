@@ -210,16 +210,22 @@ describe('a large tablet is not a desktop', () => {
 });
 
 describe('contract history overlays and summaries', () => {
-    it('keeps the floating contract picker below the sticky navbar', () => {
-        const desktop = mediaBlocks(contractHistoryCss).find(
-            ({ condition }) => /min-width:\s*1101px/.test(condition) && /min-height:\s*800px/.test(condition)
+    it('floats the contract picker below the sticky navbar on tablets as well as desktops', () => {
+        const overlay = mediaBlocks(contractHistoryCss).find(({ condition }) =>
+            /^\(min-width:\s*641px\)$/.test(condition.trim())
         );
         const picker =
-            /\.history-page:has\(\.history-result\) \.history-contracts\s*\{([^}]*)\}/.exec(desktop?.body ?? '')?.[1] ??
+            /\.history-page:has\(\.history-result\) \.history-contracts\s*\{([^}]*)\}/.exec(overlay?.body ?? '')?.[1] ??
             '';
+        const body =
+            /\.history-page:has\(\.history-result\) \.history-contracts-body\s*\{([^}]*)\}/.exec(
+                overlay?.body ?? ''
+            )?.[1] ?? '';
         const navbar = /\.navbar\s*\{([^}]*)\}/.exec(navbarCss)?.[1] ?? '';
 
         expect(picker).toContain('z-index: 18');
+        expect(body).toContain('position: absolute');
+        expect(overlay?.body ?? '').toMatch(/\.history-summary-details > :not\(summary\)\s*\{[^}]*position: absolute/);
         expect(navbar).toContain('z-index: 20');
     });
 

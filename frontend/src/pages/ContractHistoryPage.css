@@ -659,8 +659,11 @@ html:has(.history-page) {
         height: auto;
         min-height: 0;
     }
-    /* With a contract loaded, the picker drops over the chart instead of
-       pushing it down, so opening it leaves the chart alone. */
+}
+/* From tablet width up, with a contract loaded, the picker and the entry and
+   target rows drop over the chart instead of pushing it down. Touch tablets
+   need this too, so it is keyed on width alone. Phones keep them in flow. */
+@media (min-width: 641px) {
     .history-page:has(.history-result) .history-contracts {
         position: relative;
         z-index: 18;
