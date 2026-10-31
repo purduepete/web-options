@@ -6,6 +6,13 @@
     animation: loading-in 0.6s ease-out;
 }
 
+.loading,
+[role='status'] {
+    caret-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 /* Page loads sit under the fixed navbar on the page background, ring centered. */
 .loading-page {
     position: fixed;
