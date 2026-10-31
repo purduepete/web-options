@@ -26,6 +26,7 @@ import {
     money,
     pacificTime,
     premiumCaptured,
+    sinceEntry,
     sessionLabel,
     signedDelta,
     signedMoney,
@@ -531,6 +532,8 @@ const ChartPane = memo(function ChartPane({
             ...point,
             slot,
             captured: premiumCaptured(history.entry, point),
+            // Premium captured starts at the entry, so delta starts there too.
+            delta: percentage && history.entry && !sinceEntry(history.entry, point) ? null : point.delta,
         }));
     const values = points.map((point) => (percentage ? point.captured : point.mark));
     const entryPrice = !percentage && history.entry ? history.entry.mark : null;

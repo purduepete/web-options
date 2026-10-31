@@ -112,11 +112,17 @@ export const targetPrice = (value: number) =>
 export const deltaText = (value: number | null) => (value === null ? 'Unavailable' : value.toFixed(3));
 
 export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint): number | null {
-    if (!entry || entry.mark <= 0 || point.mark === null || point.sessionDate < entry.signalDate) return null;
+    if (!entry || entry.mark <= 0 || point.mark === null || !sinceEntry(entry, point)) return null;
     // A held mark is as old as the capture it came from, which may predate the entry.
     const markTime = overrideOf(point, 'mark')?.sourceTime ?? point.time;
     if (entry.capturedAt && markTime < Date.parse(entry.capturedAt)) return null;
     return ((entry.mark - point.mark) / entry.mark) * 100;
+}
+
+/** True when the capture is on or after the entry, the point where premium captured starts. */
+export function sinceEntry(entry: HistoryEntry, point: HistoryPoint): boolean {
+    if (point.sessionDate < entry.signalDate) return false;
+    return !entry.capturedAt || point.time >= Date.parse(entry.capturedAt);
 }
 
 export function elapsedTime(from: string | null, to: number): string {

@@ -9,6 +9,7 @@ import {
     pacificTime,
     premiumCaptured,
     sessionLabel,
+    sinceEntry,
     standardSpan,
     targetPrice,
 } from '../src/history/format';
@@ -66,6 +67,14 @@ describe('history summaries', () => {
         });
         expect(premiumCaptured(entry, held(Date.parse('2026-10-23T13:25:00Z')))).toBeNull();
         expect(premiumCaptured(entry, held(Date.parse('2026-10-23T13:50:00Z')))).toBe(50);
+    });
+    it('starts the entry window on the signal date at the entry capture, so delta lines up with premium captured', () => {
+        const entry = { signalDate: '2026-10-29', mark: 1.07, delta: -0.23, capturedAt: '2026-10-29T14:35:00Z' };
+        const on = (sessionDate: string, iso: string) => ({ ...point(Date.parse(iso), 1, -0.2), sessionDate });
+        expect(sinceEntry(entry, on('2026-10-26', '2026-10-26T14:35:00Z'))).toBe(false);
+        expect(sinceEntry(entry, on('2026-10-29', '2026-10-29T14:25:00Z'))).toBe(false);
+        expect(sinceEntry(entry, on('2026-10-29', '2026-10-29T14:35:00Z'))).toBe(true);
+        expect(sinceEntry({ ...entry, capturedAt: null }, on('2026-10-29', '2026-10-29T13:35:00Z'))).toBe(true);
     });
     it('uses first and last valid values per component and preserves negative delta', () => {
         const data = [point(1, 2, null), point(2, null, -0.4), point(3, 1, -0.2)];
