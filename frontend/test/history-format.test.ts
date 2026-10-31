@@ -3,6 +3,7 @@ import type { HistoryPoint } from '@weboptions/shared';
 import {
     axisTime,
     changeSummary,
+    chartPoints,
     evenTicks,
     elapsedTime,
     fitDomain,
@@ -75,6 +76,24 @@ describe('history summaries', () => {
         expect(sinceEntry(entry, on('2026-10-29', '2026-10-29T14:25:00Z'))).toBe(false);
         expect(sinceEntry(entry, on('2026-10-29', '2026-10-29T14:35:00Z'))).toBe(true);
         expect(sinceEntry({ ...entry, capturedAt: null }, on('2026-10-29', '2026-10-29T13:35:00Z'))).toBe(true);
+    });
+    it('starts the premium-captured chart at the entry and keeps the whole range for marks', () => {
+        const entry = { signalDate: '2026-10-29', mark: 1, delta: -0.23, capturedAt: '2026-10-29T14:35:00Z' };
+        const on = (sessionDate: string, iso: string) => ({ ...point(Date.parse(iso), 1, -0.2), sessionDate });
+        const points = [
+            on('2026-10-26', '2026-10-26T14:35:00Z'),
+            { ...on('2026-10-26', '2026-10-26T20:10:00Z'), kind: 'session_boundary' },
+            on('2026-10-29', '2026-10-29T14:35:00Z'),
+            on('2026-10-30', '2026-10-30T14:35:00Z'),
+        ];
+        const captured = chartPoints({ entry, points }, 'captured');
+        expect(captured.map((p) => [p.sessionDate, p.slot])).toEqual([
+            ['2026-10-29', 0],
+            ['2026-10-30', 1],
+        ]);
+        expect(chartPoints({ entry, points }, 'price')).toHaveLength(3);
+        expect(chartPoints({ entry: null, points }, 'captured')).toHaveLength(3);
+        expect(chartPoints({ entry: { ...entry, signalDate: '2026-11-02' }, points }, 'captured')).toHaveLength(3);
     });
     it('uses first and last valid values per component and preserves negative delta', () => {
         const data = [point(1, 2, null), point(2, null, -0.4), point(3, 1, -0.2)];

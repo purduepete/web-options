@@ -19,24 +19,20 @@ import { ChoiceMenu } from '../components/ChoiceMenu';
 import { InfoIcon } from '../components/icons';
 import {
     axisTime,
+    chartPoints,
     deltaText,
     evenTicks,
     fitDomain,
     historyCaptureDotRadius,
     money,
     pacificTime,
-    premiumCaptured,
-    sinceEntry,
     sessionLabel,
     signedDelta,
     signedMoney,
 } from './format';
 import type { TargetChoice } from './HistoryAnalysis';
 
-interface ChartPoint extends HistoryPoint {
-    captured: number | null;
-    slot: number;
-}
+type ChartPoint = ReturnType<typeof chartPoints>[number];
 
 const Y_AXIS_WIDTH = 56;
 const AXIS_TAG_WIDTH = 46;
@@ -475,13 +471,7 @@ export function HistoryCharts({
             clearTimeout(timer);
         };
     }, [ready, view]);
-    const points = useMemo(
-        () =>
-            history.points
-                .filter((point) => point.kind !== 'session_boundary')
-                .map((point, slot) => ({ ...point, slot, captured: premiumCaptured(history.entry, point) })),
-        [history.entry, history.points]
-    );
+    const points = useMemo(() => chartPoints(history, metric), [history, metric]);
     const sessionChanges = useMemo(() => buildSessionChanges(points), [points]);
     return (
         <>
@@ -526,15 +516,7 @@ const ChartPane = memo(function ChartPane({
 }) {
     const syncId = useId();
     const percentage = metric === 'captured';
-    const points: ChartPoint[] = history.points
-        .filter((point) => point.kind !== 'session_boundary')
-        .map((point, slot) => ({
-            ...point,
-            slot,
-            captured: premiumCaptured(history.entry, point),
-            // Premium captured starts at the entry, so delta starts there too.
-            delta: percentage && history.entry && !sinceEntry(history.entry, point) ? null : point.delta,
-        }));
+    const points = useMemo(() => chartPoints(history, metric), [history, metric]);
     const values = points.map((point) => (percentage ? point.captured : point.mark));
     const entryPrice = !percentage && history.entry ? history.entry.mark : null;
     const entryDelta = history.entry?.delta ?? null;

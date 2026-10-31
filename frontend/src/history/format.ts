@@ -1,4 +1,4 @@
-import type { HistoryEntry, HistoryPoint } from '@weboptions/shared';
+import type { HistoryEntry, HistoryPoint, HistoryResponse } from '@weboptions/shared';
 
 const PACIFIC_PARTS = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -123,6 +123,25 @@ export function premiumCaptured(entry: HistoryEntry | null, point: HistoryPoint)
 export function sinceEntry(entry: HistoryEntry, point: HistoryPoint): boolean {
     if (point.sessionDate < entry.signalDate) return false;
     return !entry.capturedAt || point.time >= Date.parse(entry.capturedAt);
+}
+
+/**
+ * Chart points numbered by position. Premium captured has no value before the
+ * entry, so that view starts the chart at the entry capture and drops the
+ * earlier sessions from the axis. The mark view keeps the whole range.
+ */
+export function chartPoints(
+    history: Pick<HistoryResponse, 'entry' | 'points'>,
+    metric: 'price' | 'captured'
+): (HistoryPoint & { captured: number | null; slot: number })[] {
+    const entry = history.entry;
+    const captures = history.points.filter((point) => point.kind !== 'session_boundary');
+    const sinceStart = metric === 'captured' && entry ? captures.filter((point) => sinceEntry(entry, point)) : captures;
+    return (sinceStart.length > 0 ? sinceStart : captures).map((point, slot) => ({
+        ...point,
+        slot,
+        captured: premiumCaptured(entry, point),
+    }));
 }
 
 export function elapsedTime(from: string | null, to: number): string {
