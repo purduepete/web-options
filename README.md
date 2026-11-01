@@ -524,7 +524,10 @@ segmented theme picker with one text-only row
 ordered Light, Dark, Midnight, System. Selecting a theme keeps
 the picker open; press the palette icon again, click outside, move focus outside,
 or press Escape to close it. The header reload button uses the two-arrow refresh
-icon and reloads the page.
+icon and reloads the page. Theme and Search use the theme accent fill and contrasting
+icon color while their panels are open, then return to their resting appearance on
+dismissal. Reload uses the same active colors and rotates its icon until the new page
+loads; repeat clicks are disabled, and reduced-motion preferences stop the rotation.
 On iPhone and iPad, the Search command palette opens with focus on the dialog so the
 software keyboard stays closed; desktop browsers still focus the search field, and
 tapping it searches as usual.

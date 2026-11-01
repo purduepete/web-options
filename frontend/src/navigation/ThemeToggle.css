@@ -102,10 +102,6 @@
     box-shadow: inset 0 0 0 2px var(--highlight);
 }
 
-.theme-toggle[aria-expanded='true'] {
-    color: var(--text);
-}
-
 /* Matches Web Portfolio's 36px selector at every width. Each segment is still
    60px or wider on a 320px phone, so the global 44px button floor is lifted here. */
 @media (pointer: coarse) {

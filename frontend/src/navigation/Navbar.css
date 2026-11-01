@@ -47,8 +47,6 @@
     margin-left: auto;
 }
 
-/* Loose icon buttons on the bar itself. A filled chip around them reads as a
-   segmented control, and there are no modes here to segment between. */
 .bar-tools {
     display: inline-flex;
     align-items: center;
@@ -71,6 +69,24 @@
 .theme-toggle:hover {
     background: transparent;
     color: var(--text);
+}
+
+.bar-tools .search-trigger[aria-expanded='true'],
+.bar-tools .reload-trigger[aria-busy='true'],
+.bar-tools .theme-toggle[aria-expanded='true'] {
+    background: var(--highlight);
+    border-color: var(--highlight);
+    color: var(--highlight-contrast);
+}
+
+.bar-tools .reload-trigger[aria-busy='true'] {
+    opacity: 1;
+    cursor: wait;
+    transition: none;
+}
+
+.reload-trigger[aria-busy='true'] svg {
+    animation: spin 1s linear infinite;
 }
 
 .menu-trigger,
@@ -147,7 +163,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .mega-panel {
+    .mega-panel,
+    .reload-trigger[aria-busy='true'] svg {
         animation: none;
     }
 }

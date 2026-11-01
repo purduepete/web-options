@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -230,6 +230,31 @@ describe('Navbar on desktop', () => {
         const reload = screen.getByRole('button', { name: 'Reload page' });
         expect(reload.getAttribute('data-tip')).toBe('Reload page');
         expect(reload.querySelectorAll('svg path')).toHaveLength(4);
+        expect(reload.getAttribute('aria-busy')).toBe('false');
+        expect(reload.hasAttribute('disabled')).toBe(false);
+    });
+
+    it('marks reload busy and allows a paint before navigating', () => {
+        renderNavbar();
+        const reload = screen.getByRole('button', { name: 'Reload page' });
+        const frames: FrameRequestCallback[] = [];
+        const requestFrame = vi
+            .spyOn(window, 'requestAnimationFrame')
+            .mockImplementation((callback) => frames.push(callback));
+        try {
+            fireEvent.click(reload);
+            expect(reload.getAttribute('aria-busy')).toBe('true');
+            expect(reload.hasAttribute('disabled')).toBe(true);
+            expect(frames).toHaveLength(1);
+            const firstFrame = frames[0];
+            if (!firstFrame) throw new Error('Reload did not schedule a frame');
+            firstFrame(0);
+            expect(frames).toHaveLength(2);
+            fireEvent.click(reload);
+            expect(frames).toHaveLength(2);
+        } finally {
+            requestFrame.mockRestore();
+        }
     });
 
     it('closes the panel once a destination is chosen', async () => {

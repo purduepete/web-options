@@ -44,7 +44,7 @@ export function Layout() {
     return (
         <>
             <FavoriteShortcuts />
-            <Navbar onNotify={notify} onOpenSearch={() => setPaletteOpen(true)} />
+            <Navbar onNotify={notify} onOpenSearch={() => setPaletteOpen(true)} searchOpen={paletteOpen} />
             <div className="route-fade" data-leaving={leaving || undefined}>
                 {/* Keyed so two routes sharing a component still count as an arrival. */}
                 <Fragment key={shownPath}>{current ? outlet : shownOutlet.current}</Fragment>

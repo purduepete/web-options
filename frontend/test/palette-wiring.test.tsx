@@ -71,13 +71,17 @@ describe('command palette wiring', () => {
         renderApp();
 
         expect(screen.queryByRole('dialog')).toBeNull();
+        const search = screen.getByRole('button', { name: 'Search' });
+        expect(search.getAttribute('aria-expanded')).toBe('false');
 
         await user.keyboard('{Control>}/{/Control}');
         expect(screen.getByRole('dialog')).toBeTruthy();
+        expect(search.getAttribute('aria-expanded')).toBe('true');
 
         await user.keyboard('weekly calendars{Enter}');
 
         expect(screen.queryByRole('dialog')).toBeNull();
+        expect(search.getAttribute('aria-expanded')).toBe('false');
         expect(await screen.findByText('latest week page')).toBeTruthy();
     });
 
@@ -85,11 +89,29 @@ describe('command palette wiring', () => {
         const user = userEvent.setup();
         renderApp();
 
-        await user.click(screen.getByRole('button', { name: /Search/ }));
+        const search = screen.getByRole('button', { name: 'Search' });
+        expect(search.getAttribute('aria-haspopup')).toBe('dialog');
+        await user.click(search);
         expect(screen.getByRole('dialog')).toBeTruthy();
+        expect(search.getAttribute('aria-expanded')).toBe('true');
 
         await user.keyboard('{Control>}/{/Control}');
         expect(screen.queryByRole('dialog')).toBeNull();
+        expect(search.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it.each(['Escape', 'Tab', 'outside click'])('clears the search active state on %s', async (dismissal) => {
+        const user = userEvent.setup();
+        renderApp();
+        const search = screen.getByRole('button', { name: 'Search' });
+
+        await user.click(search);
+        expect(search.getAttribute('aria-expanded')).toBe('true');
+        if (dismissal === 'outside click') await user.click(screen.getByTestId('palette-backdrop'));
+        else await user.keyboard(`{${dismissal}}`);
+
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(search.getAttribute('aria-expanded')).toBe('false');
     });
 
     it('leaves the individual weeks out, even when some are ingested', async () => {

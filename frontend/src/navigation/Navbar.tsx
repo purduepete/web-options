@@ -41,13 +41,16 @@ const SECTION_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
 export function Navbar({
     onNotify,
     onOpenSearch,
+    searchOpen = false,
 }: {
     onNotify?: (message: string) => void;
     onOpenSearch?: () => void;
+    searchOpen?: boolean;
 }) {
     const isDesktop = useMediaQuery(DESKTOP_QUERY);
     const [menuOpen, setMenuOpen] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [reloading, setReloading] = useState(false);
     const [openSection, setOpenSection] = useState<string | null>(null);
     const { pathname } = useLocation();
     const navRef = useRef<HTMLElement>(null);
@@ -130,6 +133,8 @@ export function Navbar({
                                 type="button"
                                 className="search-trigger"
                                 aria-label="Search"
+                                aria-haspopup="dialog"
+                                aria-expanded={searchOpen}
                                 data-tip="Search (Ctrl K)"
                                 onClick={onOpenSearch}
                             >
@@ -141,8 +146,14 @@ export function Navbar({
                             type="button"
                             className="reload-trigger"
                             aria-label="Reload page"
+                            aria-busy={reloading}
+                            disabled={reloading}
                             data-tip="Reload page"
-                            onClick={() => window.location.reload()}
+                            onClick={() => {
+                                setReloading(true);
+                                // Paint the active button before navigation suspends this document.
+                                requestAnimationFrame(() => requestAnimationFrame(() => window.location.reload()));
+                            }}
                         >
                             <RefreshCwIcon />
                         </button>
