@@ -47,7 +47,12 @@ and close, settle or session runs that finish incomplete. See
 `solution-deploy\docs\CollectorReliability.md`.
 This worker runs on `jimbrownhome1`, separate from the existing dashboard.
 Tastytrade REST supplies prices and a bounded DXLink Greeks subscription supplies
-delta and IV. When both REST attempts leave a price crossed or absent, the same
+delta and IV. The same REST option quote also carries delta and volatility. When
+DXLink fails, times out or ends with missing fields, the collector stores those REST
+values for contracts the stream missed, flagged `rest_greeks`. The quote's
+`updated_at` is used as the event time; REST provides no separate Greek timestamp.
+The stream error remains on any component still missing. When both REST attempts
+leave a price crossed or absent, the same
 DXLink connection subscribes the `Quote` event for those contracts and stores the
 first valid bid/ask, flagged `stream_quote`, with mark set to the midpoint. If a
 13:10 settle price is still crossed or absent on the slot's last tick, the collector

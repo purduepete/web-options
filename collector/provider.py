@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from functools import cache
 import logging
 from types import SimpleNamespace
 
@@ -47,6 +48,24 @@ def price_values(quote, received, underlying=None) -> dict:
     }
 
 
+@cache
+def option_market_data_model():
+    from tastytrade.market_data import MarketData
+
+    # The SDK model drops the Greeks that the REST option quote also returns.
+    class OptionMarketData(MarketData):
+        delta: object = None
+        volatility: object = None
+
+    return OptionMarketData
+
+
+async def option_market_data(session, symbols: list[str]) -> list:
+    data = await session._get("/market-data/by-type", params={"equity-option": symbols})
+    model = option_market_data_model()
+    return [model(**item) for item in data["items"]]
+
+
 async def collect(config: Config, repo: Repository, run_id: int, contracts: list[Contract], deadline) -> None:
     from tastytrade import DXLinkStreamer, Session
     from tastytrade.dxfeed import Greeks, Quote
@@ -74,12 +93,14 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
         async with Session(config.client_secret, config.refresh_token) as session:
             # One REST retry inside the same snapshot window, then one bounded Greeks and Quote stream.
             underlying = {}
+            rest_greeks = {}
             for attempt in range(2):
                 missing = repo.missing(run_id)
-                wanted = wanted_contracts(missing, {"price"})
+                price_wanted = wanted_contracts(missing, {"price"})
+                wanted = wanted_contracts(missing, {"price", "delta", "iv"}) if attempt == 0 else price_wanted
                 if not wanted:
                     break
-                symbols = sorted({contract.broker_underlying for contract in wanted})
+                symbols = sorted({contract.broker_underlying for contract in price_wanted})
                 for offset in range(0, len(symbols), 100):
                     try:
                         quotes = await asyncio.wait_for(
@@ -95,25 +116,35 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                     batch = wanted[offset : offset + 100]
                     mapping = {contract.broker_occ: contract for contract in batch}
                     try:
-                        quotes = await asyncio.wait_for(
-                            get_market_data_by_type(session, options=list(mapping)), timeout=25
-                        )
+                        quotes = await asyncio.wait_for(option_market_data(session, list(mapping)), timeout=25)
                         for quote in quotes:
                             if quote.symbol not in mapping:
                                 LOG.error("provider returned an unexpected option symbol")
                                 continue
                             contract = mapping[quote.symbol]
                             received = now()
-                            save(
-                                contract,
-                                "price",
-                                price_values(quote, received, underlying.get(contract.broker_underlying)),
-                            )
+                            at = event_time(quote.updated_at)
+                            for component, raw in (
+                                ("delta", getattr(quote, "delta", None)),
+                                ("iv", getattr(quote, "volatility", None)),
+                            ):
+                                value = number(raw, delta=component == "delta")
+                                if value is not None:
+                                    rest_greeks.setdefault(contract.broker_occ, {})[component] = {
+                                        "value": value, "event_time": at, "received_at": received,
+                                    }
+                            if any("price" in missing.get(key, set()) for key in groups[contract.broker_occ]):
+                                save(
+                                    contract,
+                                    "price",
+                                    price_values(quote, received, underlying.get(contract.broker_underlying)),
+                                )
                         returned = {quote.symbol for quote in quotes}
                         for symbol, contract in mapping.items():
                             if symbol not in returned:
                                 for key in groups[contract.broker_occ]:
-                                    repo.price_unavailable(run_id, key, now())
+                                    if "price" in missing.get(key, set()):
+                                        repo.price_unavailable(run_id, key, now())
                         LOG.info(
                             "price batch %d/%d attempt=%d elapsed coverage=%d",
                             offset + len(batch),
@@ -194,25 +225,43 @@ async def collect(config: Config, repo: Repository, run_id: int, contracts: list
                     if not pending(quoted, ("price",)):
                         return
 
-            async with DXLinkStreamer(session) as streamer:
-                subscriptions = [(kind, list(mapping)) for kind, mapping in ((Greeks, greeks), (Quote, quoted)) if mapping]
-                for kind, symbols in subscriptions:
-                    for offset in range(0, len(symbols), 100):
-                        await streamer.subscribe(kind, symbols[offset : offset + 100])
-                try:
-                    async with asyncio.timeout(min(45, max(0, (deadline - now()).total_seconds()))):
-                        await asyncio.gather(listen_greeks(streamer), listen_quotes(streamer))
-                except TimeoutError:
-                    if pending(greeks, ("delta", "iv")):
-                        LOG.error("Greeks collection timed out with missing components")
-                        for component in ("delta", "iv"):
-                            repo.component_error(run_id, component, "greeks_timeout")
-                    if pending(quoted, ("price",)):
-                        # Keep the REST price error; the audit classifies broker no-quotes from it.
-                        LOG.error("Quote stream timed out with missing prices")
-                finally:
+            def rest_greeks_fallback():
+                # REST Greeks fill only what the stream left missing.
+                filled = 0
+                for contract in greeks.values():
+                    for component, values in rest_greeks.get(contract.broker_occ, {}).items():
+                        if not needs(contract, component):
+                            continue
+                        flags = [*quality(values["event_time"], values["received_at"]), "rest_greeks"]
+                        if values["value"] == 0:
+                            flags.append("zero_boundary")
+                        store(contract, component, {**values, "flags": flags})
+                        filled += 1
+                if filled:
+                    LOG.warning("stored %d REST Greeks after the stream missed them", filled)
+
+            try:
+                async with DXLinkStreamer(session) as streamer:
+                    subscriptions = [(kind, list(mapping)) for kind, mapping in ((Greeks, greeks), (Quote, quoted)) if mapping]
                     for kind, symbols in subscriptions:
-                        await streamer.unsubscribe(kind, symbols)
+                        for offset in range(0, len(symbols), 100):
+                            await streamer.subscribe(kind, symbols[offset : offset + 100])
+                    try:
+                        async with asyncio.timeout(min(45, max(0, (deadline - now()).total_seconds()))):
+                            await asyncio.gather(listen_greeks(streamer), listen_quotes(streamer))
+                    except TimeoutError:
+                        if pending(greeks, ("delta", "iv")):
+                            LOG.error("Greeks collection timed out with missing components")
+                            for component in ("delta", "iv"):
+                                repo.component_error(run_id, component, "greeks_timeout")
+                        if pending(quoted, ("price",)):
+                            # Keep the REST price error; the audit classifies broker no-quotes from it.
+                            LOG.error("Quote stream timed out with missing prices")
+                    finally:
+                        for kind, symbols in subscriptions:
+                            await streamer.unsubscribe(kind, symbols)
+            finally:
+                rest_greeks_fallback()
 
     remaining = (deadline - now()).total_seconds()
     if remaining <= 0:
