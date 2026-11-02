@@ -1,0 +1,243 @@
+{
+  "publishDate": "2026-11-02",
+  "title": null,
+  "macro": [
+    {
+      "label": "Semiconductor selloff",
+      "text": "The chip index fell more than 7% Friday. The Nasdaq had its weakest month since March 2025."
+    },
+    {
+      "label": "VIX: 19.42",
+      "text": "The S&P 500 closed at 7,580. VIX ranged from 16.91 Wednesday to 23.93 Friday and ended near the prior week's level."
+    },
+    {
+      "label": "Jobs and Fed",
+      "text": "September payrolls added 29,000 jobs, with 65,000 expected for October. The Fed held rates; two officials favored a hike."
+    },
+    {
+      "label": "Oil and Iran",
+      "text": "Oil settled above $104 after reports that the US was weighing renewed strikes on Iran."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Nov 2",
+      "rule": "Stay out today. The slate opens Wednesday after the election.",
+      "event": null,
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Nov 3",
+      "rule": "No new entries. Tuesday sales would carry election risk through the close and into Wednesday.",
+      "event": "US midterm election. Vote counts continue after options close, with no set release time.",
+      "trades": []
+    },
+    {
+      "name": "Wednesday",
+      "date": "Nov 4",
+      "rule": "Open the window after 7:15 AM Pacific, once the election result and services survey are known. Skip if control of Congress is still unclear. After a sharp market drop, consider waiting for Friday's jobs report. For FSLR, wait a session after a sharp election-driven move.",
+      "event": "Election results and the services survey are due before the morning entry window. These trades still carry Thursday labor data, two Fed speakers and Friday payrolls.",
+      "trades": [
+        {
+          "ticker": "GE",
+          "type": "put",
+          "strike": "$290P",
+          "expiry": "2026-12-18",
+          "dte": 46,
+          "delta": "-0.34",
+          "ann": "25.1%",
+          "premium": "$918",
+          "collateral": "$29,000",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "MS",
+          "type": "put",
+          "strike": "$175P",
+          "expiry": "2026-12-18",
+          "dte": 46,
+          "delta": "-0.31",
+          "ann": "20.7%",
+          "premium": "$458",
+          "collateral": "$17,500",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "JPM",
+          "type": "call",
+          "strike": "$345C",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "+0.36",
+          "ann": "26.3%",
+          "premium": "$438",
+          "collateral": "$33,704",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-12-18",
+          "dte": 46,
+          "delta": "+0.36",
+          "ann": "22.5%",
+          "premium": "$488",
+          "collateral": "$17,155",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "WM",
+          "type": "call",
+          "strike": "$240C",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "+0.32",
+          "ann": "21.3%",
+          "premium": "$245",
+          "collateral": "$23,345",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "C",
+          "type": "put",
+          "strike": "$118P",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "-0.30",
+          "ann": "32.4%",
+          "premium": "$189",
+          "collateral": "$11,800",
+          "risk": "balanced",
+          "note": ""
+        },
+        {
+          "ticker": "FSLR",
+          "type": "put",
+          "strike": "$165P",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "-0.31",
+          "ann": "59.6%",
+          "premium": "$485",
+          "collateral": "$16,500",
+          "risk": "aggressive",
+          "note": "Wait one session after a sharp election-driven price move."
+        },
+        {
+          "ticker": "AMZN",
+          "type": "put",
+          "strike": "$235P",
+          "expiry": "2026-11-13",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "59.3%",
+          "premium": "$420",
+          "collateral": "$23,500",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "DAL",
+          "type": "put",
+          "strike": "$77.50P",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "-0.35",
+          "ann": "55.2%",
+          "premium": "$211",
+          "collateral": "$7,750",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "ORCL",
+          "type": "call",
+          "strike": "$136C",
+          "expiry": "2026-11-13",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "96.5%",
+          "premium": "$380",
+          "collateral": "$13,067",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "GOOG",
+          "type": "call",
+          "strike": "$285C",
+          "expiry": "2026-11-13",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "54.6%",
+          "premium": "$458",
+          "collateral": "$27,822",
+          "risk": "aggressive",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Nov 5",
+      "rule": "No new entries from this slate. Wednesday sales still carry Thursday labor data, two Fed speakers and Friday's jobs report.",
+      "event": "Labor data and two Fed speakers.",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Nov 6",
+      "rule": "Wait until 7:15 AM Pacific, after payrolls and the consumer survey. Payrolls above 65,000 could weigh on growth shares; a result near 29,000 or lower could support a rally. Friday entries carry weekend headline risk.",
+      "event": "Payrolls at 5:30 AM Pacific; consumer survey at 7:00 AM Pacific; Fed Governor Bowman speaks at 9:15 AM Pacific.",
+      "trades": [
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$65C",
+          "expiry": "2026-12-18",
+          "dte": 46,
+          "delta": "+0.40",
+          "ann": "26.1%",
+          "premium": "$204",
+          "collateral": "$6,208",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "CRWD",
+          "type": "put",
+          "strike": "$230P",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "-0.27",
+          "ann": "64.6%",
+          "premium": "$733",
+          "collateral": "$23,000",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "NOW",
+          "type": "call",
+          "strike": "$110C",
+          "expiry": "2026-11-20",
+          "dte": 18,
+          "delta": "+0.39",
+          "ann": "63.2%",
+          "premium": "$328",
+          "collateral": "$10,512",
+          "risk": "aggressive",
+          "note": ""
+        }
+      ]
+    }
+  ]
+}
