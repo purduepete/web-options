@@ -1,0 +1,244 @@
+{
+  "publishDate": "2026-11-09",
+  "title": null,
+  "macro": [
+    {
+      "label": "S&P 500 and VIX",
+      "text": "The S&P 500 closed at 7,376.86 after a 2.68% weekly decline. VIX ended at 25.64, up 6.22 points for the week."
+    },
+    {
+      "label": "Inflation reports",
+      "text": "Tuesday's CPI forecast is 3.9%, up from 3.7%. Friday's PPI forecast is 6.6%, up from 6.3%."
+    },
+    {
+      "label": "AI earnings",
+      "text": "CoreWeave reports Tuesday after the close. Cisco and Applied Materials report Thursday, followed by Nvidia on November 17."
+    },
+    {
+      "label": "Sizing and later dates",
+      "text": "Consider half-size positions and a buy-to-close order at 50% of the premium. November 20 expiries carry Nvidia's November 17 report and the Fed's November 18 minutes. December 18 expiries also carry the December 9 Fed decision."
+    }
+  ],
+  "days": [
+    {
+      "name": "Monday",
+      "date": "Nov 9",
+      "rule": "Wait for Tuesday's inflation report. This slate has no Monday entry window.",
+      "event": "New York Fed consumer survey at 8:00 AM Pacific. KKR and Constellation Energy report.",
+      "trades": []
+    },
+    {
+      "name": "Tuesday",
+      "date": "Nov 10",
+      "rule": "Enter after 7:00 AM Pacific and after CPI is released. If the report is delayed, wait. Consider half-size positions with VIX in the mid-20s. Below the 3.9% forecast, consider a wider cushion; above it, consider a lower strike.",
+      "event": "October CPI at 5:30 AM Pacific (3.9% forecast; 3.7% prior). The 10-year Treasury auction is at 10:00 AM Pacific. CoreWeave reports after the close.",
+      "trades": [
+        {
+          "ticker": "C",
+          "type": "put",
+          "strike": "$115P",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "-0.35",
+          "ann": "25.6%",
+          "premium": "$315",
+          "collateral": "$11,500",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "UBER",
+          "type": "put",
+          "strike": "$65P",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "-0.30",
+          "ann": "24.0%",
+          "premium": "$167",
+          "collateral": "$6,500",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "BX",
+          "type": "put",
+          "strike": "$110P",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "-0.25",
+          "ann": "22.6%",
+          "premium": "$266",
+          "collateral": "$11,000",
+          "risk": "conservative",
+          "note": "The entry window follows KKR's Monday earnings."
+        },
+        {
+          "ticker": "CVS",
+          "type": "put",
+          "strike": "$80P",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "-0.29",
+          "ann": "18.9%",
+          "premium": "$162",
+          "collateral": "$8,000",
+          "risk": "conservative",
+          "note": ""
+        },
+        {
+          "ticker": "SLV",
+          "type": "put",
+          "strike": "$45P",
+          "expiry": "2026-12-04",
+          "dte": 25,
+          "delta": "-0.33",
+          "ann": "40.1%",
+          "premium": "$124",
+          "collateral": "$4,500",
+          "risk": "balanced",
+          "note": "Carries the November 25 PCE report and December 4 jobs report."
+        },
+        {
+          "ticker": "UNH",
+          "type": "put",
+          "strike": "$385P",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "58.6%",
+          "premium": "$680",
+          "collateral": "$38,500",
+          "risk": "aggressive",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "Wednesday",
+      "date": "Nov 11",
+      "rule": "Enter after 7:00 AM Pacific, once the market has reacted to CoreWeave's results. If AI shares rise, consider keeping a wider cushion. If they fall, consider a lower strike.",
+      "event": "Veterans Day: the bond market is closed; stocks and options trade normally. Corteva reports. Cisco and Applied Materials report Thursday.",
+      "trades": [
+        {
+          "ticker": "AMZN",
+          "type": "put",
+          "strike": "$252.5P",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "-0.35",
+          "ann": "65.0%",
+          "premium": "$495",
+          "collateral": "$25,250",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "GOOG",
+          "type": "put",
+          "strike": "$275P",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "-0.32",
+          "ann": "54.3%",
+          "premium": "$450",
+          "collateral": "$27,500",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "PLTR",
+          "type": "put",
+          "strike": "$150P",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "-0.32",
+          "ann": "45.4%",
+          "premium": "$728",
+          "collateral": "$15,000",
+          "risk": "aggressive",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "Thursday",
+      "date": "Nov 12",
+      "rule": "No new entries from this slate. Wait for Cisco and Applied Materials earnings and Friday's producer price report before the covered-call window.",
+      "event": "Weekly jobless claims at 5:30 AM Pacific. The 30-year Treasury auction is at 10:00 AM Pacific. Cisco and Applied Materials report.",
+      "trades": []
+    },
+    {
+      "name": "Friday",
+      "date": "Nov 13",
+      "rule": "Enter after 7:00 AM Pacific, following PPI and Thursday's earnings. A covered call requires 100 shares and a sale price you accept. If shares rise, consider a higher strike; if they fall, consider waiting rather than lowering the sale price.",
+      "event": "October PPI at 5:30 AM Pacific (6.6% forecast; 6.3% prior). Cisco and Applied Materials results are available.",
+      "trades": [
+        {
+          "ticker": "BA",
+          "type": "call",
+          "strike": "$180C",
+          "expiry": "2026-12-18",
+          "dte": 39,
+          "delta": "+0.39",
+          "ann": "27.1%",
+          "premium": "$503",
+          "collateral": "$17,340",
+          "risk": "balanced",
+          "note": ""
+        },
+        {
+          "ticker": "INTC",
+          "type": "call",
+          "strike": "$60C",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "+0.37",
+          "ann": "123.8%",
+          "premium": "$210",
+          "collateral": "$5,628",
+          "risk": "aggressive",
+          "note": "Consider only if $60 is an acceptable share sale price."
+        },
+        {
+          "ticker": "CRWD",
+          "type": "call",
+          "strike": "$230C",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "+0.36",
+          "ann": "104.4%",
+          "premium": "$683",
+          "collateral": "$21,690",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "CRM",
+          "type": "call",
+          "strike": "$220C",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "+0.39",
+          "ann": "78.8%",
+          "premium": "$508",
+          "collateral": "$21,365",
+          "risk": "aggressive",
+          "note": ""
+        },
+        {
+          "ticker": "NFLX",
+          "type": "call",
+          "strike": "$65C",
+          "expiry": "2026-11-20",
+          "dte": 11,
+          "delta": "+0.38",
+          "ann": "59.1%",
+          "premium": "$113",
+          "collateral": "$6,341",
+          "risk": "aggressive",
+          "note": ""
+        }
+      ]
+    }
+  ]
+}
