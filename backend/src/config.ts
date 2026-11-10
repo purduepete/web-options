@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ini from 'ini';
+import { DEFAULT_WRAPUP_DIRECTORY } from './wrapups/repository';
 
 export interface DbConfig {
     server: string;
@@ -10,6 +11,7 @@ export interface DbConfig {
 }
 
 export interface AppConfig {
+    wrapupDirectory?: string;
     history?: { passfile: string; python: string; collectorRoot: string };
     auth?: { mode: 'api-key' | 'access'; allowedOrigins: string[] };
     db: DbConfig;
@@ -108,6 +110,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     }
 
     const config: AppConfig = {
+        wrapupDirectory: path.resolve(env.WEBOPTIONS_WRAPUP_DIRECTORY ?? DEFAULT_WRAPUP_DIRECTORY),
         history: env.PGPASSFILE
             ? {
                   passfile: path.resolve(env.PGPASSFILE),

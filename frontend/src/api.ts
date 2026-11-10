@@ -14,6 +14,8 @@ import type {
     Trade,
     VixResponse,
     WeekSignalsResponse,
+    WeeklyWrapup,
+    WrapupSummary,
 } from '@weboptions/shared';
 import { readKey } from './auth/keyStore';
 import { isAccessMode } from './auth/mode';
@@ -111,6 +113,14 @@ async function send<T>(path: string, init: RequestInit, key?: string): Promise<T
 
 function getJson<T>(path: string, key?: string): Promise<T> {
     return send<T>(path, {}, key);
+}
+
+export function fetchWrapups(): Promise<{ reports: WrapupSummary[] }> {
+    return getJson('/api/weekly-wrapups');
+}
+
+export function fetchWrapup(id: string): Promise<WeeklyWrapup> {
+    return getJson(`/api/weekly-wrapups/${encodeURIComponent(id)}`);
 }
 
 /** Takes the key explicitly so a candidate can be checked before it is stored. */

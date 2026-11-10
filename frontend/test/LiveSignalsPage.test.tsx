@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { STORAGE_KEYS } from '@weboptions/shared';
 import type { DaySignals, Trade, WeekSignalsResponse } from '@weboptions/shared';
+import { guidanceReport } from './fixtures/guidanceReport';
 
 const fetchWeekSignals = vi.fn();
 const fetchEarliestWeek = vi.fn();
+const fetchWrapups = vi.fn();
+const fetchWrapup = vi.fn();
+const fetchSymbolDetail = vi.fn();
 
 vi.mock('../src/api', async () => {
     const actual = await vi.importActual<typeof import('../src/api')>('../src/api');
@@ -14,6 +18,9 @@ vi.mock('../src/api', async () => {
         ...actual,
         fetchWeekSignals: (week?: string) => fetchWeekSignals(week),
         fetchEarliestWeek: () => fetchEarliestWeek(),
+        fetchWrapups: () => fetchWrapups(),
+        fetchWrapup: (id: string) => fetchWrapup(id),
+        fetchSymbolDetail: () => fetchSymbolDetail(),
     };
 });
 
@@ -124,10 +131,104 @@ beforeEach(() => {
     fetchWeekSignals.mockReset();
     fetchEarliestWeek.mockReset();
     fetchWeekSignals.mockResolvedValue(week());
+    fetchWrapups.mockReset();
+    fetchWrapup.mockReset();
+    fetchWrapups.mockResolvedValue({ reports: [] });
+    fetchSymbolDetail.mockReset();
+    fetchSymbolDetail.mockRejectedValue(new Error('Market fixture unavailable'));
     localStorage.clear();
 });
 
 describe('LiveSignalsPage', () => {
+    it('adds one color-coded guidance badge to a matching prior-week Top Pick and keeps all detail notes', async () => {
+        fetchWrapups.mockResolvedValue({ reports: [{ id: '2025-08-08' }] });
+        fetchWrapup.mockResolvedValue(guidanceReport());
+        renderPage();
+        const monday = await screen.findByRole('region', { name: 'Monday 08/11' });
+        const apple = within(monday).getByRole('button', { name: 'AAPL $100P, open details' });
+        expect(apple.querySelectorAll('.weekly-guidance-badge')).toHaveLength(1);
+        expect(apple.querySelector('.guidance-red')).toBeTruthy();
+        expect(apple.querySelector('.guidance-yellow')).toBeTruthy();
+        expect(apple.querySelector('.guidance-green')).toBeTruthy();
+        expect(
+            within(monday)
+                .getByRole('button', { name: 'MSFT $100P, open details' })
+                .querySelector('.weekly-guidance-badge')
+        ).toBeNull();
+        expect(apple.getAttribute('aria-describedby')).toBeTruthy();
+        fireEvent.click(apple);
+        const dialog = await screen.findByRole('dialog', { name: 'AAPL $100P' });
+        expect(within(dialog).getByRole('heading', { name: 'Weekly management guidance' })).toBeTruthy();
+        expect(within(dialog).getByRole('link', { name: 'View Management Plan row 4' }).getAttribute('href')).toContain(
+            'view=management&row=4#management-row-4'
+        );
+        expect(within(dialog).getByText(/not by signal entry date/)).toBeTruthy();
+        await within(dialog).findByText(/Market fixture unavailable/);
+        expect(within(dialog).getByText('Publisher note 4')).toBeTruthy();
+        expect(within(dialog).getByText('Publisher note 5')).toBeTruthy();
+        expect(within(dialog).getByText('Publisher note 6')).toBeTruthy();
+    });
+    it('does not add guidance to a matching non-Top Pick card or its detail', async () => {
+        fetchWrapups.mockResolvedValue({ reports: [{ id: '2025-08-08' }] });
+        fetchWrapup.mockResolvedValue(guidanceReport());
+        renderPage();
+        const card = await screen.findByRole('button', { name: 'AMD $100P, open details' });
+        expect(card.querySelector('.weekly-guidance-badge')).toBeNull();
+        fireEvent.click(card);
+        const dialog = await screen.findByRole('dialog', { name: 'AMD $100P' });
+        expect(within(dialog).queryByRole('heading', { name: 'Weekly management guidance' })).toBeNull();
+    });
+    it('does not add guidance to a matching current-week Top Pick card or its detail', async () => {
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        fetchWeekSignals.mockResolvedValue(week({ days: [day(today, 'Today', [trade('AAPL', { isTopPick: true })])] }));
+        fetchWrapups.mockResolvedValue({ reports: [{ id: '2025-08-08' }] });
+        fetchWrapup.mockResolvedValue(guidanceReport());
+        renderPage();
+        const card = await screen.findByRole('button', { name: 'AAPL $100P, open details' });
+        expect(card.querySelector('.weekly-guidance-badge')).toBeNull();
+        fireEvent.click(card);
+        const dialog = await screen.findByRole('dialog', { name: 'AAPL $100P' });
+        expect(within(dialog).queryByRole('heading', { name: 'Weekly management guidance' })).toBeNull();
+    });
+    it('waits for the latest imported report before revealing cards and never merges archived guidance', async () => {
+        let arrive!: (report: ReturnType<typeof guidanceReport>) => void;
+        fetchWrapups.mockResolvedValue({ reports: [{ id: '2025-08-08' }, { id: '2025-08-01' }] });
+        fetchWrapup.mockReturnValue(
+            new Promise<ReturnType<typeof guidanceReport>>((resolve) => {
+                arrive = resolve;
+            })
+        );
+        renderPage();
+        await waitFor(() => expect(fetchWrapup).toHaveBeenCalledWith('2025-08-08'));
+        expect(screen.queryByRole('region', { name: 'Monday 08/11' })).toBeNull();
+        await act(async () => {
+            arrive(guidanceReport());
+        });
+        await screen.findByRole('region', { name: 'Monday 08/11' });
+        expect(fetchWrapup).toHaveBeenCalledTimes(1);
+    });
+    it('reports a guidance failure while keeping signals available and supports retry', async () => {
+        fetchWrapups.mockRejectedValueOnce(new Error('Report storage unavailable'));
+        renderPage();
+        expect(await screen.findByRole('alert')).toBeTruthy();
+        expect(await screen.findByRole('region', { name: 'Monday 08/11' })).toBeTruthy();
+        let arrive!: (report: ReturnType<typeof guidanceReport>) => void;
+        fetchWrapups.mockResolvedValue({ reports: [{ id: '2025-08-08' }] });
+        fetchWrapup.mockReturnValue(
+            new Promise<ReturnType<typeof guidanceReport>>((resolve) => {
+                arrive = resolve;
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Retry guidance' }));
+        await waitFor(() => expect(fetchWrapup).toHaveBeenCalledWith('2025-08-08'));
+        expect(screen.getByRole('region', { name: 'Monday 08/11' })).toBeTruthy();
+        await act(async () => {
+            arrive(guidanceReport());
+        });
+        await screen.findByText(/Latest imported guidance: 08\/11\/2025/);
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
     it('titles the page with the week it actually loaded', async () => {
         renderPage();
         expect(await screen.findByRole('heading', { name: 'Week of 08/11 – 08/15' })).toBeTruthy();

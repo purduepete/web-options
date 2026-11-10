@@ -11,7 +11,7 @@ the initial rows enter.
 Personal, single-user dashboards for options-trading data. React front end, Express
 API, Azure SQL. Deployment can use Cloudflare Access and a private Tailscale fallback.
 
-Three things to look at:
+Pages include:
 
 - **Live signals** - this week's VADER cash-secured-put signals from webportfolio's
   `opt.telegram_signal` table, laid out Monday to Friday and grouped by risk tier.
@@ -22,6 +22,9 @@ Three things to look at:
 - **Weekly calendars** - each week's Substack-derived calendar, ingested into the
   `opt` schema rather than read off disk. Latest Calendar plus the arrow keys walks
   the whole archive.
+- **Weekly Wrap-up** - imported put-only Management Plan, Closed Trades, and Rolls
+  from the publisher workbook, including controlled exits. Reports stay in the
+  app's persistent shared folder. See [import instructions](docs/weekly-wrapups.md).
 
 The trading data is read-only. The one thing this app writes is its own caution
 list, and it writes it to its own schema. See

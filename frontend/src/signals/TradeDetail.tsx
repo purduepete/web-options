@@ -32,6 +32,8 @@ import {
 } from './format';
 import './TradeDetail.css';
 import '../components/SiteMarks.css';
+import { WeeklyGuidanceDetail } from './GuidanceBadges';
+import { weeklyGuidanceFor, type GuidanceIndex } from './weeklyGuidance';
 
 /**
  * The drill-in behind a live signals ticket.
@@ -43,6 +45,7 @@ import '../components/SiteMarks.css';
  */
 
 export interface TradeDetailProps {
+    guidance?: GuidanceIndex;
     trade: Trade | null;
     numberSource: NumberSource;
     onClose: () => void;
@@ -144,6 +147,7 @@ export function TradeDetail({
     onPrevious,
     onNext,
     onOpenSignal,
+    guidance,
 }: TradeDetailProps) {
     const onOpen = onOpenSignal;
     const { detail, loading, error } = useSymbolDetail(trade, reportDate);
@@ -369,6 +373,8 @@ export function TradeDetail({
                     </div>
                 </dl>
             </section>
+
+            <WeeklyGuidanceDetail matches={weeklyGuidanceFor(guidance, trade, reportDate)} />
 
             {/* THE MARKET. One reserved region, one spinner, one fade. */}
             <div className="detail-market">

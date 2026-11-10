@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { DaySignals, GradeBand, NumberSource, Trade } from '@weboptions/shared';
 import { GRADE_BAND_LABELS, hasExpired, hasKeptHalf } from '@weboptions/shared';
@@ -24,6 +24,8 @@ import { useVixValue } from '../grade/VixProvider';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ChevronDownIcon, FlaskConicalIcon, ZapIcon } from '../components/icons';
 import './WeekGrid.css';
+import { WeeklyGuidanceSummary } from './GuidanceBadges';
+import { weeklyGuidanceFor, type GuidanceIndex } from './weeklyGuidance';
 
 /**
  * The five day cards.
@@ -35,6 +37,7 @@ import './WeekGrid.css';
  */
 
 interface WeekGridProps {
+    guidance?: GuidanceIndex;
     days: DaySignals[];
     groups: SignalGroup[];
     collapsed: ReadonlySet<string>;
@@ -106,6 +109,7 @@ export function WeekGrid({
     numberSource,
     onOpenTrade,
     currentWeek,
+    guidance,
 }: WeekGridProps) {
     // Only where the cards are stacked one under another. Across the full week
     // they are columns sharing one set of rows, and folding one of them away
@@ -168,6 +172,7 @@ export function WeekGrid({
                     foldable={stacked}
                     folded={foldedDays.has(day.date)}
                     onToggleDay={toggleDay}
+                    guidance={guidance}
                 />
             ))}
         </div>
@@ -198,6 +203,7 @@ function DayCard({
     foldable,
     folded,
     onToggleDay,
+    guidance,
 }: DayCardProps) {
     const collateral = totalCollateral(day.trades);
     const premium = totalPremium(day.trades, numberSource);
@@ -276,6 +282,7 @@ function DayCard({
                             dayDate={day.date}
                             numberSource={numberSource}
                             onOpenTrade={onOpenTrade}
+                            guidance={guidance}
                         />
                     );
                 })
@@ -285,6 +292,7 @@ function DayCard({
 }
 
 interface RiskGroupProps {
+    guidance?: GuidanceIndex;
     group: SignalGroup;
     trades: Trade[];
     collapsed: boolean;
@@ -306,6 +314,7 @@ function RiskGroup({
     dayDate,
     numberSource,
     onOpenTrade,
+    guidance,
 }: RiskGroupProps) {
     const listId = `tickets-${group.id}-${dayDate}`;
     const priced = trades.filter((trade) => trade.moneyness !== null);
@@ -347,6 +356,7 @@ function RiskGroup({
                             showTierBadge={group.showTierBadge}
                             numberSource={numberSource}
                             onOpen={onOpenTrade}
+                            guidance={guidance}
                         />
                     ))}
             </div>
@@ -548,13 +558,17 @@ function Ticket({
     showTierBadge,
     numberSource,
     onOpen,
+    guidance,
 }: {
+    guidance?: GuidanceIndex;
     trade: Trade;
     dayDate: string;
     showTierBadge: boolean;
     numberSource: NumberSource;
     onOpen?: (trade: Trade) => void;
 }) {
+    const guidanceId = useId();
+    const matches = weeklyGuidanceFor(guidance, trade, dayDate);
     const delta = displayed(numberSource, trade.actualDelta, trade.delta);
     const premium = displayed(numberSource, trade.actualPremium, trade.premium);
     const annualized = displayed(numberSource, trade.actualAnnualizedYield, trade.annualizedYield);
@@ -630,6 +644,7 @@ function Ticket({
                 onOpen ? ' is-interactive' : ''
             }`}
             {...interactive}
+            aria-describedby={matches.length ? guidanceId : undefined}
         >
             <div className="ticket-row1">
                 <span className="ticker">
@@ -686,6 +701,11 @@ function Ticket({
                     <b>{formatMoney(trade.collateral)}</b> collateral
                 </span>
             </p>
+            {matches.length > 0 && (
+                <div className="weekly-guidance-badges" id={guidanceId}>
+                    <WeeklyGuidanceSummary matches={matches} />
+                </div>
+            )}
             <TicketCorner trade={trade} band={band} />
         </article>
     );

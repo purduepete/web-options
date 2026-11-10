@@ -1,0 +1,56 @@
+.weekly-guidance-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+.weekly-guidance-badge {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    max-width: 100%;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid currentColor;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 650;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.weekly-guidance-date {
+    font-size: 0.7rem;
+    font-weight: 400;
+}
+.weekly-guidance-summary {
+    padding: 0.15rem 0.3rem;
+}
+.weekly-guidance-badge.guidance-red,
+.weekly-guidance-badge .guidance-red {
+    color: var(--negative);
+}
+.weekly-guidance-badge.guidance-yellow,
+.weekly-guidance-badge .guidance-yellow {
+    color: var(--warning);
+}
+.weekly-guidance-badge.guidance-green,
+.weekly-guidance-badge .guidance-green {
+    color: var(--positive);
+}
+.weekly-guidance-entry {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border-soft);
+    overflow-wrap: anywhere;
+}
+.weekly-guidance-note {
+    white-space: pre-wrap;
+}
+.weekly-guidance-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin-block: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
