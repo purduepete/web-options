@@ -43,7 +43,6 @@ $allowedNames = @(
     'WEBPORTFOLIO_API_URL', 'WEBPORTFOLIO_SERVICE_KEY',
     'WEBOPTIONS_AUTH_MODE', 'WEBOPTIONS_ALLOWED_ORIGINS'
     'PGPASSFILE', 'WEBOPTIONS_HISTORY_PYTHON', 'WEBOPTIONS_HISTORY_COLLECTOR_ROOT'
-    'WEBOPTIONS_WRAPUP_DIRECTORY'
 )
 foreach ($name in $environment.Keys) {
     if ($name -notin $allowedNames -or $environment[$name] -isnot [string]) {

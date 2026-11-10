@@ -2,17 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { DEFAULT_NUMBER_SOURCE, STORAGE_KEYS } from '@weboptions/shared';
-import type { IsoDate, Trade, WeekSignalsResponse, WeeklyWrapup } from '@weboptions/shared';
-import {
-    UnauthorizedError,
-    describeFailure,
-    fetchEarliestWeek,
-    fetchSignal,
-    fetchWeekSignals,
-    fetchWrapup,
-    fetchWrapups,
-} from '../api';
-import { indexWeeklyGuidance } from '../signals/weeklyGuidance';
+import type { IsoDate, Trade, WeekSignalsResponse } from '@weboptions/shared';
+import { UnauthorizedError, describeFailure, fetchEarliestWeek, fetchSignal, fetchWeekSignals } from '../api';
 import { useApiKey } from '../auth/ApiKeyProvider';
 import { WeekGrid } from '../signals/WeekGrid';
 import { TradeDetail } from '../signals/TradeDetail';
@@ -48,7 +39,7 @@ import type {
     OwnedFilter,
     TierSelection,
 } from '../signals/grouping';
-import { WEEK_TITLE_SPACER, formatMDY, formatWeekTitle } from '../signals/format';
+import { WEEK_TITLE_SPACER, formatWeekTitle } from '../signals/format';
 import { useNumberSource } from '../signals/useNumberSource';
 import { useSignalShortcuts } from '../signals/useSignalShortcuts';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -122,11 +113,6 @@ export function LiveSignalsPage() {
     const [data, setData] = useState<WeekSignalsResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [guidanceReport, setGuidanceReport] = useState<WeeklyWrapup | null>(null);
-    const [guidanceSettled, setGuidanceSettled] = useState(false);
-    const [guidanceError, setGuidanceError] = useState<string | null>(null);
-    const [guidanceRetry, setGuidanceRetry] = useState(0);
-    const guidance = useMemo(() => indexWeeklyGuidance(guidanceReport), [guidanceReport]);
     const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
     // The drill-in. Held here rather than in the grid so the page can suspend its
     // own single-key shortcuts while it is open.
@@ -145,29 +131,6 @@ export function LiveSignalsPage() {
     const symbolInputRef = useRef<HTMLInputElement>(null);
     const filtersTriggerRef = useRef<HTMLButtonElement>(null);
     const filtersPanelRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        setGuidanceError(null);
-        void (async () => {
-            try {
-                const index = await fetchWrapups();
-                const latest = index.reports[0];
-                const report = latest ? await fetchWrapup(latest.id) : null;
-                if (!cancelled) setGuidanceReport(report);
-            } catch (cause) {
-                if (!cancelled) {
-                    if (cause instanceof UnauthorizedError) forget();
-                    else setGuidanceError(describeFailure(cause));
-                }
-            } finally {
-                if (!cancelled) setGuidanceSettled(true);
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [forget, guidanceRetry]);
 
     useEffect(() => {
         let cancelled = false;
@@ -681,26 +644,9 @@ export function LiveSignalsPage() {
                 </p>
             )}
 
-            {guidanceError && (
-                <div className="signals-error" role="alert">
-                    Weekly guidance could not load: {guidanceError}{' '}
-                    <button type="button" onClick={() => setGuidanceRetry((value) => value + 1)}>
-                        Retry guidance
-                    </button>
-                </div>
-            )}
-            {guidanceReport && !loading && (
-                <p className="weekly-guidance-status">
-                    <span>
-                        Latest imported guidance: {formatMDY(guidanceReport.sections.management.start)} -{' '}
-                        {formatMDY(guidanceReport.sections.management.end)}. Prior-week Top Picks only.
-                    </span>
-                    <Link to={`/weekly-wrapups?report=${guidanceReport.id}&view=management`}>Management Plan</Link>
-                </p>
-            )}
-            {(loading || !guidanceSettled) && <Loading page label="Loading this week" />}
+            {loading && <Loading page label="Loading this week" />}
 
-            {data && !loading && guidanceSettled && !error && (
+            {data && !loading && !error && (
                 <>
                     <WeekScore days={days} numberSource={numberSource} appliedFilters={appliedFilters} />
                     <WeekGrid
@@ -716,7 +662,6 @@ export function LiveSignalsPage() {
                         numberSource={numberSource}
                         onOpenTrade={openFromGrid}
                         currentWeek={data.isCurrentWeek}
-                        guidance={guidance}
                     />
                 </>
             )}
@@ -730,7 +675,6 @@ export function LiveSignalsPage() {
                 onPrevious={previousTrade}
                 onNext={nextTrade}
                 onOpenSignal={openSignal}
-                guidance={guidance}
             />
         </main>
     );

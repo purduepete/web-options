@@ -50,12 +50,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Calendars',
         items: [
             {
-                id: '/weekly-wrapups',
-                label: 'Weekly Wrap-up',
-                description: 'Put management plans, closed trades, and rolls',
-                path: '/weekly-wrapups',
-            },
-            {
                 id: '/calendars/latest',
                 label: 'Weekly Calendars',
                 // The week page steps back through the archive, so the newest

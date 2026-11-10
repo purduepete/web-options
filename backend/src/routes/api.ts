@@ -32,7 +32,6 @@ import {
 } from '@weboptions/shared';
 import type { AppConfig } from '../config';
 import { createHistoryRouter } from '../history/routes';
-import { DEFAULT_WRAPUP_DIRECTORY, listWrapups, readWrapup } from '../wrapups/repository';
 import { fetchCalendar, listCalendars } from '../calendars/repository';
 import { listCautionSymbols, replaceCautionSymbols } from '../caution/repository';
 import { getSymbolDetail } from '../market/service';
@@ -86,30 +85,6 @@ export function createApiRouter(config: AppConfig): Router {
     // Access mode trusts the external Cloudflare Access / Tailscale boundary.
     if (config.auth?.mode !== 'access') router.use(requireApiKey(config));
     router.use('/contract-history', createHistoryRouter(config));
-    const wrapupDirectory = config.wrapupDirectory ?? DEFAULT_WRAPUP_DIRECTORY;
-    router.get('/weekly-wrapups', async (_req, res, next) => {
-        try {
-            res.json({ reports: await listWrapups(wrapupDirectory) });
-        } catch (error) {
-            next(error);
-        }
-    });
-    router.get('/weekly-wrapups/:id', async (req, res, next) => {
-        if (!isIsoDate(req.params.id)) {
-            res.status(400).json({ error: 'report id must be YYYY-MM-DD' });
-            return;
-        }
-        try {
-            const report = await readWrapup(wrapupDirectory, req.params.id);
-            if (!report) {
-                res.status(404).json({ error: 'no weekly wrap-up for that report' });
-                return;
-            }
-            res.json(report);
-        } catch (error) {
-            next(error);
-        }
-    });
 
     router.get('/health', (_req, res) => {
         const body: HealthResponse = { status: 'ok' };

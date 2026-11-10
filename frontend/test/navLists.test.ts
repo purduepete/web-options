@@ -88,7 +88,6 @@ describe('nav model', () => {
         expect(ids).toEqual([
             '/',
             '/summary',
-            '/weekly-wrapups',
             '/calendars/latest',
             '/contract-history',
             '/owned-contracts',

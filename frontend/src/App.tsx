@@ -22,7 +22,6 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { OwnedContractsPage } from './pages/OwnedContractsPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { ThemeProvider } from './theme/ThemeProvider';
-import { WeeklyWrapupPage } from './pages/WeeklyWrapupPage';
 
 const ContractHistoryPage = lazy(() =>
     import('./pages/ContractHistoryPage').then((module) => ({ default: module.ContractHistoryPage }))
@@ -68,7 +67,6 @@ function Gate() {
                                             }
                                         />
                                         <Route path="owned-contracts" element={<OwnedContractsPage />} />
-                                        <Route path="weekly-wrapups" element={<WeeklyWrapupPage />} />
                                         <Route path="calendars/latest" element={<LatestCalendarPage />} />
                                         <Route path="calendars/:publishDate" element={<CalendarWeekPage />} />
                                         <Route path="settings/favorites" element={<FavoritesPage />} />

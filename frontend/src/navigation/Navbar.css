@@ -175,15 +175,6 @@
     padding: 2rem 1.5rem;
 }
 
-@media (min-width: 1024px) {
-    .navbar-bar,
-    .mega-inner {
-        max-width: 1440px;
-        padding-left: max(20px, env(safe-area-inset-left));
-        padding-right: max(20px, env(safe-area-inset-right));
-    }
-}
-
 .section-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
